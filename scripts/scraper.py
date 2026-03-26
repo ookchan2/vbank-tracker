@@ -1,55 +1,62 @@
 # scripts/scraper.py
-# This file visits bank websites and collects promotion text
-
 import asyncio
 from playwright.async_api import async_playwright
 
-# List of HK banks to scrape
+# 只保留香港虛擬銀行
 BANKS = [
     {
-        "name": "HSBC Hong Kong",
-        "url": "https://www.hsbc.com.hk/credit-cards/offers/",
-        "color": "#DB0011"
+        "name": "ZA Bank",
+        "url": "https://www.zabank.com/promotions",
+        "color": "#FF0000"
     },
     {
-        "name": "Hang Seng Bank",
-        "url": "https://bank.hangseng.com/1/2/cards/credit-cards/offers",
-        "color": "#008B6E"
+        "name": "Mox Bank",
+        "url": "https://mox.com/promotions",
+        "color": "#FF69B4"
     },
     {
-        "name": "Standard Chartered HK",
-        "url": "https://www.sc.com/hk/credit-cards/offers/",
-        "color": "#0080A1"
+        "name": "livi bank",
+        "url": "https://www.livi.com.hk/en/promotions",
+        "color": "#6A0DAD"
     },
     {
-        "name": "Citibank HK",
-        "url": "https://www.citibank.com.hk/english/credit-cards/promotions/",
-        "color": "#003B70"
+        "name": "WeLab Bank",
+        "url": "https://www.welab.bank/en/promotions",
+        "color": "#FF4500"
     },
     {
-        "name": "Bank of China HK",
-        "url": "https://www.bochk.com/en/more/creditcard/promotion.html",
-        "color": "#CC0000"
+        "name": "Ant Bank HK",
+        "url": "https://www.antbank.hk/en/promotions",
+        "color": "#1677FF"
+    },
+    {
+        "name": "PAObank",
+        "url": "https://www.paobank.hk/en/promotions",
+        "color": "#00BFFF"
+    },
+    {
+        "name": "Airstar Bank",
+        "url": "https://www.airstarbank.com/en/promotions",
+        "color": "#00CED1"
+    },
+    {
+        "name": "Fusion Bank",
+        "url": "https://www.fusionbank.com.hk/en/promotions",
+        "color": "#FF8C00"
     }
 ]
 
 
 async def scrape_one_bank(playwright, bank: dict) -> dict:
-    """
-    Visit one bank website and get all the text
-    """
-    # Launch hidden browser
     browser = await playwright.chromium.launch(headless=True)
     
-    # Set up browser to look like a real user
     context = await browser.new_context(
         user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        viewport={"width": 1280, "height": 720}
+        viewport={"width": 1280, "height": 900}
     )
     
     page = await context.new_page()
     
-    # Prepare result object
     result = {
         "bank": bank["name"],
         "color": bank["color"],
@@ -62,39 +69,48 @@ async def scrape_one_bank(playwright, bank: dict) -> dict:
     try:
         print(f"  🌐 Opening {bank['name']} website...")
         
-        # Go to bank website (30 second timeout)
         await page.goto(
             bank["url"],
-            timeout=30000,
-            wait_until="domcontentloaded"
+            timeout=45000,          # 虛擬銀行網站較慢，45秒
+            wait_until="networkidle" # 等到網絡完全空閒（適合 React/SPA）
         )
         
-        # Wait 3 seconds for page to fully load
-        await page.wait_for_timeout(3000)
+        # 額外等待 5 秒讓 JS 渲染完成
+        await page.wait_for_timeout(5000)
         
-        # Extract all visible text from the page
+        # 嘗試滾動頁面觸發 lazy load
+        await page.evaluate("""
+            () => {
+                window.scrollTo(0, document.body.scrollHeight / 2);
+            }
+        """)
+        await page.wait_for_timeout(2000)
+        await page.evaluate("""
+            () => {
+                window.scrollTo(0, document.body.scrollHeight);
+            }
+        """)
+        await page.wait_for_timeout(2000)
+        
+        # 提取文字
         content = await page.evaluate("""
             () => {
-                // Remove unnecessary elements
                 const removeElements = document.querySelectorAll(
-                    'script, style, nav, footer, header, .cookie-banner, .popup'
+                    'script, style, nav, footer, header, .cookie-banner, .popup, .modal'
                 );
                 removeElements.forEach(el => el.remove());
-                
-                // Get all remaining text
                 return document.body.innerText || document.body.textContent;
             }
         """)
         
-        # Clean up the text
         lines = [line.strip() for line in content.split('\n') if line.strip()]
         clean_text = '\n'.join(lines)
         
-        result["raw_text"] = clean_text[:5000]  # Keep first 5000 characters
+        # 虛擬銀行優惠資料較多，保留 8000 字
+        result["raw_text"] = clean_text[:8000]
         result["success"] = True
         
-        char_count = len(clean_text)
-        print(f"  ✅ {bank['name']} — got {char_count} characters of text")
+        print(f"  ✅ {bank['name']} — got {len(clean_text)} characters")
         
     except Exception as e:
         result["error"] = str(e)
@@ -108,12 +124,8 @@ async def scrape_one_bank(playwright, bank: dict) -> dict:
 
 
 async def scrape_all_banks() -> list:
-    """
-    Scrape all banks one by one
-    Returns list of results
-    """
     print("\n" + "="*50)
-    print("🏦 STARTING BANK WEBSITE SCRAPING")
+    print("🏦 SCRAPING HK VIRTUAL BANKS")
     print("="*50)
     
     results = []
@@ -121,48 +133,28 @@ async def scrape_all_banks() -> list:
     async with async_playwright() as playwright:
         for i, bank in enumerate(BANKS, 1):
             print(f"\n[{i}/{len(BANKS)}] Processing {bank['name']}...")
-            
             result = await scrape_one_bank(playwright, bank)
             results.append(result)
             
-            # Wait 2 seconds between banks (be polite to servers)
             if i < len(BANKS):
-                print(f"  ⏳ Waiting 2 seconds before next bank...")
-                await asyncio.sleep(2)
+                print(f"  ⏳ Waiting 3 seconds...")
+                await asyncio.sleep(3)
     
-    # Print summary
     successful = sum(1 for r in results if r["success"])
-    failed = len(results) - successful
-    
     print(f"\n{'='*50}")
-    print(f"📊 SCRAPING COMPLETE")
     print(f"✅ Successful: {successful}/{len(BANKS)} banks")
-    if failed > 0:
-        print(f"❌ Failed: {failed}/{len(BANKS)} banks")
     print("="*50)
     
     return results
 
 
 def run_scraper() -> list:
-    """
-    Main function to run the scraper
-    This is what other files will call
-    """
     return asyncio.run(scrape_all_banks())
 
 
-# Test - run this file directly to test scraping only
 if __name__ == "__main__":
-    print("🧪 Testing scraper...")
     results = run_scraper()
-    
-    print("\n📋 RESULTS PREVIEW:")
     for r in results:
-        print(f"\n{'='*40}")
-        print(f"Bank: {r['bank']}")
-        print(f"Success: {r['success']}")
+        print(f"\n{r['bank']}: {'✅' if r['success'] else '❌'}")
         if r['raw_text']:
             print(f"Preview: {r['raw_text'][:200]}...")
-        if r['error']:
-            print(f"Error: {r['error']}")
