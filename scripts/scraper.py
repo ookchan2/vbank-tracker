@@ -17,8 +17,8 @@ BANKS = [
     },
     {
         "name": "livi bank",
-        "url": "https://livi.com.hk/en/promotions",
-        "fallback_url": "https://www.livi.com.hk/en/promotions",
+        "url": "https://livi.com.hk/en/",
+        "fallback_url": "https://www.livi.com.hk",
         "color": "#6A0DAD"
     },
     {
@@ -35,8 +35,8 @@ BANKS = [
     },
     {
         "name": "PAObank",
-        "url": "https://www.paobank.hk/en/promotions",
-        "fallback_url": "https://paobank.hk/en/promotions",
+        "url": "https://www.paobank.com.hk/en/",
+        "fallback_url": "https://www.paobank.com.hk",
         "color": "#00B0F0"
     },
     {
@@ -47,8 +47,8 @@ BANKS = [
     },
     {
         "name": "Fusion Bank",
-        "url": "https://www.fusionbank.com.hk/en/promotions",
-        "fallback_url": "https://fusionbank.com.hk/en/promotions",
+        "url": "https://www.fusionbank.com.hk/en/",
+        "fallback_url": "https://www.fusionbank.com.hk",
         "color": "#FF8C00"
     },
 ]
