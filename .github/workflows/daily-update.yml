@@ -2,28 +2,69 @@ name: Daily VBank Tracker
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 每天香港時間早上9點
-  workflow_dispatch:  # 允許手動執行
+    # 每天香港時間早上 9:00 (UTC+8 = UTC 01:00)
+    - cron: '0 1 * * *'
+  workflow_dispatch:  # 手動觸發
 
 jobs:
   run-tracker:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
+
+    permissions:
+      contents: write  # 需要 write 權限來 push data.json
+
     steps:
+
+      # ── Step 1: Checkout code ──────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set up Python
+
+      # ── Step 2: Setup Python ───────────────────────
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Install Playwright
-        run: playwright install chromium
-      - name: Run tracker
+
+      # ── Step 3: Cache pip packages ─────────────────
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # ── Step 4: Install dependencies ───────────────
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ── Step 5: Install Playwright browsers ────────
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      # ── Step 6: Run the tracker bot ────────────────
+      - name: Run tracker bot
         env:
-          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: python scripts/main.py
+          OPENROUTER_API_KEY:  ${{ secrets.OPENROUTER_API_KEY }}
+          GMAIL_ADDRESS:       ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD:  ${{ secrets.GMAIL_APP_PASSWORD }}
+          RECIPIENT_EMAIL:     ${{ secrets.RECIPIENT_EMAIL }}
+        run: |
+          cd scripts
+          python main.py
+
+      # ── Step 7: Auto-commit updated website data ───
+      - name: Commit updated website data
+        run: |
+          git config user.name  "VBank Tracker Bot 🤖"
+          git config user.email "bot@vbank-tracker.github.io"
+          git add docs/data.json
+          git diff --staged --quiet || git commit -m "🤖 Auto-update: promotions $(date +'%Y-%m-%d %H:%M') HKT"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
