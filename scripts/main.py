@@ -16,6 +16,28 @@ def build_fallback_digest(data):
         lines.append("")
     return "\n".join(lines)
 
+def normalize_scraped_data(raw):
+    """
+    Accepts either:
+      - dict  → { 'ZA Bank': { success, text, url, ... }, ... }
+      - list  → [ { name/bank, success, text, url, ... }, ... ]
+    Always returns a dict keyed by bank name.
+    """
+    if isinstance(raw, dict):
+        return raw
+
+    normalized = {}
+    for i, item in enumerate(raw):
+        # Try common key names for the bank name
+        bank_name = (
+            item.get('name') or
+            item.get('bank') or
+            item.get('bank_name') or
+            f'Bank_{i}'
+        )
+        normalized[bank_name] = item
+    return normalized
+
 # ── Banner ────────────────────────────────────────────────────────────────────
 print("🚀" * 25)
 print("HK BANK PROMOTIONS BOT — STARTING")
@@ -48,7 +70,13 @@ print()
 print("📦 PHASE 2: Setting Up Database")
 print("-" * 40)
 
-DB_AVAILABLE = False
+DB_AVAILABLE          = False
+init_db               = None
+save_promotions       = None
+get_total_records     = None
+log_email             = None
+get_total_emails_sent = None
+
 try:
     from database import (init_db, save_promotions,
                           get_total_records, log_email,
@@ -68,7 +96,8 @@ print("-" * 40)
 scraped_data = {}
 try:
     from scraper import scrape_all_banks
-    scraped_data = asyncio.run(scrape_all_banks())
+    raw_result   = asyncio.run(scrape_all_banks())
+    scraped_data = normalize_scraped_data(raw_result)   # ← handles list OR dict
     print(f"✅ Scraped {len(scraped_data)} banks")
 except Exception as e:
     print(f"❌ Scraping error: {e}")
@@ -109,11 +138,11 @@ for bank_name, data in scraped_data.items():
         'analysis':   analysis,
         'raw_text':   raw_text,
         'url':        data.get('url', ''),
-        'color':      data.get('color', '#333333'),
+        'color':      data.get('color', '#0080A1'),
         'scraped_at': datetime.now().isoformat()
     }
 
-    if DB_AVAILABLE:
+    if DB_AVAILABLE and save_promotions is not None:
         try:
             save_promotions(bank_name, analysis, raw_text)
         except Exception as e:
@@ -131,7 +160,7 @@ try:
             'updated_at': datetime.now().isoformat(),
             'banks':      analyzed_data
         }, f, ensure_ascii=False, indent=2)
-    print(f"✅ Website data saved: docs/data.json")
+    print(f"✅ Website data saved: docs/data.json ({len(analyzed_data)} banks)")
 except Exception as e:
     print(f"❌ JSON save error: {e}")
 
@@ -168,13 +197,13 @@ recipient  = os.environ.get('RECIPIENT_EMAIL')
 
 if not recipient:
     print("❌ RECIPIENT_EMAIL not set in GitHub Secrets!")
+    print("   → Go to: Repo → Settings → Secrets → Actions → New secret")
 elif not digest_text:
     print("❌ No digest content to send")
 else:
     try:
         from emailer import send_email
 
-        # Build promotions list for emailer
         promotions_list = [
             {
                 "bank":       bank_name,
@@ -194,24 +223,25 @@ else:
         email_sent = True
         print(f"✅ Email sent to {recipient}")
 
-        if DB_AVAILABLE:
+        if DB_AVAILABLE and log_email is not None:
             log_email(recipient, subject, 'sent')
 
     except Exception as e:
         print(f"❌ Email failed: {e}")
-        if DB_AVAILABLE and recipient:
+        if DB_AVAILABLE and log_email is not None and recipient:
             log_email(recipient, 'digest', f'failed: {e}')
 
 # ── SUMMARY ───────────────────────────────────────────────────────────────────
-total_records = get_total_records()     if DB_AVAILABLE else 0
-total_sent    = get_total_emails_sent() if DB_AVAILABLE else 0
+total_records = get_total_records()     if (DB_AVAILABLE and get_total_records)     else 0
+total_sent    = get_total_emails_sent() if (DB_AVAILABLE and get_total_emails_sent) else 0
 
 print()
 print("=" * 50)
 print("🏁 PIPELINE COMPLETE")
 print("=" * 50)
-print(f"🏦 Banks processed : {banks_processed}")
-print(f"📧 Email           : {'✅ Sent' if email_sent else '❌ Failed'}")
+print(f"🏦 Banks scraped   : {len(scraped_data)}")
+print(f"🤖 Banks analyzed  : {banks_processed}")
+print(f"📧 Email           : {'✅ Sent' if email_sent else '❌ Not sent'}")
 print(f"📦 DB records      : {total_records}")
 print(f"📨 Emails sent     : {total_sent}")
 print("=" * 50)
