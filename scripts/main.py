@@ -67,7 +67,8 @@ print("-" * 40)
 scraped_data = {}
 try:
     from scraper import scrape_all_banks
-    scraped_data = scrape_all_banks()
+    import asyncio
+scraped_data = asyncio.run(scrape_all_banks())
 except Exception as e:
     print(f"❌ Scraping error: {e}")
 

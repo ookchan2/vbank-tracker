@@ -1,4 +1,4 @@
-openai
+openai==1.13.3
 requests
 beautifulsoup4
 playwright

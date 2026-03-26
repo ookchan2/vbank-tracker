@@ -50,7 +50,7 @@ jobs:
       # ── Step 6: Run the tracker bot ────────────────
       - name: Run tracker bot
         env:
-          OPENROUTER_API_KEY:  ${{ secrets.OPENROUTER_API_KEY }}
+          POE_API_KEY: ${{ secrets.POE_API_KEY }} 
           GMAIL_ADDRESS:       ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD:  ${{ secrets.GMAIL_APP_PASSWORD }}
           RECIPIENT_EMAIL:     ${{ secrets.RECIPIENT_EMAIL }}

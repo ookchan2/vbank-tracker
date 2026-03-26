@@ -6,20 +6,17 @@ load_dotenv()
 
 client = OpenAI(
     api_key=os.getenv("POE_API_KEY"),
-    base_url="https://api.poe.com/v1",  # Poe's API endpoint
+    base_url="https://api.poe.com/v1",
 )
 
 def analyze_promotion(promotion_text: str) -> str:
     try:
         response = client.chat.completions.create(
-            model="claude-sonnet-4.6",  # Exact Poe model name
+            model="claude-sonnet-4.6",
             messages=[
                 {
-                    "role": "user",
-                    "content": f"""Analyze this HK bank promotion.
-List key benefits in 2-3 bullet points:
-
-{promotion_text}"""
+                    "role": "user", 
+                    "content": f"Analyze this HK bank promotion. List key benefits in 2-3 bullet points:\n\n{promotion_text}"
                 }
             ]
         )
@@ -31,9 +28,7 @@ def test_connection() -> bool:
     try:
         response = client.chat.completions.create(
             model="claude-sonnet-4.6",
-            messages=[
-                {"role": "user", "content": "Say OK only"}
-            ]
+            messages=[{"role": "user", "content": "Say OK only"}]
         )
         result = response.choices[0].message.content
         print(f"✅ Poe AI connected! Response: {result}")
