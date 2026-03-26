@@ -1,253 +1,99 @@
-# scripts/main.py
+# main.py  ── 修復 scope bug，統一使用函數 import
+
 import os
-import sys
-import json
-import asyncio
 from datetime import datetime
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from scripts.scraper   import run_scraper, BANK_CONFIGS
+from scripts.ai_helper import init_ai, analyze_promotions   # 直接 import 函數，無 scope 問題
+from scripts.db        import init_db, save_promotions, load_promotions, mark_inactive_old
+from scripts.emailer   import build_html_email, send_email
 
-# ── Helper ────────────────────────────────────────────────────────────────────
-def build_fallback_digest(data):
-    lines = [f"HK Bank Promotions — {datetime.now().strftime('%Y-%m-%d')}\n"]
-    for bank, info in data.items():
-        lines.append(f"## {bank}")
-        lines.append(str(info.get('analysis', 'No data'))[:400])
-        lines.append("")
-    return "\n".join(lines)
 
-def normalize_scraped_data(raw):
-    """
-    Accepts either:
-      - dict  → { 'ZA Bank': { success, text, url, ... }, ... }
-      - list  → [ { name/bank, success, text, url, ... }, ... ]
-    Always returns a dict keyed by bank name.
-    """
-    if isinstance(raw, dict):
-        return raw
+def main():
+    today = datetime.now().strftime('%Y-%m-%d')
+    print(f'\n{"═"*60}')
+    print(f'  HK Virtual Bank Promotions Tracker  |  {today}')
+    print(f'{"═"*60}\n')
 
-    normalized = {}
-    for i, item in enumerate(raw):
-        # Try common key names for the bank name
-        bank_name = (
-            item.get('name') or
-            item.get('bank') or
-            item.get('bank_name') or
-            f'Bank_{i}'
-        )
-        normalized[bank_name] = item
-    return normalized
-
-# ── Banner ────────────────────────────────────────────────────────────────────
-print("🚀" * 25)
-print("HK BANK PROMOTIONS BOT — STARTING")
-print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-print("🚀" * 25)
-print()
-
-# ── PHASE 1: AI ───────────────────────────────────────────────────────────────
-print("📡 PHASE 1: Testing AI Connection")
-print("-" * 40)
-
-AI_AVAILABLE       = False
-analyze_promotions = None
-create_digest      = None
-
-try:
-    import ai_helper as _ai
-    _ai.init_ai()
-    analyze_promotions = _ai.analyze_promotions
-    create_digest      = _ai.create_digest
-    AI_AVAILABLE       = True
-    print("✅ AI connection successful")
-except Exception as e:
-    print(f"❌ AI import error: {e}")
-    print("   → AI analysis will be skipped")
-
-print()
-
-# ── PHASE 2: DATABASE ─────────────────────────────────────────────────────────
-print("📦 PHASE 2: Setting Up Database")
-print("-" * 40)
-
-DB_AVAILABLE          = False
-init_db               = None
-save_promotions       = None
-get_total_records     = None
-log_email             = None
-get_total_emails_sent = None
-
-try:
-    from database import (init_db, save_promotions,
-                          get_total_records, log_email,
-                          get_total_emails_sent)
+    # 1 ── 初始化資料庫
+    print('Step 1 ── Init database')
     init_db()
-    DB_AVAILABLE = True
-    print("✅ Database initialized")
-except Exception as e:
-    print(f"❌ Database error: {e}")
 
-print()
+    # 2 ── 初始化 AI（先 init，之後直接用函數）
+    print('\nStep 2 ── Init AI')
+    ai_ok = init_ai()
 
-# ── PHASE 3: SCRAPING ─────────────────────────────────────────────────────────
-print("🌐 PHASE 3: Scraping Bank Websites")
-print("-" * 40)
+    # 3 ── 爬取全部 8 家銀行
+    print('\nStep 3 ── Scrape all 8 banks')
+    scraped = run_scraper()
 
-scraped_data = {}
-try:
-    from scraper import scrape_all_banks
-    raw_result   = asyncio.run(scrape_all_banks())
-    scraped_data = normalize_scraped_data(raw_result)   # ← handles list OR dict
-    print(f"✅ Scraped {len(scraped_data)} banks")
-except Exception as e:
-    print(f"❌ Scraping error: {e}")
+    # 4 ── AI 提取促銷（analyze_promotions 永遠可調用）
+    print('\nStep 4 ── AI extraction')
+    total_new = 0
 
-print()
+    for bank_id, result in scraped.items():
+        bank_name   = result['bank_name']
+        default_url = BANK_CONFIGS[bank_id]['link']
+        chars       = len(result.get('text', ''))
+        mark        = '✅' if result['success'] else '❌'
+        print(f'\n  [{bank_id.upper()}] {bank_name}  {mark}  ({chars:,} chars scraped)')
 
-# ── PHASE 4: AI ANALYSIS ──────────────────────────────────────────────────────
-print("🤖 PHASE 4: AI Analyzing Promotions")
-print("-" * 40)
+        if not ai_ok:
+            print('    ⚠️  AI unavailable — skip')
+            continue
 
-analyzed_data   = {}
-banks_processed = 0
-
-for bank_name, data in scraped_data.items():
-    print(f"\n  Processing: {bank_name}")
-
-    if not data.get('success'):
-        print(f"  ⚠️  Skipping {bank_name} (scraping failed)")
-        continue
-
-    raw_text = data.get('text', '')
-    analysis = None
-
-    if AI_AVAILABLE and analyze_promotions is not None:
-        print(f"    🤖 AI analyzing {bank_name}...")
-        try:
-            analysis = analyze_promotions(bank_name, raw_text)
-            print(f"    ✅ Done")
-            banks_processed += 1
-        except Exception as e:
-            print(f"    ❌ AI failed for {bank_name}: {e}")
-            analysis = raw_text[:500]
-    else:
-        print(f"    ℹ️  No AI — storing raw text")
-        analysis = raw_text[:500]
-
-    analyzed_data[bank_name] = {
-        'analysis':   analysis,
-        'raw_text':   raw_text,
-        'url':        data.get('url', ''),
-        'color':      data.get('color', '#0080A1'),
-        'scraped_at': datetime.now().isoformat()
-    }
-    try:
-        parsed = json.loads(analysis) if isinstance(analysis, str) else analysis
-        sections = len(parsed) if isinstance(parsed, list) else 1
-    except Exception:
-        sections = len([b for b in (analysis or "").split('\n\n') if len(b.strip()) > 30])
-    scraped_data[bank_name]['sections_found'] = sections
-    if DB_AVAILABLE and save_promotions is not None:
-        try:
-            save_promotions(bank_name, analysis, raw_text)
-        except Exception as e:
-            print(f"    ⚠️  DB save error: {e}")
-
-print(f"\n✅ AI analysis complete: {banks_processed} banks processed")
-
-# ── SAVE JSON ─────────────────────────────────────────────────────────────────
-try:
-    docs_dir  = os.path.join(os.path.dirname(__file__), '..', 'docs')
-    os.makedirs(docs_dir, exist_ok=True)
-    data_file = os.path.join(docs_dir, 'data.json')
-    with open(data_file, 'w', encoding='utf-8') as f:
-        json.dump({
-            'updated_at': datetime.now().isoformat(),
-            'banks':      analyzed_data
-        }, f, ensure_ascii=False, indent=2)
-    print(f"✅ Website data saved: docs/data.json ({len(analyzed_data)} banks)")
-except Exception as e:
-    print(f"❌ JSON save error: {e}")
-
-print()
-
-# ── PHASE 5: EMAIL DIGEST ─────────────────────────────────────────────────────
-print("📝 PHASE 5: Creating Email Digest")
-print("-" * 40)
-
-digest_text = None
-
-if AI_AVAILABLE and create_digest is not None and analyzed_data:
-    print("🤖 AI creating digest...")
-    try:
-        digest_text = create_digest(analyzed_data)
-        print("✅ Digest created")
-    except Exception as e:
-        print(f"❌ Digest error: {e}")
-        digest_text = build_fallback_digest(analyzed_data)
-elif analyzed_data:
-    print("ℹ️  Using plain-text digest (no AI)")
-    digest_text = build_fallback_digest(analyzed_data)
-else:
-    print("⚠️  No data to digest")
-
-print()
-
-# ── PHASE 6: SEND EMAIL ───────────────────────────────────────────────────────
-print("📧 PHASE 6: Sending Email")
-print("-" * 40)
-
-email_sent = False
-recipient  = os.environ.get('RECIPIENT_EMAIL')
-
-if not recipient:
-    print("❌ RECIPIENT_EMAIL not set in GitHub Secrets!")
-    print("   → Go to: Repo → Settings → Secrets → Actions → New secret")
-elif not digest_text:
-    print("❌ No digest content to send")
-else:
-    try:
-        from emailer import send_email
-
-        promotions_list = [
-            {
-                "bank":       bank_name,
-                "color":      info.get("color", "#0080A1"),
-                "promotions": info.get("analysis", "No data")
-            }
-            for bank_name, info in analyzed_data.items()
-        ]
-
-        subject = f"🏦 HK Bank Promotions — {datetime.now().strftime('%Y-%m-%d')}"
-
-        send_email(
-            subject=subject,
-            text_content=digest_text,
-            promotions_data=promotions_list,
-            scraped_data=scraped_data
+        # analyze_promotions 已定義在模組頂層，永遠可調用
+        promos = analyze_promotions(
+            bank_id     = bank_id,
+            bank_name   = bank_name,
+            text        = result.get('text', ''),
+            screenshot  = result.get('screenshot'),
+            default_url = default_url,
         )
-        email_sent = True
-        print(f"✅ Email sent to {recipient}")
 
-        if DB_AVAILABLE and log_email is not None:
-            log_email(recipient, subject, 'sent')
+        if promos:
+            save_promotions(promos)
+            total_new += len(promos)
+        else:
+            print(f'    ⚠️  0 promotions extracted for {bank_name}')
 
-    except Exception as e:
-        print(f"❌ Email failed: {e}")
-        if DB_AVAILABLE and log_email is not None and recipient:
-            log_email(recipient, 'digest', f'failed: {e}')
+    print(f'\n  Total new/updated this run: {total_new}')
 
-# ── SUMMARY ───────────────────────────────────────────────────────────────────
-total_records = get_total_records()     if (DB_AVAILABLE and get_total_records)     else 0
-total_sent    = get_total_emails_sent() if (DB_AVAILABLE and get_total_emails_sent) else 0
+    # 5 ── 清理舊記錄
+    print('\nStep 5 ── Mark old promos inactive (>90 days unseen)')
+    mark_inactive_old(days_threshold=90)
 
-print()
-print("=" * 50)
-print("🏁 PIPELINE COMPLETE")
-print("=" * 50)
-print(f"🏦 Banks scraped   : {len(scraped_data)}")
-print(f"🤖 Banks analyzed  : {banks_processed}")
-print(f"📧 Email           : {'✅ Sent' if email_sent else '❌ Not sent'}")
-print(f"📦 DB records      : {total_records}")
-print(f"📨 Emails sent     : {total_sent}")
-print("=" * 50)
+    # 6 ── 從 DB 讀取全部記錄並生成 email
+    print('\nStep 6 ── Load DB + build email')
+    all_promos = load_promotions(active_only=True)
+    print(f'  DB total active: {len(all_promos)}')
+
+    html = build_html_email(promotions_data=all_promos)
+
+    # 7 ── 發送 email
+    print('\nStep 7 ── Send email')
+    recipient = os.environ.get('EMAIL_RECIPIENT', '')
+
+    if recipient:
+        try:
+            send_email(html)
+        except Exception as e:
+            print(f'  ❌ Email failed: {e}')
+            # 儲存備份
+            os.makedirs('output', exist_ok=True)
+            with open('output/email_preview.html', 'w', encoding='utf-8') as f:
+                f.write(html)
+            print('  📄 Saved fallback to output/email_preview.html')
+    else:
+        os.makedirs('output', exist_ok=True)
+        with open('output/email_preview.html', 'w', encoding='utf-8') as f:
+            f.write(html)
+        print('  EMAIL_RECIPIENT not set → saved to output/email_preview.html')
+
+    print(f'\n{"═"*60}')
+    print(f'  Done  |  {total_new} promotions processed  |  {len(all_promos)} in DB')
+    print(f'{"═"*60}\n')
+
+
+if __name__ == '__main__':
+    main()

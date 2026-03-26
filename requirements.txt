@@ -4,3 +4,4 @@ requests
 beautifulsoup4
 playwright
 python-dotenv
+fastapi-poe>=0.0.45
