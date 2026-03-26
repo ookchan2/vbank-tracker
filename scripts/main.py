@@ -31,7 +31,7 @@ def main():
 
     # ── Step 3: 爬取全部 8 家銀行 ────────────────────────────────
     print('\nStep 3 ── Scrape all 8 banks')
-    scraped = run_scraper()   # 返回 dict {bank_id: {bank_name, text, screenshot, success}}
+    scraped = run_scraper()
 
     if not scraped:
         print('  ❌ No data scraped — abort')
@@ -94,7 +94,7 @@ def main():
     # ── Step 7: 發送 email ───────────────────────────────────────
     print('\nStep 7 ── Send email')
 
-    # ✅ 對應 daily-update.yml 的 RECIPIENT_EMAIL
+    # ✅ 兼容兩個環境變數名稱
     recipient = (
         os.environ.get('RECIPIENT_EMAIL') or
         os.environ.get('EMAIL_RECIPIENT') or
@@ -102,7 +102,8 @@ def main():
     )
 
     output_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), '..', 'output', 'email_preview.html'
+        os.path.dirname(os.path.abspath(__file__)),
+        '..', 'output', 'email_preview.html'
     )
 
     if recipient:
@@ -123,7 +124,6 @@ def main():
 
 
 def _save_html_fallback(html: str, path: str):
-    """儲存 HTML 備份到指定路徑。"""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w', encoding='utf-8') as f:
         f.write(html)
