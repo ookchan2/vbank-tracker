@@ -13,7 +13,7 @@ client = OpenAI(
     base_url="https://openrouter.ai/api/v1"
 )
 
-FREE_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
+FREE_MODEL = "stepfun/step-3.5-flash:free"
 
 
 def extract_promotions(raw_text: str, bank_name: str) -> str:
