@@ -141,7 +141,12 @@ for bank_name, data in scraped_data.items():
         'color':      data.get('color', '#0080A1'),
         'scraped_at': datetime.now().isoformat()
     }
-
+    try:
+        parsed = json.loads(analysis) if isinstance(analysis, str) else analysis
+        sections = len(parsed) if isinstance(parsed, list) else 1
+    except Exception:
+        sections = len([b for b in (analysis or "").split('\n\n') if len(b.strip()) > 30])
+    scraped_data[bank_name]['sections_found'] = sections
     if DB_AVAILABLE and save_promotions is not None:
         try:
             save_promotions(bank_name, analysis, raw_text)
@@ -218,7 +223,8 @@ else:
         send_email(
             subject=subject,
             text_content=digest_text,
-            promotions_data=promotions_list
+            promotions_data=promotions_list,
+            scraped_data=scraped_data
         )
         email_sent = True
         print(f"✅ Email sent to {recipient}")
