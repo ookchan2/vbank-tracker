@@ -1,99 +1,184 @@
-# main.py  ── 修復 scope bug，統一使用函數 import
-
+# scripts/database.py
 import os
-from datetime import datetime
+import sqlite3
+from datetime import datetime, timedelta
+from typing import Any, Dict, List
 
-from scripts.scraper   import run_scraper, BANK_CONFIGS
-from scripts.ai_helper import init_ai, analyze_promotions   # 直接 import 函數，無 scope 問題
-from scripts.db        import init_db, save_promotions, load_promotions, mark_inactive_old
-from scripts.emailer   import build_html_email, send_email
-
-
-def main():
-    today = datetime.now().strftime('%Y-%m-%d')
-    print(f'\n{"═"*60}')
-    print(f'  HK Virtual Bank Promotions Tracker  |  {today}')
-    print(f'{"═"*60}\n')
-
-    # 1 ── 初始化資料庫
-    print('Step 1 ── Init database')
-    init_db()
-
-    # 2 ── 初始化 AI（先 init，之後直接用函數）
-    print('\nStep 2 ── Init AI')
-    ai_ok = init_ai()
-
-    # 3 ── 爬取全部 8 家銀行
-    print('\nStep 3 ── Scrape all 8 banks')
-    scraped = run_scraper()
-
-    # 4 ── AI 提取促銷（analyze_promotions 永遠可調用）
-    print('\nStep 4 ── AI extraction')
-    total_new = 0
-
-    for bank_id, result in scraped.items():
-        bank_name   = result['bank_name']
-        default_url = BANK_CONFIGS[bank_id]['link']
-        chars       = len(result.get('text', ''))
-        mark        = '✅' if result['success'] else '❌'
-        print(f'\n  [{bank_id.upper()}] {bank_name}  {mark}  ({chars:,} chars scraped)')
-
-        if not ai_ok:
-            print('    ⚠️  AI unavailable — skip')
-            continue
-
-        # analyze_promotions 已定義在模組頂層，永遠可調用
-        promos = analyze_promotions(
-            bank_id     = bank_id,
-            bank_name   = bank_name,
-            text        = result.get('text', ''),
-            screenshot  = result.get('screenshot'),
-            default_url = default_url,
-        )
-
-        if promos:
-            save_promotions(promos)
-            total_new += len(promos)
-        else:
-            print(f'    ⚠️  0 promotions extracted for {bank_name}')
-
-    print(f'\n  Total new/updated this run: {total_new}')
-
-    # 5 ── 清理舊記錄
-    print('\nStep 5 ── Mark old promos inactive (>90 days unseen)')
-    mark_inactive_old(days_threshold=90)
-
-    # 6 ── 從 DB 讀取全部記錄並生成 email
-    print('\nStep 6 ── Load DB + build email')
-    all_promos = load_promotions(active_only=True)
-    print(f'  DB total active: {len(all_promos)}')
-
-    html = build_html_email(promotions_data=all_promos)
-
-    # 7 ── 發送 email
-    print('\nStep 7 ── Send email')
-    recipient = os.environ.get('EMAIL_RECIPIENT', '')
-
-    if recipient:
-        try:
-            send_email(html)
-        except Exception as e:
-            print(f'  ❌ Email failed: {e}')
-            # 儲存備份
-            os.makedirs('output', exist_ok=True)
-            with open('output/email_preview.html', 'w', encoding='utf-8') as f:
-                f.write(html)
-            print('  📄 Saved fallback to output/email_preview.html')
-    else:
-        os.makedirs('output', exist_ok=True)
-        with open('output/email_preview.html', 'w', encoding='utf-8') as f:
-            f.write(html)
-        print('  EMAIL_RECIPIENT not set → saved to output/email_preview.html')
-
-    print(f'\n{"═"*60}')
-    print(f'  Done  |  {total_new} promotions processed  |  {len(all_promos)} in DB')
-    print(f'{"═"*60}\n')
+# DB 存放在專案根目錄 data/ 資料夾
+DB_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'promotions.db'
+)
 
 
-if __name__ == '__main__':
-    main()
+# ── 取得連線 ────────────────────────────────────────────────────────────────
+def _get_conn() -> sqlite3.Connection:
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row   # 讓 row 可用 dict 方式存取
+    return conn
+
+
+# ── 1. 建表 ─────────────────────────────────────────────────────────────────
+def init_db():
+    """建立 promotions 資料表（如不存在）。"""
+    conn = _get_conn()
+    try:
+        conn.executescript('''
+            CREATE TABLE IF NOT EXISTS promotions (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                bank_id       TEXT    NOT NULL,
+                bank_name     TEXT    NOT NULL,
+                title         TEXT    NOT NULL,
+                description   TEXT    DEFAULT '',
+                url           TEXT    DEFAULT '',
+                interest_rate TEXT    DEFAULT '',
+                min_deposit   TEXT    DEFAULT '',
+                valid_until   TEXT    DEFAULT '',
+                promo_type    TEXT    DEFAULT '',
+                created_at    TEXT    NOT NULL,
+                last_seen     TEXT    NOT NULL,
+                active        INTEGER NOT NULL DEFAULT 1
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_bank_id ON promotions(bank_id);
+            CREATE INDEX IF NOT EXISTS idx_active  ON promotions(active);
+            CREATE INDEX IF NOT EXISTS idx_last_seen ON promotions(last_seen);
+        ''')
+        conn.commit()
+        print('  ✅ Database ready')
+    except Exception as e:
+        print(f'  ❌ init_db error: {e}')
+        raise
+    finally:
+        conn.close()
+
+
+# ── 2. 儲存促銷（upsert） ────────────────────────────────────────────────────
+def save_promotions(promos: List[Dict[str, Any]]):
+    """
+    Upsert promotions。
+    Key = (bank_id, title)：
+      - 已存在 → 更新欄位 + last_seen + 重新設 active=1
+      - 不存在 → INSERT
+    """
+    if not promos:
+        return
+
+    conn   = _get_conn()
+    now    = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    ins = upd = skip = 0
+
+    try:
+        for promo in promos:
+            bank_id = (promo.get('bank_id') or '').strip()
+            title   = (promo.get('title')   or '').strip()
+
+            if not bank_id or not title:
+                skip += 1
+                continue
+
+            existing = conn.execute(
+                'SELECT id FROM promotions WHERE bank_id = ? AND title = ?',
+                (bank_id, title),
+            ).fetchone()
+
+            if existing:
+                conn.execute('''
+                    UPDATE promotions SET
+                        description   = ?,
+                        url           = ?,
+                        interest_rate = ?,
+                        min_deposit   = ?,
+                        valid_until   = ?,
+                        promo_type    = ?,
+                        last_seen     = ?,
+                        active        = 1
+                    WHERE id = ?
+                ''', (
+                    promo.get('description',   ''),
+                    promo.get('url',           ''),
+                    promo.get('interest_rate', ''),
+                    promo.get('min_deposit',   ''),
+                    promo.get('valid_until',   ''),
+                    promo.get('promo_type',    ''),
+                    now,
+                    existing['id'],
+                ))
+                upd += 1
+            else:
+                conn.execute('''
+                    INSERT INTO promotions
+                        (bank_id, bank_name, title, description, url,
+                         interest_rate, min_deposit, valid_until, promo_type,
+                         created_at, last_seen, active)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,1)
+                ''', (
+                    bank_id,
+                    promo.get('bank_name',     ''),
+                    title,
+                    promo.get('description',   ''),
+                    promo.get('url',           ''),
+                    promo.get('interest_rate', ''),
+                    promo.get('min_deposit',   ''),
+                    promo.get('valid_until',   ''),
+                    promo.get('promo_type',    ''),
+                    now,
+                    now,
+                ))
+                ins += 1
+
+        conn.commit()
+        print(f'  💾 DB: {ins} inserted  |  {upd} updated  |  {skip} skipped')
+
+    except Exception as e:
+        conn.rollback()
+        print(f'  ❌ save_promotions error: {e}')
+        raise
+    finally:
+        conn.close()
+
+
+# ── 3. 讀取促銷 ──────────────────────────────────────────────────────────────
+def load_promotions(active_only: bool = True) -> List[Dict[str, Any]]:
+    """
+    從 DB 讀取促銷，按 bank_id 升序、last_seen 降序排列。
+    """
+    conn = _get_conn()
+    try:
+        where = 'WHERE active = 1' if active_only else ''
+        rows  = conn.execute(f'''
+            SELECT * FROM promotions
+            {where}
+            ORDER BY bank_id ASC, last_seen DESC
+        ''').fetchall()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f'  ❌ load_promotions error: {e}')
+        return []
+    finally:
+        conn.close()
+
+
+# ── 4. 標記舊記錄為 inactive ─────────────────────────────────────────────────
+def mark_inactive_old(days_threshold: int = 90):
+    """
+    將超過 days_threshold 天未見到的 active 記錄設為 inactive。
+    """
+    cutoff = (datetime.now() - timedelta(days=days_threshold)
+              ).strftime('%Y-%m-%d %H:%M:%S')
+    conn = _get_conn()
+    try:
+        cur = conn.execute('''
+            UPDATE promotions
+            SET    active = 0
+            WHERE  last_seen < ?
+            AND    active   = 1
+        ''', (cutoff,))
+        conn.commit()
+        print(f'  🗑️  {cur.rowcount} old promotions marked inactive '
+              f'(threshold: {days_threshold} days)')
+    except Exception as e:
+        conn.rollback()
+        print(f'  ❌ mark_inactive_old error: {e}')
+    finally:
+        conn.close()

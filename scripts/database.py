@@ -1,113 +1,184 @@
-# scripts/db.py  ── 新增文件（若之前沒有）
+# scripts/database.py
+import os
+import sqlite3
+from datetime import datetime, timedelta
+from typing import Any, Dict, List
 
-import json, os, sqlite3, hashlib
-from datetime import datetime
+# DB 存放在專案根目錄 data/ 資料夾
+DB_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'promotions.db'
+)
 
-DB_PATH = os.environ.get('DB_PATH', 'promotions.db')
+
+# ── 取得連線 ────────────────────────────────────────────────────────────────
+def _get_conn() -> sqlite3.Connection:
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row   # 讓 row 可用 dict 方式存取
+    return conn
 
 
+# ── 1. 建表 ─────────────────────────────────────────────────────────────────
 def init_db():
-    with sqlite3.connect(DB_PATH) as c:
-        c.execute('''
+    """建立 promotions 資料表（如不存在）。"""
+    conn = _get_conn()
+    try:
+        conn.executescript('''
             CREATE TABLE IF NOT EXISTS promotions (
-                id          TEXT PRIMARY KEY,
-                bank        TEXT NOT NULL,
-                bName       TEXT NOT NULL,
-                name        TEXT NOT NULL,
-                types       TEXT,
-                period      TEXT,
-                end_date    TEXT,
-                highlight   TEXT,
-                description TEXT,
-                quota       TEXT,
-                cost        TEXT,
-                link        TEXT,
-                first_seen  TEXT,
-                last_seen   TEXT,
-                is_active   INTEGER DEFAULT 1
-            )
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                bank_id       TEXT    NOT NULL,
+                bank_name     TEXT    NOT NULL,
+                title         TEXT    NOT NULL,
+                description   TEXT    DEFAULT '',
+                url           TEXT    DEFAULT '',
+                interest_rate TEXT    DEFAULT '',
+                min_deposit   TEXT    DEFAULT '',
+                valid_until   TEXT    DEFAULT '',
+                promo_type    TEXT    DEFAULT '',
+                created_at    TEXT    NOT NULL,
+                last_seen     TEXT    NOT NULL,
+                active        INTEGER NOT NULL DEFAULT 1
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_bank_id ON promotions(bank_id);
+            CREATE INDEX IF NOT EXISTS idx_active  ON promotions(active);
+            CREATE INDEX IF NOT EXISTS idx_last_seen ON promotions(last_seen);
         ''')
-        c.commit()
-    print(f'  DB ready: {DB_PATH}')
+        conn.commit()
+        print('  ✅ Database ready')
+    except Exception as e:
+        print(f'  ❌ init_db error: {e}')
+        raise
+    finally:
+        conn.close()
 
 
-def _pid(bank, name):
-    return hashlib.md5(f'{bank}|{name}'.encode()).hexdigest()[:14]
+# ── 2. 儲存促銷（upsert） ────────────────────────────────────────────────────
+def save_promotions(promos: List[Dict[str, Any]]):
+    """
+    Upsert promotions。
+    Key = (bank_id, title)：
+      - 已存在 → 更新欄位 + last_seen + 重新設 active=1
+      - 不存在 → INSERT
+    """
+    if not promos:
+        return
 
+    conn   = _get_conn()
+    now    = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    ins = upd = skip = 0
 
-def save_promotions(promos: list):
-    today = datetime.now().strftime('%Y-%m-%d')
-    with sqlite3.connect(DB_PATH) as c:
-        for p in promos:
-            pid = _pid(p.get('bank', ''), p.get('name', ''))
-            exists = c.execute(
-                'SELECT id FROM promotions WHERE id=?', (pid,)
+    try:
+        for promo in promos:
+            bank_id = (promo.get('bank_id') or '').strip()
+            title   = (promo.get('title')   or '').strip()
+
+            if not bank_id or not title:
+                skip += 1
+                continue
+
+            existing = conn.execute(
+                'SELECT id FROM promotions WHERE bank_id = ? AND title = ?',
+                (bank_id, title),
             ).fetchone()
 
-            if exists:
-                c.execute('''
-                    UPDATE promotions
-                    SET last_seen=?, highlight=?, description=?,
-                        period=?, end_date=?, is_active=1
-                    WHERE id=?
-                ''', (today,
-                      p.get('highlight', ''), p.get('description', ''),
-                      p.get('period', ''),    p.get('end_date'),
-                      pid))
-            else:
-                c.execute('''
-                    INSERT INTO promotions
-                    (id,bank,bName,name,types,period,end_date,
-                     highlight,description,quota,cost,link,
-                     first_seen,last_seen,is_active)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)
+            if existing:
+                conn.execute('''
+                    UPDATE promotions SET
+                        description   = ?,
+                        url           = ?,
+                        interest_rate = ?,
+                        min_deposit   = ?,
+                        valid_until   = ?,
+                        promo_type    = ?,
+                        last_seen     = ?,
+                        active        = 1
+                    WHERE id = ?
                 ''', (
-                    pid,
-                    p.get('bank', ''),
-                    p.get('bName', ''),
-                    p.get('name', ''),
-                    json.dumps(p.get('types', []), ensure_ascii=False),
-                    p.get('period', ''),
-                    p.get('end_date'),
-                    p.get('highlight', ''),
-                    p.get('description', ''),
-                    p.get('quota', ''),
-                    p.get('cost', ''),
-                    p.get('link', ''),
-                    today, today
+                    promo.get('description',   ''),
+                    promo.get('url',           ''),
+                    promo.get('interest_rate', ''),
+                    promo.get('min_deposit',   ''),
+                    promo.get('valid_until',   ''),
+                    promo.get('promo_type',    ''),
+                    now,
+                    existing['id'],
                 ))
-        c.commit()
+                upd += 1
+            else:
+                conn.execute('''
+                    INSERT INTO promotions
+                        (bank_id, bank_name, title, description, url,
+                         interest_rate, min_deposit, valid_until, promo_type,
+                         created_at, last_seen, active)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,1)
+                ''', (
+                    bank_id,
+                    promo.get('bank_name',     ''),
+                    title,
+                    promo.get('description',   ''),
+                    promo.get('url',           ''),
+                    promo.get('interest_rate', ''),
+                    promo.get('min_deposit',   ''),
+                    promo.get('valid_until',   ''),
+                    promo.get('promo_type',    ''),
+                    now,
+                    now,
+                ))
+                ins += 1
+
+        conn.commit()
+        print(f'  💾 DB: {ins} inserted  |  {upd} updated  |  {skip} skipped')
+
+    except Exception as e:
+        conn.rollback()
+        print(f'  ❌ save_promotions error: {e}')
+        raise
+    finally:
+        conn.close()
 
 
-def load_promotions(active_only=True) -> list:
-    if not os.path.exists(DB_PATH):
+# ── 3. 讀取促銷 ──────────────────────────────────────────────────────────────
+def load_promotions(active_only: bool = True) -> List[Dict[str, Any]]:
+    """
+    從 DB 讀取促銷，按 bank_id 升序、last_seen 降序排列。
+    """
+    conn = _get_conn()
+    try:
+        where = 'WHERE active = 1' if active_only else ''
+        rows  = conn.execute(f'''
+            SELECT * FROM promotions
+            {where}
+            ORDER BY bank_id ASC, last_seen DESC
+        ''').fetchall()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f'  ❌ load_promotions error: {e}')
         return []
-    with sqlite3.connect(DB_PATH) as c:
-        c.row_factory = sqlite3.Row
-        sql = 'SELECT * FROM promotions'
-        if active_only:
-            sql += ' WHERE is_active=1'
-        sql += ' ORDER BY bank, name'
-        rows = c.execute(sql).fetchall()
-
-    result = []
-    for row in rows:
-        d = dict(row)
-        try:
-            d['types'] = json.loads(d.get('types') or '[]')
-        except Exception:
-            d['types'] = ['Others']
-        result.append(d)
-    return result
+    finally:
+        conn.close()
 
 
-def mark_inactive_old(days_threshold=90):
-    """超過 N 天未見的促銷標記為 inactive。"""
-    from datetime import timedelta
-    cutoff = (datetime.now() - timedelta(days=days_threshold)).strftime('%Y-%m-%d')
-    with sqlite3.connect(DB_PATH) as c:
-        c.execute(
-            'UPDATE promotions SET is_active=0 WHERE last_seen < ?',
-            (cutoff,)
-        )
-        c.commit()
+# ── 4. 標記舊記錄為 inactive ─────────────────────────────────────────────────
+def mark_inactive_old(days_threshold: int = 90):
+    """
+    將超過 days_threshold 天未見到的 active 記錄設為 inactive。
+    """
+    cutoff = (datetime.now() - timedelta(days=days_threshold)
+              ).strftime('%Y-%m-%d %H:%M:%S')
+    conn = _get_conn()
+    try:
+        cur = conn.execute('''
+            UPDATE promotions
+            SET    active = 0
+            WHERE  last_seen < ?
+            AND    active   = 1
+        ''', (cutoff,))
+        conn.commit()
+        print(f'  🗑️  {cur.rowcount} old promotions marked inactive '
+              f'(threshold: {days_threshold} days)')
+    except Exception as e:
+        conn.rollback()
+        print(f'  ❌ mark_inactive_old error: {e}')
+    finally:
+        conn.close()
