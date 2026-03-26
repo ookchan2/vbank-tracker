@@ -1,4 +1,5 @@
-openai==1.13.3
+openai==1.30.0
+httpx==0.27.2
 requests
 beautifulsoup4
 playwright
