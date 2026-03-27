@@ -1,6 +1,7 @@
 # scripts/ai_helper.py
 
 import asyncio
+import concurrent.futures
 import json
 import os
 import re
@@ -18,11 +19,13 @@ MODELS_TO_TRY = [
 ]
 
 # ── 詳細提取 prompt ───────────────────────────────────────────────
+# ✅ FIX 1: Use a plain string with manual substitution instead of
+#            .format() so that { } in scraped bank text never crash.
 _PROMPT_TMPL = """\
 You are a specialist at extracting bank promotion data from website text.
 
-Bank: {bank_name}
-Source URL: {url}
+Bank: BANK_NAME_PLACEHOLDER
+Source URL: URL_PLACEHOLDER
 
 ╔══════════════════════════════════════════════════════════════╗
 ║  CRITICAL: Extract EVERY SINGLE promotion you can find.     ║
@@ -40,24 +43,36 @@ ALLOWED TYPE TAGS (Chinese, pick 1-3 per promotion):
 REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
 
 Schema for each object:
-{{
+{
   "name":        "Full descriptive English name",
   "types":       ["tag1", "tag2"],
   "period":      "e.g. Until 30 Apr 2026  |  Ongoing",
   "end_date":    "YYYY-MM-DD if stated, else null",
-  "highlight":   "🎁 One-line key benefit (starts with emoji)",
+  "highlight":   "One-line key benefit (starts with emoji)",
   "description": "2-3 sentences about this specific promotion.",
   "quota":       "Eligibility or quota information",
   "cost":        "Min spend / cost, or Free",
-  "link":        "{url}"
-}}
+  "link":        "URL_PLACEHOLDER"
+}
 
 WEBSITE TEXT TO ANALYSE:
 ────────────────────────────────────────────────────────────────
-{text}
+TEXT_PLACEHOLDER
 ────────────────────────────────────────────────────────────────
-Remember: return ONLY the JSON array starting with [ and ending with ].\
-"""
+Remember: return ONLY the JSON array starting with [ and ending with ]."""
+
+
+def _build_prompt(bank_name: str, url: str, text: str) -> str:
+    """
+    ✅ FIX 1: Use plain string replacement instead of .format()
+    so { } characters in scraped text never cause KeyError/ValueError.
+    """
+    return (
+        _PROMPT_TMPL
+        .replace('BANK_NAME_PLACEHOLDER', bank_name)
+        .replace('URL_PLACEHOLDER',       url)
+        .replace('TEXT_PLACEHOLDER',      text)
+    )
 
 
 # ── Poe 非同步核心 ────────────────────────────────────────────────
@@ -74,9 +89,9 @@ async def _async_call(messages: list, bot_name: str) -> str:
 
         response_text = ''
         async for partial in fp.get_bot_response(
-            messages=poe_messages,
-            bot_name=bot_name,
-            api_key=_api_key,
+            messages = poe_messages,
+            bot_name = bot_name,
+            api_key  = _api_key,
         ):
             response_text += partial.text
 
@@ -87,19 +102,27 @@ async def _async_call(messages: list, bot_name: str) -> str:
         return ''
 
 
+def _run_async(coro) -> str:
+    """
+    ✅ FIX 2: Centralised async runner — avoids importing
+    concurrent.futures repeatedly in every function.
+    Handles both 'inside running loop' and 'no loop' cases.
+    """
+    try:
+        asyncio.get_running_loop()          # raises RuntimeError if no loop
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            future = pool.submit(asyncio.run, coro)
+            return future.result()
+    except RuntimeError:
+        return asyncio.run(coro)
+
+
 def _call(messages: list) -> str:
     """同步 wrapper，永不 raise。"""
     if not AI_AVAILABLE or _api_key is None:
         return ''
     try:
-        try:
-            loop = asyncio.get_running_loop()
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                future = pool.submit(asyncio.run, _async_call(messages, _bot_name))
-                return future.result()
-        except RuntimeError:
-            return asyncio.run(_async_call(messages, _bot_name))
+        return _run_async(_async_call(messages, _bot_name))
     except Exception as e:
         print(f'  ⚠️  Call error: {e}')
         return ''
@@ -127,18 +150,12 @@ def init_ai() -> bool:
         for model in MODELS_TO_TRY:
             print(f'  🔍 Testing model: {model} ...')
             try:
-                loop = asyncio.get_running_loop()
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    future = pool.submit(
-                        asyncio.run,
-                        _async_call([{'role': 'user', 'content': 'Reply OK only.'}], model)
-                    )
-                    test = future.result()
-            except RuntimeError:
-                test = asyncio.run(
+                test = _run_async(
                     _async_call([{'role': 'user', 'content': 'Reply OK only.'}], model)
                 )
+            except Exception as e:
+                print(f'  ❌ {model} error: {e}')
+                test = ''
 
             if test:
                 _bot_name    = model
@@ -207,7 +224,6 @@ def _parse_object(raw: str) -> dict | None:
     raw = re.sub(r'\s*```$',          '', raw, flags=re.MULTILINE)
     raw = raw.strip()
 
-    # ── Fix 4: ensure we grab the outermost {...} ──────────────────
     m = re.search(r'(\{.*\})', raw, re.DOTALL)
     if m:
         raw = m.group(1)
@@ -261,10 +277,11 @@ def analyze_promotions(bank_id: str,
     results: list = []
 
     if len(clean) >= 200:
-        prompt = _PROMPT_TMPL.format(
-            bank_name=bank_name,
-            url=default_url,
-            text=clean,
+        # ✅ FIX 1: use _build_prompt() — safe against { } in text
+        prompt = _build_prompt(
+            bank_name = bank_name,
+            url       = default_url,
+            text      = clean,
         )
         raw    = _call([{'role': 'user', 'content': prompt}])
         parsed = _parse_array(raw)
@@ -274,26 +291,18 @@ def analyze_promotions(bank_id: str,
     else:
         print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')
 
+    # ✅ FIX 4: Single unified vision-skip message
     if screenshot is not None and len(results) < 3:
-        if _bot_name.startswith('Perplexity'):
-            print(
-                f'  ℹ️  Vision skipped ({bank_name}) — '
-                f'{_bot_name} does not support image input.'
-            )
-        else:
-            print(f'  ℹ️  Vision skipped ({bank_name}) — not implemented for {_bot_name}')
+        print(
+            f'  ℹ️  Vision skipped ({bank_name}) — '
+            f'{_bot_name} image input not implemented'
+        )
 
     results = _stamp(results, bank_id, bank_name, default_url)
     print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
-    return results  # ← function ends here cleanly
+    return results
 
 
-# ─────────────────────────────────────────────────────────────────
-# ✅ FIX 1: Moved OUTSIDE analyze_promotions (was dead code before)
-# ✅ FIX 2: Removed stray `import json` (already at top of file)
-# ✅ FIX 3: Uses _call() (Poe) instead of anthropic.Anthropic()
-# ✅ FIX 4: ptype uses str() before slicing (types is a list)
-# ─────────────────────────────────────────────────────────────────
 def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
     """
     Generate AI strategic insights comparing each bank to ZA Bank.
@@ -313,7 +322,6 @@ def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
             title     = (p.get('title') or p.get('name') or 'N/A')[:80]
             highlight = (p.get('highlight') or p.get('description') or '')[:120]
             period    = (p.get('period') or p.get('validity') or 'Ongoing')[:60]
-            # ✅ FIX 4: types is a list — convert to str before slicing
             raw_types = p.get('types') or p.get('type') or 'General'
             ptype     = (', '.join(raw_types) if isinstance(raw_types, list)
                          else str(raw_types))[:40]
@@ -336,14 +344,14 @@ Analyze these active promotions and return strategic insights as JSON.
 Return this EXACT JSON structure (populate with real numbers/details from the data above):
 {{
   "best_for": [
-    {{"category": "Investment",       "bank": "BankName", "detail": "specific detail with numbers"}},
-    {{"category": "Spending/CashBack","bank": "BankName", "detail": "specific % or HKD amount"}},
-    {{"category": "Welcome Bonus",    "bank": "BankName", "detail": "HKD amount"}},
-    {{"category": "Travel",           "bank": "BankName", "detail": "specific benefit"}},
-    {{"category": "Loan APR",         "bank": "BankName", "detail": "X.XX% APR"}},
-    {{"category": "FX/Multi-Currency","bank": "BankName", "detail": "specific detail"}},
-    {{"category": "Fund Investment",  "bank": "BankName", "detail": "specific detail"}},
-    {{"category": "Referral Bonus",   "bank": "BankName", "detail": "HKD amount"}}
+    {{"category": "Investment",        "bank": "BankName", "detail": "specific detail with numbers"}},
+    {{"category": "Spending/CashBack", "bank": "BankName", "detail": "specific % or HKD amount"}},
+    {{"category": "Welcome Bonus",     "bank": "BankName", "detail": "HKD amount"}},
+    {{"category": "Travel",            "bank": "BankName", "detail": "specific benefit"}},
+    {{"category": "Loan APR",          "bank": "BankName", "detail": "X.XX% APR"}},
+    {{"category": "FX/Multi-Currency", "bank": "BankName", "detail": "specific detail"}},
+    {{"category": "Fund Investment",   "bank": "BankName", "detail": "specific detail"}},
+    {{"category": "Referral Bonus",    "bank": "BankName", "detail": "HKD amount"}}
   ],
   "bank_analysis": {{
     "ZA Bank": {{
@@ -370,7 +378,6 @@ Rules:
 - Use specific numbers/amounts from the actual promotions
 - Return valid JSON ONLY — no markdown, no code fences, no explanation"""
 
-    # ✅ FIX 3: Use Poe _call() — NOT anthropic client
     raw = _call([{'role': 'user', 'content': prompt}])
 
     if not raw:
@@ -382,13 +389,17 @@ Rules:
         print('❌ Strategic insights: JSON parse failed')
         return None
 
-    # Overwrite counts with ground truth from actual data
+    # ✅ FIX 3: Case-insensitive match when injecting ground-truth counts
+    name_lookup = {k.lower(): k for k in promotions_by_bank}
     for bname in result.get('bank_analysis', {}):
-        result['bank_analysis'][bname]['count'] = len(
-            promotions_by_bank.get(bname, [])
+        matched_key = name_lookup.get(bname.lower())
+        result['bank_analysis'][bname]['count'] = (
+            len(promotions_by_bank[matched_key]) if matched_key else 0
         )
 
-    print(f"✅ Strategic insights generated for "
-          f"{len(result.get('bank_analysis', {}))} banks "
-          f"via {_bot_name}")
+    print(
+        f'✅ Strategic insights generated for '
+        f'{len(result.get("bank_analysis", {}))} banks '
+        f'via {_bot_name}'
+    )
     return result

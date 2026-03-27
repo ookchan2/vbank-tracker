@@ -10,10 +10,10 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from scraper    import run_scraper, BANK_CONFIGS
-from ai_helper  import init_ai, analyze_promotions, generate_strategic_insights  # ✅ FIX 2
-from database   import init_db, save_promotions, load_promotions, mark_inactive_old
-from emailer    import build_html_email, send_email
+from scraper   import run_scraper, BANK_CONFIGS
+from ai_helper import init_ai, analyze_promotions, generate_strategic_insights
+from database  import init_db, save_promotions, load_promotions, mark_inactive_old
+from emailer   import build_html_email, send_email
 
 
 def main():
@@ -22,8 +22,27 @@ def main():
     print(f'  HK Virtual Bank Promotions Tracker  |  {today}')
     print(f'{"═"*60}\n')
 
+    # ── Step 0: 統一 env var ─────────────────────────────────────
+    # 你的 key 名是 GMAIL_ADDRESS / GMAIL_APP_PASSWORD / RECIPIENT_EMAIL
+    _gmail_addr = os.environ.get('GMAIL_ADDRESS', '')
+    _gmail_pass = os.environ.get('GMAIL_APP_PASSWORD', '')
+    _recipient  = (
+        os.environ.get('RECIPIENT_EMAIL') or
+        os.environ.get('EMAIL_RECIPIENT') or
+        os.environ.get('EMAIL_TO') or
+        ''
+    )
+    if _recipient:
+        os.environ['EMAIL_TO'] = _recipient  # emailer.py 統一讀 EMAIL_TO
+
+    # 早期 debug 印出 env 狀態
+    print('  Env check:')
+    print(f'    GMAIL_ADDRESS    : {"✅ set" if _gmail_addr else "❌ MISSING"}')
+    print(f'    GMAIL_APP_PASSWORD: {"✅ set" if _gmail_pass else "❌ MISSING"}')
+    print(f'    EMAIL_RECIPIENT  : {"✅ " + _recipient if _recipient else "❌ MISSING"}')
+
     # ── Step 1: 初始化資料庫 ─────────────────────────────────────
-    print('Step 1 ── Init database')
+    print('\nStep 1 ── Init database')
     init_db()
 
     # ── Step 2: 初始化 AI ────────────────────────────────────────
@@ -82,73 +101,75 @@ def main():
     print('\nStep 5 ── Mark old promos inactive (>90 days unseen)')
     mark_inactive_old(days_threshold=90)
 
-    # ── Step 6: 從 DB 讀取、生成 Insights、建立 Email ────────────
+    # ── Step 6: Load DB + Insights + Build Email ─────────────────
     print('\nStep 6 ── Load DB + strategic insights + build email')
     all_promos = load_promotions(active_only=True)
     print(f'  DB total active: {len(all_promos)}')
 
-    # ── 6a: 按 bank_id 統計（用於 log）───────────────────────────
+    # 6a: log 用
     promos_by_id: defaultdict = defaultdict(list)
     for p in all_promos:
         promos_by_id[p.get('bank', 'unknown')].append(p)
+    for bid, promos in promos_by_id.items():
+        print(f'  {bid.upper()}: {len(promos)} active promos')
 
-    for bank_id, promos in promos_by_id.items():
-        print(f'  {bank_id.upper()}: {len(promos)} active promos')
-
-    # ── 6b: 按 bank display name（用於 AI insights）──────────────
-    # ✅ FIX 6: field is 'bName' from _stamp(), not 'bank_name'
+    # 6b: AI insights 用
     promos_by_name: dict = {}
     for p in all_promos:
-        bname = p.get('bName') or p.get('bank') or 'Unknown'   # ✅ FIX 6
+        bname = p.get('bName') or p.get('bank') or 'Unknown'
         promos_by_name.setdefault(bname, []).append(p)
 
-    # ✅ FIX 1: Strategic Insights block moved INSIDE main()
+    # 6c: Strategic insights
     print('\n  🧠 Generating AI strategic insights...')
-    strategic_insights = generate_strategic_insights(promos_by_name)
+    strategic_insights = None
+    if ai_ok:
+        try:
+            strategic_insights = generate_strategic_insights(promos_by_name)
+        except Exception as e:
+            print(f'  ⚠️  Insights error: {e}')
     if not strategic_insights:
-        print('  ⚠️  Insights unavailable — email will send without that section')
+        print('  ⚠️  Insights unavailable — continuing without it')
 
-    # ── 6c: Build email HTML ──────────────────────────────────────
-    # ✅ FIX 1 + FIX 3: html built here, available for Step 7
+    # 6d: Build HTML
     html = build_html_email(
-        promotions_data   = all_promos,
-        scraped_data      = scraped,
-        strategic_insights= strategic_insights,
+        promotions_data    = all_promos,
+        scraped_data       = scraped,
+        strategic_insights = strategic_insights,
     )
+    print('  ✅ HTML email built')
 
     # ── Step 7: 發送 email ───────────────────────────────────────
     print('\nStep 7 ── Send email')
-
-    # ✅ FIX 5: send_email reads EMAIL_TO from env — no recipient param
-    # Set override here if RECIPIENT_EMAIL env var is provided
-    recipient = (
-        os.environ.get('RECIPIENT_EMAIL') or
-        os.environ.get('EMAIL_RECIPIENT') or
-        ''
-    )
-    if recipient:
-        # Temporarily override EMAIL_TO so emailer picks it up
-        os.environ['EMAIL_TO'] = recipient
 
     output_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         '..', 'output', 'email_preview.html'
     )
 
-    if recipient or os.environ.get('EMAIL_TO'):
+    # 先存 preview（無論 email 成功與否）
+    _save_html_fallback(html, output_path)
+
+    # 用你的 key 名檢查是否齊全
+    smtp_ready = all([_gmail_addr, _gmail_pass, _recipient])
+
+    if not smtp_ready:
+        missing = []
+        if not _gmail_addr: missing.append('GMAIL_ADDRESS')
+        if not _gmail_pass: missing.append('GMAIL_APP_PASSWORD')
+        if not _recipient:  missing.append('EMAIL_RECIPIENT')
+        print(f'  ❌ Missing {" / ".join(missing)} — email skipped')
+        print(f'  📄 HTML preview saved → {output_path}')
+    else:
         try:
-            success = send_email(html_content=html)   # ✅ FIX 4+5: called ONCE, correct sig
+            success = send_email(html_content=html)
             if success:
-                print(f'  ✅ Email sent → {os.environ.get("EMAIL_TO")}')
+                print(f'  ✅ Email sent → {_recipient}')
             else:
-                print('  ❌ Email send returned False — saving HTML fallback')
-                _save_html_fallback(html, output_path)
+                print('  ❌ send_email() returned False')
+                print(f'  📄 HTML preview saved → {output_path}')
         except Exception as e:
             print(f'  ❌ Email failed: {e}')
-            _save_html_fallback(html, output_path)
-    else:
-        print('  ⚠️  EMAIL_TO / RECIPIENT_EMAIL not set → saving HTML preview only')
-        _save_html_fallback(html, output_path)
+            print(f'  📄 HTML preview saved → {output_path}')
 
     # ── 完成 ─────────────────────────────────────────────────────
     print(f'\n{"═"*60}')
