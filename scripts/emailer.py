@@ -93,7 +93,7 @@ T = UI_TEXT.get(LANGUAGE, UI_TEXT['zh_HK'])
 
 # ── Brand colours (8 banks) ───────────────────────────────────────────────────
 BANK_COLORS = {
-    'za':      '#25CD9C',   # ✅ correct ZA Bank green
+    'za':      '#25CD9C',
     'welab':   '#7c3aed',
     'pao':     '#0ea5e9',
     'livi':    '#f97316',
@@ -114,7 +114,6 @@ BANK_NAMES = {
     'ant':     'Ant Bank',
 }
 
-# Fixed display order
 BANK_ORDER = ['za', 'mox', 'welab', 'livi', 'ant', 'airstar', 'pao', 'fusion']
 
 
@@ -146,7 +145,6 @@ def _expires_within(end_date: str, days: int = 7) -> bool:
 
 
 def _parse_types(types_val) -> list:
-    """Safely parse types — may be list or JSON string."""
     if isinstance(types_val, list):
         return types_val
     if isinstance(types_val, str):
@@ -182,7 +180,6 @@ def _promo_card_html(p: dict, is_new: bool = False, is_expiring: bool = False) -
     desc   = p.get('description', '')
     link   = p.get('link', '#')
 
-    # Status badge
     if is_new:
         badge = (
             f'<span style="background:#dcfce7;color:#15803d;font-size:11px;'
@@ -234,7 +231,7 @@ def _promo_card_html(p: dict, is_new: bool = False, is_expiring: bool = False) -
     </div>"""
 
 
-# ── Compact promo row (used in All Active section) ────────────────────────────
+# ── Compact promo row ─────────────────────────────────────────────────────────
 def _promo_row_html(p: dict, is_new: bool = False) -> str:
     bid    = p.get('bank', '')
     color  = BANK_COLORS.get(bid, '#6b7280')
@@ -264,17 +261,21 @@ def _promo_row_html(p: dict, is_new: bool = False) -> str:
 
 # ── Main builder ──────────────────────────────────────────────────────────────
 def build_html_email(promotions_data: list = None,
-                     scraped_summary: dict = None) -> str:
+                     scraped_summary: dict = None,
+                     promos_by_bank:  dict = None,   # ✅ added — passed from main.py
+                     scraped_data:    dict = None,    # ✅ added — raw scraper output
+                     ) -> str:
     """
     Parameters
     ----------
     promotions_data : list
-        Promotion dicts loaded from DB (fields: bank, bName, name, types,
-        period, end_date, highlight, description, quota, cost, link,
-        first_seen, last_seen, is_active).
+        Promotion dicts loaded from DB.
     scraped_summary : dict, optional
         { bank_id: { success, chars, count } }
-        If omitted, the status section is derived from promotions_data.
+    promos_by_bank : dict, optional
+        { bank_id: [promo, ...] }  — pre-grouped, passed from main.py
+    scraped_data : dict, optional
+        Raw scraper output { bank_id: { success, text, ... } } — passed from main.py
     """
     promos   = promotions_data or []
     today    = _today_str()
@@ -282,8 +283,8 @@ def build_html_email(promotions_data: list = None,
 
     # ── Classify ─────────────────────────────────────────────────────
     active_p   = [p for p in promos if not _is_expired(p.get('end_date'))]
-    new_p      = [p for p in active_p  if p.get('first_seen') == today]
-    expiring_p = [p for p in active_p  if _expires_within(p.get('end_date'), 7)]
+    new_p      = [p for p in active_p if p.get('first_seen') == today]
+    expiring_p = [p for p in active_p if _expires_within(p.get('end_date'), 7)]
     expired_p  = [
         p for p in promos
         if p.get('last_seen') == today and _is_expired(p.get('end_date'))
@@ -294,11 +295,26 @@ def build_html_email(promotions_data: list = None,
     expired_today = len(expired_p)
     expiring_7d   = len(expiring_p)
 
-    # ── Scrape Status rows ───────────────────────────────────────────
-    by_bank: dict = defaultdict(list)
-    for p in active_p:
-        by_bank[p.get('bank', '')].append(p)
+    # ── Build by_bank (use pre-grouped if provided) ───────────────────
+    if promos_by_bank:
+        by_bank = defaultdict(list, promos_by_bank)
+    else:
+        by_bank: dict = defaultdict(list)
+        for p in active_p:
+            by_bank[p.get('bank', '')].append(p)
 
+    # ── Convert raw scraped_data → scraped_summary if needed ──────────
+    # ✅ main.py passes scraped_data (raw); convert it here
+    if scraped_data and not scraped_summary:
+        scraped_summary = {}
+        for bid, r in scraped_data.items():
+            scraped_summary[bid] = {
+                'success': r.get('success', False),
+                'chars':   len(r.get('text', '')),
+                'count':   len(by_bank.get(bid, [])),
+            }
+
+    # ── Scrape Status rows ───────────────────────────────────────────
     scrape_rows = ''
     for bid in BANK_ORDER:
         bname = BANK_NAMES.get(bid, bid)
@@ -349,8 +365,8 @@ def build_html_email(promotions_data: list = None,
     # ── Expiring Soon section ────────────────────────────────────────
     expiring_section = ''
     if expiring_p:
-        cards   = ''.join(_promo_card_html(p, is_expiring=True) for p in expiring_p[:5])
-        more_s  = (
+        cards  = ''.join(_promo_card_html(p, is_expiring=True) for p in expiring_p[:5])
+        more_s = (
             f'<div style="text-align:center;font-size:12px;color:#9ca3af;margin-top:8px;">'
             f'+ {len(expiring_p) - 5} {T["more_promos"]}</div>'
             if len(expiring_p) > 5 else ''
@@ -419,7 +435,7 @@ def build_html_email(promotions_data: list = None,
         f'{T["no_promos"]}</div>'
     )
 
-    # ── Full HTML ─────────────────────────────────────────────────────
+    # ── Full HTML ────────────────────────────────────────────────────
     return f"""<!DOCTYPE html>
 <html lang="zh-HK">
 <head>
@@ -522,26 +538,31 @@ def build_html_email(promotions_data: list = None,
 
 
 # ── send_email ────────────────────────────────────────────────────────────────
-def send_email(html_content: str, recipient: str):
+def send_email(html_content: str, recipient: str = ''):
     """
     Send pre-built HTML email via Gmail SMTP.
-    main.py calls build_html_email() first, then passes result here.
 
     Required env vars:
         GMAIL_ADDRESS       sender Gmail address
         GMAIL_APP_PASSWORD  Gmail App Password (not account password)
-        EMAIL_RECIPIENT     recipient address
-    Optional:
-        LANGUAGE            zh_HK (default) | zh_CN | en
+        RECIPIENT_EMAIL     recipient address (also checks EMAIL_RECIPIENT)
     """
-    sender    = os.environ.get('GMAIL_ADDRESS', '').strip()
-    password  = os.environ.get('GMAIL_APP_PASSWORD', '').strip()
-    recipient = os.environ.get('EMAIL_RECIPIENT', '').strip()
+    sender   = os.environ.get('GMAIL_ADDRESS', '').strip()
+    password = os.environ.get('GMAIL_APP_PASSWORD', '').strip()
+
+    # ✅ Use passed-in recipient first; fall back to env vars
+    if not recipient:
+        recipient = (
+            os.environ.get('RECIPIENT_EMAIL', '') or
+            os.environ.get('EMAIL_RECIPIENT',  '')
+        ).strip()
 
     if not all([sender, password, recipient]):
-        raise ValueError(
-            'Missing required env vars: GMAIL_ADDRESS / GMAIL_APP_PASSWORD / EMAIL_RECIPIENT'
-        )
+        missing = []
+        if not sender:   missing.append('GMAIL_ADDRESS')
+        if not password: missing.append('GMAIL_APP_PASSWORD')
+        if not recipient: missing.append('RECIPIENT_EMAIL')
+        raise ValueError(f'Missing required env vars: {" / ".join(missing)}')
 
     date_fmt = datetime.now().strftime('%d %B %Y')
     subject  = T['subject'].format(date=date_fmt)

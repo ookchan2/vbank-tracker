@@ -1,14 +1,14 @@
 # scripts/main.py
-# main.py 在 scripts/ 資料夾內，直接 import 同層模組
-
+from dotenv import load_dotenv
 import os
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+
 import sys
 from datetime import datetime
+from collections import defaultdict
 
-# ── 確保 scripts/ 在 Python 路徑內 ──────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# ── 同層直接 import，不加 scripts. 前綴 ──────────────────────────
 from scraper   import run_scraper, BANK_CONFIGS
 from ai_helper import init_ai, analyze_promotions
 from database  import init_db, save_promotions, load_promotions, mark_inactive_old
@@ -86,14 +86,21 @@ def main():
     all_promos = load_promotions(active_only=True)
     print(f'  DB total active: {len(all_promos)}')
 
+    promos_by_bank = defaultdict(list)
+    for p in all_promos:
+        promos_by_bank[p.get('bank_id', 'unknown')].append(p)
+
+    for bank_id, promos in promos_by_bank.items():
+        print(f'  {bank_id.upper()}: {len(promos)} active promos')
+
     html = build_html_email(
         promotions_data = all_promos,
+        promos_by_bank  = dict(promos_by_bank),
+        scraped_data    = scraped,
     )
 
     # ── Step 7: 發送 email ───────────────────────────────────────
     print('\nStep 7 ── Send email')
-
-    # ✅ 兼容兩個環境變數名稱
     recipient = (
         os.environ.get('RECIPIENT_EMAIL') or
         os.environ.get('EMAIL_RECIPIENT') or
