@@ -55,27 +55,40 @@ def init_db():
 
 # ── 2. 儲存促銷（upsert） ────────────────────────────────────────────────────
 def save_promotions(promos: List[Dict[str, Any]]):
-    """
-    Upsert promotions。
-    Key = (bank_id, title)：
-      - 已存在 → 更新欄位 + last_seen + 重新設 active=1
-      - 不存在 → INSERT
-    """
     if not promos:
         return
 
-    conn   = _get_conn()
-    now    = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    conn = _get_conn()
+    now  = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     ins = upd = skip = 0
 
     try:
         for promo in promos:
-            bank_id = (promo.get('bank_id') or '').strip()
-            title   = (promo.get('title')   or '').strip()
+            # ✅ 兼容 ai_helper 返回的 'bank' 和標準的 'bank_id'
+            bank_id = (promo.get('bank_id') or promo.get('bank') or '').strip()
+            # ✅ 兼容 ai_helper 返回的 'name' 和標準的 'title'
+            title   = (promo.get('title')   or promo.get('name')  or '').strip()
 
             if not bank_id or not title:
                 skip += 1
                 continue
+
+            # ✅ 兼容所有欄位名稱差異
+            bank_name   = promo.get('bank_name')  or promo.get('bName')    or ''
+            description = promo.get('description') or ''
+            url         = promo.get('url')         or promo.get('link')     or ''
+            valid_until = (
+                promo.get('valid_until') or
+                promo.get('end_date')    or
+                promo.get('period')      or ''
+            )
+            # ✅ types 是 list，轉成逗號分隔字串存入 DB
+            raw_types  = promo.get('promo_type') or promo.get('types') or ''
+            promo_type = (
+                ', '.join(raw_types)
+                if isinstance(raw_types, list)
+                else str(raw_types)
+            )
 
             existing = conn.execute(
                 'SELECT id FROM promotions WHERE bank_id = ? AND title = ?',
@@ -95,12 +108,12 @@ def save_promotions(promos: List[Dict[str, Any]]):
                         active        = 1
                     WHERE id = ?
                 ''', (
-                    promo.get('description',   ''),
-                    promo.get('url',           ''),
+                    description,
+                    url,
                     promo.get('interest_rate', ''),
                     promo.get('min_deposit',   ''),
-                    promo.get('valid_until',   ''),
-                    promo.get('promo_type',    ''),
+                    valid_until,
+                    promo_type,
                     now,
                     existing['id'],
                 ))
@@ -114,14 +127,14 @@ def save_promotions(promos: List[Dict[str, Any]]):
                     VALUES (?,?,?,?,?,?,?,?,?,?,?,1)
                 ''', (
                     bank_id,
-                    promo.get('bank_name',     ''),
+                    bank_name,
                     title,
-                    promo.get('description',   ''),
-                    promo.get('url',           ''),
+                    description,
+                    url,
                     promo.get('interest_rate', ''),
                     promo.get('min_deposit',   ''),
-                    promo.get('valid_until',   ''),
-                    promo.get('promo_type',    ''),
+                    valid_until,
+                    promo_type,
                     now,
                     now,
                 ))
@@ -134,51 +147,5 @@ def save_promotions(promos: List[Dict[str, Any]]):
         conn.rollback()
         print(f'  ❌ save_promotions error: {e}')
         raise
-    finally:
-        conn.close()
-
-
-# ── 3. 讀取促銷 ──────────────────────────────────────────────────────────────
-def load_promotions(active_only: bool = True) -> List[Dict[str, Any]]:
-    """
-    從 DB 讀取促銷，按 bank_id 升序、last_seen 降序排列。
-    """
-    conn = _get_conn()
-    try:
-        where = 'WHERE active = 1' if active_only else ''
-        rows  = conn.execute(f'''
-            SELECT * FROM promotions
-            {where}
-            ORDER BY bank_id ASC, last_seen DESC
-        ''').fetchall()
-        return [dict(row) for row in rows]
-    except Exception as e:
-        print(f'  ❌ load_promotions error: {e}')
-        return []
-    finally:
-        conn.close()
-
-
-# ── 4. 標記舊記錄為 inactive ─────────────────────────────────────────────────
-def mark_inactive_old(days_threshold: int = 90):
-    """
-    將超過 days_threshold 天未見到的 active 記錄設為 inactive。
-    """
-    cutoff = (datetime.now() - timedelta(days=days_threshold)
-              ).strftime('%Y-%m-%d %H:%M:%S')
-    conn = _get_conn()
-    try:
-        cur = conn.execute('''
-            UPDATE promotions
-            SET    active = 0
-            WHERE  last_seen < ?
-            AND    active   = 1
-        ''', (cutoff,))
-        conn.commit()
-        print(f'  🗑️  {cur.rowcount} old promotions marked inactive '
-              f'(threshold: {days_threshold} days)')
-    except Exception as e:
-        conn.rollback()
-        print(f'  ❌ mark_inactive_old error: {e}')
     finally:
         conn.close()

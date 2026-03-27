@@ -522,7 +522,7 @@ def build_html_email(promotions_data: list = None,
 
 
 # ── send_email ────────────────────────────────────────────────────────────────
-def send_email(html_content: str):
+def send_email(html_content: str, recipient: str):
     """
     Send pre-built HTML email via Gmail SMTP.
     main.py calls build_html_email() first, then passes result here.
