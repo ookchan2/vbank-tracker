@@ -10,12 +10,11 @@ _api_key     = None
 _bot_name    = "Claude-3-7-Sonnet"
 AI_AVAILABLE = False
 
-# ✅ 新增：依序嘗試的模型列表（第一個成功就停）
 MODELS_TO_TRY = [
-    "Claude-3-7-Sonnet",       # 優先：最強，支援長文
-    "Claude-3-5-Sonnet",       # Fallback 1
-    "GPT-4o",                  # Fallback 2
-    "Perplexity-Pro-Search",   # Fallback 3（不支援 Vision，但文字分析 OK）
+    "Claude-3-7-Sonnet",
+    "Claude-3-5-Sonnet",
+    "GPT-4o",
+    "Perplexity-Pro-Search",
 ]
 
 # ── 詳細提取 prompt ───────────────────────────────────────────────
@@ -76,7 +75,7 @@ async def _async_call(messages: list, bot_name: str) -> str:
         response_text = ''
         async for partial in fp.get_bot_response(
             messages=poe_messages,
-            bot_name=bot_name,          # ✅ 改為參數傳入
+            bot_name=bot_name,
             api_key=_api_key,
         ):
             response_text += partial.text
@@ -116,7 +115,7 @@ def init_ai() -> bool:
     global _api_key, _bot_name, AI_AVAILABLE
 
     try:
-        import fastapi_poe  # 確認 package 已安裝
+        import fastapi_poe  # noqa: F401
 
         key = os.environ.get('POE_API_KEY', '').strip()
         if not key:
@@ -125,7 +124,6 @@ def init_ai() -> bool:
 
         _api_key = key
 
-        # ✅ 逐一測試模型，找到第一個可用的
         for model in MODELS_TO_TRY:
             print(f'  🔍 Testing model: {model} ...')
             try:
@@ -200,6 +198,28 @@ def _parse_array(raw: str) -> list:
     return []
 
 
+def _parse_object(raw: str) -> dict | None:
+    """穩健解析返回的 JSON object。"""
+    if not raw:
+        return None
+
+    raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+    raw = re.sub(r'\s*```$',          '', raw, flags=re.MULTILINE)
+    raw = raw.strip()
+
+    # ── Fix 4: ensure we grab the outermost {...} ──────────────────
+    m = re.search(r'(\{.*\})', raw, re.DOTALL)
+    if m:
+        raw = m.group(1)
+
+    try:
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else None
+    except json.JSONDecodeError as e:
+        print(f'  ⚠️  JSON object parse failed: {e}. First 200 chars: {raw[:200]}')
+        return None
+
+
 def _trim_text(text: str, max_chars: int = 18000) -> str:
     """超長文字：保留前 10K + 後 8K。"""
     if len(text) <= max_chars:
@@ -254,9 +274,8 @@ def analyze_promotions(bank_id: str,
     else:
         print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')
 
-    # ✅ Vision 提示：根據當前模型判斷
     if screenshot is not None and len(results) < 3:
-        if _bot_name.startswith("Perplexity"):
+        if _bot_name.startswith('Perplexity'):
             print(
                 f'  ℹ️  Vision skipped ({bank_name}) — '
                 f'{_bot_name} does not support image input.'
@@ -266,4 +285,110 @@ def analyze_promotions(bank_id: str,
 
     results = _stamp(results, bank_id, bank_name, default_url)
     print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
-    return results
+    return results  # ← function ends here cleanly
+
+
+# ─────────────────────────────────────────────────────────────────
+# ✅ FIX 1: Moved OUTSIDE analyze_promotions (was dead code before)
+# ✅ FIX 2: Removed stray `import json` (already at top of file)
+# ✅ FIX 3: Uses _call() (Poe) instead of anthropic.Anthropic()
+# ✅ FIX 4: ptype uses str() before slicing (types is a list)
+# ─────────────────────────────────────────────────────────────────
+def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
+    """
+    Generate AI strategic insights comparing each bank to ZA Bank.
+    Uses the same Poe _call() as the rest of the file.
+    """
+    if not AI_AVAILABLE:
+        print('⚠️  AI not available — skipping strategic insights')
+        return None
+
+    # Build per-bank summaries ----------------------------------------
+    bank_summaries = []
+    for bank_name, promos in sorted(promotions_by_bank.items()):
+        if not promos:
+            continue
+        lines = []
+        for p in promos:
+            title     = (p.get('title') or p.get('name') or 'N/A')[:80]
+            highlight = (p.get('highlight') or p.get('description') or '')[:120]
+            period    = (p.get('period') or p.get('validity') or 'Ongoing')[:60]
+            # ✅ FIX 4: types is a list — convert to str before slicing
+            raw_types = p.get('types') or p.get('type') or 'General'
+            ptype     = (', '.join(raw_types) if isinstance(raw_types, list)
+                         else str(raw_types))[:40]
+            lines.append(f'  [{ptype}] {title}: {highlight} | {period}')
+        bank_summaries.append(
+            f'## {bank_name} ({len(promos)} active)\n' + '\n'.join(lines)
+        )
+
+    if not bank_summaries:
+        print('⚠️  No promotions data — skipping strategic insights')
+        return None
+
+    promotions_text = '\n\n'.join(bank_summaries)
+
+    prompt = f"""You are a Hong Kong virtual bank analyst. \
+Analyze these active promotions and return strategic insights as JSON.
+
+{promotions_text}
+
+Return this EXACT JSON structure (populate with real numbers/details from the data above):
+{{
+  "best_for": [
+    {{"category": "Investment",       "bank": "BankName", "detail": "specific detail with numbers"}},
+    {{"category": "Spending/CashBack","bank": "BankName", "detail": "specific % or HKD amount"}},
+    {{"category": "Welcome Bonus",    "bank": "BankName", "detail": "HKD amount"}},
+    {{"category": "Travel",           "bank": "BankName", "detail": "specific benefit"}},
+    {{"category": "Loan APR",         "bank": "BankName", "detail": "X.XX% APR"}},
+    {{"category": "FX/Multi-Currency","bank": "BankName", "detail": "specific detail"}},
+    {{"category": "Fund Investment",  "bank": "BankName", "detail": "specific detail"}},
+    {{"category": "Referral Bonus",   "bank": "BankName", "detail": "HKD amount"}}
+  ],
+  "bank_analysis": {{
+    "ZA Bank": {{
+      "focus": "short keywords mixing EN/中文",
+      "strengths": ["strength with numbers", "strength 2", "strength 3"],
+      "expiring_alert": "Offer expiring within 30 days, or empty string",
+      "vs_za_pros": null,
+      "vs_za_cons": null
+    }},
+    "OtherBank": {{
+      "focus": "keywords",
+      "strengths": ["strength 1", "strength 2", "strength 3"],
+      "expiring_alert": "",
+      "vs_za_pros": "clear pros vs ZA Bank",
+      "vs_za_cons": "clear cons vs ZA Bank"
+    }}
+  }}
+}}
+
+Rules:
+- Include ALL banks from the data above in bank_analysis
+- For ZA Bank: vs_za_pros and vs_za_cons MUST be null
+- Only include best_for entries you can clearly identify a winner for
+- Use specific numbers/amounts from the actual promotions
+- Return valid JSON ONLY — no markdown, no code fences, no explanation"""
+
+    # ✅ FIX 3: Use Poe _call() — NOT anthropic client
+    raw = _call([{'role': 'user', 'content': prompt}])
+
+    if not raw:
+        print('❌ Strategic insights: empty response from AI')
+        return None
+
+    result = _parse_object(raw)
+    if result is None:
+        print('❌ Strategic insights: JSON parse failed')
+        return None
+
+    # Overwrite counts with ground truth from actual data
+    for bname in result.get('bank_analysis', {}):
+        result['bank_analysis'][bname]['count'] = len(
+            promotions_by_bank.get(bname, [])
+        )
+
+    print(f"✅ Strategic insights generated for "
+          f"{len(result.get('bank_analysis', {}))} banks "
+          f"via {_bot_name}")
+    return result

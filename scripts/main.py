@@ -1,4 +1,5 @@
 # scripts/main.py
+
 from dotenv import load_dotenv
 import os
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -9,10 +10,10 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from scraper   import run_scraper, BANK_CONFIGS
-from ai_helper import init_ai, analyze_promotions
-from database  import init_db, save_promotions, load_promotions, mark_inactive_old
-from emailer   import build_html_email, send_email
+from scraper    import run_scraper, BANK_CONFIGS
+from ai_helper  import init_ai, analyze_promotions, generate_strategic_insights  # ✅ FIX 2
+from database   import init_db, save_promotions, load_promotions, mark_inactive_old
+from emailer    import build_html_email, send_email
 
 
 def main():
@@ -81,46 +82,72 @@ def main():
     print('\nStep 5 ── Mark old promos inactive (>90 days unseen)')
     mark_inactive_old(days_threshold=90)
 
-    # ── Step 6: 從 DB 讀取並生成 email ───────────────────────────
-    print('\nStep 6 ── Load DB + build email')
+    # ── Step 6: 從 DB 讀取、生成 Insights、建立 Email ────────────
+    print('\nStep 6 ── Load DB + strategic insights + build email')
     all_promos = load_promotions(active_only=True)
     print(f'  DB total active: {len(all_promos)}')
 
-    promos_by_bank = defaultdict(list)
+    # ── 6a: 按 bank_id 統計（用於 log）───────────────────────────
+    promos_by_id: defaultdict = defaultdict(list)
     for p in all_promos:
-        promos_by_bank[p.get('bank_id', 'unknown')].append(p)
+        promos_by_id[p.get('bank', 'unknown')].append(p)
 
-    for bank_id, promos in promos_by_bank.items():
+    for bank_id, promos in promos_by_id.items():
         print(f'  {bank_id.upper()}: {len(promos)} active promos')
 
+    # ── 6b: 按 bank display name（用於 AI insights）──────────────
+    # ✅ FIX 6: field is 'bName' from _stamp(), not 'bank_name'
+    promos_by_name: dict = {}
+    for p in all_promos:
+        bname = p.get('bName') or p.get('bank') or 'Unknown'   # ✅ FIX 6
+        promos_by_name.setdefault(bname, []).append(p)
+
+    # ✅ FIX 1: Strategic Insights block moved INSIDE main()
+    print('\n  🧠 Generating AI strategic insights...')
+    strategic_insights = generate_strategic_insights(promos_by_name)
+    if not strategic_insights:
+        print('  ⚠️  Insights unavailable — email will send without that section')
+
+    # ── 6c: Build email HTML ──────────────────────────────────────
+    # ✅ FIX 1 + FIX 3: html built here, available for Step 7
     html = build_html_email(
-        promotions_data = all_promos,
-        promos_by_bank  = dict(promos_by_bank),
-        scraped_data    = scraped,
+        promotions_data   = all_promos,
+        scraped_data      = scraped,
+        strategic_insights= strategic_insights,
     )
 
     # ── Step 7: 發送 email ───────────────────────────────────────
     print('\nStep 7 ── Send email')
+
+    # ✅ FIX 5: send_email reads EMAIL_TO from env — no recipient param
+    # Set override here if RECIPIENT_EMAIL env var is provided
     recipient = (
         os.environ.get('RECIPIENT_EMAIL') or
         os.environ.get('EMAIL_RECIPIENT') or
         ''
     )
+    if recipient:
+        # Temporarily override EMAIL_TO so emailer picks it up
+        os.environ['EMAIL_TO'] = recipient
 
     output_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         '..', 'output', 'email_preview.html'
     )
 
-    if recipient:
+    if recipient or os.environ.get('EMAIL_TO'):
         try:
-            send_email(html_content=html, recipient=recipient)
-            print(f'  ✅ Email sent to {recipient}')
+            success = send_email(html_content=html)   # ✅ FIX 4+5: called ONCE, correct sig
+            if success:
+                print(f'  ✅ Email sent → {os.environ.get("EMAIL_TO")}')
+            else:
+                print('  ❌ Email send returned False — saving HTML fallback')
+                _save_html_fallback(html, output_path)
         except Exception as e:
             print(f'  ❌ Email failed: {e}')
             _save_html_fallback(html, output_path)
     else:
-        print('  ⚠️  RECIPIENT_EMAIL not set → saving HTML preview only')
+        print('  ⚠️  EMAIL_TO / RECIPIENT_EMAIL not set → saving HTML preview only')
         _save_html_fallback(html, output_path)
 
     # ── 完成 ─────────────────────────────────────────────────────
