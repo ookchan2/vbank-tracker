@@ -1,3 +1,5 @@
+# scripts/emailer.py
+
 import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -15,6 +17,7 @@ BANK_COLORS = {
     "Livi Bank":    "#722ed1",
     "PAOB":         "#00b96b",
     "Airstar Bank": "#13c2c2",
+    "Fusion Bank":  "#f97316",
 }
 
 CATEGORY_COLORS = {
@@ -31,9 +34,9 @@ CATEGORY_COLORS = {
 
 CATEGORY_EMOJIS = {
     "investment": "📈", "spending": "💳", "cashback": "💳",
-    "welcome": "🎁",   "bonus": "🎁",    "travel": "✈️",
-    "loan": "💰",      "fx": "🌐",       "currency": "🌐",
-    "fund": "📊",      "referral": "👥",
+    "welcome":    "🎁", "bonus":    "🎁", "travel":   "✈️",
+    "loan":       "💰", "fx":       "🌐", "currency": "🌐",
+    "fund":       "📊", "referral": "👥",
 }
 
 
@@ -70,6 +73,18 @@ def _tag(text: str, bg: str) -> str:
     )
 
 
+def _types_to_list(types_raw) -> list:
+    """
+    ✅ FIX 5: Safely convert types field to a clean list regardless of
+    whether it arrived as a list, comma-separated string, or other.
+    """
+    if isinstance(types_raw, list):
+        return [str(t).strip() for t in types_raw if str(t).strip()]
+    if isinstance(types_raw, str):
+        return [t.strip() for t in types_raw.split(",") if t.strip()]
+    return []
+
+
 # ── Promotion card ─────────────────────────────────────────────────────────────
 
 def _promo_card(promo: dict, color: str) -> str:
@@ -78,11 +93,9 @@ def _promo_card(promo: dict, color: str) -> str:
     period    = promo.get("period") or promo.get("validity") or "Ongoing"
     types_raw = promo.get("types") or promo.get("type") or ""
 
-    tags_html = "".join(
-        _tag(t.strip(), _type_color(t.strip()))
-        for t in str(types_raw).split(",")
-        if t.strip()
-    )[:4]  # cap at 4 tags
+    # ✅ FIX 4 + 5: convert to list first, cap at 4 items, THEN join HTML
+    type_list = _types_to_list(types_raw)[:4]
+    tags_html = "".join(_tag(t, _type_color(t)) for t in type_list)
 
     return f"""
 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">
@@ -273,11 +286,9 @@ def _insights_html(insights: dict) -> str:
     <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">
       AI-generated analysis • Updated daily • Base comparison: ZA Bank
     </div>
-
     <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;
                 letter-spacing:.05em;margin-bottom:12px;">🏆 Best in Category</div>
     {best_table}
-
     <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;
                 letter-spacing:.05em;margin-bottom:14px;">📋 Bank-by-Bank Analysis</div>
     {bank_cards}
@@ -294,16 +305,15 @@ def build_html_email(
 ) -> str:
     now = datetime.now().strftime("%d %b %Y, %H:%M HKT")
 
-    # Group by bank
+    # ✅ FIX 3: Use 'bName' (display name set by _stamp()) with fallbacks
     banks: dict = {}
     for p in promotions_data or []:
-        bank = p.get("bank_name") or p.get("bank") or "Unknown"
+        bank = p.get("bName") or p.get("bank_name") or p.get("bank") or "Unknown"
         banks.setdefault(bank, []).append(p)
 
     total_promos = len(promotions_data or [])
     total_banks  = len(banks)
 
-    # Rough expiring-this-month count
     this_month = datetime.now().strftime("%b").lower()
     next_month = ["jan","feb","mar","apr","may","jun",
                   "jul","aug","sep","oct","nov","dec"][datetime.now().month % 12].lower()
@@ -313,14 +323,16 @@ def build_html_email(
         or next_month in str(p.get("period", "")).lower()
     )
 
-    # Scrape status rows
+    # ✅ FIX 6: Accept both boolean 'success' and string 'status' from scraper
     scrape_rows = ""
     for bank_name, result in sorted((scraped_data or {}).items()):
-        status = result.get("status", "unknown")
-        count  = result.get("count") or len(banks.get(bank_name, []))
-        ok     = status == "success"
-        dot    = "#10b981" if ok else "#ef4444"
-        label  = f"{'✅' if ok else '❌'} {status}"
+        raw_status = result.get("status")
+        raw_ok     = result.get("success")
+        ok = (raw_status == "success") or (raw_ok is True)
+        # Count: prefer explicit key, fall back to matching promotions list
+        count = result.get("count") or len(banks.get(bank_name, []))
+        dot   = "#10b981" if ok else "#ef4444"
+        label = f"{'✅' if ok else '❌'} {'success' if ok else (raw_status or 'failed')}"
         scrape_rows += f"""
 <tr style="border-bottom:1px solid #f3f4f6;">
   <td style="padding:9px 12px;font-size:13px;color:#374151;font-weight:600;">{bank_name}</td>
@@ -330,13 +342,11 @@ def build_html_email(
   </td>
 </tr>"""
 
-    # Promotions HTML — ZA Bank always first
     sorted_banks = sorted(
         banks.items(), key=lambda x: (0 if "za" in x[0].lower() else 1, x[0])
     )
     promos_html = "".join(_bank_section(bname, bpromos) for bname, bpromos in sorted_banks)
 
-    # Strategic insights block
     insights_block = _insights_html(strategic_insights) if strategic_insights else ""
     insights_row = (
         f"<tr><td>{insights_block}</td></tr><tr><td style='height:16px;'></td></tr>"
@@ -445,20 +455,44 @@ def build_html_email(
 
 # ── Sender ─────────────────────────────────────────────────────────────────────
 
-def send_email(html_content: str, subject: str = None) -> bool:
+def send_email(
+    html_content: str,
+    subject: str = None,
+    recipient: str = None,          # ✅ FIX 1: added recipient param
+) -> bool:
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_user = os.getenv("SMTP_USER") or os.getenv("EMAIL_FROM")
-    smtp_pass = os.getenv("SMTP_PASS") or os.getenv("EMAIL_PASS")
-    email_to  = os.getenv("EMAIL_TO")
+    smtp_user = (
+        os.getenv("SMTP_USER")
+        or os.getenv("EMAIL_FROM")
+    )
+    smtp_pass = (
+        os.getenv("SMTP_PASS")
+        or os.getenv("EMAIL_PASS")
+    )
+    # ✅ FIX 2: accept all known env var names for the recipient address
+    email_to = (
+        recipient
+        or os.getenv("RECIPIENT_EMAIL")
+        or os.getenv("EMAIL_RECIPIENT")
+        or os.getenv("EMAIL_TO")
+    )
 
     if not all([smtp_user, smtp_pass, email_to]):
-        print("❌ Missing SMTP_USER / SMTP_PASS / EMAIL_TO")
+        missing = [
+            name for name, val in [
+                ("SMTP_USER / EMAIL_FROM",                   smtp_user),
+                ("SMTP_PASS / EMAIL_PASS",                   smtp_pass),
+                ("RECIPIENT_EMAIL / EMAIL_RECIPIENT / EMAIL_TO", email_to),
+            ]
+            if not val
+        ]
+        print(f"❌ Missing env vars: {', '.join(missing)}")
         return False
 
     subject = subject or f"🏦 VBank Daily Report — {datetime.now().strftime('%d %b %Y')}"
 
-    msg = MIMEMultipart("alternative")
+    msg            = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"]    = smtp_user
     msg["To"]      = email_to
