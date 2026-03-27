@@ -1,4 +1,4 @@
-# scripts/ai_helper.py  ── 改用 Perplexity-Pro-Search via Poe API
+# scripts/ai_helper.py
 
 import asyncio
 import json
@@ -7,8 +7,16 @@ import re
 
 # ── 模組級別狀態 ──────────────────────────────────────────────────
 _api_key     = None
-_bot_name    = 'Perplexity-Pro-Search'
-AI_AVAILABLE = False   # 外部可 import 這個 flag
+_bot_name    = "Claude-3-7-Sonnet"
+AI_AVAILABLE = False
+
+# ✅ 新增：依序嘗試的模型列表（第一個成功就停）
+MODELS_TO_TRY = [
+    "Claude-3-7-Sonnet",       # 優先：最強，支援長文
+    "Claude-3-5-Sonnet",       # Fallback 1
+    "GPT-4o",                  # Fallback 2
+    "Perplexity-Pro-Search",   # Fallback 3（不支援 Vision，但文字分析 OK）
+]
 
 # ── 詳細提取 prompt ───────────────────────────────────────────────
 _PROMPT_TMPL = """\
@@ -55,7 +63,7 @@ Remember: return ONLY the JSON array starting with [ and ending with ].\
 
 # ── Poe 非同步核心 ────────────────────────────────────────────────
 
-async def _async_call(messages: list) -> str:
+async def _async_call(messages: list, bot_name: str) -> str:
     """非同步調用 Poe bot，返回完整回應文字。"""
     try:
         import fastapi_poe as fp
@@ -68,7 +76,7 @@ async def _async_call(messages: list) -> str:
         response_text = ''
         async for partial in fp.get_bot_response(
             messages=poe_messages,
-            bot_name=_bot_name,
+            bot_name=bot_name,          # ✅ 改為參數傳入
             api_key=_api_key,
         ):
             response_text += partial.text
@@ -76,7 +84,7 @@ async def _async_call(messages: list) -> str:
         return response_text.strip()
 
     except Exception as e:
-        print(f'  ⚠️  Poe async call error: {e}')
+        print(f'  ⚠️  Poe async call error ({bot_name}): {e}')
         return ''
 
 
@@ -85,15 +93,14 @@ def _call(messages: list) -> str:
     if not AI_AVAILABLE or _api_key is None:
         return ''
     try:
-        # 如果已有 event loop（如 Jupyter），用 thread 方式執行
         try:
             loop = asyncio.get_running_loop()
             import concurrent.futures
             with concurrent.futures.ThreadPoolExecutor() as pool:
-                future = pool.submit(asyncio.run, _async_call(messages))
+                future = pool.submit(asyncio.run, _async_call(messages, _bot_name))
                 return future.result()
         except RuntimeError:
-            return asyncio.run(_async_call(messages))
+            return asyncio.run(_async_call(messages, _bot_name))
     except Exception as e:
         print(f'  ⚠️  Call error: {e}')
         return ''
@@ -102,8 +109,12 @@ def _call(messages: list) -> str:
 # ── 初始化 ────────────────────────────────────────────────────────
 
 def init_ai() -> bool:
-    """初始化 Poe client，測試連接。返回 bool。"""
+    """
+    依序嘗試 MODELS_TO_TRY，第一個能成功回應的就使用。
+    返回 bool。
+    """
     global _api_key, _bot_name, AI_AVAILABLE
+
     try:
         import fastapi_poe  # 確認 package 已安裝
 
@@ -112,18 +123,36 @@ def init_ai() -> bool:
             print('⚠️  POE_API_KEY not set — AI disabled')
             return False
 
-        _api_key  = key
-        _bot_name = os.environ.get('POE_BOT_NAME', 'Perplexity-Pro-Search')
+        _api_key = key
 
-        # 快速測試連接
-        test = _call([{'role': 'user', 'content': 'Reply OK only.'}])
-        if not test:
-            print(f'❌ Poe connection test failed for {_bot_name}')
-            return False
+        # ✅ 逐一測試模型，找到第一個可用的
+        for model in MODELS_TO_TRY:
+            print(f'  🔍 Testing model: {model} ...')
+            try:
+                loop = asyncio.get_running_loop()
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    future = pool.submit(
+                        asyncio.run,
+                        _async_call([{'role': 'user', 'content': 'Reply OK only.'}], model)
+                    )
+                    test = future.result()
+            except RuntimeError:
+                test = asyncio.run(
+                    _async_call([{'role': 'user', 'content': 'Reply OK only.'}], model)
+                )
 
-        AI_AVAILABLE = True
-        print(f'✅ Poe ready: {_bot_name}')
-        return True
+            if test:
+                _bot_name    = model
+                AI_AVAILABLE = True
+                print(f'✅ Poe ready: {_bot_name}')
+                return True
+            else:
+                print(f'  ❌ {model} failed, trying next...')
+
+        print('❌ All models failed — AI disabled')
+        AI_AVAILABLE = False
+        return False
 
     except ImportError:
         print('❌ fastapi-poe not installed. Run: pip install fastapi-poe')
@@ -142,19 +171,16 @@ def _parse_array(raw: str) -> list:
     if not raw:
         return []
 
-    # 去除 markdown fences
     raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
     raw = re.sub(r'\s*```$',          '', raw, flags=re.MULTILINE)
     raw = raw.strip()
 
-    # 直接解析
     try:
         data = json.loads(raw)
         return data if isinstance(data, list) else [data]
     except json.JSONDecodeError:
         pass
 
-    # 嘗試找出 [...] 範圍
     m = re.search(r'(\[.*\])', raw, re.DOTALL)
     if m:
         try:
@@ -163,7 +189,6 @@ def _parse_array(raw: str) -> list:
         except Exception:
             pass
 
-    # 截斷時補全再試
     for suffix in ('}]', ']'):
         try:
             data = json.loads(raw + suffix)
@@ -207,7 +232,6 @@ def analyze_promotions(bank_id: str,
                        default_url: str = '') -> list:
     """
     從爬取文字中提取所有促銷活動。
-    注意：Perplexity-Pro-Search 不支援 Vision，截圖輸入自動略過。
     永遠返回 list（失敗時為空 list），絕不 raise。
     """
     if not AI_AVAILABLE:
@@ -216,7 +240,6 @@ def analyze_promotions(bank_id: str,
     clean   = _trim_text(text.strip() if text else '')
     results: list = []
 
-    # ── 文字提取 ─────────────────────────────────────────────────
     if len(clean) >= 200:
         prompt = _PROMPT_TMPL.format(
             bank_name=bank_name,
@@ -231,15 +254,16 @@ def analyze_promotions(bank_id: str,
     else:
         print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')
 
-    # ── Vision：Perplexity 不支援，自動略過 ──────────────────────
+    # ✅ Vision 提示：根據當前模型判斷
     if screenshot is not None and len(results) < 3:
-        print(
-            f'  ℹ️  Vision skipped ({bank_name}) — '
-            f'Perplexity-Pro-Search does not support image input.\n'
-            f'     Tip: Switch to Claude-Sonnet if vision is needed.'
-        )
+        if _bot_name.startswith("Perplexity"):
+            print(
+                f'  ℹ️  Vision skipped ({bank_name}) — '
+                f'{_bot_name} does not support image input.'
+            )
+        else:
+            print(f'  ℹ️  Vision skipped ({bank_name}) — not implemented for {_bot_name}')
 
-    # ── 加上 bank 標記 ───────────────────────────────────────────
     results = _stamp(results, bank_id, bank_name, default_url)
     print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
     return results

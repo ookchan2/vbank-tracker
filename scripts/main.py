@@ -88,7 +88,6 @@ def main():
 
     html = build_html_email(
         promotions_data = all_promos,
-        scraped_data    = scraped,
     )
 
     # ── Step 7: 發送 email ───────────────────────────────────────
