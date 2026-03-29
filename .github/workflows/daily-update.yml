@@ -55,9 +55,9 @@ jobs:
         run: |
           git config user.name  "VBank Tracker Bot 🤖"
           git config user.email "bot@vbank-tracker.github.io"
+          git pull --rebase origin main
           git add docs/data.json docs/index.html
           git diff --cached --quiet || git commit -m "🤖 Auto-update: promotions $(date +'%Y-%m-%d %H:%M') HKT"
-          git pull --rebase origin main
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

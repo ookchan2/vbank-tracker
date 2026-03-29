@@ -126,7 +126,8 @@ def main():
 
     promos_by_id: defaultdict = defaultdict(list)
     for p in all_promos:
-        promos_by_id[p.get('bank', 'unknown')].append(p)
+    bid = p.get('bank_id') or p.get('bank') or 'unknown'
+    promos_by_id[bid].append(p)
     for bid, promos in promos_by_id.items():
         print(f'  {bid.upper()}: {len(promos)} active promos')
 
