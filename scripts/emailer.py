@@ -458,19 +458,24 @@ def build_html_email(
 def send_email(
     html_content: str,
     subject: str = None,
-    recipient: str = None,          # ✅ FIX 1: added recipient param
+    recipient: str = None,
 ) -> bool:
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
+
+    # ✅ added GMAIL_ADDRESS as fallback
     smtp_user = (
-        os.getenv("SMTP_USER")
+        os.getenv("GMAIL_ADDRESS")
+        or os.getenv("SMTP_USER")
         or os.getenv("EMAIL_FROM")
     )
+    # ✅ added GMAIL_APP_PASSWORD as fallback
     smtp_pass = (
-        os.getenv("SMTP_PASS")
+        os.getenv("GMAIL_APP_PASSWORD")
+        or os.getenv("SMTP_PASS")
         or os.getenv("EMAIL_PASS")
     )
-    # ✅ FIX 2: accept all known env var names for the recipient address
+    # ✅ RECIPIENT_EMAIL first — matches your GitHub Secret name
     email_to = (
         recipient
         or os.getenv("RECIPIENT_EMAIL")
@@ -481,9 +486,9 @@ def send_email(
     if not all([smtp_user, smtp_pass, email_to]):
         missing = [
             name for name, val in [
-                ("SMTP_USER / EMAIL_FROM",                   smtp_user),
-                ("SMTP_PASS / EMAIL_PASS",                   smtp_pass),
-                ("RECIPIENT_EMAIL / EMAIL_RECIPIENT / EMAIL_TO", email_to),
+                ("GMAIL_ADDRESS / SMTP_USER / EMAIL_FROM",           smtp_user),
+                ("GMAIL_APP_PASSWORD / SMTP_PASS / EMAIL_PASS",      smtp_pass),
+                ("RECIPIENT_EMAIL / EMAIL_RECIPIENT / EMAIL_TO",     email_to),
             ]
             if not val
         ]

@@ -2,7 +2,14 @@
 
 from dotenv import load_dotenv
 import os
+
+# ✅ load_dotenv() FIRST
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+
+# ✅ THEN print (now the values will actually be populated)
+print("USER:", os.getenv("GMAIL_ADDRESS"))
+print("PASS:", "SET=" + os.getenv("GMAIL_APP_PASSWORD","")[:4] + "..." if os.getenv("GMAIL_APP_PASSWORD") else "MISSING")
+print("TO:  ", os.getenv("RECIPIENT_EMAIL"))
 
 import sys
 from datetime import datetime
@@ -39,7 +46,7 @@ def main():
     print('  Env check:')
     print(f'    GMAIL_ADDRESS    : {"✅ set" if _gmail_addr else "❌ MISSING"}')
     print(f'    GMAIL_APP_PASSWORD: {"✅ set" if _gmail_pass else "❌ MISSING"}')
-    print(f'    EMAIL_RECIPIENT  : {"✅ " + _recipient if _recipient else "❌ MISSING"}')
+    print(f'    RECIPIENT_EMAIL  : {"✅ " + _recipient if _recipient else "❌ MISSING"}')
 
     # ── Step 1: 初始化資料庫 ─────────────────────────────────────
     print('\nStep 1 ── Init database')
@@ -156,7 +163,7 @@ def main():
         missing = []
         if not _gmail_addr: missing.append('GMAIL_ADDRESS')
         if not _gmail_pass: missing.append('GMAIL_APP_PASSWORD')
-        if not _recipient:  missing.append('EMAIL_RECIPIENT')
+        if not _recipient:  missing.append('RECIPIENT_EMAIL')
         print(f'  ❌ Missing {" / ".join(missing)} — email skipped')
         print(f'  📄 HTML preview saved → {output_path}')
     else:
