@@ -1,12 +1,12 @@
 # scripts/scraper.py
+
 import asyncio
 import re
 import requests
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 
-# ── Bank configs ───────────────────────────────────────────────────────────────
-# wait_extra (ms): SPA / heavy-JS sites need longer hydration time
+# ── Bank configs ──────────────────────────────────────────────────────────────
 BANK_CONFIGS = {
     'za': {
         'name':       'ZA Bank',
@@ -16,7 +16,7 @@ BANK_CONFIGS = {
             'https://bank.za.group/en',
             'https://bank.za.group/',
         ],
-        'link':       'https://bank.za.group/en',
+        'link':       'https://bank.za.group/en/promotion',
         'wait_extra': 3000,
     },
     'mox': {
@@ -33,7 +33,7 @@ BANK_CONFIGS = {
         'name':       'livi bank',
         'color':      '#f97316',
         'urls': [
-            'https://www.livibank.com.hk/',   # ✅ correct domain
+            'https://www.livibank.com.hk/',
             'https://www.livibank.com/',
         ],
         'link':       'https://www.livibank.com.hk/',
@@ -54,7 +54,7 @@ BANK_CONFIGS = {
         'name':       'PAObank',
         'color':      '#0ea5e9',
         'urls': [
-            'https://www.pingandb.com/en/',   # ✅ correct domain (not .com.hk)
+            'https://www.pingandb.com/en/',
             'https://www.pingandb.com/tc/',
         ],
         'link':       'https://www.pingandb.com/en/',
@@ -74,26 +74,25 @@ BANK_CONFIGS = {
         'name':       'Fusion Bank',
         'color':      '#14b8a6',
         'urls': [
-            'https://www.fusionbank.com/?lang=en',       # ✅ correct domain (.com not .com.hk)
+            'https://www.fusionbank.com/?lang=en',
             'https://www.fusionbank.com/?lang=zh-HK',
         ],
         'link':       'https://www.fusionbank.com/?lang=en',
-        'wait_extra': 6000,   # SPA with lang param — needs extra time
+        'wait_extra': 6000,
     },
     'ant': {
         'name':       'Ant Bank',
         'color':      '#1677ff',
         'urls': [
-            'https://www.antbank.hk/em-plus-offer?lang=en_us',  # ✅ correct promo page
+            'https://www.antbank.hk/em-plus-offer?lang=en_us',
             'https://www.antbank.hk/em-plus-offer?lang=zh_hk',
             'https://www.antbank.hk/',
         ],
         'link':       'https://www.antbank.hk/em-plus-offer?lang=en_us',
-        'wait_extra': 8000,   # Heavy JS — needs longest wait
+        'wait_extra': 8000,
     },
 }
 
-# ── Playwright browser args ────────────────────────────────────────────────────
 BROWSER_ARGS = [
     '--no-sandbox',
     '--disable-setuid-sandbox',
@@ -112,7 +111,6 @@ USER_AGENT = (
     'Chrome/122.0.0.0 Safari/537.36'
 )
 
-# JS walker: extract clean text, skipping noisy tags
 _JS_GET_TEXT = '''() => {
     const SKIP = new Set([
         'SCRIPT','STYLE','NAV','HEADER','FOOTER',
@@ -128,7 +126,8 @@ _JS_GET_TEXT = '''() => {
 }'''
 
 
-# ── Fallback: plain HTTP + BeautifulSoup ──────────────────────────────────────
+# ── Fallback: requests + BeautifulSoup ───────────────────────────────────────
+
 def scrape_with_requests(url: str) -> str | None:
     headers = {
         'User-Agent':      USER_AGENT,
@@ -148,38 +147,29 @@ def scrape_with_requests(url: str) -> str | None:
         return None
 
 
-# ── Try a single URL with Playwright ──────────────────────────────────────────
+# ── Single URL via Playwright ─────────────────────────────────────────────────
+
 async def _try_url(page, url: str, wait_extra: int = 3000):
-    """Returns (text, screenshot_bytes)."""
     try:
         await page.goto(url, timeout=60000, wait_until='domcontentloaded')
-
-        # Wait for network idle (ok to time out on SPA)
         try:
             await page.wait_for_load_state('networkidle', timeout=15000)
         except Exception:
             pass
-
-        # Per-bank extra hydration time
         await page.wait_for_timeout(wait_extra)
-
-        # Scroll to trigger lazy-loaded content
         await page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
         await page.wait_for_timeout(1500)
         await page.evaluate('window.scrollTo(0, 0)')
 
-        # Extract clean text
         text = await page.evaluate(_JS_GET_TEXT)
         text = re.sub(r'\s+', ' ', text or '').strip()
 
-        # Screenshot if content looks good
         screenshot = None
         if len(text) > 300:
             try:
                 screenshot = await page.screenshot(full_page=False, type='png')
             except Exception:
                 pass
-
         return text, screenshot
 
     except Exception as e:
@@ -187,7 +177,8 @@ async def _try_url(page, url: str, wait_extra: int = 3000):
         return '', None
 
 
-# ── Scrape one bank ────────────────────────────────────────────────────────────
+# ── Scrape one bank ───────────────────────────────────────────────────────────
+
 async def _scrape_bank(browser, bank_id: str) -> dict:
     cfg        = BANK_CONFIGS[bank_id]
     wait_extra = cfg.get('wait_extra', 3000)
@@ -215,20 +206,19 @@ async def _scrape_bank(browser, bank_id: str) -> dict:
             lambda r: r.abort(),
         )
 
-        # ── STEP 1: Playwright ─────────────────────────────────────────────
+        # ── Playwright pass ────────────────────────────────────────
         for url in cfg['urls']:
             print(f'    → Playwright: {url}')
             text, shot = await _try_url(page, url, wait_extra)
-
             if text and len(text.strip()) > len(best_text.strip()):
                 best_text = text
                 best_shot = shot
                 best_url  = url
                 print(f'    ✓ {len(text):,} chars')
                 if len(text) > 3000:
-                    break   # Good enough
+                    break
 
-        # ── STEP 2: requests fallback ──────────────────────────────────────
+        # ── requests fallback ──────────────────────────────────────
         if len(best_text.strip()) < 300:
             print(f'    🔁 Playwright thin ({len(best_text)} chars) → requests fallback...')
             for url in cfg['urls']:
@@ -240,16 +230,15 @@ async def _scrape_bank(browser, bank_id: str) -> dict:
                     if len(fb) > 1000:
                         break
 
-        # ── STEP 3: Screenshot-only Vision fallback ────────────────────────
+        # ── Screenshot-only fallback ───────────────────────────────
         if best_shot is None and len(best_text.strip()) < 300:
             print('    📸 Still thin → screenshot for Vision fallback...')
             try:
-                # Re-enable images for screenshot
                 await page.unroute(
                     '**/*.{png,jpg,jpeg,gif,webp,ico,woff,woff2,ttf,eot,otf}'
                 )
                 await page.goto(best_url, wait_until='domcontentloaded', timeout=45000)
-                await page.wait_for_timeout(wait_extra + 3000)  # extra time for full render
+                await page.wait_for_timeout(wait_extra + 3000)
                 best_shot = await page.screenshot(full_page=True, type='png')
                 print('    ✓ screenshot taken')
             except Exception as e:
@@ -268,7 +257,8 @@ async def _scrape_bank(browser, bank_id: str) -> dict:
     }
 
 
-# ── Run all banks ──────────────────────────────────────────────────────────────
+# ── Run all banks ─────────────────────────────────────────────────────────────
+
 async def _run_all() -> dict:
     results = {}
     async with async_playwright() as pw:
@@ -276,7 +266,7 @@ async def _run_all() -> dict:
         for bank_id, cfg in BANK_CONFIGS.items():
             header = f'══ {cfg["name"]} '
             print(f'\n{header}{"═" * max(1, 50 - len(header))}')
-            result          = await _scrape_bank(browser, bank_id)
+            result           = await _scrape_bank(browser, bank_id)
             results[bank_id] = result
             mark = '✅' if result['success'] else '❌'
             print(f'  {mark}  {cfg["name"]}: {len(result["text"]):,} chars')
@@ -285,5 +275,5 @@ async def _run_all() -> dict:
 
 
 def run_scraper() -> dict:
-    """Synchronous entry point — called by main.py."""
+    """Synchronous entry point called by main.py."""
     return asyncio.run(_run_all())

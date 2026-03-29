@@ -2,31 +2,27 @@ name: Daily VBank Tracker
 
 on:
   schedule:
-    # 每天香港時間早上 9:00 (UTC+8 = UTC 01:00)
+    # 香港時間早上 9:00 (UTC+8 → UTC 01:00)
     - cron: '0 1 * * *'
-  workflow_dispatch:  # 手動觸發
+  workflow_dispatch:
 
 jobs:
   run-tracker:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     permissions:
-      contents: write  # 需要 write 權限來 push data.json
+      contents: write
 
     steps:
-
-      # ── Step 1: Checkout code ──────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── Step 2: Setup Python ───────────────────────
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # ── Step 3: Cache pip packages ─────────────────
       - name: Cache pip packages
         uses: actions/cache@v4
         with:
@@ -35,22 +31,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # ── Step 4: Install dependencies ───────────────
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ── Step 5: Install Playwright browsers ────────
       - name: Install Playwright browsers
         run: |
           playwright install chromium
           playwright install-deps chromium
 
-      # ── Step 6: Run the tracker bot ────────────────
       - name: Run tracker bot
         env:
-          POE_API_KEY: ${{ secrets.POE_API_KEY }} 
+          POE_API_KEY:         ${{ secrets.POE_API_KEY }}
           GMAIL_ADDRESS:       ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD:  ${{ secrets.GMAIL_APP_PASSWORD }}
           RECIPIENT_EMAIL:     ${{ secrets.RECIPIENT_EMAIL }}
@@ -58,13 +51,12 @@ jobs:
           cd scripts
           python main.py
 
-      # ── Step 7: Auto-commit updated website data ───
-      - name: Commit updated website data
+      - name: Commit updated data
         run: |
           git config user.name  "VBank Tracker Bot 🤖"
           git config user.email "bot@vbank-tracker.github.io"
           git pull --rebase origin main
-          git add docs/data.json
+          git add docs/data.json data/promotions.db
           git diff --staged --quiet || git commit -m "🤖 Auto-update: promotions $(date +'%Y-%m-%d %H:%M') HKT"
           git push
         env:
