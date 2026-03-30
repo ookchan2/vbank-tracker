@@ -58,7 +58,7 @@ jobs:
           git checkout -- .
           git pull --rebase origin main
           git add docs/data.json
-          git diff --cached --quiet || git commit -m "🤖 Auto-update: promotions $(date +'%Y-%m-%d')"
+          git diff --cached --quiet || git commit -m "🤖 Auto-update: $(date +'%Y-%m-%d')"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
