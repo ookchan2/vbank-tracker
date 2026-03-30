@@ -12,16 +12,19 @@ print("TO:  ", os.getenv("RECIPIENT_EMAIL"))
 
 import sys
 from datetime import datetime
-from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from scraper   import run_scraper, BANK_CONFIGS
 from ai_helper import init_ai, analyze_promotions, generate_strategic_insights
-from database  import init_db, save_promotions, load_promotions, mark_inactive_old, export_to_json
+from database  import (
+    init_db, save_promotions,
+    mark_stale_as_inactive, mark_inactive_old,
+    generate_daily_report,
+    export_to_json,
+)
 from emailer   import build_html_email, send_email
 
-# Path for website data (committed to GitHub Pages)
 DATA_JSON_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     '..', 'docs', 'data.json'
@@ -42,23 +45,21 @@ def main():
         os.environ.get('EMAIL_RECIPIENT') or
         os.environ.get('EMAIL_TO') or ''
     )
-    if _recipient:
-        os.environ['EMAIL_TO'] = _recipient
 
     print('  Env check:')
     print(f'    GMAIL_ADDRESS     : {"✅ set" if _gmail_addr else "❌ MISSING"}')
     print(f'    GMAIL_APP_PASSWORD: {"✅ set" if _gmail_pass else "❌ MISSING"}')
     print(f'    RECIPIENT_EMAIL   : {"✅ " + _recipient if _recipient else "❌ MISSING"}')
 
-    # ── Step 1: Database ─────────────────────────────────────────
+    # ── Step 1: Database ──────────────────────────────────────────
     print('\nStep 1 ── Init database')
     init_db()
 
-    # ── Step 2: AI ───────────────────────────────────────────────
+    # ── Step 2: AI ────────────────────────────────────────────────
     print('\nStep 2 ── Init AI')
     ai_ok = init_ai()
 
-    # ── Step 3: Scrape all 8 banks ───────────────────────────────
+    # ── Step 3: Scrape all 8 banks ────────────────────────────────
     print('\nStep 3 ── Scrape all 8 banks')
     scraped = run_scraper()
 
@@ -66,15 +67,21 @@ def main():
         print('  ❌ No data scraped — abort')
         return
 
-    # Build scraped_data dict keyed by bank_name for email
-    scraped_by_name: dict = {}
-    for bank_id, result in scraped.items():
-        bname = result.get('bank_name', bank_id)
-        scraped_by_name[bname] = result
+    # Banks that returned successful scrape results (used later for mark_stale)
+    bank_ids_ok: list = [
+        bank_id for bank_id, result in scraped.items()
+        if result.get('success')
+    ]
 
-    # ── Step 4: AI extraction ────────────────────────────────────
+    # Build dict keyed by bank_name for email scrape-status table
+    scraped_by_name: dict = {
+        result.get('bank_name', bank_id): result
+        for bank_id, result in scraped.items()
+    }
+
+    # ── Step 4: AI extraction + save to DB ───────────────────────
     print('\nStep 4 ── AI extraction')
-    total_new = 0
+    total_extracted = 0
 
     for bank_id, result in scraped.items():
         bank_name   = result.get('bank_name', bank_id)
@@ -103,42 +110,51 @@ def main():
             continue
 
         if promos:
-            save_promotions(promos)
-            total_new += len(promos)
-            print(f'    ✅ {len(promos)} promotions saved')
+            ins, upd, skip = save_promotions(promos)
+            total_extracted += len(promos)
+            print(f'    ✅ {len(promos)} extracted — {ins} inserted, {upd} updated, {skip} skipped')
         else:
             print(f'    ⚠️  0 promotions extracted for {bank_name}')
 
-    print(f'\n  Total new/updated this run: {total_new}')
+    print(f'\n  Total extracted this run: {total_extracted}')
 
-    # ── Step 5: Mark old promos inactive ─────────────────────────
-    print('\nStep 5 ── Mark old promos inactive (>90 days unseen)')
+    # ── Step 5: Mark stale + old inactive ────────────────────────
+    print('\nStep 5 ── Mark stale / old promos inactive')
+    # Only mark stale for banks we successfully scraped today
+    mark_stale_as_inactive(bank_ids_ok)
+    # Safety net: anything not seen in 90 days regardless of bank
     mark_inactive_old(days_threshold=90)
 
-    # ── Step 6: Export to data.json for website ──────────────────
+    # ── Step 6: Export data.json for website ─────────────────────
     print('\nStep 6 ── Export data.json for website')
     export_to_json(DATA_JSON_PATH)
 
-    # ── Step 7: Load DB + insights + build email ─────────────────
-    print('\nStep 7 ── Load DB + strategic insights + build email')
-    all_promos = load_promotions(active_only=True)
-    print(f'  DB total active: {len(all_promos)}')
+    # ── Step 7: Generate daily report ────────────────────────────
+    print('\nStep 7 ── Generate daily report')
+    report         = generate_daily_report()
+    new_promos     = report['new']
+    active_promos  = report['active']
+    expired_promos = report['expired']
+    summary        = report['summary']
 
-    promos_by_id: defaultdict = defaultdict(list)
-    for p in all_promos:
-        bid = p.get('bank_id') or p.get('bank') or 'unknown'
-        promos_by_id[bid].append(p)
-    for bid, promos in promos_by_id.items():
-        print(f'  {bid.upper()}: {len(promos)} active promos')
+    print(f'  🆕 New:     {summary["new_count"]}')
+    print(f'  ✅ Active:  {len(active_promos)}')
+    print(f'  ❌ Expired: {summary["expired_count"]}')
+    for bank_id, count in summary['by_bank'].items():
+        print(f'    {bank_id.upper()}: {count} active')
 
+    # Combine new + active for email promo list + insights
+    all_promos = new_promos + active_promos
+
+    # ── Step 8: Strategic insights ────────────────────────────────
+    print('\nStep 8 ── Generate AI strategic insights')
     promos_by_name: dict = {}
     for p in all_promos:
         bname = p.get('bName') or p.get('bank_name') or p.get('bank') or 'Unknown'
         promos_by_name.setdefault(bname, []).append(p)
 
-    print('\n  🧠 Generating AI strategic insights...')
     strategic_insights = None
-    if ai_ok:
+    if ai_ok and promos_by_name:
         try:
             strategic_insights = generate_strategic_insights(promos_by_name)
         except Exception as e:
@@ -146,6 +162,8 @@ def main():
     if not strategic_insights:
         print('  ⚠️  Insights unavailable — continuing without it')
 
+    # ── Step 9: Build & send email ────────────────────────────────
+    print('\nStep 9 ── Build & send email')
     html = build_html_email(
         promotions_data    = all_promos,
         scraped_data       = scraped_by_name,
@@ -153,8 +171,6 @@ def main():
     )
     print('  ✅ HTML email built')
 
-    # ── Step 8: Send email ───────────────────────────────────────
-    print('\nStep 8 ── Send email')
     output_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         '..', 'output', 'email_preview.html'
@@ -163,15 +179,18 @@ def main():
 
     smtp_ready = all([_gmail_addr, _gmail_pass, _recipient])
     if not smtp_ready:
-        missing = []
-        if not _gmail_addr: missing.append('GMAIL_ADDRESS')
-        if not _gmail_pass: missing.append('GMAIL_APP_PASSWORD')
-        if not _recipient:  missing.append('RECIPIENT_EMAIL')
+        missing = [
+            name for name, val in [
+                ('GMAIL_ADDRESS',      _gmail_addr),
+                ('GMAIL_APP_PASSWORD', _gmail_pass),
+                ('RECIPIENT_EMAIL',    _recipient),
+            ] if not val
+        ]
         print(f'  ❌ Missing {" / ".join(missing)} — email skipped')
         print(f'  📄 HTML preview saved → {output_path}')
     else:
         try:
-            success = send_email(html_content=html)
+            success = send_email(html_content=html, recipient=_recipient)
             if success:
                 print(f'  ✅ Email sent → {_recipient}')
             else:
@@ -182,7 +201,12 @@ def main():
             print(f'  📄 HTML preview → {output_path}')
 
     print(f'\n{"═"*60}')
-    print(f'  Done  |  {total_new} new/updated  |  {len(all_promos)} active in DB')
+    print(
+        f'  Done  |  '
+        f'🆕 {summary["new_count"]} new  |  '
+        f'✅ {len(active_promos)} active  |  '
+        f'❌ {summary["expired_count"]} expired'
+    )
     print(f'{"═"*60}\n')
 
 

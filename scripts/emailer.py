@@ -9,29 +9,28 @@ from datetime import datetime
 # ── Category metadata (matches website + AI categories) ───────────────────────
 
 CATEGORY_META = {
-    "迎新":     {"bg": "#10b981", "emoji": "🎉"},
-    "消費":     {"bg": "#f59e0b", "emoji": "💳"},
-    "投資":     {"bg": "#6366f1", "emoji": "📈"},
-    "旅遊":     {"bg": "#06b6d4", "emoji": "✈️"},
-    "保險":     {"bg": "#ef4444", "emoji": "🛡️"},
-    "貸款":     {"bg": "#dc2626", "emoji": "💰"},
-    "存款":     {"bg": "#3b82f6", "emoji": "🏦"},
-    "外匯":     {"bg": "#8b5cf6", "emoji": "🌐"},
-    "推薦":     {"bg": "#ec4899", "emoji": "👥"},
-    "長期獎勵": {"bg": "#f97316", "emoji": "⭐"},
-    "新資金":   {"bg": "#0ea5e9", "emoji": "💵"},
-    "Others":   {"bg": "#6b7280", "emoji": "📋"},
+    "迎新":   {"bg": "#10b981", "emoji": "🎉"},
+    "消費":   {"bg": "#f59e0b", "emoji": "💳"},
+    "投資":   {"bg": "#6366f1", "emoji": "📈"},
+    "旅遊":   {"bg": "#06b6d4", "emoji": "✈️"},
+    "保險":   {"bg": "#ef4444", "emoji": "🛡️"},
+    "貸款":   {"bg": "#dc2626", "emoji": "💰"},
+    "存款":   {"bg": "#3b82f6", "emoji": "🏦"},
+    "外匯":   {"bg": "#8b5cf6", "emoji": "🌐"},
+    "推薦":   {"bg": "#ec4899", "emoji": "👥"},
+    "新資金": {"bg": "#0ea5e9", "emoji": "💵"},
+    "Others": {"bg": "#6b7280", "emoji": "📋"},
 }
 
 BANK_COLORS = {
-    "ZA Bank":    "#25CD9C",
-    "Mox Bank":   "#ec4899",
-    "WeLab Bank": "#7c3aed",
-    "livi bank":  "#f97316",
-    "PAObank":    "#0ea5e9",
+    "ZA Bank":      "#25CD9C",
+    "Mox Bank":     "#ec4899",
+    "WeLab Bank":   "#7c3aed",
+    "livi bank":    "#f97316",
+    "PAObank":      "#0ea5e9",
     "Airstar Bank": "#06b6d4",
-    "Fusion Bank": "#14b8a6",
-    "Ant Bank":   "#1677ff",
+    "Fusion Bank":  "#14b8a6",
+    "Ant Bank":     "#1677ff",
 }
 
 CATEGORY_EMOJIS = {k: v["emoji"] for k, v in CATEGORY_META.items()}
@@ -69,15 +68,13 @@ def _get_cat_meta(type_str: str) -> dict:
         return CATEGORY_META["外匯"]
     if any(k in t for k in ['refer', '推薦']):
         return CATEGORY_META["推薦"]
-    if any(k in t for k in ['ongoing', 'year-round', 'permanent', '長期']):
-        return CATEGORY_META["長期獎勵"]
     if any(k in t for k in ['new fund', 'fresh', '新資金']):
         return CATEGORY_META["新資金"]
     return CATEGORY_META["Others"]
 
 
 def _cat_tag(text: str) -> str:
-    meta = _get_cat_meta(text)
+    meta  = _get_cat_meta(text)
     emoji = meta.get("emoji", "📋")
     bg    = meta.get("bg",    "#6b7280")
     return (
@@ -98,17 +95,16 @@ def _types_to_list(types_raw) -> list:
 # ── Promotion card (with category tags) ──────────────────────────────────────
 
 def _promo_card(promo: dict, color: str) -> str:
-    title       = (promo.get("title") or promo.get("name") or "Untitled")[:100]
-    highlight   = promo.get("highlight") or promo.get("description") or ""
-    period      = promo.get("period") or promo.get("validity") or "Ongoing"
-    quota       = promo.get("quota") or ""
-    cost        = promo.get("cost")  or ""
-    tc_link     = promo.get("tc_link") or promo.get("url") or promo.get("link") or ""
-    types_raw   = promo.get("types") or promo.get("type") or promo.get("promo_type") or ""
+    title     = (promo.get("title") or promo.get("name") or "Untitled")[:100]
+    highlight = promo.get("highlight") or promo.get("description") or ""
+    period    = promo.get("period") or promo.get("validity") or "Ongoing"
+    quota     = promo.get("quota") or ""
+    cost      = promo.get("cost")  or ""
+    tc_link   = promo.get("tc_link") or promo.get("url") or promo.get("link") or ""
+    types_raw = promo.get("types") or promo.get("type") or promo.get("promo_type") or ""
 
-    type_list   = _types_to_list(types_raw)[:4]
-    # Category tags — prominently displayed
-    cat_tags    = "".join(_cat_tag(t) for t in type_list) if type_list else _cat_tag("Others")
+    type_list = _types_to_list(types_raw)[:4]
+    cat_tags  = "".join(_cat_tag(t) for t in type_list) if type_list else _cat_tag("Others")
 
     quota_row = (
         f'<span style="font-size:11px;color:#6b7280;margin-right:12px;">👥 {quota}</span>'
@@ -129,13 +125,9 @@ def _promo_card(promo: dict, color: str) -> str:
 <tr><td style="background:#ffffff;border-radius:10px;padding:14px 16px;
                border-left:4px solid {color};
                box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-  <!-- Category tags row — prominent -->
   <div style="margin-bottom:8px;">{cat_tags}</div>
-  <!-- Title -->
   <div style="font-weight:700;font-size:14px;color:#1f2937;margin-bottom:6px;">{title}</div>
-  <!-- Highlight -->
   <div style="font-size:13px;color:#4b5563;line-height:1.6;margin-bottom:8px;">{highlight}</div>
-  <!-- Period + meta -->
   <div style="margin-top:6px;">
     <span style="font-size:11px;color:#9ca3af;margin-right:12px;">📅 {period}</span>
     {quota_row}{cost_row}{tc_row}
@@ -215,7 +207,7 @@ def _insights_html(insights: dict) -> str:
   <tbody>{best_rows}</tbody>
 </table>"""
 
-    bank_cards = ""
+    bank_cards  = ""
     sorted_banks = sorted(
         insights.get("bank_analysis", {}).items(),
         key=lambda x: (0 if "za" in x[0].lower() else 1, x[0]),
@@ -281,9 +273,11 @@ def _insights_html(insights: dict) -> str:
   </tr>
   <tr>
     <td style="background:#ffffff;padding:14px 16px;">
-      <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Focus</div>
+      <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
+                  margin-bottom:4px;">Focus</div>
       <div style="font-size:13px;color:#374151;margin-bottom:12px;">{focus}</div>
-      <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Key Strengths</div>
+      <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
+                  margin-bottom:6px;">Key Strengths</div>
       <table cellpadding="0" cellspacing="0">{strengths_html}{expiring_html}{vs_za_html}</table>
     </td>
   </tr>
@@ -292,17 +286,17 @@ def _insights_html(insights: dict) -> str:
     return f"""
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:16px;">
   <tr><td style="padding:24px;">
-    <div style="font-size:20px;font-weight:800;color:#1f2937;margin-bottom:4px;">🧠 Strategic Insights</div>
+    <div style="font-size:20px;font-weight:800;color:#1f2937;margin-bottom:4px;">
+      🧠 Strategic Insights
+    </div>
     <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">
       AI-generated analysis • Updated daily • Base comparison: ZA Bank
     </div>
-    <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;margin-bottom:12px;">
-      🏆 Best in Category
-    </div>
+    <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;
+                margin-bottom:12px;">🏆 Best in Category</div>
     {best_table}
-    <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;margin-bottom:14px;">
-      📋 Bank-by-Bank Analysis
-    </div>
+    <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;
+                margin-bottom:14px;">📋 Bank-by-Bank Analysis</div>
     {bank_cards}
   </td></tr>
 </table>"""
@@ -311,8 +305,8 @@ def _insights_html(insights: dict) -> str:
 # ── Main HTML builder ─────────────────────────────────────────────────────────
 
 def build_html_email(
-    promotions_data: list,
-    scraped_data: dict,
+    promotions_data:    list,
+    scraped_data:       dict,
     strategic_insights: dict = None,
 ) -> str:
     now = datetime.now().strftime("%d %b %Y, %H:%M HKT")
@@ -346,7 +340,8 @@ def build_html_email(
 <tr style="border-bottom:1px solid #f3f4f6;">
   <td style="padding:9px 12px;font-size:13px;color:#374151;font-weight:600;">{bank_name}</td>
   <td style="padding:9px 12px;text-align:center;font-size:13px;color:{dot};">{label}</td>
-  <td style="padding:9px 12px;text-align:center;font-size:14px;font-weight:800;color:#6366f1;">{count}</td>
+  <td style="padding:9px 12px;text-align:center;font-size:14px;font-weight:800;
+             color:#6366f1;">{count}</td>
 </tr>"""
 
     sorted_banks = sorted(
@@ -386,28 +381,37 @@ def build_html_email(
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
       <td width="33%" style="text-align:center;padding:18px 12px;border-right:1px solid #f3f4f6;">
         <div style="font-size:30px;font-weight:800;color:#6366f1;">{total_promos}</div>
-        <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-top:4px;">Active Promos</div>
+        <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
+                    margin-top:4px;">Active Promos</div>
       </td>
       <td width="33%" style="text-align:center;padding:18px 12px;border-right:1px solid #f3f4f6;">
         <div style="font-size:30px;font-weight:800;color:#10b981;">{total_banks}</div>
-        <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-top:4px;">Banks Tracked</div>
+        <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
+                    margin-top:4px;">Banks Tracked</div>
       </td>
       <td width="33%" style="text-align:center;padding:18px 12px;">
         <div style="font-size:30px;font-weight:800;color:#f59e0b;">{expiring_count}</div>
-        <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-top:4px;">Expiring Soon</div>
+        <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
+                    margin-top:4px;">Expiring Soon</div>
       </td>
     </tr></table>
   </td></tr>
   <tr><td style="height:16px;"></td></tr>
 
   <!-- SCRAPE STATUS -->
-  <tr><td style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-    <div style="font-size:16px;font-weight:800;color:#1f2937;margin-bottom:14px;">📡 Today's Scrape Status</div>
+  <tr><td style="background:#fff;border-radius:12px;padding:20px;
+                 box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <div style="font-size:16px;font-weight:800;color:#1f2937;margin-bottom:14px;">
+      📡 Today's Scrape Status
+    </div>
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
       <thead><tr style="background:#f9fafb;">
-        <th style="padding:9px 12px;text-align:left;font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;">Bank</th>
-        <th style="padding:9px 12px;text-align:center;font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;">Status</th>
-        <th style="padding:9px 12px;text-align:center;font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;">Count</th>
+        <th style="padding:9px 12px;text-align:left;font-size:11px;color:#6b7280;
+                   font-weight:700;text-transform:uppercase;">Bank</th>
+        <th style="padding:9px 12px;text-align:center;font-size:11px;color:#6b7280;
+                   font-weight:700;text-transform:uppercase;">Status</th>
+        <th style="padding:9px 12px;text-align:center;font-size:11px;color:#6b7280;
+                   font-weight:700;text-transform:uppercase;">Count</th>
       </tr></thead>
       <tbody>{scrape_rows}</tbody>
     </table>
@@ -418,8 +422,11 @@ def build_html_email(
   {insights_row}
 
   <!-- ALL PROMOTIONS -->
-  <tr><td style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-    <div style="font-size:18px;font-weight:800;color:#1f2937;margin-bottom:20px;">🎯 All Active Promotions</div>
+  <tr><td style="background:#fff;border-radius:12px;padding:24px;
+                 box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <div style="font-size:18px;font-weight:800;color:#1f2937;margin-bottom:20px;">
+      🎯 All Active Promotions
+    </div>
     {promos_html}
   </td></tr>
   <tr><td style="height:16px;"></td></tr>
@@ -445,7 +452,7 @@ def send_email(html_content: str, subject: str = None, recipient: str = None) ->
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
 
-    smtp_user = os.getenv("GMAIL_ADDRESS") or os.getenv("SMTP_USER") or os.getenv("EMAIL_FROM")
+    smtp_user = os.getenv("GMAIL_ADDRESS")    or os.getenv("SMTP_USER") or os.getenv("EMAIL_FROM")
     smtp_pass = os.getenv("GMAIL_APP_PASSWORD") or os.getenv("SMTP_PASS") or os.getenv("EMAIL_PASS")
     email_to  = (
         recipient
@@ -457,9 +464,9 @@ def send_email(html_content: str, subject: str = None, recipient: str = None) ->
     if not all([smtp_user, smtp_pass, email_to]):
         missing = [
             name for name, val in [
-                ("GMAIL_ADDRESS",       smtp_user),
-                ("GMAIL_APP_PASSWORD",  smtp_pass),
-                ("RECIPIENT_EMAIL",     email_to),
+                ("GMAIL_ADDRESS",      smtp_user),
+                ("GMAIL_APP_PASSWORD", smtp_pass),
+                ("RECIPIENT_EMAIL",    email_to),
             ] if not val
         ]
         print(f"❌ Missing env vars: {', '.join(missing)}")

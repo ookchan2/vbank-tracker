@@ -98,11 +98,16 @@ async def _async_call(messages: list, bot_name: str) -> str:
 def _run_async(coro) -> str:
     try:
         asyncio.get_running_loop()
-        with concurrent.futures.ThreadPoolExecutor() as pool:
+        # 有 running loop → 用新 thread 跑
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             future = pool.submit(asyncio.run, coro)
-            return future.result()
+            return future.result(timeout=120)  # 加 timeout
     except RuntimeError:
+        # 沒有 running loop → 直接 run
         return asyncio.run(coro)
+    except Exception as e:
+        print(f'  ⚠️  _run_async error: {e}')
+        return ''
 
 
 def _call(messages: list) -> str:
@@ -110,6 +115,9 @@ def _call(messages: list) -> str:
         return ''
     try:
         return _run_async(_async_call(messages, _bot_name))
+        print(f'  [DEBUG] AI ({_bot_name}) returned {len(result)} chars')
+        if len(result) < 50:
+            print(f'  [DEBUG] Full response: {repr(result)}')
     except Exception as e:
         print(f'  ⚠️  Call error: {e}')
         return ''
@@ -204,7 +212,12 @@ def _parse_object(raw: str) -> dict | None:
 def _trim_text(text: str, max_chars: int = 18000) -> str:
     if len(text) <= max_chars:
         return text
-    return text[:10000] + '\n\n…[middle trimmed for length]…\n\n' + text[-8000:]
+    keep = max_chars // 2
+    return (
+        text[:keep]
+        + f'\n\n…[{len(text) - max_chars:,} chars trimmed]…\n\n'
+        + text[-keep:]
+    )
 
 
 def _stamp(promos: list, bank_id: str, bank_name: str, default_url: str) -> list:
@@ -230,24 +243,30 @@ def analyze_promotions(bank_id: str,
                        text: str = '',
                        screenshot: bytes = None,
                        default_url: str = '') -> list:
+    
     if not AI_AVAILABLE:
         return []
 
-    clean   = _trim_text(text.strip() if text else '')
+    clean = _trim_text(text.strip() if text else '')
     results: list = []
 
     if len(clean) >= 200:
         prompt = _build_prompt(bank_name=bank_name, url=default_url, text=clean)
-        raw    = _call([{'role': 'user', 'content': prompt}])
-        parsed = _parse_array(raw)
-        if parsed:
-            results = parsed
-            print(f'  📝 Text → {len(results)} promotions for {bank_name}')
+
+        for attempt in range(2):  # ← retry loop 在 prompt 定義之後
+            raw    = _call([{'role': 'user', 'content': prompt}])
+            parsed = _parse_array(raw)
+            if parsed:
+                results = parsed
+                print(f'  📝 Text → {len(results)} promotions for {bank_name}')
+                break
+            if attempt == 0:
+                print(f'  🔄 Retry AI for {bank_name}...')
+        else:
+            # for loop 完整跑完都沒 break → 兩次都失敗
+            print(f'  ❌ Both attempts failed for {bank_name}')
     else:
         print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')
-
-    if screenshot is not None and len(results) < 3:
-        print(f'  ℹ️  Vision skipped ({bank_name}) — {_bot_name} image input not implemented')
 
     results = _stamp(results, bank_id, bank_name, default_url)
     print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
@@ -265,7 +284,7 @@ def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
             continue
         lines = []
         for p in promos:
-            title     = (p.get('title') or p.get('name') or 'N/A')[:80]
+            title     = (p.get('name') or p.get('title') or 'N/A')[:80]
             highlight = (p.get('highlight') or p.get('description') or '')[:120]
             period    = (p.get('period') or 'Ongoing')[:60]
             raw_types = p.get('types') or 'General'
