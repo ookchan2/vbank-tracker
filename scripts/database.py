@@ -337,21 +337,21 @@ def load_promotions(active_only: bool = True) -> List[Dict[str, Any]]:
 
 # ── 6. Export to JSON for website ─────────────────────────────────────────────
 
+# ── 6. Export to JSON for website ─────────────────────────────────────────────
+
 def export_to_json(output_path: str):
     """Export ALL promotions to docs/data.json for the GitHub Pages website."""
     all_promos = load_promotions(active_only=False)
 
     records = []
     for p in all_promos:
-        raw_type   = p.get('promo_type') or p.get('category') or ''
+        raw_type = p.get('promo_type') or p.get('category') or ''
         types_list = (
             [t.strip() for t in raw_type.split(',') if t.strip()]
             if isinstance(raw_type, str) else list(raw_type)
-)
-# 過濾掉 長期獎勵
-types_list = [t for t in types_list if '長期' not in t]
-if not types_list:
-    types_list = ['Others']
+        )
+        if not types_list:
+            types_list = ['Others']
 
         records.append({
             'id':          p.get('id'),
