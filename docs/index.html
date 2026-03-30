@@ -14,72 +14,110 @@
               vertical-align:middle; margin-right:6px; }
   details > summary { list-style:none; cursor:pointer; }
   details > summary::-webkit-details-marker { display:none; }
-  details[open] .chevron { transform: rotate(180deg); }
   .chevron { transition: transform 0.2s; display:inline-block; }
   tr:hover td { background:#f8fafc; }
+  .bank-strategy-card {
+    border-left: 4px solid #6366f1;
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
 <!-- ── HEADER ─────────────────────────────────────────────────── -->
 <div class="bg-gradient-to-r from-gray-900 to-gray-700 text-white px-4 py-6 shadow-lg">
-  <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
       <h1 class="text-2xl font-extrabold tracking-tight">🏦 HK Virtual Bank Promotions</h1>
-      <p class="text-gray-300 text-sm mt-1" id="lastUpdated">Loading…</p>
+      <p class="text-gray-300 text-sm mt-1">香港虛擬銀行優惠追蹤 · <span id="bankCount">–</span> Banks · Real-time Filter</p>
     </div>
-    <div class="flex gap-3">
-      <div class="bg-white/10 rounded-xl px-4 py-2 text-center">
-        <div class="text-2xl font-black" id="statActive">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Active</div>
+    <div class="flex gap-3 flex-wrap">
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black" id="statTotal">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Total</div>
       </div>
-      <div class="bg-white/10 rounded-xl px-4 py-2 text-center">
+      <div class="bg-green-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black text-green-300" id="statActive">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Active ✅</div>
+      </div>
+      <div class="bg-orange-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black text-orange-300" id="statExpiring">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Expiring ⚡</div>
+      </div>
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
         <div class="text-2xl font-black" id="statExpired">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Expired</div>
-      </div>
-      <div class="bg-white/10 rounded-xl px-4 py-2 text-center">
-        <div class="text-2xl font-black" id="statBanks">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Banks</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Expired ✗</div>
       </div>
     </div>
+  </div>
+  <div class="max-w-screen-2xl mx-auto mt-2">
+    <p class="text-gray-400 text-xs" id="lastUpdated">Loading…</p>
+  </div>
+</div>
+
+<!-- ── BANK FILTER TABS ───────────────────────────────────────── -->
+<div class="max-w-screen-2xl mx-auto px-4 pt-4">
+  <div class="flex gap-2 flex-wrap" id="bankTabs">
+    <button onclick="setBankTab('')"
+      id="tab-all"
+      class="bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-indigo-600 text-white">
+      All Banks
+    </button>
   </div>
 </div>
 
 <!-- ── CONTROLS ───────────────────────────────────────────────── -->
-<div class="max-w-7xl mx-auto px-4 py-4">
+<div class="max-w-screen-2xl mx-auto px-4 py-3">
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
     <div class="flex flex-col md:flex-row gap-3 items-start md:items-center flex-wrap">
 
       <!-- Search -->
       <div class="relative flex-1 min-w-48">
         <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
-        <input id="searchInput" type="text" placeholder="Search promotions…"
+        <input id="searchInput" type="text" placeholder="Search promotions... (e.g. cash reward, 0 fee, interest)"
           class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
           oninput="applyFilters()">
       </div>
-
-      <!-- Bank filter -->
-      <select id="bankFilter" onchange="applyFilters()"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
-        <option value="">All Banks</option>
-      </select>
 
       <!-- Category filter -->
       <select id="catFilter" onchange="applyFilters()"
         class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
         <option value="">All Categories</option>
-        <option>迎新</option><option>消費</option><option>投資</option>
-        <option>旅遊</option><option>保險</option><option>貸款</option>
-        <option>存款</option><option>外匯</option><option>推薦</option>
-        <option>長期獎勵</option><option>新資金</option><option>Others</option>
+        <option>迎新 Welcome</option>
+        <option>消費 Spending</option>
+        <option>投資 Investment</option>
+        <option>旅遊 Travel</option>
+        <option>保險 Insurance</option>
+        <option>貸款 Loan</option>
+        <option>活期存款 Savings</option>
+        <option>信用卡 Card</option>
+        <option>定期存款 TDeposit</option>
+        <option>外匯 FX</option>
+        <option>推薦 Referral</option>
+        <option>新資金 New Funds</option>
+        <option>Others 其他</option>
       </select>
 
       <!-- Status filter -->
       <select id="statusFilter" onchange="applyFilters()"
         class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
-        <option value="active">Active Only</option>
-        <option value="expired">Expired Only</option>
+        <option value="active">✅ Valid Only</option>
+        <option value="expiring">⚡ Expiring Soon</option>
         <option value="all">All (Active + Expired)</option>
+        <option value="expired">✗ Expired Only</option>
+      </select>
+
+      <!-- Sort -->
+      <select id="sortFilter" onchange="applyFilters()"
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+        <option value="default">Sort: Default</option>
+        <option value="bank">Sort: Bank</option>
+        <option value="enddate">Sort: End Date</option>
+        <option value="newest">Sort: Newest</option>
       </select>
 
       <!-- Export -->
@@ -90,80 +128,96 @@
 
     </div>
 
+    <!-- Category Tags Filter -->
+    <div class="mt-3 flex flex-wrap gap-2" id="catTagFilter"></div>
+
     <!-- Result count -->
-    <div class="mt-3 text-sm text-gray-500" id="resultCount"></div>
+    <div class="mt-2 text-sm text-gray-500" id="resultCount"></div>
   </div>
 </div>
 
-<!-- ── PROMOTIONS TABLE ────────────────────────────────────────── -->
-<div class="max-w-7xl mx-auto px-4 pb-10">
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+<!-- ── MAIN LAYOUT ─────────────────────────────────────────────── -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-10 flex gap-4">
 
-    <!-- Loading state -->
-    <div id="loadingState" class="p-16 text-center text-gray-400">
-      <div class="text-4xl mb-3">⏳</div>
-      <div class="text-lg font-medium">Loading promotions…</div>
+  <!-- Left: Table -->
+  <div class="flex-1 min-w-0">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+      <!-- Loading -->
+      <div id="loadingState" class="p-16 text-center text-gray-400">
+        <div class="text-4xl mb-3">⏳</div>
+        <div class="text-lg font-medium">Loading promotions…</div>
+      </div>
+
+      <!-- Error -->
+      <div id="errorState" class="p-16 text-center text-red-400 hidden">
+        <div class="text-4xl mb-3">⚠️</div>
+        <div class="text-lg font-medium">Failed to load data</div>
+        <div class="text-sm mt-2" id="errorMsg"></div>
+      </div>
+
+      <!-- Table -->
+      <div id="tableWrapper" class="hidden overflow-x-auto">
+        <table class="w-full border-collapse text-sm" id="promoTable">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-100">
+              <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Bank</th>
+              <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Promotion</th>
+              <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Category</th>
+              <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide whitespace-nowrap">Period</th>
+              <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Status</th>
+              <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Details</th>
+            </tr>
+          </thead>
+          <tbody id="promoTbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Empty -->
+      <div id="emptyState" class="p-16 text-center text-gray-400 hidden">
+        <div class="text-4xl mb-3">🔍</div>
+        <div class="text-lg font-medium">No promotions match your filters</div>
+      </div>
     </div>
-
-    <!-- Error state -->
-    <div id="errorState" class="p-16 text-center text-red-400 hidden">
-      <div class="text-4xl mb-3">⚠️</div>
-      <div class="text-lg font-medium">Failed to load data</div>
-      <div class="text-sm mt-2" id="errorMsg"></div>
-    </div>
-
-    <!-- Table -->
-    <div id="tableWrapper" class="hidden overflow-x-auto">
-      <table class="w-full border-collapse text-sm" id="promoTable">
-        <thead>
-          <tr class="bg-gray-50 border-b border-gray-100">
-            <th class="text-left px-4 py-3 font-700 text-gray-500 uppercase text-xs tracking-wide">Bank</th>
-            <th class="text-left px-4 py-3 font-700 text-gray-500 uppercase text-xs tracking-wide">Promotion</th>
-            <th class="text-left px-4 py-3 font-700 text-gray-500 uppercase text-xs tracking-wide">Category</th>
-            <th class="text-left px-4 py-3 font-700 text-gray-500 uppercase text-xs tracking-wide whitespace-nowrap">Period</th>
-            <th class="text-left px-4 py-3 font-700 text-gray-500 uppercase text-xs tracking-wide">Status</th>
-            <th class="text-left px-4 py-3 font-700 text-gray-500 uppercase text-xs tracking-wide">Details</th>
-          </tr>
-        </thead>
-        <tbody id="promoTbody"></tbody>
-      </table>
-    </div>
-
-    <!-- Empty state -->
-    <div id="emptyState" class="p-16 text-center text-gray-400 hidden">
-      <div class="text-4xl mb-3">🔍</div>
-      <div class="text-lg font-medium">No promotions match your filters</div>
-    </div>
-
   </div>
+
+  <!-- Right: Bank Strategy Summary -->
+  <div class="w-72 shrink-0 hidden lg:block">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sticky top-4">
+      <div class="font-bold text-gray-700 text-sm mb-3">🏦 Bank Strategy Summary</div>
+      <div id="bankSummary" class="text-sm text-gray-500">Loading...</div>
+    </div>
+  </div>
+
 </div>
 
 <script>
-// ── Category config ──────────────────────────────────────────────
+// ── Category config (長期獎勵 REMOVED) ───────────────────────────
 const CAT_META = {
-  "迎新":     {bg:"#10b981", emoji:"🎉"},
-  "消費":     {bg:"#f59e0b", emoji:"💳"},
-  "投資":     {bg:"#6366f1", emoji:"📈"},
-  "旅遊":     {bg:"#06b6d4", emoji:"✈️"},
-  "保險":     {bg:"#ef4444", emoji:"🛡️"},
-  "貸款":     {bg:"#dc2626", emoji:"💰"},
-  "存款":     {bg:"#3b82f6", emoji:"🏦"},
-  "外匯":     {bg:"#8b5cf6", emoji:"🌐"},
-  "推薦":     {bg:"#ec4899", emoji:"👥"},
-  "長期獎勵": {bg:"#f97316", emoji:"⭐"},
-  "新資金":   {bg:"#0ea5e9", emoji:"💵"},
-  "Others":   {bg:"#6b7280", emoji:"📋"},
+  "迎新 Welcome":        {bg:"#10b981", emoji:"🎉"},
+  "消費 Spending":       {bg:"#f59e0b", emoji:"💳"},
+  "投資 Investment":     {bg:"#6366f1", emoji:"📈"},
+  "旅遊 Travel":         {bg:"#06b6d4", emoji:"✈️"},
+  "保險 Insurance":      {bg:"#ef4444", emoji:"🛡️"},
+  "貸款 Loan":           {bg:"#dc2626", emoji:"💰"},
+  "活期存款 Savings":    {bg:"#3b82f6", emoji:"🏦"},
+  "信用卡 Card":         {bg:"#7c3aed", emoji:"💳"},
+  "定期存款 TDeposit":   {bg:"#0369a1", emoji:"🏛️"},
+  "外匯 FX":             {bg:"#8b5cf6", emoji:"🌐"},
+  "推薦 Referral":       {bg:"#ec4899", emoji:"👥"},
+  "新資金 New Funds":    {bg:"#0ea5e9", emoji:"💵"},
+  "Others 其他":         {bg:"#6b7280", emoji:"📋"},
 };
 
 const BANK_COLORS = {
-  "ZA Bank":     "#25CD9C",
-  "Mox Bank":    "#ec4899",
-  "WeLab Bank":  "#7c3aed",
-  "livi bank":   "#f97316",
-  "PAObank":     "#0ea5e9",
-  "Airstar Bank":"#06b6d4",
-  "Fusion Bank": "#14b8a6",
-  "Ant Bank":    "#1677ff",
+  "ZA Bank":      "#25CD9C",
+  "Mox Bank":     "#ec4899",
+  "WeLab Bank":   "#7c3aed",
+  "livi bank":    "#f97316",
+  "PAObank":      "#0ea5e9",
+  "Airstar Bank": "#06b6d4",
+  "Fusion Bank":  "#14b8a6",
+  "Ant Bank":     "#1677ff",
 };
 
 function bankColor(name) {
@@ -174,45 +228,85 @@ function bankColor(name) {
 }
 
 function catMeta(cat) {
-  return CAT_META[cat] || {bg:"#6b7280", emoji:"📋"};
+  // Try exact match first, then partial match
+  if (CAT_META[cat]) return CAT_META[cat];
+  for (const [k, v] of Object.entries(CAT_META)) {
+    if (cat && k.toLowerCase().includes(cat.toLowerCase())) return v;
+    if (cat && cat.toLowerCase().includes(k.split(' ')[0].toLowerCase())) return v;
+  }
+  return {bg:"#6b7280", emoji:"📋"};
 }
 
 function catTag(cat) {
+  // Skip 長期獎勵 entirely
+  if (cat && cat.includes('長期')) return '';
   const m = catMeta(cat);
   return `<span class="cat-tag" style="background:${m.bg}">${m.emoji} ${cat}</span>`;
 }
 
-// ── State ────────────────────────────────────────────────────────
-let allPromos = [];
-let filtered  = [];
+// ── Status Logic (FIXED: Ongoing never expires) ──────────────────
+function getStatus(p) {
+  if (!p.active) return 'expired';
+  // Ongoing or no end_date → always active
+  if (!p.end_date || p.period === 'Ongoing' ||
+      (p.period && p.period.toLowerCase().includes('ongoing'))) return 'active';
+  const diff = (new Date(p.end_date) - new Date()) / 86400000;
+  if (diff < 0)   return 'expired';
+  if (diff <= 30) return 'expiring';  // within 30 days
+  return 'active';
+}
 
-// ── Load data ────────────────────────────────────────────────────
+function statusBadge(p) {
+  const s = getStatus(p);
+  if (s === 'active')
+    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">✅ Valid</span>`;
+  if (s === 'expiring') {
+    const diff = Math.ceil((new Date(p.end_date) - new Date()) / 86400000);
+    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-600">⚡ ${diff}d left</span>`;
+  }
+  return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
+}
+
+// ── State ────────────────────────────────────────────────────────
+let allPromos   = [];
+let filtered    = [];
+let activeBankTab = '';
+
+// ── Load ─────────────────────────────────────────────────────────
 async function loadData() {
   try {
     const res  = await fetch('./data.json?_=' + Date.now());
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    allPromos  = data.promotions || [];
 
-    allPromos = data.promotions || [];
+    // Fix: remap old category names to new format if needed
+    allPromos = allPromos.map(p => ({
+      ...p,
+      types: (p.types || [])
+        .filter(t => !t.includes('長期'))   // Remove 長期獎勵
+        .map(t => remapCat(t))
+    }));
 
-    // Stats
-    const activeN  = allPromos.filter(p => p.active).length;
-    const expiredN = allPromos.filter(p => !p.active).length;
-    const banks    = new Set(allPromos.map(p => p.bank_name)).size;
+    // Stats using getStatus
+    const activeN   = allPromos.filter(p => getStatus(p) === 'active').length;
+    const expiringN = allPromos.filter(p => getStatus(p) === 'expiring').length;
+    const expiredN  = allPromos.filter(p => getStatus(p) === 'expired').length;
+    const banks     = [...new Set(allPromos.map(p => p.bank_name))];
 
-    document.getElementById('statActive').textContent  = activeN;
-    document.getElementById('statExpired').textContent = expiredN;
-    document.getElementById('statBanks').textContent   = banks;
-    document.getElementById('lastUpdated').textContent =
-      `Last updated: ${data.updated || 'Unknown'} HKT`;
+    document.getElementById('statTotal').textContent    = allPromos.length;
+    document.getElementById('statActive').textContent   = activeN;
+    document.getElementById('statExpiring').textContent = expiringN;
+    document.getElementById('statExpired').textContent  = expiredN;
+    document.getElementById('bankCount').textContent    = banks.length;
+    document.getElementById('lastUpdated').textContent  =
+      `Last updated: ${data.updated || data.last_updated || 'Unknown'} HKT`;
 
-    // Populate bank filter
-    const bankSel = document.getElementById('bankFilter');
-    [...new Set(allPromos.map(p => p.bank_name))].sort().forEach(b => {
-      const opt = document.createElement('option');
-      opt.value = b; opt.textContent = b;
-      bankSel.appendChild(opt);
-    });
+    // Bank tabs
+    buildBankTabs(banks);
+
+    // Bank summary sidebar
+    buildBankSummary(banks);
 
     document.getElementById('loadingState').classList.add('hidden');
     document.getElementById('tableWrapper').classList.remove('hidden');
@@ -225,86 +319,165 @@ async function loadData() {
   }
 }
 
-// ── Filter ───────────────────────────────────────────────────────
+// Remap old cat names to new bilingual format
+function remapCat(t) {
+  const MAP = {
+    '迎新':'迎新 Welcome','消費':'消費 Spending','投資':'投資 Investment',
+    '旅遊':'旅遊 Travel','保險':'保險 Insurance','貸款':'貸款 Loan',
+    '存款':'活期存款 Savings','活期存款':'活期存款 Savings',
+    '信用卡':'信用卡 Card','定期存款':'定期存款 TDeposit',
+    '外匯':'外匯 FX','推薦':'推薦 Referral','新資金':'新資金 New Funds',
+    'Others':'Others 其他',
+  };
+  return MAP[t] || t;
+}
+
+// ── Bank Tabs ─────────────────────────────────────────────────────
+function buildBankTabs(banks) {
+  const container = document.getElementById('bankTabs');
+  banks.sort().forEach(b => {
+    const c = bankColor(b);
+    const btn = document.createElement('button');
+    btn.id = `tab-${b}`;
+    btn.className = 'bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
+    btn.style.borderColor = c;
+    btn.innerHTML = `<span style="color:${c}">●</span> ${b}`;
+    btn.onclick = () => setBankTab(b);
+    container.appendChild(btn);
+  });
+}
+
+function setBankTab(bank) {
+  activeBankTab = bank;
+  document.querySelectorAll('.bank-tab-btn').forEach(btn => {
+    btn.classList.remove('bg-indigo-600','text-white','text-gray-600','bg-white');
+    btn.classList.add('text-gray-600','bg-white');
+  });
+  const activeBtn = document.getElementById(bank ? `tab-${bank}` : 'tab-all');
+  if (activeBtn) {
+    activeBtn.classList.remove('text-gray-600','bg-white');
+    activeBtn.classList.add('bg-indigo-600','text-white');
+  }
+  applyFilters();
+}
+
+// ── Bank Summary Sidebar ──────────────────────────────────────────
+function buildBankSummary(banks) {
+  const el = document.getElementById('bankSummary');
+
+  const STRATEGY = {
+    'ZA Bank':      'Strong in investment & spending rewards. Leading cashback and stock rewards.',
+    'Mox Bank':     'Cashback-focused. Best for everyday spending and travel perks.',
+    'WeLab Bank':   'High savings rates & new fund bonuses. Good for deposits.',
+    'livi bank':    'Competitive welcome offers & referral programs.',
+    'PAObank':      'Simple welcome offers, good for new users.',
+    'Airstar Bank': 'Investment & FX focused. Securities transfer support.',
+    'Fusion Bank':  'Emerging offers — data still being tracked.',
+    'Ant Bank':     'New entrant. Watch for welcome promotions.',
+  };
+
+  el.innerHTML = banks.sort().map(b => {
+    const promos  = allPromos.filter(p => p.bank_name === b);
+    const active  = promos.filter(p => getStatus(p) === 'active').length;
+    const expiring= promos.filter(p => getStatus(p) === 'expiring').length;
+    const color   = bankColor(b);
+    const types   = [...new Set(promos.flatMap(p => p.types || []))].slice(0, 3);
+    const strategy= STRATEGY[b] || `${active} active promotions tracked.`;
+
+    return `
+    <div class="bank-strategy-card" style="border-left-color:${color}">
+      <div class="flex items-center justify-between mb-1">
+        <span class="font-bold text-gray-700 text-sm">${b}</span>
+        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">${active} active</span>
+      </div>
+      ${expiring > 0 ? `<div class="text-xs text-orange-500 mb-1">⚡ ${expiring} expiring soon</div>` : ''}
+      <div class="text-xs text-gray-500 mb-2 leading-relaxed">${strategy}</div>
+      <div class="flex flex-wrap gap-1">
+        ${types.map(t => {
+          const m = catMeta(t);
+          return `<span class="text-xs px-2 py-0.5 rounded-full text-white font-semibold" style="background:${m.bg}">${t.split(' ')[0]}</span>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Filter ────────────────────────────────────────────────────────
 function applyFilters() {
-  const search  = document.getElementById('searchInput').value.toLowerCase();
-  const bank    = document.getElementById('bankFilter').value;
-  const cat     = document.getElementById('catFilter').value;
-  const status  = document.getElementById('statusFilter').value;
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const cat    = document.getElementById('catFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  const sort   = document.getElementById('sortFilter').value;
 
   filtered = allPromos.filter(p => {
-    // Status
-    if (status === 'active'  && !p.active) return false;
-    if (status === 'expired' &&  p.active) return false;
-    // Bank
-    if (bank && p.bank_name !== bank) return false;
-    // Category
+    const s = getStatus(p);
+    if (status === 'active'   && s !== 'active')   return false;
+    if (status === 'expiring' && s !== 'expiring')  return false;
+    if (status === 'expired'  && s !== 'expired')   return false;
+    if (activeBankTab && p.bank_name !== activeBankTab) return false;
     if (cat && !(p.types || []).includes(cat)) return false;
-    // Search
     if (search) {
-      const haystack = [
-        p.bank_name, p.title, p.highlight, p.description, p.period,
-        ...(p.types || [])
-      ].join(' ').toLowerCase();
-      if (!haystack.includes(search)) return false;
+      const hay = [p.bank_name,p.title,p.highlight,p.description,p.period,...(p.types||[])].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
     }
     return true;
   });
+
+  // Sort
+  if (sort === 'bank')    filtered.sort((a,b) => a.bank_name.localeCompare(b.bank_name));
+  if (sort === 'enddate') filtered.sort((a,b) => (a.end_date||'9999') < (b.end_date||'9999') ? -1 : 1);
+  if (sort === 'newest')  filtered.sort((a,b) => (b.created_at||'') > (a.created_at||'') ? 1 : -1);
 
   renderTable(filtered);
   document.getElementById('resultCount').textContent =
     `Showing ${filtered.length} of ${allPromos.length} promotions`;
 }
 
-// ── Render ───────────────────────────────────────────────────────
+// ── Render ────────────────────────────────────────────────────────
 function renderTable(promos) {
   const tbody = document.getElementById('promoTbody');
   const empty = document.getElementById('emptyState');
   const wrap  = document.getElementById('tableWrapper');
 
-  if (promos.length === 0) {
+  if (!promos.length) {
     tbody.innerHTML = '';
     wrap.classList.add('hidden');
     empty.classList.remove('hidden');
     return;
   }
-
   empty.classList.add('hidden');
   wrap.classList.remove('hidden');
 
   tbody.innerHTML = promos.map((p, i) => {
-    const color   = bankColor(p.bank_name);
-    const cats    = (p.types || ['Others']).map(catTag).join('');
-    const statusBadge = p.active
-      ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">● Active</span>`
-      : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500">● Expired</span>`;
+    const color  = bankColor(p.bank_name);
+    const cats   = (p.types || ['Others 其他']).map(catTag).join('');
+    const badge  = statusBadge(p);
     const tcLink = p.tc_link || p.url || '#';
-
-    // Expanded detail row
     const detailId = `detail-${i}`;
+
     const detailHtml = `
       <tr id="${detailId}" class="hidden bg-indigo-50/40">
         <td colspan="6" class="px-6 py-4">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <div class="font-bold text-gray-500 uppercase text-xs mb-1">📅 Period</div>
+              <div class="font-bold text-gray-400 uppercase text-xs mb-1">📅 Period</div>
               <div class="text-gray-700">${p.period || '—'}</div>
             </div>
             <div>
-              <div class="font-bold text-gray-500 uppercase text-xs mb-1">👥 Quota / Eligibility</div>
+              <div class="font-bold text-gray-400 uppercase text-xs mb-1">👥 Quota / Eligibility</div>
               <div class="text-gray-700">${p.quota || '—'}</div>
             </div>
             <div>
-              <div class="font-bold text-gray-500 uppercase text-xs mb-1">💲 Cost / Min Spend</div>
+              <div class="font-bold text-gray-400 uppercase text-xs mb-1">💲 Cost / Min Spend</div>
               <div class="text-gray-700">${p.cost || '—'}</div>
             </div>
             <div class="md:col-span-3">
-              <div class="font-bold text-gray-500 uppercase text-xs mb-1">📝 Summary</div>
+              <div class="font-bold text-gray-400 uppercase text-xs mb-1">📝 Summary</div>
               <div class="text-gray-700 leading-relaxed">${p.description || p.highlight || '—'}</div>
             </div>
             <div class="md:col-span-3">
               <a href="${tcLink}" target="_blank" rel="noopener"
-                 class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-semibold underline">
+                class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-semibold underline">
                 📄 View T&amp;C / Official Source ↗
               </a>
             </div>
@@ -313,18 +486,18 @@ function renderTable(promos) {
       </tr>`;
 
     const mainRow = `
-      <tr class="border-b border-gray-50 cursor-pointer" onclick="toggleDetail(${i})">
+      <tr class="border-b border-gray-50 cursor-pointer hover:bg-gray-50" onclick="toggleDetail(${i})">
         <td class="px-4 py-3 whitespace-nowrap">
           <span class="bank-dot" style="background:${color}"></span>
           <span class="font-semibold text-gray-700">${p.bank_name}</span>
         </td>
         <td class="px-4 py-3 max-w-xs">
           <div class="font-semibold text-gray-800 leading-snug">${p.title}</div>
-          <div class="text-gray-500 text-xs mt-0.5 line-clamp-1">${p.highlight || ''}</div>
+          <div class="text-gray-400 text-xs mt-0.5">${p.highlight || ''}</div>
         </td>
         <td class="px-4 py-3">${cats}</td>
         <td class="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">${p.period || '—'}</td>
-        <td class="px-4 py-3">${statusBadge}</td>
+        <td class="px-4 py-3">${badge}</td>
         <td class="px-4 py-3 text-gray-400 text-xs">
           <span class="chevron" id="chevron-${i}">▼</span>
         </td>
@@ -343,17 +516,16 @@ function toggleDetail(i) {
   chev.style.transform = open ? '' : 'rotate(180deg)';
 }
 
-// ── Excel Export ─────────────────────────────────────────────────
+// ── Excel Export ──────────────────────────────────────────────────
 function exportExcel() {
   if (!filtered.length) { alert('No promotions to export.'); return; }
-
   const rows = filtered.map(p => ({
     'Bank':        p.bank_name,
     'Title':       p.title,
     'Categories':  (p.types || []).join(', '),
+    'Status':      getStatus(p),
     'Period':      p.period || '',
     'End Date':    p.end_date || '',
-    'Status':      p.active ? 'Active' : 'Expired',
     'Quota':       p.quota || '',
     'Cost':        p.cost || '',
     'Highlight':   p.highlight || '',
@@ -361,23 +533,17 @@ function exportExcel() {
     'T&C Link':    p.tc_link || p.url || '',
     'Last Seen':   p.last_seen || '',
   }));
-
   const ws = XLSX.utils.json_to_sheet(rows);
-
-  // Column widths
   ws['!cols'] = [
-    {wch:15},{wch:50},{wch:25},{wch:25},{wch:12},{wch:10},
+    {wch:15},{wch:50},{wch:30},{wch:10},{wch:25},{wch:12},
     {wch:30},{wch:20},{wch:40},{wch:60},{wch:40},{wch:20}
   ];
-
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Promotions');
-
-  const date = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `HK_VBank_Promotions_${date}.xlsx`);
+  XLSX.writeFile(wb, `HK_VBank_Promotions_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-// ── Boot ─────────────────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────────────
 loadData();
 </script>
 </body>
