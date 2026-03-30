@@ -69,6 +69,7 @@ def init_db():
             ('category',      "ALTER TABLE promotions ADD COLUMN category      TEXT DEFAULT ''"),
             ('interest_rate', "ALTER TABLE promotions ADD COLUMN interest_rate TEXT DEFAULT ''"),
             ('min_deposit',   "ALTER TABLE promotions ADD COLUMN min_deposit   TEXT DEFAULT ''"),
+            ('promo_type',    "ALTER TABLE promotions ADD COLUMN promo_type    TEXT DEFAULT ''"),
         ]
         for col, sql in migrations:
             if col not in existing_cols:
@@ -251,15 +252,14 @@ def get_new_promotions(today_str: str = None) -> List[Dict[str, Any]]:
 
 
 def get_active_promotions(today_str: str = None) -> List[Dict[str, Any]]:
-    """持續有效、不是今天才新增的 promo。"""
-    today_str = today_str or datetime.now().strftime('%Y-%m-%d')
+    """所有有效的 promo（active=1）。"""
     conn = _get_conn()
     try:
         return _to_dicts(conn.execute('''
             SELECT * FROM promotions
-            WHERE active = 1 AND DATE(created_at) != ?
+            WHERE active = 1
             ORDER BY bank_id ASC, last_seen DESC
-        ''', (today_str,)).fetchall())
+        ''').fetchall())
     except Exception as e:
         print(f'  ❌ get_active_promotions error: {e}')
         return []
@@ -286,51 +286,34 @@ def get_expired_promotions(today_str: str = None) -> List[Dict[str, Any]]:
 
 
 def generate_daily_report(today_str: str = None) -> Dict[str, Any]:
-    """
-    彙整每日報告，供 main.py 直接使用。
-
-    Returns:
-        {
-            'new':     [...],
-            'active':  [...],
-            'expired': [...],
-            'summary': {
-                'total_active': int,
-                'new_count':    int,
-                'expired_count':int,
-                'by_bank':      {bank_id: count},
-            }
-        }
-    """
     today_str = today_str or datetime.now().strftime('%Y-%m-%d')
 
     new_promos     = get_new_promotions(today_str)
-    active_promos  = get_active_promotions(today_str)
     expired_promos = get_expired_promotions(today_str)
+    
+    # ✅ 所有 active（包含今天新增的），不重複計算
+    all_active = get_active_promotions()  # 不傳 today_str
+    
+    # 把 new 和 ongoing active 分開顯示
+    new_ids     = {p['id'] for p in new_promos}
+    ongoing     = [p for p in all_active if p['id'] not in new_ids]
 
     by_bank: Dict[str, int] = {}
-    for p in new_promos + active_promos:
+    for p in all_active:
         bid = p.get('bank_id', 'unknown')
         by_bank[bid] = by_bank.get(bid, 0) + 1
 
     report = {
         'new':     new_promos,
-        'active':  active_promos,
+        'active':  ongoing,       # 持續有效（非今天新增）
         'expired': expired_promos,
         'summary': {
-            'total_active':  len(new_promos) + len(active_promos),
+            'total_active':  len(all_active),
             'new_count':     len(new_promos),
             'expired_count': len(expired_promos),
             'by_bank':       by_bank,
         },
     }
-
-    print(
-        f'  📊 Daily report — '
-        f'🆕 {len(new_promos)} new  |  '
-        f'✅ {len(active_promos)} active  |  '
-        f'❌ {len(expired_promos)} expired'
-    )
     return report
 
 
@@ -360,13 +343,15 @@ def export_to_json(output_path: str):
 
     records = []
     for p in all_promos:
-        raw_type   = p.get('promo_type') or ''
+        raw_type   = p.get('promo_type') or p.get('category') or ''
         types_list = (
             [t.strip() for t in raw_type.split(',') if t.strip()]
             if isinstance(raw_type, str) else list(raw_type)
-        )
-        if not types_list:
-            types_list = ['Others']
+)
+# 過濾掉 長期獎勵
+types_list = [t for t in types_list if '長期' not in t]
+if not types_list:
+    types_list = ['Others']
 
         records.append({
             'id':          p.get('id'),
