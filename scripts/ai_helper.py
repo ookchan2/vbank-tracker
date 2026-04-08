@@ -57,9 +57,15 @@ Source URL: URL_PLACEHOLDER
 ║       ✅ BAU: "Free Instant FPS Transfers" (always available)       ║
 ║       ✅ BAU: "Multi-Currency Savings Account" (product feature)    ║
 ║       ✅ BAU: "New Crypto Customer Fee Waiver" (ZA Bank, permanent) ║
+║       ✅ BAU: "$0 Fund Subscription Fee Mode" (WeLab, no end date)  ║
 ║       ❌ NOT BAU: "New Customer Bonus" (new customers only)         ║
 ║       ❌ NOT BAU: "Limited-Time Fee Waiver" (has end date)          ║
 ║       ❌ NOT BAU: Any promotion with a promo code                   ║
+║                                                                      ║
+║  6. CATEGORY TAGGING RULES:                                         ║
+║     • Any referral / invite-a-friend / 推薦 program → tag 推薦     ║
+║     • Any fund / 基金 / unit trust subscription fee promo → 投資   ║
+║     • Any stock / crypto / securities trading fee promo → 投資     ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 ALLOWED CATEGORY TAGS (Chinese, pick 1-3 per promotion):
@@ -355,6 +361,8 @@ Crypto synonyms:
 Fund subscription synonyms:
   "Zero Subscription Fee on All Funds" = "Zero-Fee Fund Subscription & Switching"
   = "Featured Funds with Zero Subscription Fees" = "Zero Fee Investment Funds"
+  = "$0 Fund Trading Fee Mode" = "$0基金買賣收費" = "Zero Fund Subscription Fee"
+  = "0% Fund Subscription Fee"
 
 Mox × csl:
   "Best-in-Town Plan Offer" = "Best-in-Town Device Plans with Instalments" = anything + "Best-in-Town"
@@ -372,6 +380,10 @@ SWIFT / Payment Connect:
 WeLab Global Wallet FX:
   "WeLab Global Wallet Exchange Rate Promotion" = "WeLab Global Wallet - Best Exchange Rates"
   = "Global Remittance Service" = "WeLab Global Wallet Best FX Rates"
+
+Referral programs:
+  "Referral Bonus" = "Invite a Friend" = "多友多賞" = "推薦計劃" = "Friend Referral Program"
+  = "Refer a Friend" = any title with "推薦碼" or "referral code" + HKD amount
 
 Promo codes: if two titles share the same promo code (ignoring trailing year digits),
   e.g. MOXBILL25 and MOXBILL26 → SAME campaign. MOXHKT25 in both titles → SAME.
@@ -477,7 +489,15 @@ MATCHING RULES — mark as MATCH in all these cases:
 9. Payroll switch:
    Any payroll + switch/deposit/benefit → MATCH
 
-10. When uncertain → declare MATCH (prevents duplicate rows)
+10. Fund zero-fee:
+    "$0 Fund Trading Fee" ↔ "Zero Fund Subscription Fee" ↔ "0% Fund Subscription Fee"
+    ↔ "$0基金買賣" ↔ "Zero-Fee Fund Subscription & Switching" → MATCH (same campaign)
+
+11. Referral programs:
+    "多友多賞" ↔ "Mox Referral Programme" ↔ "Refer a Friend HKD300" → MATCH
+    Any two titles referencing the same bank's referral/invite-a-friend program → MATCH
+
+12. When uncertain → declare MATCH (prevents duplicate rows)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 NEWLY SCRAPED (this run):
@@ -512,14 +532,40 @@ No explanation. No markdown. No code fences."""
         return {}
 
 
+# ── Strategic insights helpers ────────────────────────────────────────────────
+
+def _build_bank_summary_lines(promos: list) -> list[str]:
+    """
+    Convert a list of promotions into summary lines for the insights prompt.
+    Each line is tagged with BAU status and types so the AI can cross-reference
+    Chinese type tags (推薦, 投資 …) against English best_for categories.
+    """
+    lines = []
+    for p in promos:
+        title     = (p.get('name') or p.get('title') or 'N/A')[:80]
+        highlight = (p.get('highlight') or p.get('description') or '')[:120]
+        period    = (p.get('period') or 'Ongoing')[:60]
+        raw_types = p.get('types') or ['General']
+        ptype     = (', '.join(raw_types) if isinstance(raw_types, list)
+                     else str(raw_types))[:40]
+        bau_tag   = ' [BAU - Permanent Feature]' if p.get('is_bau') else ''
+        lines.append(f'  [{ptype}]{bau_tag} {title}: {highlight} | {period}')
+    return lines
+
+
 def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
     """
     Generate strategic insights from ALL promotions including BAU.
 
     promotions_by_bank: dict of bank_name → list of ALL promos (BAU + non-BAU).
+
     BAU promos are tagged [BAU - Permanent Feature] in the AI prompt so the AI
     treats them as always-available competitive advantages and includes them in
-    best_for rankings. The email digest separately filters out BAU promos.
+    best_for rankings.  The email digest separately filters out BAU promos.
+
+    Chinese type tags (推薦, 投資 …) are passed through to the prompt verbatim
+    and the prompt explains the mapping to English best_for categories so the AI
+    never outputs "None" when a qualifying promotion exists.
     """
     if not AI_AVAILABLE:
         print('⚠️  AI not available — skipping strategic insights')
@@ -532,20 +578,7 @@ def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
 
         non_bau_count = sum(1 for p in promos if not p.get('is_bau'))
         bau_count     = len(promos) - non_bau_count
-
-        lines = []
-        for p in promos:
-            title     = (p.get('name') or p.get('title') or 'N/A')[:80]
-            highlight = (p.get('highlight') or p.get('description') or '')[:120]
-            period    = (p.get('period') or 'Ongoing')[:60]
-            raw_types = p.get('types') or 'General'
-            ptype     = (', '.join(raw_types) if isinstance(raw_types, list)
-                         else str(raw_types))[:40]
-            # ← KEY FIX: tag BAU promos clearly so AI does not ignore them
-            bau_tag   = ' [BAU - Permanent Feature]' if p.get('is_bau') else ''
-            lines.append(
-                f'  [{ptype}]{bau_tag} {title}: {highlight} | {period}'
-            )
+        lines         = _build_bank_summary_lines(promos)
 
         bank_summaries.append(
             f'## {bank_name} ({non_bau_count} time-limited promos'
@@ -564,30 +597,60 @@ Analyze these active promotions and return strategic insights as JSON.
 {promotions_text}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-IMPORTANT — BAU (Business As Usual) items are tagged [BAU - Permanent Feature].
-These are ALWAYS-AVAILABLE product features with no expiry date.
+SECTION 1 — BAU ITEMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Items tagged [BAU - Permanent Feature] are ALWAYS-AVAILABLE with no expiry.
 You MUST include BAU items when evaluating "best_for" category winners.
 A permanent zero-fee or zero-commission feature is often the strongest
-competitive advantage a bank has — do NOT ignore it just because it has no
-end date. Treat [BAU - Permanent Feature] items as equally eligible as
-time-limited promotions for all "best_for" slots.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+competitive advantage — do NOT skip it just because it has no end date.
+Treat [BAU - Permanent Feature] items as equally eligible as time-limited
+promotions for all "best_for" slots.
 
-STRICT CATEGORY DEFINITIONS — you MUST follow these when choosing "best_for" winners:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2 — CHINESE TYPE TAG → ENGLISH CATEGORY MAPPING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The promotion lines above use Chinese category tags inside [ ].
+Use this mapping to decide which best_for category each promotion belongs to:
+
+  [推薦]           → "Referral Bonus"
+                     (referral / invite-a-friend / 推薦碼 programs)
+  [投資] + fund    → "Fund Investment"
+                     (any mention of 基金, fund subscription, $0認購費,
+                      zero fund fee, unit trust, 認購費, 轉換費)
+  [投資] + stock   → "Investment (Stock/Crypto Trading)"
+  [投資] + crypto  → "Investment (Stock/Crypto Trading)"
+  [消費]           → "Spending/CashBack"
+  [迎新]           → "Welcome Bonus"
+  [旅遊]           → "Travel"
+  [貸款]           → "Loan APR"
+  [外匯]           → "FX/Multi-Currency"
+  [新資金]         → "Welcome Bonus" or "Spending/CashBack" (pick most relevant)
+
+A single promotion may carry multiple tags — evaluate ALL of them.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3 — STRICT CATEGORY DEFINITIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 • Investment (Stock/Crypto Trading)
     → Pick ONLY promotions about STOCK TRADING or CRYPTO TRADING.
-    → Examples: brokerage commission waiver, crypto trading fee waiver, stock cashback,
-      securities transfer bonus, IPO subscription reward.
+    → Examples: brokerage commission waiver, crypto trading fee waiver,
+      stock cashback, securities transfer bonus, IPO subscription reward,
+      lifetime $0 commission on stocks.
     → BAU zero-fee crypto/stock trading features qualify — include them.
-    → DO NOT pick: time deposit, savings, insurance, or fund promotions for this slot.
+    → DO NOT pick: time deposit, savings, insurance, or fund promotions here.
 
 • Fund Investment
-    → Pick ONLY promotions about MUTUAL FUND or UNIT TRUST subscriptions/switching.
-    → Examples: zero subscription fee on funds, fund switching cashback,
-      fund platform reward, zero-fee fund subscription.
-    → BAU zero-fee fund subscription features qualify — include them.
-    → DO NOT pick: stock brokerage, crypto, or commission-free trading promotions here.
+    → Pick ONLY promotions about MUTUAL FUND or UNIT TRUST
+      subscriptions / switching / platform fees.
+    → QUALIFYING KEYWORDS (any of these = qualifies):
+        "0% subscription fee", "$0 fund", "zero fund subscription",
+        "fund fee waiver", "$0認購費", "零認購費", "基金認購費",
+        "$0轉換費", "零轉換費", "fund switching", "unit trust fee",
+        "$0 fund trading fee", "zero-fee fund", "fund platform fee waiver",
+        "WeLab $0 fund", "ZA Bank fund subscription"
+    → BAU zero-fee fund features qualify — include them.
+    → DO NOT pick: stock brokerage, crypto, or savings promotions here.
 
 • Spending/CashBack
     → Credit/debit card cashback or merchant spending reward promotions.
@@ -597,7 +660,7 @@ STRICT CATEGORY DEFINITIONS — you MUST follow these when choosing "best_for" w
     → Must be a concrete HKD amount or tangible reward.
 
 • Travel
-    → Travel insurance, flight/hotel discounts, Asia Miles, trip.com promotions.
+    → Travel insurance, flight/hotel discounts, Asia Miles, trip.com promos.
 
 • Loan APR
     → Personal loan or instant loan with the lowest specific APR rate quoted.
@@ -608,19 +671,63 @@ STRICT CATEGORY DEFINITIONS — you MUST follow these when choosing "best_for" w
 
 • Referral Bonus
     → Referral / invite-a-friend programs with a stated reward amount.
+    → QUALIFYING KEYWORDS (any of these = qualifies):
+        "referral", "推薦", "invite a friend", "推薦碼", "referral code",
+        "多友多賞", "refer a friend", "HKD XXX per referral",
+        "referral reward", "推薦獎賞", "invite bonus"
+    → ANY promotion tagged [推薦] in its types automatically qualifies here.
+    → The winner must have a concrete HKD reward amount stated.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4 — MANDATORY WINNER SELECTION RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  CRITICAL: You MUST select a winner for EVERY category as long as ANY
+promotion in the data could plausibly qualify, including BAU items.
+
+Output "None" ONLY when there is absolutely zero evidence of any promotion
+across ALL banks that relates to that category.
+
+CHECKLIST — before writing "None" for any category, verify:
+
+  Fund Investment  →  Search for ANY line containing:
+    fund / 基金 / $0認購費 / zero subscription / 0% fund / fund fee
+    If found → pick the best one. Do NOT write "None".
+
+  Referral Bonus   →  Search for ANY line tagged [推薦] OR containing:
+    referral / 推薦 / invite / 多友多賞 / HKD NNN per referral
+    If found → pick the bank with the highest stated HKD reward. Do NOT write "None".
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5 — KNOWN QUALIFIERS (real examples you must recognise)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+These are real promotions that MUST be correctly classified:
+
+  ✅ Fund Investment winners:
+       ZA Bank   "0% Fund Subscription Fee for All Funds until 31 Jul 2026"
+                 → qualifies because it has "0% subscription fee" + "funds"
+       WeLab Bank "$0 Fund Trading Fee Mode / $0認購費 $0轉換費" [BAU]
+                 → qualifies even though BAU; permanent zero-fee fund model
+       Pick the one with the strongest benefit (time-limited with end date
+       often signals a special campaign; BAU means always-on advantage).
+
+  ✅ Referral Bonus winners:
+       Mox       "多友多賞 Referral Programme — HKD300 per successful referral"
+                 → qualifies; tagged [推薦]; concrete HKD300 reward stated
+       Any bank  with a [推薦]-tagged promotion + HKD amount → qualifies
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Return this EXACT JSON structure (no markdown, no code fences):
 {{
   "best_for": [
-    {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific stock/crypto detail with numbers", "is_bau": true}},
+    {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific stock/crypto detail with numbers", "is_bau": false}},
     {{"category": "Spending/CashBack",                "bank": "BankName", "detail": "specific % or HKD amount",                  "is_bau": false}},
     {{"category": "Welcome Bonus",                    "bank": "BankName", "detail": "HKD amount",                                "is_bau": false}},
     {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit",                          "is_bau": false}},
     {{"category": "Loan APR",                         "bank": "BankName", "detail": "X.XX% APR",                                "is_bau": false}},
     {{"category": "FX/Multi-Currency",                "bank": "BankName", "detail": "specific detail",                          "is_bau": false}},
-    {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail",         "is_bau": true}},
-    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount",                               "is_bau": false}}
+    {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail",         "is_bau": false}},
+    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount per referral",                  "is_bau": false}}
   ],
   "bank_analysis": {{
     "ZA Bank": {{
@@ -642,7 +749,12 @@ Return this EXACT JSON structure (no markdown, no code fences):
 
 IMPORTANT for "is_bau" field in best_for entries:
   Set true  if the winning promotion is a [BAU - Permanent Feature].
-  Set false if it is a time-limited promotion."""
+  Set false if it is a time-limited promotion.
+
+FINAL REMINDER:
+  • "Fund Investment" and "Referral Bonus" entries MUST have a real bank name,
+    not "None", if any qualifying promotion exists in the data above.
+  • Re-read the promotion list one more time before finalising your answer."""
 
     raw = _call([{'role': 'user', 'content': prompt}])
     if not raw:
@@ -654,13 +766,13 @@ IMPORTANT for "is_bau" field in best_for entries:
         print('❌ Strategic insights: JSON parse failed')
         return None
 
-    # Count only non-BAU promos for the email digest badge, but log both
+    # ── post-process bank_analysis counts ─────────────────────────────────────
     name_lookup = {k.lower(): k for k in promotions_by_bank}
     for bname in result.get('bank_analysis', {}):
         matched_key = name_lookup.get(bname.lower())
         if matched_key:
-            all_promos      = promotions_by_bank[matched_key]
-            non_bau_promos  = [p for p in all_promos if not p.get('is_bau')]
+            all_promos     = promotions_by_bank[matched_key]
+            non_bau_promos = [p for p in all_promos if not p.get('is_bau')]
             result['bank_analysis'][bname]['count']     = len(non_bau_promos)
             result['bank_analysis'][bname]['bau_count'] = (
                 len(all_promos) - len(non_bau_promos)
@@ -669,11 +781,21 @@ IMPORTANT for "is_bau" field in best_for entries:
             result['bank_analysis'][bname]['count']     = 0
             result['bank_analysis'][bname]['bau_count'] = 0
 
-    bau_wins = sum(
-        1 for b in result.get('best_for', []) if b.get('is_bau')
+    # ── diagnostic logging ────────────────────────────────────────────────────
+    bau_wins  = sum(1 for b in result.get('best_for', []) if b.get('is_bau'))
+    none_wins = sum(
+        1 for b in result.get('best_for', [])
+        if (b.get('bank') or '').lower() in ('none', '', 'n/a')
     )
+    if none_wins:
+        none_cats = [
+            b['category'] for b in result.get('best_for', [])
+            if (b.get('bank') or '').lower() in ('none', '', 'n/a')
+        ]
+        print(f'  ⚠️  {none_wins} best_for slot(s) still show None: {none_cats}')
+
     print(
         f'✅ Strategic insights generated via {_bot_name} '
-        f'({bau_wins} best_for winner(s) are BAU features)'
+        f'({bau_wins} BAU winner(s), {none_wins} None slot(s))'
     )
     return result
