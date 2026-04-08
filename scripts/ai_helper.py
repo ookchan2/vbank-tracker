@@ -513,6 +513,14 @@ No explanation. No markdown. No code fences."""
 
 
 def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
+    """
+    Generate strategic insights from ALL promotions including BAU.
+
+    promotions_by_bank: dict of bank_name → list of ALL promos (BAU + non-BAU).
+    BAU promos are tagged [BAU - Permanent Feature] in the AI prompt so the AI
+    treats them as always-available competitive advantages and includes them in
+    best_for rankings. The email digest separately filters out BAU promos.
+    """
     if not AI_AVAILABLE:
         print('⚠️  AI not available — skipping strategic insights')
         return None
@@ -521,6 +529,10 @@ def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
     for bank_name, promos in sorted(promotions_by_bank.items()):
         if not promos:
             continue
+
+        non_bau_count = sum(1 for p in promos if not p.get('is_bau'))
+        bau_count     = len(promos) - non_bau_count
+
         lines = []
         for p in promos:
             title     = (p.get('name') or p.get('title') or 'N/A')[:80]
@@ -529,8 +541,16 @@ def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
             raw_types = p.get('types') or 'General'
             ptype     = (', '.join(raw_types) if isinstance(raw_types, list)
                          else str(raw_types))[:40]
-            lines.append(f'  [{ptype}] {title}: {highlight} | {period}')
-        bank_summaries.append(f'## {bank_name} ({len(promos)} active)\n' + '\n'.join(lines))
+            # ← KEY FIX: tag BAU promos clearly so AI does not ignore them
+            bau_tag   = ' [BAU - Permanent Feature]' if p.get('is_bau') else ''
+            lines.append(
+                f'  [{ptype}]{bau_tag} {title}: {highlight} | {period}'
+            )
+
+        bank_summaries.append(
+            f'## {bank_name} ({non_bau_count} time-limited promos'
+            f' + {bau_count} BAU permanent features)\n' + '\n'.join(lines)
+        )
 
     if not bank_summaries:
         print('⚠️  No promotions data — skipping strategic insights')
@@ -538,27 +558,35 @@ def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
 
     promotions_text = '\n\n'.join(bank_summaries)
 
-    # ← CHANGED: added explicit category definitions so AI picks the correct
-    #   promotion type for each "best_for" entry — especially Investment
-    #   (stock/crypto only) vs Fund Investment (funds only)
     prompt = f"""You are a Hong Kong virtual bank analyst. \
 Analyze these active promotions and return strategic insights as JSON.
 
 {promotions_text}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IMPORTANT — BAU (Business As Usual) items are tagged [BAU - Permanent Feature].
+These are ALWAYS-AVAILABLE product features with no expiry date.
+You MUST include BAU items when evaluating "best_for" category winners.
+A permanent zero-fee or zero-commission feature is often the strongest
+competitive advantage a bank has — do NOT ignore it just because it has no
+end date. Treat [BAU - Permanent Feature] items as equally eligible as
+time-limited promotions for all "best_for" slots.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 STRICT CATEGORY DEFINITIONS — you MUST follow these when choosing "best_for" winners:
 
 • Investment (Stock/Crypto Trading)
     → Pick ONLY promotions about STOCK TRADING or CRYPTO TRADING.
     → Examples: brokerage commission waiver, crypto trading fee waiver, stock cashback,
       securities transfer bonus, IPO subscription reward.
+    → BAU zero-fee crypto/stock trading features qualify — include them.
     → DO NOT pick: time deposit, savings, insurance, or fund promotions for this slot.
 
 • Fund Investment
     → Pick ONLY promotions about MUTUAL FUND or UNIT TRUST subscriptions/switching.
     → Examples: zero subscription fee on funds, fund switching cashback,
       fund platform reward, zero-fee fund subscription.
+    → BAU zero-fee fund subscription features qualify — include them.
     → DO NOT pick: stock brokerage, crypto, or commission-free trading promotions here.
 
 • Spending/CashBack
@@ -576,6 +604,7 @@ STRICT CATEGORY DEFINITIONS — you MUST follow these when choosing "best_for" w
 
 • FX/Multi-Currency
     → Foreign exchange rate promotions, global wallet, international remittance.
+    → BAU always-on FX features qualify — include them.
 
 • Referral Bonus
     → Referral / invite-a-friend programs with a stated reward amount.
@@ -584,14 +613,14 @@ STRICT CATEGORY DEFINITIONS — you MUST follow these when choosing "best_for" w
 Return this EXACT JSON structure (no markdown, no code fences):
 {{
   "best_for": [
-    {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific stock/crypto detail with numbers"}},
-    {{"category": "Spending/CashBack",                "bank": "BankName", "detail": "specific % or HKD amount"}},
-    {{"category": "Welcome Bonus",                    "bank": "BankName", "detail": "HKD amount"}},
-    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit"}},
-    {{"category": "Loan APR",                         "bank": "BankName", "detail": "X.XX% APR"}},
-    {{"category": "FX/Multi-Currency",                "bank": "BankName", "detail": "specific detail"}},
-    {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail"}},
-    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount"}}
+    {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific stock/crypto detail with numbers", "is_bau": true}},
+    {{"category": "Spending/CashBack",                "bank": "BankName", "detail": "specific % or HKD amount",                  "is_bau": false}},
+    {{"category": "Welcome Bonus",                    "bank": "BankName", "detail": "HKD amount",                                "is_bau": false}},
+    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit",                          "is_bau": false}},
+    {{"category": "Loan APR",                         "bank": "BankName", "detail": "X.XX% APR",                                "is_bau": false}},
+    {{"category": "FX/Multi-Currency",                "bank": "BankName", "detail": "specific detail",                          "is_bau": false}},
+    {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail",         "is_bau": true}},
+    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount",                               "is_bau": false}}
   ],
   "bank_analysis": {{
     "ZA Bank": {{
@@ -609,7 +638,11 @@ Return this EXACT JSON structure (no markdown, no code fences):
       "vs_za_cons": "cons vs ZA Bank"
     }}
   }}
-}}"""
+}}
+
+IMPORTANT for "is_bau" field in best_for entries:
+  Set true  if the winning promotion is a [BAU - Permanent Feature].
+  Set false if it is a time-limited promotion."""
 
     raw = _call([{'role': 'user', 'content': prompt}])
     if not raw:
@@ -621,12 +654,26 @@ Return this EXACT JSON structure (no markdown, no code fences):
         print('❌ Strategic insights: JSON parse failed')
         return None
 
+    # Count only non-BAU promos for the email digest badge, but log both
     name_lookup = {k.lower(): k for k in promotions_by_bank}
     for bname in result.get('bank_analysis', {}):
         matched_key = name_lookup.get(bname.lower())
-        result['bank_analysis'][bname]['count'] = (
-            len(promotions_by_bank[matched_key]) if matched_key else 0
-        )
+        if matched_key:
+            all_promos      = promotions_by_bank[matched_key]
+            non_bau_promos  = [p for p in all_promos if not p.get('is_bau')]
+            result['bank_analysis'][bname]['count']     = len(non_bau_promos)
+            result['bank_analysis'][bname]['bau_count'] = (
+                len(all_promos) - len(non_bau_promos)
+            )
+        else:
+            result['bank_analysis'][bname]['count']     = 0
+            result['bank_analysis'][bname]['bau_count'] = 0
 
-    print(f'✅ Strategic insights generated via {_bot_name}')
+    bau_wins = sum(
+        1 for b in result.get('best_for', []) if b.get('is_bau')
+    )
+    print(
+        f'✅ Strategic insights generated via {_bot_name} '
+        f'({bau_wins} best_for winner(s) are BAU features)'
+    )
     return result
