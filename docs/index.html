@@ -33,6 +33,11 @@
     background: #fff;
   }
   #compTable thead th:first-child { background: #f9fafb; }
+  /* ← CHANGED: cat filter button transition */
+  .cat-filter-btn {
+    cursor: pointer;
+    transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -94,28 +99,14 @@
           oninput="applyFilters()">
       </div>
 
-      <select id="catFilter" onchange="applyFilters()"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm
-               focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
-        <option value="">All Categories</option>
-        <option>迎新 Welcome</option>
-        <option>消費 Spending</option>
-        <option>投資 Investment</option>
-        <option>旅遊 Travel</option>
-        <option>保險 Insurance</option>
-        <option>貸款 Loan</option>
-        <option>活期存款 Savings</option>
-        <option>定期存款 TDeposit</option>
-        <option>外匯 FX</option>
-        <option>推薦 Referral</option>
-        <option>新資金 New Funds</option>
-        <option>Others 其他</option>
-      </select>
+      <!-- ← CHANGED: removed <select id="catFilter"> — replaced by multi-select buttons below -->
 
       <select id="statusFilter" onchange="applyFilters()"
         class="border border-gray-200 rounded-lg px-3 py-2 text-sm
                focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
         <option value="active">✅ Valid Only</option>
+        <!-- ← CHANGED: added Valid + Expiring option -->
+        <option value="active+expiring">✅⚡ Valid + Expiring</option>
         <option value="expiring">⚡ Expiring Soon</option>
         <option value="all">All (Active + Expired)</option>
         <option value="expired">✗ Expired Only</option>
@@ -137,13 +128,13 @@
       </button>
     </div>
 
-    <div class="mt-3 flex flex-wrap gap-2" id="catTagFilter"></div>
+    <!-- ← CHANGED: catTagFilter is now populated by buildCatButtons() for multi-select -->
+    <div class="mt-3 flex flex-wrap gap-2 items-center" id="catTagFilter"></div>
     <div class="mt-2 text-sm text-gray-500" id="resultCount"></div>
   </div>
 </div>
 
 <!-- ══ NEW TODAY SECTION ══════════════════════════════════════════ -->
-<!-- ✅ 新增：只顯示今天 created_at 的優惠 -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newTodaySection" style="display:none;">
   <div class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
 
@@ -187,7 +178,7 @@
       </table>
     </div>
 
-    <!-- Empty state (shown when data loaded but 0 new today) -->
+    <!-- Empty state -->
     <div id="newTodayEmpty"
          class="hidden bg-amber-50 px-5 py-8 text-center text-gray-400 text-sm">
       🔍 No new promotions detected today.
@@ -309,6 +300,24 @@ const BANK_COLORS = {
   "Ant Bank":     "#1677ff",
 };
 
+// ← CHANGED: category filter button definitions (includes BAU)
+const CAT_FILTER_LIST = [
+  { key: '__ALL__',             label: 'All',         bg: '#4f46e5' },
+  { key: 'BAU',                 label: '⚙️ BAU',      bg: '#64748b' },
+  { key: '迎新 Welcome',       label: '🎉 迎新',     bg: '#10b981' },
+  { key: '消費 Spending',      label: '💳 消費',     bg: '#f59e0b' },
+  { key: '投資 Investment',    label: '📈 投資',     bg: '#6366f1' },
+  { key: '旅遊 Travel',        label: '✈️ 旅遊',    bg: '#06b6d4' },
+  { key: '保險 Insurance',     label: '🛡️ 保險',   bg: '#ef4444' },
+  { key: '貸款 Loan',          label: '💰 貸款',     bg: '#dc2626' },
+  { key: '活期存款 Savings',   label: '🏦 活期存款', bg: '#3b82f6' },
+  { key: '定期存款 TDeposit',  label: '🏛️ 定期存款',bg: '#0369a1' },
+  { key: '外匯 FX',            label: '🌐 外匯',     bg: '#8b5cf6' },
+  { key: '推薦 Referral',      label: '👥 推薦',     bg: '#ec4899' },
+  { key: '新資金 New Funds',   label: '💵 新資金',   bg: '#0ea5e9' },
+  { key: 'Others 其他',        label: '📋 Others',   bg: '#6b7280' },
+];
+
 function bankColor(name) {
   for (const [k, v] of Object.entries(BANK_COLORS)) {
     if (name && name.toLowerCase().includes(k.toLowerCase())) return v;
@@ -360,6 +369,7 @@ function statusBadge(p) {
 let allPromos     = [];
 let filtered      = [];
 let activeBankTab = '';
+let selectedCats  = [];   // ← CHANGED: multi-select category state
 
 // ── Load ──────────────────────────────────────────────────────────
 async function loadData() {
@@ -391,7 +401,7 @@ async function loadData() {
 
     buildBankTabs(banks);
     buildBankSummary(banks);
-    buildNewTodaySection();   // ✅ 新增：渲染今日新優惠
+    buildNewTodaySection();
     buildComparisonTable();
 
     document.getElementById('loadingState').classList.add('hidden');
@@ -419,13 +429,10 @@ function remapCat(t) {
 }
 
 // ══ NEW TODAY SECTION ════════════════════════════════════════════
-// ✅ 新增函數：只顯示今天 created_at 的優惠
 function buildNewTodaySection() {
-  // 取得本地今天日期 "YYYY-MM-DD"
   const now   = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
-  // 用 created_at 的前 10 碼做比較
   const newToday = allPromos.filter(p => {
     const created = (p.created_at || '').substring(0, 10);
     return created === today;
@@ -436,7 +443,6 @@ function buildNewTodaySection() {
   const countEl  = document.getElementById('newTodayCount');
   const emptyEl  = document.getElementById('newTodayEmpty');
 
-  // 始終顯示 section（讓使用者知道今天有沒有新優惠）
   section.style.display = 'block';
 
   if (!newToday.length) {
@@ -499,6 +505,60 @@ function setBankTab(bank) {
     activeBtn.classList.add('bg-indigo-600', 'text-white');
   }
   applyFilters();
+}
+
+// ── Category multi-select buttons ─────────────────────────────────
+// ← CHANGED: builds clickable toggle buttons for category filtering
+
+function buildCatButtons() {
+  const container = document.getElementById('catTagFilter');
+  container.innerHTML =
+    `<span class="text-xs text-gray-400 font-semibold self-center mr-1 whitespace-nowrap">
+       Category:
+     </span>` +
+    CAT_FILTER_LIST.map(c => `
+      <button
+        class="cat-filter-btn cat-tag"
+        data-cat="${c.key}"
+        style="background:${c.bg}; opacity:${c.key === '__ALL__' ? '1' : '0.65'};
+               ${c.key === '__ALL__' ? 'box-shadow:0 0 0 3px rgba(0,0,0,0.28);' : ''}"
+        onclick="toggleCat('${c.key}')">
+        ${c.label}
+      </button>`
+    ).join('');
+}
+
+function toggleCat(cat) {
+  if (cat === '__ALL__') {
+    // Clear all → show All
+    selectedCats = [];
+  } else {
+    const idx = selectedCats.indexOf(cat);
+    if (idx === -1) selectedCats.push(cat);
+    else            selectedCats.splice(idx, 1);
+  }
+  updateCatButtons();
+  applyFilters();
+}
+
+function updateCatButtons() {
+  document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+    const cat        = btn.dataset.cat;
+    const isAll      = cat === '__ALL__';
+    const noneSelected = selectedCats.length === 0;
+
+    if (isAll) {
+      // "All" button: highlighted when nothing is selected
+      btn.style.opacity   = noneSelected ? '1'    : '0.45';
+      btn.style.boxShadow = noneSelected ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
+      btn.style.transform = 'scale(1)';
+    } else {
+      const isSelected = selectedCats.includes(cat);
+      btn.style.opacity   = isSelected ? '1' : (noneSelected ? '0.65' : '0.38');
+      btn.style.boxShadow = isSelected ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
+      btn.style.transform = isSelected ? 'scale(1.07)' : 'scale(1)';
+    }
+  });
 }
 
 // ── Bank Strategy Sidebar ─────────────────────────────────────────
@@ -771,19 +831,30 @@ function buildProsCons(zaBank, allBanks, topTypes) {
 }
 
 // ── Filter ────────────────────────────────────────────────────────
+// ← CHANGED: removed catFilter select reference; added selectedCats multi-select
+//            and active+expiring status handling
 function applyFilters() {
   const search = document.getElementById('searchInput').value.toLowerCase();
-  const cat    = document.getElementById('catFilter').value;
   const status = document.getElementById('statusFilter').value;
   const sort   = document.getElementById('sortFilter').value;
 
   filtered = allPromos.filter(p => {
     const s = getStatus(p);
-    if (status === 'active'   && s !== 'active')  return false;
-    if (status === 'expiring' && s !== 'expiring') return false;
-    if (status === 'expired'  && s !== 'expired')  return false;
+    if (status === 'active'          && s !== 'active')                         return false;
+    if (status === 'expiring'        && s !== 'expiring')                        return false;
+    if (status === 'expired'         && s !== 'expired')                         return false;
+    if (status === 'active+expiring' && s !== 'active' && s !== 'expiring')      return false;
     if (activeBankTab && p.bank_name !== activeBankTab) return false;
-    if (cat && !(p.types || []).includes(cat)) return false;
+
+    // ← CHANGED: multi-select category filter (OR logic across selected cats)
+    if (selectedCats.length > 0) {
+      const hasBau    = selectedCats.includes('BAU');
+      const otherCats = selectedCats.filter(c => c !== 'BAU');
+      const matchBau  = hasBau && !!p.is_bau;
+      const matchCat  = otherCats.length > 0 && otherCats.some(c => (p.types || []).includes(c));
+      if (!matchBau && !matchCat) return false;
+    }
+
     if (search) {
       const hay = [
         p.bank_name, p.title, p.highlight, p.description,
@@ -895,6 +966,7 @@ function exportExcel() {
     'Bank':        p.bank_name,
     'Title':       p.title,
     'Categories':  (p.types || []).join(', '),
+    'BAU':         p.is_bau ? 'Yes' : 'No',
     'Status':      getStatus(p),
     'Period':      p.period || '',
     'End Date':    p.end_date || '',
@@ -907,7 +979,7 @@ function exportExcel() {
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [
-    {wch:15},{wch:50},{wch:30},{wch:10},{wch:25},{wch:12},
+    {wch:15},{wch:50},{wch:30},{wch:6},{wch:10},{wch:25},{wch:12},
     {wch:30},{wch:20},{wch:40},{wch:60},{wch:40},{wch:20},
   ];
   const wb = XLSX.utils.book_new();
@@ -916,6 +988,8 @@ function exportExcel() {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────
+// ← CHANGED: build category buttons before loading data (no data dependency)
+buildCatButtons();
 loadData();
 </script>
 </body>

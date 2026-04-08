@@ -22,11 +22,15 @@ ALLOWED_CATEGORIES = [
     "貸款", "存款", "外匯", "推薦", "新資金", "Others"
 ]
 
+# ← CHANGED: hardcoded BAU overrides — always flag regardless of AI classification
+# Format: { bank_id_lowercase: ["substring to match in title (lowercase)"] }
+BAU_OVERRIDES: dict[str, list[str]] = {
+    "za": [
+        "new crypto customer fee waiver",
+    ],
+}
+
 # ── Extraction prompt ─────────────────────────────────────────────────────────
-# Key changes vs previous version:
-#   • is_bau field added — AI flags permanent features vs time-limited promos
-#   • start_date field added — specific YYYY-MM-DD required
-#   • period must NOT default to "Ongoing" if dates are visible on the page
 
 _PROMPT_TMPL = """\
 You are a specialist at extracting bank promotion data from website text.
@@ -53,6 +57,7 @@ Source URL: URL_PLACEHOLDER
 ║     NO end date and NO special eligibility condition, e.g.:         ║
 ║       ✅ BAU: "Free Instant FPS Transfers" (always available)       ║
 ║       ✅ BAU: "Multi-Currency Savings Account" (product feature)    ║
+║       ✅ BAU: "New Crypto Customer Fee Waiver" (ZA Bank, permanent) ║
 ║       ❌ NOT BAU: "New Customer Bonus" (new customers only)         ║
 ║       ❌ NOT BAU: "Limited-Time Fee Waiver" (has end date)          ║
 ║       ❌ NOT BAU: Any promotion with a promo code                   ║
@@ -260,6 +265,21 @@ def _stamp(promos: list, bank_id: str, bank_name: str, default_url: str) -> list
     return promos
 
 
+# ← CHANGED: force-set is_bau=True for promos matching BAU_OVERRIDES
+def _apply_bau_overrides(promos: list, bank_id: str) -> list:
+    """Force-set is_bau=True for promotions matching hardcoded BAU_OVERRIDES."""
+    overrides = [o.lower() for o in BAU_OVERRIDES.get(bank_id.lower(), [])]
+    if not overrides:
+        return promos
+    for p in promos:
+        title = (p.get('name') or p.get('title') or '').lower()
+        if any(override in title for override in overrides):
+            if not p.get('is_bau'):
+                p['is_bau'] = True
+                print(f'    🔒 BAU override: {p.get("name") or p.get("title")}')
+    return promos
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def analyze_promotions(bank_id: str,
@@ -296,6 +316,7 @@ def analyze_promotions(bank_id: str,
         print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')
 
     results = _stamp(results, bank_id, bank_name, default_url)
+    results = _apply_bau_overrides(results, bank_id)  # ← CHANGED
     print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
     return results
 

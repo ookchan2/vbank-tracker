@@ -33,6 +33,18 @@ BANK_COLORS = {
     "Ant Bank":     "#1677ff",
 }
 
+# ← CHANGED: short display names for email headers
+BANK_DISPLAY_NAMES = {
+    "ZA Bank":      "ZA",
+    "Airstar Bank": "Airstar",
+    "Ant Bank":     "Ant",
+    "Fusion Bank":  "Fusion",
+    "Mox Bank":     "Mox",
+    "PAObank":      "PAO",
+    "WeLab Bank":   "WeLab",
+    "livi bank":    "Livi",
+}
+
 CATEGORY_EMOJIS = {k: v["emoji"] for k, v in CATEGORY_META.items()}
 
 
@@ -43,6 +55,14 @@ def _bank_color(bank_name: str) -> str:
         if key.lower() in (bank_name or "").lower():
             return color
     return "#6b7280"
+
+
+# ← CHANGED: returns short display name for email
+def _bank_display_name(bank_name: str) -> str:
+    for key, short in BANK_DISPLAY_NAMES.items():
+        if key.lower() in (bank_name or "").lower():
+            return short
+    return bank_name
 
 
 def _get_cat_meta(type_str: str) -> dict:
@@ -138,9 +158,10 @@ def _promo_card(promo: dict, color: str) -> str:
 # ── Bank section ──────────────────────────────────────────────────────────────
 
 def _bank_section(bank_name: str, promos: list) -> str:
-    color = _bank_color(bank_name)
-    count = len(promos)
-    cards = "".join(_promo_card(p, color) for p in promos)
+    color        = _bank_color(bank_name)
+    display_name = _bank_display_name(bank_name)  # ← CHANGED
+    count        = len(promos)
+    cards        = "".join(_promo_card(p, color) for p in promos)
     return f"""
 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
 <tr><td style="padding-bottom:10px;border-bottom:3px solid {color};">
@@ -149,7 +170,7 @@ def _bank_section(bank_name: str, promos: list) -> str:
       <span style="display:inline-block;width:12px;height:12px;border-radius:50%;
                    background:{color};vertical-align:middle;margin-right:8px;"></span>
       <span style="font-weight:800;font-size:17px;color:#1f2937;vertical-align:middle;">
-        {bank_name}
+        {display_name}
       </span>
     </td>
     <td style="text-align:right;vertical-align:middle;">
@@ -313,11 +334,9 @@ def build_html_email(
     promotions_data:    list,
     scraped_data:       dict,
     strategic_insights: dict = None,
-    # FIXED: mutable default [] replaced with None — avoids shared-state bug
-    # where the same list object is reused across multiple calls.
     new_promos:         list = None,
 ) -> str:
-    new_promos = new_promos or []   # ← safe internal default
+    new_promos = new_promos or []
     now        = datetime.now().strftime("%d %b %Y, %H:%M HKT")
 
     banks: dict = {}
@@ -339,15 +358,16 @@ def build_html_email(
 
     scrape_rows = ""
     for bank_name, result in sorted((scraped_data or {}).items()):
-        raw_status = result.get("status")
-        raw_ok     = result.get("success")
-        ok    = (raw_status == "success") or (raw_ok is True)
-        count = result.get("count") or len(banks.get(bank_name, []))
-        dot   = "#10b981" if ok else "#ef4444"
-        label = f"{'✅' if ok else '❌'} {'success' if ok else (raw_status or 'failed')}"
+        raw_status   = result.get("status")
+        raw_ok       = result.get("success")
+        ok           = (raw_status == "success") or (raw_ok is True)
+        count        = result.get("count") or len(banks.get(bank_name, []))
+        dot          = "#10b981" if ok else "#ef4444"
+        label        = f"{'✅' if ok else '❌'} {'success' if ok else (raw_status or 'failed')}"
+        display      = _bank_display_name(bank_name)  # ← CHANGED
         scrape_rows += f"""
 <tr style="border-bottom:1px solid #f3f4f6;">
-  <td style="padding:9px 12px;font-size:13px;color:#374151;font-weight:600;">{bank_name}</td>
+  <td style="padding:9px 12px;font-size:13px;color:#374151;font-weight:600;">{display}</td>
   <td style="padding:9px 12px;text-align:center;font-size:13px;color:{dot};">{label}</td>
   <td style="padding:9px 12px;text-align:center;font-size:14px;font-weight:800;
              color:#6366f1;">{count}</td>
@@ -364,21 +384,19 @@ def build_html_email(
     )
 
     # ── Newly launched section ────────────────────────────────────
-    # Only shows promotions whose first_run_id = current_run_id,
-    # i.e. they did NOT appear in any previous scrape run.
-    # BAU promotions are already filtered out upstream.
     if new_promos:
         new_rows = ""
         for p in new_promos:
-            bank_name = p.get('bName') or p.get('bank_name') or p.get('bank') or '—'
-            title     = p.get('title') or p.get('name') or '—'
-            types_raw = p.get('types') or p.get('type') or p.get('promo_type') or ''
-            types_str = ', '.join(_types_to_list(types_raw)) if types_raw else '—'
-            period    = p.get('period') or p.get('validity') or 'Ongoing'
-            bc        = _bank_color(bank_name)
+            bank_name    = p.get('bName') or p.get('bank_name') or p.get('bank') or '—'
+            display_name = _bank_display_name(bank_name)  # ← CHANGED
+            title        = p.get('title') or p.get('name') or '—'
+            types_raw    = p.get('types') or p.get('type') or p.get('promo_type') or ''
+            types_str    = ', '.join(_types_to_list(types_raw)) if types_raw else '—'
+            period       = p.get('period') or p.get('validity') or 'Ongoing'
+            bc           = _bank_color(bank_name)
             new_rows += f"""
 <tr style="border-bottom:1px solid #f0f0f0;">
-  <td style="padding:8px 12px;font-size:13px;font-weight:700;color:{bc};">{bank_name}</td>
+  <td style="padding:8px 12px;font-size:13px;font-weight:700;color:{bc};">{display_name}</td>
   <td style="padding:8px 12px;font-size:13px;color:#374151;">{title}</td>
   <td style="padding:8px 12px;font-size:13px;color:#6b7280;">{types_str}</td>
   <td style="padding:8px 12px;font-size:13px;color:#6b7280;">{period}</td>
