@@ -33,7 +33,7 @@ BANK_COLORS = {
     "Ant Bank":     "#1677ff",
 }
 
-# ← CHANGED: short display names for email headers
+# Short display names for email headers and winner badges
 BANK_DISPLAY_NAMES = {
     "ZA Bank":      "ZA",
     "Airstar Bank": "Airstar",
@@ -57,7 +57,6 @@ def _bank_color(bank_name: str) -> str:
     return "#6b7280"
 
 
-# ← CHANGED: returns short display name for email
 def _bank_display_name(bank_name: str) -> str:
     for key, short in BANK_DISPLAY_NAMES.items():
         if key.lower() in (bank_name or "").lower():
@@ -103,6 +102,15 @@ def _cat_tag(text: str) -> str:
     )
 
 
+def _bau_tag() -> str:
+    """Returns a grey BAU badge for promotions flagged as is_bau."""
+    return (
+        '<span style="display:inline-block;padding:3px 10px;margin:2px 3px 2px 0;'
+        'border-radius:20px;font-size:11px;color:#fff;font-weight:700;'
+        'background:#64748b;">⚙️ BAU</span>'
+    )
+
+
 def _types_to_list(types_raw) -> list:
     if isinstance(types_raw, list):
         return [str(t).strip() for t in types_raw if str(t).strip()]
@@ -121,9 +129,13 @@ def _promo_card(promo: dict, color: str) -> str:
     cost      = promo.get("cost")  or ""
     tc_link   = promo.get("tc_link") or promo.get("url") or promo.get("link") or ""
     types_raw = promo.get("types") or promo.get("type") or promo.get("promo_type") or ""
+    is_bau    = bool(promo.get("is_bau", False))
 
     type_list = _types_to_list(types_raw)[:4]
     cat_tags  = "".join(_cat_tag(t) for t in type_list) if type_list else _cat_tag("Others")
+    # ← append BAU badge if flagged
+    if is_bau:
+        cat_tags += _bau_tag()
 
     quota_row = (
         f'<span style="font-size:11px;color:#6b7280;margin-right:12px;">👥 {quota}</span>'
@@ -159,7 +171,7 @@ def _promo_card(promo: dict, color: str) -> str:
 
 def _bank_section(bank_name: str, promos: list) -> str:
     color        = _bank_color(bank_name)
-    display_name = _bank_display_name(bank_name)  # ← CHANGED
+    display_name = _bank_display_name(bank_name)
     count        = len(promos)
     cards        = "".join(_promo_card(p, color) for p in promos)
     return f"""
@@ -198,6 +210,8 @@ def _insights_html(insights: dict) -> str:
         detail = item.get("detail", "")
         bc     = _bank_color(bank)
         em     = _get_cat_meta(cat).get("emoji", "🏆")
+        # ← CHANGED: use short display name in winner badge
+        bank_short = _bank_display_name(bank)
         best_rows += f"""
 <tr style="border-bottom:1px solid #f3f4f6;">
   <td style="padding:9px 12px;font-size:13px;color:#374151;font-weight:600;white-space:nowrap;">
@@ -205,7 +219,7 @@ def _insights_html(insights: dict) -> str:
   </td>
   <td style="padding:9px 12px;white-space:nowrap;">
     <span style="background:{bc};color:#fff;padding:3px 10px;border-radius:20px;
-                 font-size:12px;font-weight:700;">{bank}</span>
+                 font-size:12px;font-weight:700;">{bank_short}</span>
   </td>
   <td style="padding:9px 12px;font-size:13px;color:#6b7280;">{detail}</td>
 </tr>"""
@@ -245,6 +259,9 @@ def _insights_html(insights: dict) -> str:
 
         hdr_bg    = bc if is_za else "#f9fafb"
         hdr_color = "#ffffff" if is_za else "#1f2937"
+
+        # ← use short name in bank-by-bank header
+        display_name = _bank_display_name(bank_name)
 
         strengths_html = "".join(
             f'<tr><td style="padding:3px 0;font-size:13px;color:#374151;">'
@@ -287,7 +304,9 @@ def _insights_html(insights: dict) -> str:
   <tr>
     <td style="background:{hdr_bg};padding:12px 16px;">
       <table width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td><span style="font-weight:800;font-size:15px;color:{hdr_color};">{bank_name}</span></td>
+        <td>
+          <span style="font-weight:800;font-size:15px;color:{hdr_color};">{display_name}</span>
+        </td>
         <td style="text-align:right;">
           <span style="background:rgba(0,0,0,0.1);color:{hdr_color};padding:2px 10px;
                        border-radius:20px;font-size:12px;font-weight:700;">{count} active</span>
@@ -364,7 +383,7 @@ def build_html_email(
         count        = result.get("count") or len(banks.get(bank_name, []))
         dot          = "#10b981" if ok else "#ef4444"
         label        = f"{'✅' if ok else '❌'} {'success' if ok else (raw_status or 'failed')}"
-        display      = _bank_display_name(bank_name)  # ← CHANGED
+        display      = _bank_display_name(bank_name)
         scrape_rows += f"""
 <tr style="border-bottom:1px solid #f3f4f6;">
   <td style="padding:9px 12px;font-size:13px;color:#374151;font-weight:600;">{display}</td>
@@ -388,12 +407,15 @@ def build_html_email(
         new_rows = ""
         for p in new_promos:
             bank_name    = p.get('bName') or p.get('bank_name') or p.get('bank') or '—'
-            display_name = _bank_display_name(bank_name)  # ← CHANGED
+            display_name = _bank_display_name(bank_name)
             title        = p.get('title') or p.get('name') or '—'
             types_raw    = p.get('types') or p.get('type') or p.get('promo_type') or ''
             types_str    = ', '.join(_types_to_list(types_raw)) if types_raw else '—'
             period       = p.get('period') or p.get('validity') or 'Ongoing'
             bc           = _bank_color(bank_name)
+            # ← append BAU label to category string if flagged
+            if p.get('is_bau'):
+                types_str = (types_str + ', BAU') if types_str != '—' else 'BAU'
             new_rows += f"""
 <tr style="border-bottom:1px solid #f0f0f0;">
   <td style="padding:8px 12px;font-size:13px;font-weight:700;color:{bc};">{display_name}</td>
@@ -520,11 +542,10 @@ def build_html_email(
   </td></tr>
   <tr><td style="height:16px;"></td></tr>
 
-  <!-- STRATEGIC INSIGHTS (omitted entirely when unavailable) -->
+  <!-- STRATEGIC INSIGHTS -->
   {insights_row}
 
   <!-- NEWLY LAUNCHED PROMOTIONS -->
-  <!-- Only promos first seen in THIS run, BAU excluded -->
   {new_section_html}
 
   <!-- ALL ACTIVE PROMOTIONS -->

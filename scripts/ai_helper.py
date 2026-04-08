@@ -22,8 +22,7 @@ ALLOWED_CATEGORIES = [
     "貸款", "存款", "外匯", "推薦", "新資金", "Others"
 ]
 
-# ← CHANGED: hardcoded BAU overrides — always flag regardless of AI classification
-# Format: { bank_id_lowercase: ["substring to match in title (lowercase)"] }
+# ← hardcoded BAU overrides — always flag regardless of AI classification
 BAU_OVERRIDES: dict[str, list[str]] = {
     "za": [
         "new crypto customer fee waiver",
@@ -265,7 +264,6 @@ def _stamp(promos: list, bank_id: str, bank_name: str, default_url: str) -> list
     return promos
 
 
-# ← CHANGED: force-set is_bau=True for promos matching BAU_OVERRIDES
 def _apply_bau_overrides(promos: list, bank_id: str) -> list:
     """Force-set is_bau=True for promotions matching hardcoded BAU_OVERRIDES."""
     overrides = [o.lower() for o in BAU_OVERRIDES.get(bank_id.lower(), [])]
@@ -316,7 +314,7 @@ def analyze_promotions(bank_id: str,
         print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')
 
     results = _stamp(results, bank_id, bank_name, default_url)
-    results = _apply_bau_overrides(results, bank_id)  # ← CHANGED
+    results = _apply_bau_overrides(results, bank_id)
     print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
     return results
 
@@ -540,22 +538,60 @@ def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
 
     promotions_text = '\n\n'.join(bank_summaries)
 
+    # ← CHANGED: added explicit category definitions so AI picks the correct
+    #   promotion type for each "best_for" entry — especially Investment
+    #   (stock/crypto only) vs Fund Investment (funds only)
     prompt = f"""You are a Hong Kong virtual bank analyst. \
 Analyze these active promotions and return strategic insights as JSON.
 
 {promotions_text}
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRICT CATEGORY DEFINITIONS — you MUST follow these when choosing "best_for" winners:
+
+• Investment (Stock/Crypto Trading)
+    → Pick ONLY promotions about STOCK TRADING or CRYPTO TRADING.
+    → Examples: brokerage commission waiver, crypto trading fee waiver, stock cashback,
+      securities transfer bonus, IPO subscription reward.
+    → DO NOT pick: time deposit, savings, insurance, or fund promotions for this slot.
+
+• Fund Investment
+    → Pick ONLY promotions about MUTUAL FUND or UNIT TRUST subscriptions/switching.
+    → Examples: zero subscription fee on funds, fund switching cashback,
+      fund platform reward, zero-fee fund subscription.
+    → DO NOT pick: stock brokerage, crypto, or commission-free trading promotions here.
+
+• Spending/CashBack
+    → Credit/debit card cashback or merchant spending reward promotions.
+
+• Welcome Bonus
+    → New customer account opening welcome cash or gift rewards.
+    → Must be a concrete HKD amount or tangible reward.
+
+• Travel
+    → Travel insurance, flight/hotel discounts, Asia Miles, trip.com promotions.
+
+• Loan APR
+    → Personal loan or instant loan with the lowest specific APR rate quoted.
+
+• FX/Multi-Currency
+    → Foreign exchange rate promotions, global wallet, international remittance.
+
+• Referral Bonus
+    → Referral / invite-a-friend programs with a stated reward amount.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Return this EXACT JSON structure (no markdown, no code fences):
 {{
   "best_for": [
-    {{"category": "Investment",        "bank": "BankName", "detail": "specific detail with numbers"}},
-    {{"category": "Spending/CashBack", "bank": "BankName", "detail": "specific % or HKD amount"}},
-    {{"category": "Welcome Bonus",     "bank": "BankName", "detail": "HKD amount"}},
-    {{"category": "Travel",            "bank": "BankName", "detail": "specific benefit"}},
-    {{"category": "Loan APR",          "bank": "BankName", "detail": "X.XX% APR"}},
-    {{"category": "FX/Multi-Currency", "bank": "BankName", "detail": "specific detail"}},
-    {{"category": "Fund Investment",   "bank": "BankName", "detail": "specific detail"}},
-    {{"category": "Referral Bonus",    "bank": "BankName", "detail": "HKD amount"}}
+    {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific stock/crypto detail with numbers"}},
+    {{"category": "Spending/CashBack",                "bank": "BankName", "detail": "specific % or HKD amount"}},
+    {{"category": "Welcome Bonus",                    "bank": "BankName", "detail": "HKD amount"}},
+    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit"}},
+    {{"category": "Loan APR",                         "bank": "BankName", "detail": "X.XX% APR"}},
+    {{"category": "FX/Multi-Currency",                "bank": "BankName", "detail": "specific detail"}},
+    {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail"}},
+    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount"}}
   ],
   "bank_analysis": {{
     "ZA Bank": {{
