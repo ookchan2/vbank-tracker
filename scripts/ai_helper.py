@@ -314,57 +314,115 @@ def _apply_bau_overrides(promos: list, bank_id: str) -> list:
     return promos
 
 
-# ── FIX 3: Evidence gate — module-level constants ─────────────────────────────
+# ── FIX 3 + FIX 4a: Evidence gate constants ──────────────────────────────────
 #
-# These are used by _validate_best_for_evidence() to catch best_for winners
-# whose "detail" field is vague or contains no concrete verifiable fact.
+# FIX 3  (previous): basic evidence gate — rejects vague/hallucinated details
+# FIX 4a (NEW):      broadened _CONCRETE_EVIDENCE_RE to recognise patterns the
+#                    old regex missed, causing valid Investment / FX winners to
+#                    be incorrectly rejected:
 #
-# Root causes being fixed:
-#   • Navigation menu items (e.g. "Travel Offers", "Travel with ZA Card")
-#     were being treated as travel promotions with no concrete numbers,
-#     producing hallucinated winners like "Year-Round Travel Offers with
-#     special travel-related promotions".
-#   • Any winner detail that matches _VAGUE_DETAIL_PATTERNS is immediately
-#     rejected regardless of what the LLM chose.
-#   • Any winner detail that has no _CONCRETE_EVIDENCE_RE match is also
-#     rejected — a real promotion always has at least one concrete fact
-#     (HKD amount, %, date, named partner, etc.).
+#   OLD gap: "$0 platform fee"   → no match  (only HKD / % / date were checked)
+#   NEW fix: "\$\s*0\b"         → matches "$0"
+#            "platform\s*fee"   → matches "platform fee"
+#            "trading\s*fee"    → matches "trading fee"
+#            "fee\s*waiver"     → matches "fee waiver"
+#            "zero[\s-]fee"     → matches "zero fee" / "zero-fee"
+#            "free\s+stock"     → matches "free stocks" (PowerDraw etc.)
+#            "payment\s+connect"→ matches ZA Bank's named FX product
+#            "global\s+wallet"  → matches WeLab / ZA named FX product
 
 _VAGUE_DETAIL_PATTERNS: list[str] = [
-    r'special\s+\w+[-\s]related\s+promotions?',        # "special travel-related promotions"
-    r'year[- ]round\s+\w+\s+offers?\s+with\s+special', # "year-round travel offers with special…"
-    r'^\s*various\b',                                   # "various promotions available"
-    r'competitive\s+features',                          # "competitive features"
-    r'\bservices?\s+available\s*$',                     # ends with "services available"
-    r'no\s+\w+\s+promotions?\s+available',              # "no X promotions available"
+    r'special\s+\w+[-\s]related\s+promotions?',
+    r'year[- ]round\s+\w+\s+offers?\s+with\s+special',
+    r'^\s*various\b',
+    r'competitive\s+features',
+    r'\bservices?\s+available\s*$',
+    r'no\s+\w+\s+promotions?\s+available',
 ]
 
+# FIX 4a — broadened concrete-evidence regex
 _CONCRETE_EVIDENCE_RE = re.compile(
-    r'HKD\s*[\d,]+'                    # HKD amount    e.g. HKD300, HKD8,888
-    r'|\d+\.?\d*\s*%'                  # percentage    e.g. 0%, 1.18%, 20%
-    r'|\d{1,2}\s+[A-Za-z]+\s+20\d\d'  # named date    e.g. 31 Jul 2026
-    r'|20\d\d-\d\d-\d\d'              # ISO date      e.g. 2026-07-31
-    r'|trip\.com'                      # named partner e.g. Trip.com
+    r'HKD\s*[\d,]+'                    # HKD amount         e.g. HKD300, HKD8,888
+    r'|\$\s*0\b'                       # $0 anything        e.g. $0 platform fee
+    r'|\d+\.?\d*\s*%'                  # percentage         e.g. 0%, 1.18%, 20%
+    r'|\d{1,2}\s+[A-Za-z]+\s+20\d\d'  # named date         e.g. 31 Jul 2026
+    r'|20\d\d-\d\d-\d\d'              # ISO date           e.g. 2026-07-31
+    r'|trip\.com'                      # named partner
     r'|asia\s*miles'                   # Asia Miles
     r'|\bapr\b'                        # APR rate
-    r'|subscription\s*fee'             # fund fee waiver
+    r'|subscription\s*fee'             # fund subscription fee
+    r'|platform\s*fee'                 # NEW: e.g. $0 platform fee (crypto)
+    r'|trading\s*fee'                  # NEW: e.g. $0 trading fee
+    r'|fee\s*waiver'                   # NEW: e.g. fee waiver
+    r'|zero[\s-]fee'                   # NEW: zero fee / zero-fee
+    r'|free\s+stock'                   # NEW: free stocks (PowerDraw, card reward)
+    r'|payment\s+connect'              # NEW: ZA Bank named FX product
+    r'|global\s+wallet'                # NEW: WeLab / ZA named FX product
     r'|commission'                     # commission waiver
     r'|cashback|cash\s*back',          # cashback reward
     re.IGNORECASE,
 )
 
+# ── FIX 4b: Category → keywords for cross-check ──────────────────────────────
+#
+# Used by _cross_check_best_for_from_strengths() to scan bank_analysis.strengths
+# when the LLM correctly identified a strength but still wrote "None" in best_for.
+# Each list covers all realistic surface forms the LLM might write.
+
+_CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    'Investment (Stock/Crypto Trading)': [
+        'crypto', 'bitcoin', 'virtual asset', 'digital asset',
+        'stock', 'securities', 'brokerage', 'ipo',
+        'trading fee', 'platform fee', '$0', 'commission',
+        'powerdraw', 'free stock',
+    ],
+    'Fund Investment': [
+        'fund', '基金', 'mutual fund', 'unit trust',
+        'subscription fee', '$0認購費', '認購費', '轉換費',
+        'fund fee', 'zero-fee fund', '0% fund', '$0 fund',
+        'fund subscription', 'fund trading fee',
+    ],
+    'Referral Bonus': [
+        'referral', '推薦', 'invite', '多友多賞',
+        'refer a friend', 'referral code', '推薦碼',
+        'referral reward', 'invite a friend', 'invite bonus',
+    ],
+    'FX/Multi-Currency': [
+        'fx', 'forex', 'exchange rate', 'multi-currency',
+        'global wallet', 'payment connect', 'remittance',
+        'international transfer', 'swift', 'foreign currency',
+        'welab global', 'fps transfer',
+    ],
+    'Travel': [
+        'trip.com', 'asia miles', 'flight', 'hotel',
+        'travel insurance', 'lounge', 'agoda',
+        'booking.com', 'travel cashback', 'travel reward',
+    ],
+    'Spending/CashBack': [
+        'cashback', 'cash back', 'spending reward',
+        'merchant', 'card reward', 'rebate', 'card spending',
+    ],
+    'Welcome Bonus': [
+        'welcome', 'new customer', 'account opening',
+        'sign up', 'onboarding', 'welcome gift',
+        'hkd8,888', 'hkd888', 'join bonus',
+    ],
+    'Loan APR': [
+        'loan', 'apr', 'instant loan', 'personal loan',
+        'interest rate', '1.18%', 'tax loan', 'tax season',
+    ],
+}
+
 
 def _validate_best_for_evidence(best_for: list) -> list:
     """
-    Post-processing safety guard applied AFTER the LLM generates best_for slots.
+    FIX 3: Post-LLM safety guard.
 
-    Rejects any winner whose "detail" field:
+    Rejects any best_for winner whose "detail" field:
       (a) matches a known vague/hallucinated pattern, OR
-      (b) contains no concrete verifiable fact (HKD amount, %, date, etc.)
+      (b) contains no concrete verifiable fact
 
-    Sets bank → "None" for rejected entries so the UI shows "None" rather
-    than a fabricated winner.  Always logs what was rejected and why.
-
+    Sets bank → "None" for rejected entries and logs every rejection.
     Already-None entries pass through untouched.
     """
     validated    = []
@@ -406,6 +464,106 @@ def _validate_best_for_evidence(best_for: list) -> list:
         print(f'  🚫 Evidence gate total: {reject_count} vague winner(s) nullified')
 
     return validated
+
+
+def _cross_check_best_for_from_strengths(
+    result:             dict,
+    promotions_by_bank: dict,
+) -> dict:
+    """
+    FIX 4b — Consistency reconciliation pass.
+
+    Closes the disconnect between bank_analysis and best_for:
+
+      SYMPTOM: LLM writes "$0 crypto platform fee" as a ZA Bank strength,
+               but best_for Investment slot still shows "None".
+
+      ROOT CAUSE: The LLM generates both sections in one pass but does not
+                  reliably cross-reference them.  The evidence gate may also
+                  have rejected a valid winner because the detail lacked a
+                  recognised concrete-fact pattern (fixed by FIX 4a, but
+                  this function is a belt-and-suspenders safety net).
+
+    Algorithm:
+      1. Find every best_for slot still showing bank = "None"
+      2. Scan ALL banks' bank_analysis.strengths for keywords matching
+         that category (via _CATEGORY_KEYWORDS)
+      3. Prefer the first candidate whose strength text passes
+         _CONCRETE_EVIDENCE_RE; otherwise use the first keyword match
+      4. Fill in the slot, log it, and infer is_bau from promo data
+
+    Called AFTER _validate_best_for_evidence() — only fills genuine gaps,
+    never overrides a valid winner.
+    """
+    best_for      = result.get('best_for', [])
+    bank_analysis = result.get('bank_analysis', {})
+
+    if not bank_analysis:
+        return result
+
+    filled = 0
+    for i, entry in enumerate(best_for):
+        cat  = (entry.get('category') or '').strip()
+        bank = (entry.get('bank')     or '').strip()
+
+        # Only process None / empty slots
+        if bank.lower() not in ('none', '', 'n/a'):
+            continue
+
+        keywords = _CATEGORY_KEYWORDS.get(cat, [])
+        if not keywords:
+            continue
+
+        # ── Scan each bank's strengths list for a keyword match ───────────
+        candidates: list[tuple[str, str]] = []   # (bank_name, strength_text)
+        for bname, bdata in bank_analysis.items():
+            strengths: list = bdata.get('strengths') or []
+            for s in strengths:
+                s_lower = s.lower()
+                if any(kw.lower() in s_lower for kw in keywords):
+                    candidates.append((bname, s))
+
+        if not candidates:
+            continue   # genuinely no evidence — leave as None
+
+        # Prefer candidate with concrete evidence; fall back to first match
+        best = next(
+            (c for c in candidates if _CONCRETE_EVIDENCE_RE.search(c[1])),
+            candidates[0],
+        )
+        best_bank, best_detail = best
+
+        # Infer is_bau from the actual promotion objects
+        bank_promos  = promotions_by_bank.get(best_bank, [])
+        is_bau_guess = any(
+            p.get('is_bau') and
+            any(
+                kw.lower() in (p.get('name') or p.get('title') or '').lower()
+                for kw in keywords
+            )
+            for p in bank_promos
+        )
+
+        print(
+            f'  🔁 Strength cross-check FILLED [{cat}] → {best_bank}: '
+            f'"{best_detail[:80]}"'
+        )
+        best_for[i] = {
+            **entry,
+            'bank':   best_bank,
+            'detail': best_detail,
+            'is_bau': is_bau_guess,
+        }
+        filled += 1
+
+    if filled:
+        print(
+            f'  🔁 Cross-check total: {filled} slot(s) filled from '
+            f'bank_analysis.strengths'
+        )
+
+    result['best_for'] = best_for
+    return result
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -683,18 +841,12 @@ def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
 
     promotions_by_bank: dict of bank_name → list of ALL promos (BAU + non-BAU).
 
-    BAU promos are tagged [BAU - Permanent Feature] in the AI prompt so the AI
-    treats them as always-available competitive advantages and includes them in
-    best_for rankings.  The email digest separately filters out BAU promos.
-
-    Chinese type tags (推薦, 投資 …) are passed through to the prompt verbatim
-    and the prompt explains the mapping to English best_for categories so the AI
-    never outputs "None" when a qualifying promotion exists.
-
-    FIX 2: Added SECTION 6 — Evidence Gate to the AI prompt, instructing the
-            LLM to self-reject any winner whose detail has no concrete fact.
-    FIX 3: Calls _validate_best_for_evidence() after parsing to catch any
-            hallucinated winners that survive the prompt instruction.
+    FIX 2:  Added SECTION 6 — Evidence Gate to the AI prompt.
+    FIX 3:  Calls _validate_best_for_evidence() after parsing.
+    FIX 4b: Calls _cross_check_best_for_from_strengths() after the evidence
+            gate to fill None slots from the LLM's own bank_analysis.strengths.
+    FIX 4c: Added SECTION 7 — Self-Consistency Check to the prompt, telling the
+            LLM to cross-reference its own strengths before finalising best_for.
     """
     if not AI_AVAILABLE:
         print('⚠️  AI not available — skipping strategic insights')
@@ -765,7 +917,7 @@ SECTION 3 — STRICT CATEGORY DEFINITIONS
     → Pick ONLY promotions about STOCK TRADING or CRYPTO TRADING.
     → Examples: brokerage commission waiver, crypto trading fee waiver,
       stock cashback, securities transfer bonus, IPO subscription reward,
-      lifetime $0 commission on stocks.
+      lifetime $0 commission on stocks, $0 platform fee for crypto.
     → BAU zero-fee crypto/stock trading features qualify — include them.
     → DO NOT pick: time deposit, savings, insurance, or fund promotions here.
 
@@ -831,45 +983,53 @@ SECTION 5 — KNOWN QUALIFIERS (real examples you must recognise)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 These are real promotions that MUST be correctly classified:
 
+  ✅ Investment (Stock/Crypto Trading) winners:
+       ZA Bank   "$0 platform fee for crypto trading" [BAU]
+                 → qualifies because "$0 platform fee" is a concrete fact
+       ZA Bank   "Free stocks with ZA Card spending"
+                 → qualifies because "free stock" is a concrete reward
+       ZA Bank   "Free stocks through PowerDraw"
+                 → qualifies; PowerDraw = ZA Bank named product
+
   ✅ Fund Investment winners:
        ZA Bank   "0% Fund Subscription Fee for All Funds until 31 Jul 2026"
                  → qualifies because it has "0% subscription fee" + "funds"
        WeLab Bank "$0 Fund Trading Fee Mode / $0認購費 $0轉換費" [BAU]
                  → qualifies even though BAU; permanent zero-fee fund model
-       Pick the one with the strongest benefit (time-limited with end date
-       often signals a special campaign; BAU means always-on advantage).
 
   ✅ Referral Bonus winners:
        Mox       "多友多賞 Referral Programme — HKD300 per successful referral"
                  → qualifies; tagged [推薦]; concrete HKD300 reward stated
-       Any bank  with a [推薦]-tagged promotion + HKD amount → qualifies
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 6 — EVIDENCE GATE: NO HALLUCINATION ALLOWED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FIX 2: The "detail" field for each best_for winner MUST contain at least
-ONE concrete verifiable fact from the promotion data listed above.
+The "detail" field for each best_for winner MUST contain at least ONE
+concrete verifiable fact from the promotion data listed above.
 
   ✅ VALID details (contain specific evidence):
+       "$0 platform fee for crypto trading (permanent)"
+       "Free stocks via PowerDraw + free stocks with ZA Card spending"
        "0% fund subscription fee until 31 Jul 2026"
        "HKD300 per successful referral, no cap"
        "1.18% APR on Tax Season Instant Loan"
-       "Up to 8% off + 2% CashBack on Trip.com until Dec 2026"
-       "Lifetime $0 commissions on HK stocks trading"
+       "Up to 8% off + 2% CashBack on Trip.com until 2026-12-31"
+       "Zero-fee Payment Connect international transfers"
 
   ❌ INVALID details (vague, no concrete fact — NEVER use):
        "Year-Round Travel Offers with special travel-related promotions"
        "Various fund investment promotions available"
        "Investment services with competitive features"
+       "Competitive FX rates for customers"
        "Travel benefits for cardholders"
 
 RULE: If your detail string does NOT contain at least one of:
   • A specific HKD/USD amount   (e.g. HKD300, HKD8,888)
   • A specific percentage        (e.g. 0%, 1.18%, 8%)
+  • A $0 or zero-fee fact        (e.g. $0 platform fee, zero-fee transfer)
   • A specific date              (e.g. until 31 Jul 2026)
-  • A named concrete partner     (e.g. Trip.com, Asia Miles)
-  • A named specific product     (e.g. Tax Season Instant Loan, subscription fee)
-  • A commission or fee keyword  (e.g. commission, subscription fee, cashback)
+  • A named concrete product     (e.g. PowerDraw, Payment Connect, Trip.com)
+  • A commission/fee keyword     (e.g. commission, subscription fee, cashback)
 → Set bank to "None" for that category.
   A truthful "None" is ALWAYS better than a hallucinated winner.
 
@@ -879,19 +1039,54 @@ TRAVEL category special rule:
   (Trip.com, Agoda, airline name, etc.) with a concrete benefit amount.
   Navigation menu items like "Travel Offers" or "Travel with ZA Card"
   are NOT travel promotions — never use them as evidence for a winner.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7 — SELF-CONSISTENCY CHECK  ← FIX 4c
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BEFORE writing your final JSON, perform this mandatory cross-check:
+
+  Step 1 — For each bank you list in bank_analysis, read every item in
+           its "strengths" array.
+
+  Step 2 — For each strength, identify the matching best_for category
+           using the SECTION 2 mapping:
+             "crypto / stock / $0 platform fee / commission"  → Investment
+             "fund / 基金 / subscription fee / $0認購費"      → Fund Investment
+             "referral / 推薦 / 多友多賞 / invite"           → Referral Bonus
+             "FX / exchange rate / global wallet / SWIFT"     → FX/Multi-Currency
+             "cashback / spending / card reward"              → Spending/CashBack
+
+  Step 3 — If you have written "None" for that best_for category but the
+           strength bullet clearly describes that product → CONTRADICTION.
+           Resolve it: replace "None" with the bank name and use the
+           strength text as the detail.
+
+  ⚠️  EXAMPLE OF THE CONTRADICTION YOU MUST AVOID:
+       bank_analysis.ZA Bank.strengths = ["$0 platform fee for crypto trading"]
+       best_for Investment = {{ "bank": "None", ... }}   ← WRONG
+
+       Correct answer:
+       best_for Investment = {{
+         "bank": "ZA Bank",
+         "detail": "$0 platform fee for crypto trading (permanent BAU)",
+         "is_bau": true
+       }}
+
+  RULE: It is NEVER acceptable to list a strength AND write None for the
+        matching category unless a different bank has a provably better offer.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Return this EXACT JSON structure (no markdown, no code fences):
 {{
   "best_for": [
-    {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific stock/crypto detail with numbers", "is_bau": false}},
-    {{"category": "Spending/CashBack",                "bank": "BankName", "detail": "specific % or HKD amount",                  "is_bau": false}},
-    {{"category": "Welcome Bonus",                    "bank": "BankName", "detail": "HKD amount",                                "is_bau": false}},
-    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit with % or named partner",  "is_bau": false}},
-    {{"category": "Loan APR",                         "bank": "BankName", "detail": "X.XX% APR",                                "is_bau": false}},
-    {{"category": "FX/Multi-Currency",                "bank": "BankName", "detail": "specific detail",                          "is_bau": false}},
-    {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail",         "is_bau": false}},
-    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount per referral",                  "is_bau": false}}
+    {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific stock/crypto detail — must include $0, %, or named product", "is_bau": false}},
+    {{"category": "Spending/CashBack",                "bank": "BankName", "detail": "specific % or HKD amount",                                              "is_bau": false}},
+    {{"category": "Welcome Bonus",                    "bank": "BankName", "detail": "HKD amount",                                                            "is_bau": false}},
+    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit with % or named partner (e.g. Trip.com 8% off)",       "is_bau": false}},
+    {{"category": "Loan APR",                         "bank": "BankName", "detail": "X.XX% APR",                                                            "is_bau": false}},
+    {{"category": "FX/Multi-Currency",                "bank": "BankName", "detail": "specific detail with named product or %",                               "is_bau": false}},
+    {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail with 0% or $0",                       "is_bau": false}},
+    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount per referral",                                               "is_bau": false}}
   ],
   "bank_analysis": {{
     "ZA Bank": {{
@@ -916,10 +1111,11 @@ IMPORTANT for "is_bau" field in best_for entries:
   Set false if it is a time-limited promotion.
 
 FINAL REMINDER:
+  • Complete SECTION 7 self-consistency check before writing final JSON.
   • "Fund Investment" and "Referral Bonus" entries MUST have a real bank name,
     not "None", if any qualifying promotion exists in the data above.
-  • Re-read the promotion list one more time before finalising your answer.
-  • Every "detail" field MUST pass the SECTION 6 evidence gate."""
+  • Every "detail" field MUST pass the SECTION 6 evidence gate.
+  • Re-read the promotion list one more time before finalising your answer."""
 
     raw = _call([{'role': 'user', 'content': prompt}])
     if not raw:
@@ -931,8 +1127,11 @@ FINAL REMINDER:
         print('❌ Strategic insights: JSON parse failed')
         return None
 
-    # ── FIX 3: Python evidence gate — catches hallucinations the LLM missed ──
+    # ── FIX 3: Python evidence gate ───────────────────────────────────────────
     result['best_for'] = _validate_best_for_evidence(result.get('best_for', []))
+
+    # ── FIX 4b: Cross-check — fill None slots from bank_analysis.strengths ───
+    result = _cross_check_best_for_from_strengths(result, promotions_by_bank)
 
     # ── post-process bank_analysis counts ─────────────────────────────────────
     name_lookup = {k.lower(): k for k in promotions_by_bank}
