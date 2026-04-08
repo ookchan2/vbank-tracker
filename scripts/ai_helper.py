@@ -30,6 +30,8 @@ BAU_OVERRIDES: dict[str, list[str]] = {
 }
 
 # ── Extraction prompt ─────────────────────────────────────────────────────────
+# FIX 1a: Added Rule 7 — footnotes are real promotions, always extract them
+# FIX 1b: Added Rule 8 — nav/menu/footer items are NOT promotions, never extract
 
 _PROMPT_TMPL = """\
 You are a specialist at extracting bank promotion data from website text.
@@ -66,6 +68,34 @@ Source URL: URL_PLACEHOLDER
 ║     • Any referral / invite-a-friend / 推薦 program → tag 推薦     ║
 ║     • Any fund / 基金 / unit trust subscription fee promo → 投資   ║
 ║     • Any stock / crypto / securities trading fee promo → 投資     ║
+║                                                                      ║
+║  7. ⚠️  FOOTNOTES ARE REAL PROMOTIONS — ALWAYS EXTRACT THEM        ║
+║     Lines starting with  *  †  #  ¹  ²  are often the most         ║
+║     important promotion terms, NOT just legal disclaimers.          ║
+║     REQUIRED: scan EVERY footnote line and ask yourself:            ║
+║       "Does this mention a fee waiver, discount, reward, or         ║
+║        eligibility period?" → If YES, extract it as a promotion.   ║
+║                                                                      ║
+║     REAL EXAMPLE you must not miss:                                 ║
+║       "*From now until 31 Jul 2026 ... retail banking users who    ║
+║        have activated investment fund trading services with ZA Bank ║
+║        can enjoy 0% fund subscription fee offer and redemption fee  ║
+║        waivers for all funds."                                      ║
+║       → Extract as: name="ZA Bank 0% Fund Subscription Fee Offer   ║
+║         until 31 Jul 2026", types=["投資"], is_bau=false,          ║
+║         end_date="2026-07-31"                                       ║
+║                                                                      ║
+║  8. ⛔ DO NOT EXTRACT THESE — they are NOT promotions:             ║
+║     • Navigation / menu items                                       ║
+║       (e.g. "Travel Offers", "Download App", "Get an Account",     ║
+║        "Help Center", "About Us", "Travel with ZA Card" as menu)   ║
+║     • Section headings without a concrete benefit amount            ║
+║     • Pure risk disclaimers / legal boilerplate                     ║
+║     • Generic product feature names with no specific reward         ║
+║     • Footer links (Terms, Privacy Policy, Contact Us, etc.)       ║
+║                                                                      ║
+║     ❌ BAD extraction (nav item): "Travel with ZA Card"            ║
+║     ✅ GOOD extraction (real deal): "Trip.com 8% off + 2% CashBack"║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 ALLOWED CATEGORY TAGS (Chinese, pick 1-3 per promotion):
@@ -282,6 +312,100 @@ def _apply_bau_overrides(promos: list, bank_id: str) -> list:
                 p['is_bau'] = True
                 print(f'    🔒 BAU override: {p.get("name") or p.get("title")}')
     return promos
+
+
+# ── FIX 3: Evidence gate — module-level constants ─────────────────────────────
+#
+# These are used by _validate_best_for_evidence() to catch best_for winners
+# whose "detail" field is vague or contains no concrete verifiable fact.
+#
+# Root causes being fixed:
+#   • Navigation menu items (e.g. "Travel Offers", "Travel with ZA Card")
+#     were being treated as travel promotions with no concrete numbers,
+#     producing hallucinated winners like "Year-Round Travel Offers with
+#     special travel-related promotions".
+#   • Any winner detail that matches _VAGUE_DETAIL_PATTERNS is immediately
+#     rejected regardless of what the LLM chose.
+#   • Any winner detail that has no _CONCRETE_EVIDENCE_RE match is also
+#     rejected — a real promotion always has at least one concrete fact
+#     (HKD amount, %, date, named partner, etc.).
+
+_VAGUE_DETAIL_PATTERNS: list[str] = [
+    r'special\s+\w+[-\s]related\s+promotions?',        # "special travel-related promotions"
+    r'year[- ]round\s+\w+\s+offers?\s+with\s+special', # "year-round travel offers with special…"
+    r'^\s*various\b',                                   # "various promotions available"
+    r'competitive\s+features',                          # "competitive features"
+    r'\bservices?\s+available\s*$',                     # ends with "services available"
+    r'no\s+\w+\s+promotions?\s+available',              # "no X promotions available"
+]
+
+_CONCRETE_EVIDENCE_RE = re.compile(
+    r'HKD\s*[\d,]+'                    # HKD amount    e.g. HKD300, HKD8,888
+    r'|\d+\.?\d*\s*%'                  # percentage    e.g. 0%, 1.18%, 20%
+    r'|\d{1,2}\s+[A-Za-z]+\s+20\d\d'  # named date    e.g. 31 Jul 2026
+    r'|20\d\d-\d\d-\d\d'              # ISO date      e.g. 2026-07-31
+    r'|trip\.com'                      # named partner e.g. Trip.com
+    r'|asia\s*miles'                   # Asia Miles
+    r'|\bapr\b'                        # APR rate
+    r'|subscription\s*fee'             # fund fee waiver
+    r'|commission'                     # commission waiver
+    r'|cashback|cash\s*back',          # cashback reward
+    re.IGNORECASE,
+)
+
+
+def _validate_best_for_evidence(best_for: list) -> list:
+    """
+    Post-processing safety guard applied AFTER the LLM generates best_for slots.
+
+    Rejects any winner whose "detail" field:
+      (a) matches a known vague/hallucinated pattern, OR
+      (b) contains no concrete verifiable fact (HKD amount, %, date, etc.)
+
+    Sets bank → "None" for rejected entries so the UI shows "None" rather
+    than a fabricated winner.  Always logs what was rejected and why.
+
+    Already-None entries pass through untouched.
+    """
+    validated    = []
+    reject_count = 0
+
+    for entry in best_for:
+        detail = (entry.get('detail')   or '').strip()
+        bank   = (entry.get('bank')     or '').strip()
+        cat    = (entry.get('category') or '').strip()
+
+        # Already None / empty — pass through unchanged
+        if bank.lower() in ('none', '', 'n/a'):
+            validated.append(entry)
+            continue
+
+        is_vague     = any(
+            re.search(pat, detail, re.IGNORECASE)
+            for pat in _VAGUE_DETAIL_PATTERNS
+        )
+        has_evidence = bool(_CONCRETE_EVIDENCE_RE.search(detail))
+
+        if is_vague or not has_evidence:
+            reason = 'vague pattern matched' if is_vague else 'no concrete fact found'
+            print(
+                f'  🚫 Evidence gate REJECTED [{cat}] winner "{bank}" '
+                f'({reason}) → detail was: "{detail}"'
+            )
+            validated.append({
+                **entry,
+                'bank':   'None',
+                'detail': f'No verified {cat} promotion with concrete details found',
+                'is_bau': False,
+            })
+            reject_count += 1
+        else:
+            validated.append(entry)
+
+    if reject_count:
+        print(f'  🚫 Evidence gate total: {reject_count} vague winner(s) nullified')
+
+    return validated
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -566,6 +690,11 @@ def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
     Chinese type tags (推薦, 投資 …) are passed through to the prompt verbatim
     and the prompt explains the mapping to English best_for categories so the AI
     never outputs "None" when a qualifying promotion exists.
+
+    FIX 2: Added SECTION 6 — Evidence Gate to the AI prompt, instructing the
+            LLM to self-reject any winner whose detail has no concrete fact.
+    FIX 3: Calls _validate_best_for_evidence() after parsing to catch any
+            hallucinated winners that survive the prompt instruction.
     """
     if not AI_AVAILABLE:
         print('⚠️  AI not available — skipping strategic insights')
@@ -716,6 +845,41 @@ These are real promotions that MUST be correctly classified:
        Any bank  with a [推薦]-tagged promotion + HKD amount → qualifies
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6 — EVIDENCE GATE: NO HALLUCINATION ALLOWED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FIX 2: The "detail" field for each best_for winner MUST contain at least
+ONE concrete verifiable fact from the promotion data listed above.
+
+  ✅ VALID details (contain specific evidence):
+       "0% fund subscription fee until 31 Jul 2026"
+       "HKD300 per successful referral, no cap"
+       "1.18% APR on Tax Season Instant Loan"
+       "Up to 8% off + 2% CashBack on Trip.com until Dec 2026"
+       "Lifetime $0 commissions on HK stocks trading"
+
+  ❌ INVALID details (vague, no concrete fact — NEVER use):
+       "Year-Round Travel Offers with special travel-related promotions"
+       "Various fund investment promotions available"
+       "Investment services with competitive features"
+       "Travel benefits for cardholders"
+
+RULE: If your detail string does NOT contain at least one of:
+  • A specific HKD/USD amount   (e.g. HKD300, HKD8,888)
+  • A specific percentage        (e.g. 0%, 1.18%, 8%)
+  • A specific date              (e.g. until 31 Jul 2026)
+  • A named concrete partner     (e.g. Trip.com, Asia Miles)
+  • A named specific product     (e.g. Tax Season Instant Loan, subscription fee)
+  • A commission or fee keyword  (e.g. commission, subscription fee, cashback)
+→ Set bank to "None" for that category.
+  A truthful "None" is ALWAYS better than a hallucinated winner.
+
+TRAVEL category special rule:
+  Only pick a Travel winner if the promotion text EXPLICITLY states a
+  discount %, cashback %, Asia Miles earn rate, or a named travel partner
+  (Trip.com, Agoda, airline name, etc.) with a concrete benefit amount.
+  Navigation menu items like "Travel Offers" or "Travel with ZA Card"
+  are NOT travel promotions — never use them as evidence for a winner.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Return this EXACT JSON structure (no markdown, no code fences):
 {{
@@ -723,7 +887,7 @@ Return this EXACT JSON structure (no markdown, no code fences):
     {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific stock/crypto detail with numbers", "is_bau": false}},
     {{"category": "Spending/CashBack",                "bank": "BankName", "detail": "specific % or HKD amount",                  "is_bau": false}},
     {{"category": "Welcome Bonus",                    "bank": "BankName", "detail": "HKD amount",                                "is_bau": false}},
-    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit",                          "is_bau": false}},
+    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit with % or named partner",  "is_bau": false}},
     {{"category": "Loan APR",                         "bank": "BankName", "detail": "X.XX% APR",                                "is_bau": false}},
     {{"category": "FX/Multi-Currency",                "bank": "BankName", "detail": "specific detail",                          "is_bau": false}},
     {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail",         "is_bau": false}},
@@ -754,7 +918,8 @@ IMPORTANT for "is_bau" field in best_for entries:
 FINAL REMINDER:
   • "Fund Investment" and "Referral Bonus" entries MUST have a real bank name,
     not "None", if any qualifying promotion exists in the data above.
-  • Re-read the promotion list one more time before finalising your answer."""
+  • Re-read the promotion list one more time before finalising your answer.
+  • Every "detail" field MUST pass the SECTION 6 evidence gate."""
 
     raw = _call([{'role': 'user', 'content': prompt}])
     if not raw:
@@ -765,6 +930,9 @@ FINAL REMINDER:
     if result is None:
         print('❌ Strategic insights: JSON parse failed')
         return None
+
+    # ── FIX 3: Python evidence gate — catches hallucinations the LLM missed ──
+    result['best_for'] = _validate_best_for_evidence(result.get('best_for', []))
 
     # ── post-process bank_analysis counts ─────────────────────────────────────
     name_lookup = {k.lower(): k for k in promotions_by_bank}
