@@ -15,6 +15,7 @@
   details > summary { list-style:none; cursor:pointer; }
   details > summary::-webkit-details-marker { display:none; }
   .chevron { transition: transform 0.2s; display:inline-block; }
+  details[open] .comp-chevron { transform: rotate(180deg); }
   tr:hover td { background:#f8fafc; }
   .bank-strategy-card {
     border-left: 4px solid #6366f1;
@@ -24,6 +25,14 @@
     margin-bottom: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.07);
   }
+  #compTable td:first-child,
+  #compTable th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+  }
+  #compTable thead th:first-child { background: #f9fafb; }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -33,7 +42,9 @@
   <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
       <h1 class="text-2xl font-extrabold tracking-tight">🏦 HK Virtual Bank Promotions</h1>
-      <p class="text-gray-300 text-sm mt-1">香港虛擬銀行優惠追蹤 · <span id="bankCount">–</span> Banks · Real-time Filter</p>
+      <p class="text-gray-300 text-sm mt-1">
+        香港虛擬銀行優惠追蹤 · <span id="bankCount">–</span> Banks · Real-time Filter
+      </p>
     </div>
     <div class="flex gap-3 flex-wrap">
       <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
@@ -62,8 +73,7 @@
 <!-- ── BANK FILTER TABS ───────────────────────────────────────── -->
 <div class="max-w-screen-2xl mx-auto px-4 pt-4">
   <div class="flex gap-2 flex-wrap" id="bankTabs">
-    <button onclick="setBankTab('')"
-      id="tab-all"
+    <button onclick="setBankTab('')" id="tab-all"
       class="bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-indigo-600 text-white">
       All Banks
     </button>
@@ -75,17 +85,18 @@
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
     <div class="flex flex-col md:flex-row gap-3 items-start md:items-center flex-wrap">
 
-      <!-- Search -->
       <div class="relative flex-1 min-w-48">
         <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
-        <input id="searchInput" type="text" placeholder="Search promotions... (e.g. cash reward, 0 fee, interest)"
-          class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+        <input id="searchInput" type="text"
+          placeholder="Search promotions... (e.g. cash reward, 0 fee, interest)"
+          class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm
+                 focus:outline-none focus:ring-2 focus:ring-indigo-300"
           oninput="applyFilters()">
       </div>
 
-      <!-- Category filter -->
       <select id="catFilter" onchange="applyFilters()"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm
+               focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
         <option value="">All Categories</option>
         <option>迎新 Welcome</option>
         <option>消費 Spending</option>
@@ -94,7 +105,6 @@
         <option>保險 Insurance</option>
         <option>貸款 Loan</option>
         <option>活期存款 Savings</option>
-        <option>信用卡 Card</option>
         <option>定期存款 TDeposit</option>
         <option>外匯 FX</option>
         <option>推薦 Referral</option>
@@ -102,38 +112,122 @@
         <option>Others 其他</option>
       </select>
 
-      <!-- Status filter -->
       <select id="statusFilter" onchange="applyFilters()"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm
+               focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
         <option value="active">✅ Valid Only</option>
         <option value="expiring">⚡ Expiring Soon</option>
         <option value="all">All (Active + Expired)</option>
         <option value="expired">✗ Expired Only</option>
       </select>
 
-      <!-- Sort -->
       <select id="sortFilter" onchange="applyFilters()"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm
+               focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
         <option value="default">Sort: Default</option>
         <option value="bank">Sort: Bank</option>
         <option value="enddate">Sort: End Date</option>
         <option value="newest">Sort: Newest</option>
       </select>
 
-      <!-- Export -->
       <button onclick="exportExcel()"
-        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white
+               px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
         📥 Export Excel
       </button>
-
     </div>
 
-    <!-- Category Tags Filter -->
     <div class="mt-3 flex flex-wrap gap-2" id="catTagFilter"></div>
-
-    <!-- Result count -->
     <div class="mt-2 text-sm text-gray-500" id="resultCount"></div>
   </div>
+</div>
+
+<!-- ══ NEW TODAY SECTION ══════════════════════════════════════════ -->
+<!-- ✅ 新增：只顯示今天 created_at 的優惠 -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newTodaySection" style="display:none;">
+  <div class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
+
+    <!-- Header bar -->
+    <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4
+                flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🆕</span>
+        <div>
+          <div class="font-extrabold text-white text-lg tracking-tight">
+            New Promotions Today
+          </div>
+          <div class="text-orange-100 text-xs mt-0.5">
+            今日首次偵測到的優惠 · First detected today
+          </div>
+        </div>
+      </div>
+      <span id="newTodayCount"
+            class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full">
+      </span>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-amber-50 overflow-x-auto">
+      <table class="w-full border-collapse text-sm" id="newTodayTable">
+        <thead>
+          <tr class="bg-orange-100 border-b border-orange-200">
+            <th class="text-left px-4 py-3 font-bold text-orange-700
+                       uppercase text-xs tracking-wide whitespace-nowrap">Bank</th>
+            <th class="text-left px-4 py-3 font-bold text-orange-700
+                       uppercase text-xs tracking-wide">Promotion</th>
+            <th class="text-left px-4 py-3 font-bold text-orange-700
+                       uppercase text-xs tracking-wide">Category</th>
+            <th class="text-left px-4 py-3 font-bold text-orange-700
+                       uppercase text-xs tracking-wide whitespace-nowrap">Period</th>
+            <th class="text-left px-4 py-3 font-bold text-orange-700
+                       uppercase text-xs tracking-wide">Status</th>
+          </tr>
+        </thead>
+        <tbody id="newTodayTbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Empty state (shown when data loaded but 0 new today) -->
+    <div id="newTodayEmpty"
+         class="hidden bg-amber-50 px-5 py-8 text-center text-gray-400 text-sm">
+      🔍 No new promotions detected today.
+    </div>
+
+  </div>
+</div>
+<!-- ══ END NEW TODAY SECTION ══ -->
+
+<!-- ── COMPARISON SECTION ────────────────────────────────────────── -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="comparisonSection" style="display:none">
+  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+    <summary class="px-5 py-4 flex items-center justify-between
+                    hover:bg-gray-50/80 select-none transition-colors">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">📊</span>
+        <div>
+          <div class="font-bold text-gray-800">銀行比較 Bank Comparison</div>
+          <div class="text-xs text-gray-400 mt-0.5">
+            以 ZA Bank 為基準 · ▲ more than ZA · ▼ less than ZA · 🟢 category leader
+          </div>
+        </div>
+      </div>
+      <span class="comp-chevron chevron text-gray-400 text-sm">▼</span>
+    </summary>
+
+    <div class="px-5 pb-6 border-t border-gray-100">
+      <div class="overflow-x-auto rounded-xl border border-gray-100 mt-5 mb-5 shadow-sm">
+        <table class="w-full border-collapse text-sm" id="compTable">
+          <tbody>
+            <tr>
+              <td class="px-6 py-8 text-center text-gray-400">⏳ Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid gap-4 md:grid-cols-2" id="prosConsWrap"></div>
+    </div>
+  </details>
 </div>
 
 <!-- ── MAIN LAYOUT ─────────────────────────────────────────────── -->
@@ -143,20 +237,17 @@
   <div class="flex-1 min-w-0">
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
-      <!-- Loading -->
       <div id="loadingState" class="p-16 text-center text-gray-400">
         <div class="text-4xl mb-3">⏳</div>
         <div class="text-lg font-medium">Loading promotions…</div>
       </div>
 
-      <!-- Error -->
       <div id="errorState" class="p-16 text-center text-red-400 hidden">
         <div class="text-4xl mb-3">⚠️</div>
         <div class="text-lg font-medium">Failed to load data</div>
         <div class="text-sm mt-2" id="errorMsg"></div>
       </div>
 
-      <!-- Table -->
       <div id="tableWrapper" class="hidden overflow-x-auto">
         <table class="w-full border-collapse text-sm" id="promoTable">
           <thead>
@@ -173,7 +264,6 @@
         </table>
       </div>
 
-      <!-- Empty -->
       <div id="emptyState" class="p-16 text-center text-gray-400 hidden">
         <div class="text-4xl mb-3">🔍</div>
         <div class="text-lg font-medium">No promotions match your filters</div>
@@ -192,21 +282,20 @@
 </div>
 
 <script>
-// ── Category config (長期獎勵 REMOVED) ───────────────────────────
+// ── Category config ───────────────────────────────────────────────
 const CAT_META = {
-  "迎新 Welcome":        {bg:"#10b981", emoji:"🎉"},
-  "消費 Spending":       {bg:"#f59e0b", emoji:"💳"},
-  "投資 Investment":     {bg:"#6366f1", emoji:"📈"},
-  "旅遊 Travel":         {bg:"#06b6d4", emoji:"✈️"},
-  "保險 Insurance":      {bg:"#ef4444", emoji:"🛡️"},
-  "貸款 Loan":           {bg:"#dc2626", emoji:"💰"},
-  "活期存款 Savings":    {bg:"#3b82f6", emoji:"🏦"},
-  "信用卡 Card":         {bg:"#7c3aed", emoji:"💳"},
-  "定期存款 TDeposit":   {bg:"#0369a1", emoji:"🏛️"},
-  "外匯 FX":             {bg:"#8b5cf6", emoji:"🌐"},
-  "推薦 Referral":       {bg:"#ec4899", emoji:"👥"},
-  "新資金 New Funds":    {bg:"#0ea5e9", emoji:"💵"},
-  "Others 其他":         {bg:"#6b7280", emoji:"📋"},
+  "迎新 Welcome":      { bg:"#10b981", emoji:"🎉" },
+  "消費 Spending":     { bg:"#f59e0b", emoji:"💳" },
+  "投資 Investment":   { bg:"#6366f1", emoji:"📈" },
+  "旅遊 Travel":       { bg:"#06b6d4", emoji:"✈️" },
+  "保險 Insurance":    { bg:"#ef4444", emoji:"🛡️" },
+  "貸款 Loan":         { bg:"#dc2626", emoji:"💰" },
+  "活期存款 Savings":  { bg:"#3b82f6", emoji:"🏦" },
+  "定期存款 TDeposit": { bg:"#0369a1", emoji:"🏛️" },
+  "外匯 FX":           { bg:"#8b5cf6", emoji:"🌐" },
+  "推薦 Referral":     { bg:"#ec4899", emoji:"👥" },
+  "新資金 New Funds":  { bg:"#0ea5e9", emoji:"💵" },
+  "Others 其他":       { bg:"#6b7280", emoji:"📋" },
 };
 
 const BANK_COLORS = {
@@ -228,51 +317,51 @@ function bankColor(name) {
 }
 
 function catMeta(cat) {
-  // Try exact match first, then partial match
   if (CAT_META[cat]) return CAT_META[cat];
   for (const [k, v] of Object.entries(CAT_META)) {
     if (cat && k.toLowerCase().includes(cat.toLowerCase())) return v;
     if (cat && cat.toLowerCase().includes(k.split(' ')[0].toLowerCase())) return v;
   }
-  return {bg:"#6b7280", emoji:"📋"};
+  return { bg:"#6b7280", emoji:"📋" };
 }
 
 function catTag(cat) {
-  // Skip 長期獎勵 entirely
   if (cat && cat.includes('長期')) return '';
   const m = catMeta(cat);
   return `<span class="cat-tag" style="background:${m.bg}">${m.emoji} ${cat}</span>`;
 }
 
-// ── Status Logic (FIXED: Ongoing never expires) ──────────────────
+// ── Status logic ──────────────────────────────────────────────────
 function getStatus(p) {
   if (!p.active) return 'expired';
-  // Ongoing or no end_date → always active
   if (!p.end_date || p.period === 'Ongoing' ||
       (p.period && p.period.toLowerCase().includes('ongoing'))) return 'active';
   const diff = (new Date(p.end_date) - new Date()) / 86400000;
   if (diff < 0)   return 'expired';
-  if (diff <= 30) return 'expiring';  // within 30 days
+  if (diff <= 30) return 'expiring';
   return 'active';
 }
 
 function statusBadge(p) {
   const s = getStatus(p);
   if (s === 'active')
-    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">✅ Valid</span>`;
+    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                         text-xs font-bold bg-green-100 text-green-700">✅ Valid</span>`;
   if (s === 'expiring') {
     const diff = Math.ceil((new Date(p.end_date) - new Date()) / 86400000);
-    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-600">⚡ ${diff}d left</span>`;
+    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                         text-xs font-bold bg-orange-100 text-orange-600">⚡ ${diff}d left</span>`;
   }
-  return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
+  return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                       text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
 }
 
-// ── State ────────────────────────────────────────────────────────
-let allPromos   = [];
-let filtered    = [];
+// ── State ─────────────────────────────────────────────────────────
+let allPromos     = [];
+let filtered      = [];
 let activeBankTab = '';
 
-// ── Load ─────────────────────────────────────────────────────────
+// ── Load ──────────────────────────────────────────────────────────
 async function loadData() {
   try {
     const res  = await fetch('./data.json?_=' + Date.now());
@@ -280,15 +369,13 @@ async function loadData() {
     const data = await res.json();
     allPromos  = data.promotions || [];
 
-    // Fix: remap old category names to new format if needed
     allPromos = allPromos.map(p => ({
       ...p,
       types: (p.types || [])
-        .filter(t => !t.includes('長期'))   // Remove 長期獎勵
-        .map(t => remapCat(t))
+        .filter(t => !t.includes('長期'))
+        .map(t => remapCat(t)),
     }));
 
-    // Stats using getStatus
     const activeN   = allPromos.filter(p => getStatus(p) === 'active').length;
     const expiringN = allPromos.filter(p => getStatus(p) === 'expiring').length;
     const expiredN  = allPromos.filter(p => getStatus(p) === 'expired').length;
@@ -302,11 +389,10 @@ async function loadData() {
     document.getElementById('lastUpdated').textContent  =
       `Last updated: ${data.updated || data.last_updated || 'Unknown'} HKT`;
 
-    // Bank tabs
     buildBankTabs(banks);
-
-    // Bank summary sidebar
     buildBankSummary(banks);
+    buildNewTodaySection();   // ✅ 新增：渲染今日新優惠
+    buildComparisonTable();
 
     document.getElementById('loadingState').classList.add('hidden');
     document.getElementById('tableWrapper').classList.remove('hidden');
@@ -319,30 +405,84 @@ async function loadData() {
   }
 }
 
-// Remap old cat names to new bilingual format
 function remapCat(t) {
   const MAP = {
-    '迎新':'迎新 Welcome','消費':'消費 Spending','投資':'投資 Investment',
-    '旅遊':'旅遊 Travel','保險':'保險 Insurance','貸款':'貸款 Loan',
-    '存款':'活期存款 Savings','活期存款':'活期存款 Savings',
-    '信用卡':'信用卡 Card','定期存款':'定期存款 TDeposit',
-    '外匯':'外匯 FX','推薦':'推薦 Referral','新資金':'新資金 New Funds',
-    'Others':'Others 其他',
+    '迎新':'迎新 Welcome',       '消費':'消費 Spending',
+    '投資':'投資 Investment',     '旅遊':'旅遊 Travel',
+    '保險':'保險 Insurance',      '貸款':'貸款 Loan',
+    '存款':'活期存款 Savings',    '活期存款':'活期存款 Savings',
+    '定期存款':'定期存款 TDeposit',
+    '外匯':'外匯 FX',             '推薦':'推薦 Referral',
+    '新資金':'新資金 New Funds',  'Others':'Others 其他',
   };
   return MAP[t] || t;
 }
+
+// ══ NEW TODAY SECTION ════════════════════════════════════════════
+// ✅ 新增函數：只顯示今天 created_at 的優惠
+function buildNewTodaySection() {
+  // 取得本地今天日期 "YYYY-MM-DD"
+  const now   = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+  // 用 created_at 的前 10 碼做比較
+  const newToday = allPromos.filter(p => {
+    const created = (p.created_at || '').substring(0, 10);
+    return created === today;
+  });
+
+  const section  = document.getElementById('newTodaySection');
+  const tbody    = document.getElementById('newTodayTbody');
+  const countEl  = document.getElementById('newTodayCount');
+  const emptyEl  = document.getElementById('newTodayEmpty');
+
+  // 始終顯示 section（讓使用者知道今天有沒有新優惠）
+  section.style.display = 'block';
+
+  if (!newToday.length) {
+    tbody.innerHTML = '';
+    emptyEl.classList.remove('hidden');
+    countEl.textContent = '0 new today';
+    return;
+  }
+
+  emptyEl.classList.add('hidden');
+  countEl.textContent = `${newToday.length} new today`;
+
+  tbody.innerHTML = newToday.map(p => {
+    const color = bankColor(p.bank_name);
+    const cats  = (p.types || ['Others 其他']).map(catTag).join('');
+    const badge = statusBadge(p);
+    return `
+      <tr class="border-b border-orange-100 hover:bg-orange-100/60 transition-colors">
+        <td class="px-4 py-3 whitespace-nowrap">
+          <span class="bank-dot" style="background:${color}"></span>
+          <span class="font-semibold text-gray-700">${p.bank_name}</span>
+        </td>
+        <td class="px-4 py-3 max-w-xs">
+          <div class="font-semibold text-gray-800 leading-snug">${p.title}</div>
+          <div class="text-gray-400 text-xs mt-0.5">${p.highlight || ''}</div>
+        </td>
+        <td class="px-4 py-3">${cats}</td>
+        <td class="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">${p.period || '—'}</td>
+        <td class="px-4 py-3">${badge}</td>
+      </tr>`;
+  }).join('');
+}
+// ══ END NEW TODAY SECTION ════════════════════════════════════════
 
 // ── Bank Tabs ─────────────────────────────────────────────────────
 function buildBankTabs(banks) {
   const container = document.getElementById('bankTabs');
   banks.sort().forEach(b => {
-    const c = bankColor(b);
+    const c   = bankColor(b);
     const btn = document.createElement('button');
-    btn.id = `tab-${b}`;
-    btn.className = 'bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
+    btn.id        = `tab-${b}`;
+    btn.className = 'bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold '
+                  + 'border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
     btn.style.borderColor = c;
     btn.innerHTML = `<span style="color:${c}">●</span> ${b}`;
-    btn.onclick = () => setBankTab(b);
+    btn.onclick   = () => setBankTab(b);
     container.appendChild(btn);
   });
 }
@@ -350,21 +490,20 @@ function buildBankTabs(banks) {
 function setBankTab(bank) {
   activeBankTab = bank;
   document.querySelectorAll('.bank-tab-btn').forEach(btn => {
-    btn.classList.remove('bg-indigo-600','text-white','text-gray-600','bg-white');
-    btn.classList.add('text-gray-600','bg-white');
+    btn.classList.remove('bg-indigo-600', 'text-white', 'text-gray-600', 'bg-white');
+    btn.classList.add('text-gray-600', 'bg-white');
   });
   const activeBtn = document.getElementById(bank ? `tab-${bank}` : 'tab-all');
   if (activeBtn) {
-    activeBtn.classList.remove('text-gray-600','bg-white');
-    activeBtn.classList.add('bg-indigo-600','text-white');
+    activeBtn.classList.remove('text-gray-600', 'bg-white');
+    activeBtn.classList.add('bg-indigo-600', 'text-white');
   }
   applyFilters();
 }
 
-// ── Bank Summary Sidebar ──────────────────────────────────────────
+// ── Bank Strategy Sidebar ─────────────────────────────────────────
 function buildBankSummary(banks) {
   const el = document.getElementById('bankSummary');
-
   const STRATEGY = {
     'ZA Bank':      'Strong in investment & spending rewards. Leading cashback and stock rewards.',
     'Mox Bank':     'Cashback-focused. Best for everyday spending and travel perks.',
@@ -377,29 +516,258 @@ function buildBankSummary(banks) {
   };
 
   el.innerHTML = banks.sort().map(b => {
-    const promos  = allPromos.filter(p => p.bank_name === b);
-    const active  = promos.filter(p => getStatus(p) === 'active').length;
-    const expiring= promos.filter(p => getStatus(p) === 'expiring').length;
-    const color   = bankColor(b);
-    const types   = [...new Set(promos.flatMap(p => p.types || []))].slice(0, 3);
-    const strategy= STRATEGY[b] || `${active} active promotions tracked.`;
+    const promos   = allPromos.filter(p => p.bank_name === b);
+    const active   = promos.filter(p => getStatus(p) === 'active').length;
+    const expiring = promos.filter(p => getStatus(p) === 'expiring').length;
+    const color    = bankColor(b);
+    const types    = [...new Set(promos.flatMap(p => p.types || []))].slice(0, 3);
+    const strategy = STRATEGY[b] || `${active} active promotions tracked.`;
 
     return `
-    <div class="bank-strategy-card" style="border-left-color:${color}">
-      <div class="flex items-center justify-between mb-1">
-        <span class="font-bold text-gray-700 text-sm">${b}</span>
-        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">${active} active</span>
-      </div>
-      ${expiring > 0 ? `<div class="text-xs text-orange-500 mb-1">⚡ ${expiring} expiring soon</div>` : ''}
-      <div class="text-xs text-gray-500 mb-2 leading-relaxed">${strategy}</div>
-      <div class="flex flex-wrap gap-1">
-        ${types.map(t => {
-          const m = catMeta(t);
-          return `<span class="text-xs px-2 py-0.5 rounded-full text-white font-semibold" style="background:${m.bg}">${t.split(' ')[0]}</span>`;
-        }).join('')}
-      </div>
-    </div>`;
+      <div class="bank-strategy-card" style="border-left-color:${color}">
+        <div class="flex items-center justify-between mb-1">
+          <span class="font-bold text-gray-700 text-sm">${b}</span>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full
+                       bg-green-100 text-green-700">${active} active</span>
+        </div>
+        ${expiring > 0
+          ? `<div class="text-xs text-orange-500 mb-1">⚡ ${expiring} expiring soon</div>`
+          : ''}
+        <div class="text-xs text-gray-500 mb-2 leading-relaxed">${strategy}</div>
+        <div class="flex flex-wrap gap-1">
+          ${types.map(t => {
+            const m = catMeta(t);
+            return `<span class="text-xs px-2 py-0.5 rounded-full text-white font-semibold"
+                          style="background:${m.bg}">${t.split(' ')[0]}</span>`;
+          }).join('')}
+        </div>
+      </div>`;
   }).join('');
+}
+
+// ── Comparison Table ──────────────────────────────────────────────
+function buildComparisonTable() {
+  document.getElementById('comparisonSection').style.display = 'block';
+
+  const livePromos = allPromos.filter(p => {
+    const s = getStatus(p);
+    return s === 'active' || s === 'expiring';
+  });
+
+  if (!livePromos.length) return;
+
+  const bankMap = {};
+  livePromos.forEach(p => {
+    if (!bankMap[p.bank_name]) bankMap[p.bank_name] = { name: p.bank_name, promos: [] };
+    bankMap[p.bank_name].promos.push(p);
+  });
+
+  const banks = Object.values(bankMap).sort((a, b) => {
+    if (a.name.includes('ZA')) return -1;
+    if (b.name.includes('ZA')) return 1;
+    return b.promos.length - a.promos.length;
+  });
+
+  const zaBank = banks.find(b => b.name.includes('ZA'));
+  if (!zaBank) {
+    console.warn('Comparison: ZA Bank not found in data');
+    return;
+  }
+
+  const typeCounts = {};
+  livePromos.forEach(p =>
+    (p.types || []).forEach(t => {
+      if (!t.includes('長期') && !t.includes('Others'))
+        typeCounts[t] = (typeCounts[t] || 0) + 1;
+    })
+  );
+  const topTypes = Object.entries(typeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(e => e[0])
+    .slice(0, 8);
+
+  let thead = `<tr class="bg-gray-50 border-b-2 border-gray-200">
+    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500
+               uppercase tracking-wide w-44 whitespace-nowrap">
+      指標 / Metric
+    </th>`;
+
+  banks.forEach(b => {
+    const isZA  = b.name.includes('ZA');
+    const color = bankColor(b.name);
+    thead += `
+      <th class="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide
+                 ${isZA ? 'bg-blue-50' : ''}"
+          style="color:${color}; min-width:95px;">
+        <span class="bank-dot" style="background:${color}; margin-right:3px;"></span>${b.name}
+        ${isZA
+          ? '<br><span class="text-blue-400 font-normal normal-case text-xs">⭐ 基準 Base</span>'
+          : ''}
+      </th>`;
+  });
+  thead += `</tr>`;
+
+  function makeRow(label, getVal, isBold = false) {
+    const zaVal  = getVal(zaBank);
+    const allVals= banks.map(b => getVal(b));
+    const maxVal = Math.max(...allVals);
+
+    let r = `<tr class="border-b border-gray-100 hover:bg-indigo-50/20 transition-colors">
+      <td class="px-4 py-2.5 text-sm text-gray-700 whitespace-nowrap
+                 ${isBold ? 'font-bold' : 'font-medium'}">${label}</td>`;
+
+    banks.forEach(b => {
+      const isZA  = b.name.includes('ZA');
+      const val   = getVal(b);
+      const isTop = !isZA && val === maxVal && maxVal > 0;
+
+      let indicator = '';
+      if (!isZA) {
+        if      (val > zaVal)      indicator = `<span class="ml-1 text-green-500 text-xs font-bold">▲</span>`;
+        else if (val < zaVal)      indicator = `<span class="ml-1 text-red-400 text-xs font-bold">▼</span>`;
+        else if (val > 0 || zaVal > 0)
+                                   indicator = `<span class="ml-1 text-gray-300 text-xs">—</span>`;
+      }
+
+      const display = val > 0
+        ? `<span class="${isTop ? 'text-green-600 font-bold' : isZA ? 'text-blue-700 font-bold' : 'text-gray-700'}">${val}</span>`
+        : `<span class="text-gray-200">0</span>`;
+
+      r += `<td class="px-4 py-2.5 text-center ${isZA ? 'bg-blue-50/50' : ''}">
+        ${display}${indicator}
+      </td>`;
+    });
+
+    r += `</tr>`;
+    return r;
+  }
+
+  function sectionRow(label) {
+    return `<tr class="bg-gray-50/80 border-b border-gray-100">
+      <td colspan="${banks.length + 1}"
+          class="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+        ${label}
+      </td>
+    </tr>`;
+  }
+
+  const rows = [];
+
+  rows.push(sectionRow('📋 總覽 Overview'));
+  rows.push(makeRow('✅ 有效優惠總數 Total Active',
+    b => b.promos.length, true));
+  rows.push(makeRow('🔄 長期/無到期 Ongoing',
+    b => b.promos.filter(p =>
+      !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))
+    ).length));
+  rows.push(makeRow('⚡ 即將到期 Expiring ≤30d',
+    b => b.promos.filter(p => getStatus(p) === 'expiring').length));
+
+  rows.push(sectionRow('🏷️ 優惠類別 By Category'));
+  topTypes.forEach(type => {
+    const m     = catMeta(type);
+    const short = type.split(' ')[0];
+    rows.push(makeRow(
+      `<span style="color:${m.bg}" class="mr-1">${m.emoji}</span>${short}`,
+      b => b.promos.filter(p => (p.types || []).includes(type)).length
+    ));
+  });
+
+  document.getElementById('compTable').innerHTML =
+    `<thead>${thead}</thead><tbody>${rows.join('')}</tbody>`;
+
+  buildProsCons(zaBank, banks, topTypes);
+}
+
+// ── Pros / Cons ────────────────────────────────────────────────────
+function buildProsCons(zaBank, allBanks, topTypes) {
+  const others = allBanks.filter(b => b.name !== zaBank.name);
+  if (!others.length) return;
+
+  const avg = arr =>
+    arr.length ? arr.reduce((s, n) => s + n, 0) / arr.length : 0;
+
+  const pros = [];
+  const cons = [];
+
+  const avgCount = avg(others.map(b => b.promos.length));
+  if (zaBank.promos.length >= avgCount)
+    pros.push(`有效優惠總數 (${zaBank.promos.length}) 高於或持平其他銀行平均 (${avgCount.toFixed(1)})`);
+  else
+    cons.push(`有效優惠總數 (${zaBank.promos.length}) 低於其他銀行平均 (${avgCount.toFixed(1)})`);
+
+  const beatCount = others.filter(b => zaBank.promos.length > b.promos.length).length;
+  if (beatCount === others.length && others.length > 1)
+    pros.push(`優惠總數領先全部 ${others.length} 間競爭銀行`);
+  else if (beatCount > others.length / 2)
+    pros.push(`優惠總數超越 ${beatCount}/${others.length} 間競爭銀行`);
+
+  const leadCats = [];
+  const weakCats = [];
+
+  topTypes.forEach(type => {
+    const zaC   = zaBank.promos.filter(p => (p.types || []).includes(type)).length;
+    const avgC  = avg(others.map(b => b.promos.filter(p => (p.types || []).includes(type)).length));
+    const m     = catMeta(type);
+    const short = `${m.emoji}${type.split(' ')[0]}`;
+    if (zaC > avgC + 0.5) leadCats.push(short);
+    if (zaC < avgC - 0.5)
+      weakCats.push(`${short} (ZA: ${zaC} vs 平均: ${avgC.toFixed(1)})`);
+  });
+
+  if (leadCats.length)
+    pros.push(`在 ${leadCats.join('、')} 類別優惠數量領先市場`);
+  if (weakCats.length)
+    cons.push(`以下類別優惠相對較少：${weakCats.join('、')}`);
+
+  const zaOngoing  = zaBank.promos.filter(p =>
+    !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))
+  ).length;
+  const avgOngoing = avg(others.map(b =>
+    b.promos.filter(p =>
+      !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))
+    ).length
+  ));
+  if (zaOngoing > avgOngoing + 0.5)
+    pros.push(`長期優惠比例高，${zaOngoing} 項長期有效 (其他平均 ${avgOngoing.toFixed(1)} 項)`);
+  else if (zaOngoing < avgOngoing - 0.5)
+    cons.push(`長期優惠相對較少 (${zaOngoing} 項，其他平均 ${avgOngoing.toFixed(1)} 項)`);
+
+  const zaExpiring = zaBank.promos.filter(p => getStatus(p) === 'expiring').length;
+  if (zaExpiring > 5)
+    cons.push(`有 ${zaExpiring} 項優惠將在30天內到期，部分優惠持續性有待觀察`);
+
+  document.getElementById('prosConsWrap').innerHTML = `
+    <div class="rounded-2xl border border-green-100
+                bg-gradient-to-br from-green-50 to-emerald-50 p-5">
+      <h3 class="font-bold text-green-700 mb-3 flex items-center gap-2">
+        <span>✅</span> ZA Bank 相對優勢 Strengths
+      </h3>
+      <ul class="space-y-2">
+        ${pros.length
+          ? pros.map(p => `
+              <li class="flex items-start gap-2 text-sm text-green-800">
+                <span class="text-green-500 shrink-0 mt-0.5">●</span>
+                <span>${p}</span>
+              </li>`).join('')
+          : '<li class="text-sm text-gray-400 italic">暫無突出優勢</li>'}
+      </ul>
+    </div>
+    <div class="rounded-2xl border border-orange-100
+                bg-gradient-to-br from-orange-50 to-amber-50 p-5">
+      <h3 class="font-bold text-orange-700 mb-3 flex items-center gap-2">
+        <span>⚠️</span> ZA Bank 可改進空間 Areas to Improve
+      </h3>
+      <ul class="space-y-2">
+        ${cons.length
+          ? cons.map(c => `
+              <li class="flex items-start gap-2 text-sm text-orange-800">
+                <span class="text-orange-400 shrink-0 mt-0.5">●</span>
+                <span>${c}</span>
+              </li>`).join('')
+          : '<li class="text-sm text-gray-400 italic">暫無明顯不足</li>'}
+      </ul>
+    </div>`;
 }
 
 // ── Filter ────────────────────────────────────────────────────────
@@ -411,29 +779,31 @@ function applyFilters() {
 
   filtered = allPromos.filter(p => {
     const s = getStatus(p);
-    if (status === 'active'   && s !== 'active')   return false;
-    if (status === 'expiring' && s !== 'expiring')  return false;
-    if (status === 'expired'  && s !== 'expired')   return false;
+    if (status === 'active'   && s !== 'active')  return false;
+    if (status === 'expiring' && s !== 'expiring') return false;
+    if (status === 'expired'  && s !== 'expired')  return false;
     if (activeBankTab && p.bank_name !== activeBankTab) return false;
     if (cat && !(p.types || []).includes(cat)) return false;
     if (search) {
-      const hay = [p.bank_name,p.title,p.highlight,p.description,p.period,...(p.types||[])].join(' ').toLowerCase();
+      const hay = [
+        p.bank_name, p.title, p.highlight, p.description,
+        p.period, ...(p.types || []),
+      ].join(' ').toLowerCase();
       if (!hay.includes(search)) return false;
     }
     return true;
   });
 
-  // Sort
-  if (sort === 'bank')    filtered.sort((a,b) => a.bank_name.localeCompare(b.bank_name));
-  if (sort === 'enddate') filtered.sort((a,b) => (a.end_date||'9999') < (b.end_date||'9999') ? -1 : 1);
-  if (sort === 'newest')  filtered.sort((a,b) => (b.created_at||'') > (a.created_at||'') ? 1 : -1);
+  if (sort === 'bank')    filtered.sort((a, b) => a.bank_name.localeCompare(b.bank_name));
+  if (sort === 'enddate') filtered.sort((a, b) => (a.end_date||'9999') < (b.end_date||'9999') ? -1 : 1);
+  if (sort === 'newest')  filtered.sort((a, b) => (b.created_at||'') > (a.created_at||'') ? 1 : -1);
 
   renderTable(filtered);
   document.getElementById('resultCount').textContent =
     `Showing ${filtered.length} of ${allPromos.length} promotions`;
 }
 
-// ── Render ────────────────────────────────────────────────────────
+// ── Render Table ──────────────────────────────────────────────────
 function renderTable(promos) {
   const tbody = document.getElementById('promoTbody');
   const empty = document.getElementById('emptyState');
@@ -449,10 +819,10 @@ function renderTable(promos) {
   wrap.classList.remove('hidden');
 
   tbody.innerHTML = promos.map((p, i) => {
-    const color  = bankColor(p.bank_name);
-    const cats   = (p.types || ['Others 其他']).map(catTag).join('');
-    const badge  = statusBadge(p);
-    const tcLink = p.tc_link || p.url || '#';
+    const color    = bankColor(p.bank_name);
+    const cats     = (p.types || ['Others 其他']).map(catTag).join('');
+    const badge    = statusBadge(p);
+    const tcLink   = p.tc_link || p.url || '#';
     const detailId = `detail-${i}`;
 
     const detailHtml = `
@@ -477,7 +847,8 @@ function renderTable(promos) {
             </div>
             <div class="md:col-span-3">
               <a href="${tcLink}" target="_blank" rel="noopener"
-                class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-semibold underline">
+                class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800
+                       text-xs font-semibold underline">
                 📄 View T&amp;C / Official Source ↗
               </a>
             </div>
@@ -486,7 +857,8 @@ function renderTable(promos) {
       </tr>`;
 
     const mainRow = `
-      <tr class="border-b border-gray-50 cursor-pointer hover:bg-gray-50" onclick="toggleDetail(${i})">
+      <tr class="border-b border-gray-50 cursor-pointer hover:bg-gray-50"
+          onclick="toggleDetail(${i})">
         <td class="px-4 py-3 whitespace-nowrap">
           <span class="bank-dot" style="background:${color}"></span>
           <span class="font-semibold text-gray-700">${p.bank_name}</span>
@@ -536,7 +908,7 @@ function exportExcel() {
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [
     {wch:15},{wch:50},{wch:30},{wch:10},{wch:25},{wch:12},
-    {wch:30},{wch:20},{wch:40},{wch:60},{wch:40},{wch:20}
+    {wch:30},{wch:20},{wch:40},{wch:60},{wch:40},{wch:20},
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Promotions');

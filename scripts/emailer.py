@@ -6,7 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
 
-# ── Category metadata (matches website + AI categories) ───────────────────────
+# ── Category metadata ─────────────────────────────────────────────────────────
 
 CATEGORY_META = {
     "迎新":   {"bg": "#10b981", "emoji": "🎉"},
@@ -46,7 +46,6 @@ def _bank_color(bank_name: str) -> str:
 
 
 def _get_cat_meta(type_str: str) -> dict:
-    """Return bg/emoji for a category tag (Chinese or English fallback)."""
     if type_str in CATEGORY_META:
         return CATEGORY_META[type_str]
     t = (type_str or "").lower()
@@ -92,7 +91,7 @@ def _types_to_list(types_raw) -> list:
     return []
 
 
-# ── Promotion card (with category tags) ──────────────────────────────────────
+# ── Promotion card ────────────────────────────────────────────────────────────
 
 def _promo_card(promo: dict, color: str) -> str:
     title     = (promo.get("title") or promo.get("name") or "Untitled")[:100]
@@ -227,7 +226,8 @@ def _insights_html(insights: dict) -> str:
         hdr_color = "#ffffff" if is_za else "#1f2937"
 
         strengths_html = "".join(
-            f'<tr><td style="padding:3px 0;font-size:13px;color:#374151;">✓&nbsp;{s}</td></tr>'
+            f'<tr><td style="padding:3px 0;font-size:13px;color:#374151;">'
+            f'✓&nbsp;{s}</td></tr>'
             for s in strengths
         )
         expiring_html = (
@@ -236,6 +236,7 @@ def _insights_html(insights: dict) -> str:
             f'⚡&nbsp;{expiring}</td></tr>'
             if expiring else ""
         )
+
         vs_za_html = ""
         if is_za:
             vs_za_html = (
@@ -245,11 +246,13 @@ def _insights_html(insights: dict) -> str:
             )
         elif pros or cons:
             pros_row = (
-                f'<tr><td style="font-size:12px;color:#059669;padding:2px 0;">✅&nbsp;{pros}</td></tr>'
+                f'<tr><td style="font-size:12px;color:#059669;padding:2px 0;">'
+                f'✅&nbsp;{pros}</td></tr>'
                 if pros else ""
             )
             cons_row = (
-                f'<tr><td style="font-size:12px;color:#dc2626;padding:2px 0;">❌&nbsp;{cons}</td></tr>'
+                f'<tr><td style="font-size:12px;color:#dc2626;padding:2px 0;">'
+                f'❌&nbsp;{cons}</td></tr>'
                 if cons else ""
             )
             vs_za_html = f"""
@@ -278,7 +281,9 @@ def _insights_html(insights: dict) -> str:
       <div style="font-size:13px;color:#374151;margin-bottom:12px;">{focus}</div>
       <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
                   margin-bottom:6px;">Key Strengths</div>
-      <table cellpadding="0" cellspacing="0">{strengths_html}{expiring_html}{vs_za_html}</table>
+      <table cellpadding="0" cellspacing="0">
+        {strengths_html}{expiring_html}{vs_za_html}
+      </table>
     </td>
   </tr>
 </table>"""
@@ -308,8 +313,12 @@ def build_html_email(
     promotions_data:    list,
     scraped_data:       dict,
     strategic_insights: dict = None,
+    # FIXED: mutable default [] replaced with None — avoids shared-state bug
+    # where the same list object is reused across multiple calls.
+    new_promos:         list = None,
 ) -> str:
-    now = datetime.now().strftime("%d %b %Y, %H:%M HKT")
+    new_promos = new_promos or []   # ← safe internal default
+    now        = datetime.now().strftime("%d %b %Y, %H:%M HKT")
 
     banks: dict = {}
     for p in promotions_data or []:
@@ -354,6 +363,79 @@ def build_html_email(
         if insights_block else ""
     )
 
+    # ── Newly launched section ────────────────────────────────────
+    # Only shows promotions whose first_run_id = current_run_id,
+    # i.e. they did NOT appear in any previous scrape run.
+    # BAU promotions are already filtered out upstream.
+    if new_promos:
+        new_rows = ""
+        for p in new_promos:
+            bank_name = p.get('bName') or p.get('bank_name') or p.get('bank') or '—'
+            title     = p.get('title') or p.get('name') or '—'
+            types_raw = p.get('types') or p.get('type') or p.get('promo_type') or ''
+            types_str = ', '.join(_types_to_list(types_raw)) if types_raw else '—'
+            period    = p.get('period') or p.get('validity') or 'Ongoing'
+            bc        = _bank_color(bank_name)
+            new_rows += f"""
+<tr style="border-bottom:1px solid #f0f0f0;">
+  <td style="padding:8px 12px;font-size:13px;font-weight:700;color:{bc};">{bank_name}</td>
+  <td style="padding:8px 12px;font-size:13px;color:#374151;">{title}</td>
+  <td style="padding:8px 12px;font-size:13px;color:#6b7280;">{types_str}</td>
+  <td style="padding:8px 12px;font-size:13px;color:#6b7280;">{period}</td>
+</tr>"""
+
+        new_section_html = f"""
+<tr><td style="border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background:linear-gradient(135deg,#ff6b35,#f7931e);padding:14px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td>
+            <span style="font-size:18px;">🆕</span>
+            <span style="font-weight:800;font-size:16px;color:#fff;margin-left:8px;">
+              NEWLY LAUNCHED PROMOTIONS
+            </span>
+          </td>
+          <td style="text-align:right;">
+            <span style="background:rgba(255,255,255,0.25);color:#fff;border-radius:20px;
+                         padding:3px 12px;font-size:12px;font-weight:700;">
+              {len(new_promos)} new
+            </span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+    <tr>
+      <td style="background:#fffdf9;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+          <thead>
+            <tr style="background:#fff3e8;">
+              <th style="padding:10px 12px;text-align:left;color:#e65c00;
+                         font-weight:700;font-size:12px;">Bank</th>
+              <th style="padding:10px 12px;text-align:left;color:#e65c00;
+                         font-weight:700;font-size:12px;">Promotion</th>
+              <th style="padding:10px 12px;text-align:left;color:#e65c00;
+                         font-weight:700;font-size:12px;">Category</th>
+              <th style="padding:10px 12px;text-align:left;color:#e65c00;
+                         font-weight:700;font-size:12px;">Period</th>
+            </tr>
+          </thead>
+          <tbody>{new_rows}</tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+<tr><td style="height:16px;"></td></tr>"""
+    else:
+        new_section_html = """
+<tr><td style="background:#f9f9f9;border-radius:12px;padding:16px 20px;
+               border:1px dashed #ddd;text-align:center;
+               color:#9ca3af;font-size:13px;">
+  🔍 No new promotions detected since the last run.
+</td></tr>
+<tr><td style="height:16px;"></td></tr>"""
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -379,12 +461,14 @@ def build_html_email(
   <!-- STATS -->
   <tr><td style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td width="33%" style="text-align:center;padding:18px 12px;border-right:1px solid #f3f4f6;">
+      <td width="33%" style="text-align:center;padding:18px 12px;
+                              border-right:1px solid #f3f4f6;">
         <div style="font-size:30px;font-weight:800;color:#6366f1;">{total_promos}</div>
         <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
                     margin-top:4px;">Active Promos</div>
       </td>
-      <td width="33%" style="text-align:center;padding:18px 12px;border-right:1px solid #f3f4f6;">
+      <td width="33%" style="text-align:center;padding:18px 12px;
+                              border-right:1px solid #f3f4f6;">
         <div style="font-size:30px;font-weight:800;color:#10b981;">{total_banks}</div>
         <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
                     margin-top:4px;">Banks Tracked</div>
@@ -418,10 +502,14 @@ def build_html_email(
   </td></tr>
   <tr><td style="height:16px;"></td></tr>
 
-  <!-- STRATEGIC INSIGHTS -->
+  <!-- STRATEGIC INSIGHTS (omitted entirely when unavailable) -->
   {insights_row}
 
-  <!-- ALL PROMOTIONS -->
+  <!-- NEWLY LAUNCHED PROMOTIONS -->
+  <!-- Only promos first seen in THIS run, BAU excluded -->
+  {new_section_html}
+
+  <!-- ALL ACTIVE PROMOTIONS -->
   <tr><td style="background:#fff;border-radius:12px;padding:24px;
                  box-shadow:0 1px 3px rgba(0,0,0,0.08);">
     <div style="font-size:18px;font-weight:800;color:#1f2937;margin-bottom:20px;">
@@ -452,13 +540,21 @@ def send_email(html_content: str, subject: str = None, recipient: str = None) ->
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
 
-    smtp_user = os.getenv("GMAIL_ADDRESS")    or os.getenv("SMTP_USER") or os.getenv("EMAIL_FROM")
-    smtp_pass = os.getenv("GMAIL_APP_PASSWORD") or os.getenv("SMTP_PASS") or os.getenv("EMAIL_PASS")
-    email_to  = (
-        recipient
-        or os.getenv("RECIPIENT_EMAIL")
-        or os.getenv("EMAIL_RECIPIENT")
-        or os.getenv("EMAIL_TO")
+    smtp_user = (
+        os.getenv("GMAIL_ADDRESS")      or
+        os.getenv("SMTP_USER")          or
+        os.getenv("EMAIL_FROM")
+    )
+    smtp_pass = (
+        os.getenv("GMAIL_APP_PASSWORD") or
+        os.getenv("SMTP_PASS")          or
+        os.getenv("EMAIL_PASS")
+    )
+    email_to = (
+        recipient                       or
+        os.getenv("RECIPIENT_EMAIL")    or
+        os.getenv("EMAIL_RECIPIENT")    or
+        os.getenv("EMAIL_TO")
     )
 
     if not all([smtp_user, smtp_pass, email_to]):

@@ -16,12 +16,22 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from scraper   import run_scraper, BANK_CONFIGS
-from ai_helper import init_ai, analyze_promotions, generate_strategic_insights
+from ai_helper import (
+    init_ai,
+    analyze_promotions,
+    ai_dedup_titles,
+    ai_match_against_existing,
+    generate_strategic_insights,
+)
 from database  import (
-    init_db, save_promotions,
-    mark_stale_as_inactive, mark_inactive_old,
+    init_db,
+    start_new_run,                   # ← ADDED: required for run-based "new" tracking
+    save_promotions,
+    mark_stale_as_inactive,
+    mark_inactive_old,
     generate_daily_report,
     export_to_json,
+    get_active_promos_for_bank,
 )
 from emailer   import build_html_email, send_email
 
@@ -55,11 +65,18 @@ def main():
     print('\nStep 1 ── Init database')
     init_db()
 
+    # ┌─────────────────────────────────────────────────────────────┐
+    # │  FIXED: start_new_run() MUST be called once per execution  │
+    # │  so that "newly launched" promos are correctly identified   │
+    # │  even if main.py is re-run multiple times on the same day. │
+    # └─────────────────────────────────────────────────────────────┘
+    current_run_id = start_new_run(banks=list(BANK_CONFIGS.keys()))
+
     # ── Step 2: AI ────────────────────────────────────────────────
     print('\nStep 2 ── Init AI')
     ai_ok = init_ai()
 
-    # ── Step 3: Scrape all 8 banks ────────────────────────────────
+    # ── Step 3: Scrape all banks ──────────────────────────────────
     print('\nStep 3 ── Scrape all 8 banks')
     scraped = run_scraper()
 
@@ -67,21 +84,22 @@ def main():
         print('  ❌ No data scraped — abort')
         return
 
-    # Banks that returned successful scrape results (used later for mark_stale)
     bank_ids_ok: list = [
         bank_id for bank_id, result in scraped.items()
         if result.get('success')
     ]
-
-    # Build dict keyed by bank_name for email scrape-status table
     scraped_by_name: dict = {
         result.get('bank_name', bank_id): result
         for bank_id, result in scraped.items()
     }
 
-    # ── Step 4: AI extraction + save to DB ───────────────────────
+    # ── Step 4: AI extraction + dedup + save ─────────────────────
     print('\nStep 4 ── AI extraction')
-    total_extracted = 0
+    total_extracted  = 0
+    total_new        = 0
+    total_updated    = 0
+    total_deduped    = 0
+    total_db_matched = 0
 
     for bank_id, result in scraped.items():
         bank_name   = result.get('bank_name', bank_id)
@@ -97,6 +115,7 @@ def main():
             print(f'    ⚠️  Scrape failed — skip AI for {bank_name}')
             continue
 
+        # ── 4a: Extract promotions ────────────────────────────────
         try:
             promos = analyze_promotions(
                 bank_id     = bank_id,
@@ -109,20 +128,73 @@ def main():
             print(f'    ❌ AI error for {bank_name}: {e}')
             continue
 
-        if promos:
-            ins, upd, skip = save_promotions(promos)
-            total_extracted += len(promos)
-            print(f'    ✅ {len(promos)} extracted — {ins} inserted, {upd} updated, {skip} skipped')
-        else:
+        if not promos:
             print(f'    ⚠️  0 promotions extracted for {bank_name}')
+            continue
 
-    print(f'\n  Total extracted this run: {total_extracted}')
+        # ── 4b: Within-batch dedup (name-based) ───────────────────
+        # Catches cases where AI extracted the same offer twice in one
+        # run with different wording.  Checks both title AND highlight
+        # content — whichever matches first triggers removal.
+        try:
+            titles  = [p.get('name') or p.get('title', '') for p in promos]
+            dup_map = ai_dedup_titles(titles, bank_name)
+            if dup_map:
+                before  = len(promos)
+                promos  = [p for i, p in enumerate(promos) if i not in dup_map]
+                removed = before - len(promos)
+                total_deduped += removed
+                print(f'    🤖 Within-batch dedup: removed {removed} '
+                      f'({before} → {len(promos)}) for {bank_name}')
+        except Exception as e:
+            print(f'    ⚠️  Within-batch dedup error for {bank_name}: {e}')
+
+        if not promos:
+            print(f'    ⚠️  0 promotions after within-batch dedup for {bank_name}')
+            continue
+
+        # ── 4c: Match against existing DB records ─────────────────
+        # Catches semantic variants the formula pass misses —
+        # both name variants AND highlight content matches.
+        # Matched promos get _matched_id stamped so save_promotions
+        # does UPDATE (not INSERT) for those rows.
+        try:
+            existing_db = get_active_promos_for_bank(bank_id)
+            if existing_db:
+                match_map = ai_match_against_existing(promos, existing_db, bank_name)
+                for idx, db_id in match_map.items():
+                    if 0 <= idx < len(promos):
+                        promos[idx]['_matched_id'] = db_id
+                total_db_matched += len(match_map)
+            else:
+                print(f'    ℹ️  No existing DB records for {bank_name} — all will be new')
+        except Exception as e:
+            print(f'    ⚠️  DB-match error for {bank_name}: {e} — formula pass only')
+
+        # ── 4d: Save to DB ────────────────────────────────────────
+        # FIXED: current_run_id is now passed so first_run_id gets
+        # stamped on every genuinely new row.  Without this, the
+        # "newly launched" email section would always be empty.
+        total_extracted += len(promos)
+        db_result = save_promotions(
+            bank_id,
+            bank_name,
+            promos,
+            current_run_id = current_run_id,   # ← FIXED
+        )
+        total_new     += db_result['new']
+        total_updated += db_result['updated']
+        print(f"    ✅ {db_result['new']} new, {db_result['updated']} updated, "
+              f"{db_result['skipped']} skipped — {bank_name}")
+
+    print(f"\n📊 Extracted: {total_extracted} | "
+          f"New: {total_new} | Updated: {total_updated} | "
+          f"Within-batch deduped: {total_deduped} | "
+          f"DB-matched: {total_db_matched}")
 
     # ── Step 5: Mark stale + old inactive ────────────────────────
     print('\nStep 5 ── Mark stale / old promos inactive')
-    # Only mark stale for banks we successfully scraped today
     mark_stale_as_inactive(bank_ids_ok)
-    # Safety net: anything not seen in 90 days regardless of bank
     mark_inactive_old(days_threshold=90)
 
     # ── Step 6: Export data.json for website ─────────────────────
@@ -131,7 +203,10 @@ def main():
 
     # ── Step 7: Generate daily report ────────────────────────────
     print('\nStep 7 ── Generate daily report')
-    report         = generate_daily_report()
+    # FIXED: generate_daily_report() requires current_run_id so it
+    # can distinguish "new this run" from "seen before".
+    # Calling it without the argument causes a TypeError.
+    report         = generate_daily_report(current_run_id)   # ← FIXED
     new_promos     = report['new']
     active_promos  = report['active']
     expired_promos = report['expired']
@@ -140,10 +215,12 @@ def main():
     print(f'  🆕 New:     {summary["new_count"]}')
     print(f'  ✅ Active:  {len(active_promos)}')
     print(f'  ❌ Expired: {summary["expired_count"]}')
-    for bank_id, count in summary['by_bank'].items():
-        print(f'    {bank_id.upper()}: {count} active')
+    for bid, count in summary['by_bank'].items():
+        print(f'    {bid.upper()}: {count} active')
 
-    # Combine new + active for email promo list + insights
+    # BAU items are already excluded by generate_daily_report (is_bau=0 filter).
+    # new_promos  = only first seen THIS run  (not in any previous run)
+    # active_promos = all other currently active non-BAU promos
     all_promos = new_promos + active_promos
 
     # ── Step 8: Strategic insights ────────────────────────────────
@@ -168,8 +245,10 @@ def main():
         promotions_data    = all_promos,
         scraped_data       = scraped_by_name,
         strategic_insights = strategic_insights,
+        new_promos         = new_promos,
     )
     print('  ✅ HTML email built')
+    print(f'  [INFO] New promos this run: {len(new_promos)}')
 
     output_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -205,7 +284,8 @@ def main():
         f'  Done  |  '
         f'🆕 {summary["new_count"]} new  |  '
         f'✅ {len(active_promos)} active  |  '
-        f'❌ {summary["expired_count"]} expired'
+        f'❌ {summary["expired_count"]} expired  |  '
+        f'🤖 deduped:{total_deduped} db-matched:{total_db_matched}'
     )
     print(f'{"═"*60}\n')
 
