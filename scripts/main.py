@@ -1,594 +1,314 @@
-#!/usr/bin/env python3
 # scripts/main.py
-"""
-VBank Tracker — main entry point.
-Scrapes HK virtual bank promotion pages, stores in SQLite,
-writes docs/data.json for the GitHub Pages frontend,
-generates strategic insights via AI, and sends the daily email digest.
-"""
 
-from __future__ import annotations
-
-import json
+from dotenv import load_dotenv
 import os
-import sqlite3
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+
+print("USER:", os.getenv("GMAIL_ADDRESS"))
+print("PASS:", ("SET=" + os.getenv("GMAIL_APP_PASSWORD", "")[:4] + "...")
+      if os.getenv("GMAIL_APP_PASSWORD") else "MISSING")
+print("TO:  ", os.getenv("RECIPIENT_EMAIL"))
+
 import sys
-import traceback
-from datetime import datetime, timezone, timedelta
-from pathlib import Path
+import json as _json
+from datetime import datetime
 
-from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
-SCRIPT_DIR = Path(__file__).resolve().parent
-ROOT_DIR   = SCRIPT_DIR.parent
-DB_PATH    = ROOT_DIR / "data"   / "promotions.db"
-DATA_JSON  = ROOT_DIR / "docs"   / "data.json"
+from scraper   import run_scraper, BANK_CONFIGS
+from ai_helper import (
+    init_ai,
+    analyze_promotions,
+    ai_dedup_titles,
+    ai_match_against_existing,
+    generate_strategic_insights,
+)
+from database  import (
+    init_db,
+    start_new_run,
+    save_promotions,
+    mark_stale_as_inactive,
+    mark_inactive_old,
+    generate_daily_report,
+    export_to_json,
+    get_active_promos_for_bank,
+    get_active_promotions,
+)
+from emailer   import build_html_email, send_email
 
-# Ensure scripts/ is importable
-sys.path.insert(0, str(SCRIPT_DIR))
-
-import ai_helper
-from emailer import send_daily_email
-
-# ── HKT ───────────────────────────────────────────────────────────────────────
-HKT = timezone(timedelta(hours=8))
+DATA_JSON_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    '..', 'docs', 'data.json'
+)
 
 
-def _hkt_now() -> datetime:
-    return datetime.now(HKT)
+def main():
+    today = datetime.now().strftime('%Y-%m-%d')
+    print(f'\n{"═"*60}')
+    print(f'  HK Virtual Bank Promotions Tracker  |  {today}')
+    print(f'{"═"*60}\n')
 
-
-def _hkt_today() -> str:
-    return _hkt_now().strftime("%Y-%m-%d")
-
-
-# ── Bank registry ─────────────────────────────────────────────────────────────
-BANKS: list[dict] = [
-    {
-        "id":   "za",
-        "name": "ZA Bank",
-        "urls": [
-            "https://www.zabank.com.hk/en/promotions",
-            "https://www.zabank.com.hk/promotions",
-        ],
-    },
-    {
-        "id":   "mox",
-        "name": "Mox Bank",
-        "urls": ["https://mox.com/promotions/"],
-    },
-    {
-        "id":   "welab",
-        "name": "WeLab Bank",
-        "urls": ["https://www.welabbank.com/en/promotions/"],
-    },
-    {
-        "id":   "livi",
-        "name": "livi bank",
-        "urls": ["https://www.livi.com.hk/en/promotions/"],
-    },
-    {
-        "id":   "pao",
-        "name": "PAObank",
-        "urls": ["https://www.paobank.hk/en/promotions"],
-    },
-    {
-        "id":   "airstar",
-        "name": "Airstar Bank",
-        "urls": ["https://www.airstarbank.com/en/promotions"],
-    },
-    {
-        "id":   "fusion",
-        "name": "Fusion Bank",
-        "urls": ["https://www.fusionbank.com.hk/en/promotions"],
-    },
-    {
-        "id":   "ant",
-        "name": "Ant Bank",
-        "urls": ["https://www.antbank.hk/en/promotions"],
-    },
-]
-
-# ── Database ──────────────────────────────────────────────────────────────────
-
-def init_db(db_path: Path) -> sqlite3.Connection:
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(db_path))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS promotions (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            bank        TEXT    NOT NULL,
-            bank_name   TEXT    NOT NULL,
-            title       TEXT    NOT NULL,
-            types       TEXT    DEFAULT '[]',
-            is_bau      INTEGER DEFAULT 0,
-            start_date  TEXT,
-            end_date    TEXT,
-            period      TEXT    DEFAULT 'Ongoing',
-            highlight   TEXT    DEFAULT '',
-            description TEXT    DEFAULT '',
-            quota       TEXT    DEFAULT '',
-            cost        TEXT    DEFAULT '',
-            tc_link     TEXT    DEFAULT '',
-            url         TEXT    DEFAULT '',
-            active      INTEGER DEFAULT 1,
-            created_at  TEXT    NOT NULL,
-            last_seen   TEXT    NOT NULL
-        )
-        """
+    # ── Env check ────────────────────────────────────────────────
+    _gmail_addr = os.environ.get('GMAIL_ADDRESS', '')
+    _gmail_pass = os.environ.get('GMAIL_APP_PASSWORD', '')
+    _recipient  = (
+        os.environ.get('RECIPIENT_EMAIL') or
+        os.environ.get('EMAIL_RECIPIENT') or
+        os.environ.get('EMAIL_TO') or ''
     )
-    # Schema migrations — add columns that may be absent in older DBs
-    existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(promotions)")}
-    migrations = [
-        ("highlight",   'TEXT DEFAULT ""'),
-        ("description", 'TEXT DEFAULT ""'),
-        ("quota",       'TEXT DEFAULT ""'),
-        ("cost",        'TEXT DEFAULT ""'),
-        ("tc_link",     'TEXT DEFAULT ""'),
-        ("url",         'TEXT DEFAULT ""'),
-        ("is_bau",      "INTEGER DEFAULT 0"),
-        ("start_date",  "TEXT"),
-        ("period",      'TEXT DEFAULT "Ongoing"'),
+
+    print('  Env check:')
+    print(f'    GMAIL_ADDRESS     : {"✅ set" if _gmail_addr else "❌ MISSING"}')
+    print(f'    GMAIL_APP_PASSWORD: {"✅ set" if _gmail_pass else "❌ MISSING"}')
+    print(f'    RECIPIENT_EMAIL   : {"✅ " + _recipient if _recipient else "❌ MISSING"}')
+
+    # ── Step 1: Database ──────────────────────────────────────────
+    print('\nStep 1 ── Init database')
+    init_db()
+    current_run_id = start_new_run(banks=list(BANK_CONFIGS.keys()))
+
+    # ── Step 2: AI ────────────────────────────────────────────────
+    print('\nStep 2 ── Init AI')
+    ai_ok = init_ai()
+
+    # ── Step 3: Scrape all banks ──────────────────────────────────
+    print('\nStep 3 ── Scrape all 8 banks')
+    scraped = run_scraper()
+
+    if not scraped:
+        print('  ❌ No data scraped — abort')
+        return
+
+    bank_ids_ok: list = [
+        bank_id for bank_id, result in scraped.items()
+        if result.get('success')
     ]
-    for col, defn in migrations:
-        if col not in existing_cols:
-            conn.execute(f"ALTER TABLE promotions ADD COLUMN {col} {defn}")
-    conn.commit()
-    return conn
-
-
-def db_upsert(conn: sqlite3.Connection, promo: dict, today: str) -> tuple[bool, bool]:
-    """
-    Insert or update one promotion.
-    Returns (is_new, was_reactivated).
-    """
-    title     = (promo.get("title") or promo.get("name") or "").strip()
-    bank_id   = promo.get("bank", "")
-    bank_name = promo.get("bank_name") or promo.get("bName") or bank_id
-
-    if not title or not bank_id:
-        return False, False
-
-    row = conn.execute(
-        "SELECT id, active FROM promotions "
-        "WHERE bank = ? AND title = ? COLLATE NOCASE",
-        (bank_id, title),
-    ).fetchone()
-
-    types_json = json.dumps(promo.get("types") or ["Others"])
-
-    fields = dict(
-        types       = types_json,
-        is_bau      = 1 if promo.get("is_bau") else 0,
-        start_date  = promo.get("start_date"),
-        end_date    = promo.get("end_date"),
-        period      = promo.get("period") or "Ongoing",
-        highlight   = promo.get("highlight") or "",
-        description = promo.get("description") or "",
-        quota       = promo.get("quota") or "",
-        cost        = promo.get("cost") or "",
-        tc_link     = promo.get("tc_link") or promo.get("url") or "",
-        url         = promo.get("url") or promo.get("tc_link") or "",
-        last_seen   = today,
-    )
-
-    if row:
-        was_inactive = not row["active"]
-        conn.execute(
-            """
-            UPDATE promotions SET
-                types=:types, is_bau=:is_bau, start_date=:start_date,
-                end_date=:end_date, period=:period, highlight=:highlight,
-                description=:description, quota=:quota, cost=:cost,
-                tc_link=:tc_link, url=:url, active=1, last_seen=:last_seen
-            WHERE id = ?
-            """,
-            {**fields, "id": row["id"]},
-        )
-        conn.commit()
-        return False, was_inactive
-
-    conn.execute(
-        """
-        INSERT INTO promotions
-            (bank, bank_name, title, types, is_bau, start_date, end_date,
-             period, highlight, description, quota, cost, tc_link, url,
-             active, created_at, last_seen)
-        VALUES
-            (:bank,:bank_name,:title,:types,:is_bau,:start_date,:end_date,
-             :period,:highlight,:description,:quota,:cost,:tc_link,:url,
-             1,:created_at,:last_seen)
-        """,
-        {
-            **fields,
-            "bank":       bank_id,
-            "bank_name":  bank_name,
-            "title":      title,
-            "created_at": today,
-        },
-    )
-    conn.commit()
-    return True, False
-
-
-def db_mark_unseen_inactive(conn: sqlite3.Connection, bank_id: str, today: str) -> None:
-    """Promotions not seen in today's run → mark inactive."""
-    conn.execute(
-        "UPDATE promotions SET active = 0 "
-        "WHERE bank = ? AND last_seen != ? AND active = 1",
-        (bank_id, today),
-    )
-    conn.commit()
-
-
-def db_fetch_all(conn: sqlite3.Connection) -> list[dict]:
-    """All promotions (active + recently expired) for data.json."""
-    rows = conn.execute(
-        """
-        SELECT * FROM promotions
-        ORDER BY bank_name, is_bau, created_at DESC
-        """
-    ).fetchall()
-    return [dict(r) for r in rows]
-
-
-def db_fetch_bank_active(conn: sqlite3.Connection, bank_id: str) -> list[dict]:
-    """Active promotions for a specific bank — used for AI matching."""
-    rows = conn.execute(
-        "SELECT * FROM promotions WHERE bank = ? AND active = 1 "
-        "ORDER BY created_at DESC",
-        (bank_id,),
-    ).fetchall()
-    return [dict(r) for r in rows]
-
-
-def db_fetch_bank_by_name(conn: sqlite3.Connection, bank_name: str) -> list[dict]:
-    """Active promotions by display name — used for AI supplement fallback."""
-    rows = conn.execute(
-        "SELECT * FROM promotions WHERE bank_name = ? AND active = 1 "
-        "ORDER BY created_at DESC",
-        (bank_name,),
-    ).fetchall()
-    return [dict(r) for r in rows]
-
-
-# ── Scraping ──────────────────────────────────────────────────────────────────
-
-_SCRAPE_WAIT_MS  = 5_000   # wait after page load
-_SCROLL_WAIT_MS  = 2_000   # wait after scroll
-
-
-def _scrape_url(page: Page, url: str) -> str:
-    """Navigate to URL and return cleaned visible text."""
-    try:
-        page.goto(url, timeout=60_000, wait_until="domcontentloaded")
-        page.wait_for_timeout(_SCRAPE_WAIT_MS)
-        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        page.wait_for_timeout(_SCROLL_WAIT_MS)
-        text: str = page.evaluate(
-            """() => {
-                // Drop non-content elements
-                ['nav','footer','script','style','noscript',
-                 '.cookie-banner','#cookie-notice','.header',
-                 '[aria-hidden="true"]'].forEach(sel => {
-                    document.querySelectorAll(sel).forEach(el => el.remove());
-                });
-                return document.body.innerText || document.body.textContent || '';
-            }"""
-        )
-        return (text or "").strip()
-    except Exception as exc:
-        print(f"    ⚠️  Failed to scrape {url}: {exc}")
-        return ""
-
-
-def scrape_bank(page: Page, bank: dict) -> str:
-    """Scrape all registered URLs for a bank; return combined text."""
-    parts: list[str] = []
-    for url in bank["urls"]:
-        print(f"    🌐 {url}")
-        text = _scrape_url(page, url)
-        if text:
-            parts.append(f"[URL: {url}]\n{text}")
-            print(f"       → {len(text):,} chars")
-        else:
-            print("       → empty / failed")
-    return "\n\n".join(parts)
-
-
-# ── Per-bank processing ───────────────────────────────────────────────────────
-
-def process_bank(
-    conn:       sqlite3.Connection,
-    page:       Page,
-    bank:       dict,
-    today:      str,
-    ai_enabled: bool,
-) -> tuple[list[dict], int, int]:
-    """
-    Scrape → extract → dedup → match → upsert one bank.
-    Returns (new_promo_list, new_count, reactivated_count).
-    """
-    bank_id   = bank["id"]
-    bank_name = bank["name"]
-    primary_url = bank["urls"][0]
-
-    print(f"\n🏦  {bank_name}")
-
-    raw_text = scrape_bank(page, bank)
-
-    if not raw_text:
-        print(f"  ⚠️  No text scraped — skipping AI extraction")
-        db_mark_unseen_inactive(conn, bank_id, today)
-        return [], 0, 0
-
-    if not ai_enabled:
-        print(f"  ℹ️  AI disabled — skipping extraction")
-        db_mark_unseen_inactive(conn, bank_id, today)
-        return [], 0, 0
-
-    # 1. AI extraction
-    ai_promos = ai_helper.analyze_promotions(
-        bank_id     = bank_id,
-        bank_name   = bank_name,
-        text        = raw_text,
-        default_url = primary_url,
-    )
-    if not ai_promos:
-        print(f"  ℹ️  No promotions extracted")
-        db_mark_unseen_inactive(conn, bank_id, today)
-        return [], 0, 0
-
-    # 2. Intra-run dedup (duplicates within this single scrape)
-    if len(ai_promos) >= 2:
-        titles  = [p.get("title") or p.get("name") or "" for p in ai_promos]
-        dup_map = ai_helper.ai_dedup_titles(titles, bank_name)
-        if dup_map:
-            ai_promos = [p for i, p in enumerate(ai_promos) if i not in dup_map]
-            print(f"  🧹 After intra-run dedup: {len(ai_promos)}")
-
-    # 3. Match against existing DB entries
-    existing = db_fetch_bank_active(conn, bank_id)
-    match_map: dict[int, int] = (
-        ai_helper.ai_match_against_existing(ai_promos, existing, bank_name)
-        if existing
-        else {}
-    )
-
-    # 4. Upsert
-    new_promos: list[dict] = []
-    new_count = react_count = 0
-
-    for i, promo in enumerate(ai_promos):
-        if i in match_map:
-            db_id   = match_map[i]
-            matched = next((r for r in existing if r["id"] == db_id), None)
-            if matched:
-                promo["title"] = matched["title"]   # preserve canonical title
-
-        is_new, was_react = db_upsert(conn, promo, today)
-        if is_new:
-            new_count += 1
-            new_promos.append(promo)
-        if was_react:
-            react_count += 1
-
-    # 5. Retire anything not seen today
-    db_mark_unseen_inactive(conn, bank_id, today)
-
-    print(
-        f"  ✅ {len(ai_promos)} extracted → "
-        f"{new_count} new, {react_count} reactivated"
-    )
-    return new_promos, new_count, react_count
-
-
-# ── data.json helpers ─────────────────────────────────────────────────────────
-
-def _row_to_promo(r: dict) -> dict:
-    try:
-        types: list = json.loads(r.get("types") or "[]")
-    except Exception:
-        types = ["Others"]
-    return {
-        "id":          r["id"],
-        "bank_name":   r["bank_name"],
-        "title":       r["title"],
-        "types":       types,
-        "is_bau":      bool(r.get("is_bau")),
-        "start_date":  r.get("start_date"),
-        "end_date":    r.get("end_date"),
-        "period":      r.get("period") or "Ongoing",
-        "highlight":   r.get("highlight") or "",
-        "description": r.get("description") or "",
-        "quota":       r.get("quota") or "",
-        "cost":        r.get("cost") or "",
-        "tc_link":     r.get("tc_link") or r.get("url") or "",
-        "url":         r.get("url") or r.get("tc_link") or "",
-        "active":      bool(r.get("active")),
-        "created_at":  r.get("created_at") or "",
-        "last_seen":   r.get("last_seen") or "",
+    scraped_by_name: dict = {
+        result.get('bank_name', bank_id): result
+        for bank_id, result in scraped.items()
     }
 
+    # ── Step 4: AI extraction + dedup + save ─────────────────────
+    print('\nStep 4 ── AI extraction')
+    total_extracted  = 0
+    total_new        = 0
+    total_updated    = 0
+    total_deduped    = 0
+    total_db_matched = 0
 
-def build_data_payload(conn: sqlite3.Connection) -> dict:
-    now_hkt = _hkt_now().strftime("%Y-%m-%d %H:%M")
-    promos  = [_row_to_promo(r) for r in db_fetch_all(conn)]
-    return {
-        "updated":      now_hkt,
-        "last_updated": now_hkt,
-        "promotions":   promos,
-    }
+    for bank_id, result in scraped.items():
+        bank_name   = result.get('bank_name', bank_id)
+        default_url = BANK_CONFIGS.get(bank_id, {}).get('link', '')
+        chars       = len(result.get('text', ''))
+        mark        = '✅' if result.get('success') else '❌'
+        print(f'\n  [{bank_id.upper()}] {bank_name}  {mark}  ({chars:,} chars scraped)')
 
+        if not ai_ok:
+            print('    ⚠️  AI unavailable — skip')
+            continue
+        if not result.get('success'):
+            print(f'    ⚠️  Scrape failed — skip AI for {bank_name}')
+            continue
 
-def write_data_json(conn: sqlite3.Connection) -> dict:
-    DATA_JSON.parent.mkdir(parents=True, exist_ok=True)
-    data = build_data_payload(conn)
-    with open(DATA_JSON, "w", encoding="utf-8") as fh:
-        json.dump(data, fh, ensure_ascii=False, indent=2)
-    non_bau = sum(1 for p in data["promotions"] if not p["is_bau"])
-    print(
-        f"\n📄 Wrote {DATA_JSON.relative_to(ROOT_DIR)}: "
-        f"{len(data['promotions'])} total ({non_bau} non-BAU)"
-    )
-    return data
-
-
-# ── Strategic insights ────────────────────────────────────────────────────────
-
-def _build_insights_input(conn: sqlite3.Connection) -> dict[str, list]:
-    """Assemble promotions_by_bank dict for generate_strategic_insights."""
-    result: dict[str, list] = {}
-    for bank in BANKS:
-        rows = db_fetch_bank_active(conn, bank["id"])
-        if rows:
-            result[bank["name"]] = [
-                {
-                    "name":        r.get("title", ""),
-                    "title":       r.get("title", ""),
-                    "types":       json.loads(r.get("types") or "[]"),
-                    "is_bau":      bool(r.get("is_bau")),
-                    "highlight":   r.get("highlight", ""),
-                    "description": r.get("description", ""),
-                    "period":      r.get("period", "Ongoing"),
-                }
-                for r in rows
-            ]
-    return result
-
-
-def _db_supplement_fn(conn: sqlite3.Connection):
-    """Factory that returns a callable for ai_helper.supplement_from_db."""
-    def fetch(bank_name: str) -> list[dict]:
-        rows = db_fetch_bank_by_name(conn, bank_name)
-        result = []
-        for r in rows:
-            try:
-                types = json.loads(r.get("types") or "[]")
-            except Exception:
-                types = ["Others"]
-            result.append({
-                "name":    r.get("title", ""),
-                "title":   r.get("title", ""),
-                "types":   types,
-                "is_bau":  bool(r.get("is_bau")),
-                "highlight": r.get("highlight", ""),
-                "period":  r.get("period", "Ongoing"),
-            })
-        return result
-    return fetch
-
-
-# ── Main ──────────────────────────────────────────────────────────────────────
-
-def main() -> None:
-    print("=" * 65)
-    print("🏦  VBank Tracker")
-    print(f"    {_hkt_now().strftime('%Y-%m-%d %H:%M:%S')} HKT")
-    print("=" * 65)
-
-    today      = _hkt_today()
-    ai_enabled = ai_helper.init_ai()
-
-    conn = init_db(DB_PATH)
-
-    all_new:  dict[str, list] = {}    # bank_name → list of new promos
-    run_log:  list[str]       = []
-
-    # ── Browser session ───────────────────────────────────────────────────────
-    with sync_playwright() as pw:
-        browser: Browser = pw.chromium.launch(
-            headless=True,
-            args=[
-                "--no-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-            ],
-        )
-        ctx: BrowserContext = browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
-            ),
-            locale="en-HK",
-            timezone_id="Asia/Hong_Kong",
-        )
-        page: Page = ctx.new_page()
-
-        for bank in BANKS:
-            try:
-                new_promos, new_cnt, react_cnt = process_bank(
-                    conn, page, bank, today, ai_enabled
-                )
-                if new_promos:
-                    all_new[bank["name"]] = new_promos
-                flags = ("🆕 " if new_cnt else "") + ("🔄 " if react_cnt else "")
-                run_log.append(
-                    f"{flags}{bank['name']}: "
-                    f"{new_cnt} new, {react_cnt} reactivated"
-                )
-            except Exception as exc:
-                print(f"  ❌ Error processing {bank['name']}: {exc}")
-                traceback.print_exc()
-                run_log.append(f"❌ {bank['name']}: {exc}")
-
-        browser.close()
-
-    # ── Strategic insights ────────────────────────────────────────────────────
-    insights = None
-    if ai_enabled:
+        # ── 4a: Extract promotions ────────────────────────────────
         try:
-            pbb = _build_insights_input(conn)
-            if pbb:
-                insights = ai_helper.generate_strategic_insights(
-                    promotions_by_bank = pbb,
-                    db_fetch_fn        = _db_supplement_fn(conn),
-                )
-        except Exception as exc:
-            print(f"  ⚠️  Strategic insights failed: {exc}")
-            traceback.print_exc()
-
-    # ── Write data.json ───────────────────────────────────────────────────────
-    data = write_data_json(conn)
-
-    # ── Email ─────────────────────────────────────────────────────────────────
-    gmail_addr = os.environ.get("GMAIL_ADDRESS",      "").strip()
-    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "").strip()
-    recipient  = os.environ.get("RECIPIENT_EMAIL",    "").strip()
-
-    if gmail_addr and gmail_pass and recipient:
-        try:
-            send_daily_email(
-                sender_address  = gmail_addr,
-                app_password    = gmail_pass,
-                recipient       = recipient,
-                all_promotions  = data["promotions"],
-                new_promotions  = all_new,
-                insights        = insights,
-                run_date        = today,
+            promos = analyze_promotions(
+                bank_id     = bank_id,
+                bank_name   = bank_name,
+                text        = result.get('text', ''),
+                screenshot  = result.get('screenshot'),
+                default_url = default_url,
             )
-        except Exception as exc:
-            print(f"  ⚠️  Email failed: {exc}")
-            traceback.print_exc()
+        except Exception as e:
+            print(f'    ❌ AI error for {bank_name}: {e}')
+            continue
+
+        if not promos:
+            print(f'    ⚠️  0 promotions extracted for {bank_name}')
+            continue
+
+        # ── 4b: Within-batch dedup ────────────────────────────────
+        try:
+            titles  = [p.get('name') or p.get('title', '') for p in promos]
+            dup_map = ai_dedup_titles(titles, bank_name)
+            if dup_map:
+                before  = len(promos)
+                promos  = [p for i, p in enumerate(promos) if i not in dup_map]
+                removed = before - len(promos)
+                total_deduped += removed
+                print(f'    🤖 Within-batch dedup: removed {removed} '
+                      f'({before} → {len(promos)}) for {bank_name}')
+        except Exception as e:
+            print(f'    ⚠️  Within-batch dedup error for {bank_name}: {e}')
+
+        if not promos:
+            print(f'    ⚠️  0 promotions after within-batch dedup for {bank_name}')
+            continue
+
+        # ── 4c: Match against existing DB records ─────────────────
+        try:
+            existing_db = get_active_promos_for_bank(bank_id)
+            if existing_db:
+                match_map = ai_match_against_existing(promos, existing_db, bank_name)
+                for idx, db_id in match_map.items():
+                    if 0 <= idx < len(promos):
+                        promos[idx]['_matched_id'] = db_id
+                total_db_matched += len(match_map)
+            else:
+                print(f'    ℹ️  No existing DB records for {bank_name} — all will be new')
+        except Exception as e:
+            print(f'    ⚠️  DB-match error for {bank_name}: {e} — formula pass only')
+
+        # ── 4d: Save to DB ────────────────────────────────────────
+        total_extracted += len(promos)
+        db_result = save_promotions(
+            bank_id,
+            bank_name,
+            promos,
+            current_run_id = current_run_id,
+        )
+        total_new     += db_result['new']
+        total_updated += db_result['updated']
+        print(f"    ✅ {db_result['new']} new, {db_result['updated']} updated, "
+              f"{db_result['skipped']} skipped — {bank_name}")
+
+    print(f"\n📊 Extracted: {total_extracted} | "
+          f"New: {total_new} | Updated: {total_updated} | "
+          f"Within-batch deduped: {total_deduped} | "
+          f"DB-matched: {total_db_matched}")
+
+    # ── Step 5: Mark stale + old inactive ────────────────────────
+    print('\nStep 5 ── Mark stale / old promos inactive')
+    mark_stale_as_inactive(bank_ids_ok)
+    mark_inactive_old(days_threshold=90)
+
+    # ── Step 6: Export data.json for website ─────────────────────
+    print('\nStep 6 ── Export data.json for website')
+    export_to_json(DATA_JSON_PATH)
+
+    # Patch the 'updated' / 'last_updated' timestamp in data.json
+    _run_ts = datetime.now().strftime('%Y-%m-%d %H:%M')
+    try:
+        with open(DATA_JSON_PATH, 'r', encoding='utf-8') as _f:
+            _jdata = _json.load(_f)
+        _jdata['updated']      = _run_ts
+        _jdata['last_updated'] = _run_ts
+        with open(DATA_JSON_PATH, 'w', encoding='utf-8') as _f:
+            _json.dump(_jdata, _f, ensure_ascii=False, indent=2)
+        print(f'  ✅ data.json timestamp patched → {_run_ts}')
+    except Exception as _patch_err:
+        print(f'  ⚠️  data.json timestamp patch failed: {_patch_err}')
+
+    # ── Step 7: Generate daily report (for summary stats + new list) ──
+    print('\nStep 7 ── Generate daily report')
+    report         = generate_daily_report(current_run_id)
+    new_promos     = report['new']
+    active_promos  = report['active']
+    expired_promos = report['expired']
+    summary        = report['summary']
+
+    print(f'  🆕 New:     {summary["new_count"]}')
+    print(f'  ✅ Active:  {len(active_promos)}')
+    print(f'  ❌ Expired: {summary["expired_count"]}')
+    for bid, count in summary['by_bank'].items():
+        print(f'    {bid.upper()}: {count} active')
+
+    # ── Step 8: Strategic insights ────────────────────────────────
+    print('\nStep 8 ── Generate AI strategic insights')
+    all_active_with_bau = get_active_promotions(include_bau=True)
+
+    bau_count_insights = sum(1 for p in all_active_with_bau if p.get('is_bau', False))
+    print(f'  📊 Insights input: {len(all_active_with_bau)} promos '
+          f'({bau_count_insights} BAU + '
+          f'{len(all_active_with_bau) - bau_count_insights} time-limited)')
+
+    # ── FIX Issues 2 & 3: Email data from same source as data.json ──────
+    # OLD: new_promos + active_promos
+    #   → double-counts every promo that is both "new this run" AND "currently
+    #     active", inflating the email count (39) vs website (20).
+    #   → also uses pre-reconciliation BAU flags from the fresh AI extraction,
+    #     which can differ from the DB state exported to data.json (Fusion 2 vs 0).
+    # FIX: derive email list from all_active_with_bau (the exact same DB snapshot
+    #   that export_to_json just wrote to data.json).  Email and website now read
+    #   from an identical source, so counts MUST match.
+    all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
+    new_promos_email = [p for p in new_promos          if not p.get('is_bau', False)]
+
+    promos_by_name: dict = {}
+    for p in all_active_with_bau:
+        bname = p.get('bank_name') or p.get('bName') or p.get('bank') or 'Unknown'
+        promos_by_name.setdefault(bname, []).append(p)
+
+    strategic_insights = None
+    if ai_ok and promos_by_name:
+        try:
+            strategic_insights = generate_strategic_insights(promos_by_name)
+        except Exception as e:
+            print(f'  ⚠️  Insights error: {e}')
+    if not strategic_insights:
+        print('  ⚠️  Insights unavailable — continuing without it')
+
+    # ── Step 9: Build & send email ────────────────────────────────
+    print('\nStep 9 ── Build & send email')
+    html = build_html_email(
+        promotions_data    = all_promos_email,
+        scraped_data       = scraped_by_name,
+        strategic_insights = strategic_insights,
+        new_promos         = new_promos_email,
+    )
+    print('  ✅ HTML email built')
+    print(f'  [INFO] Non-BAU new promos this run : {len(new_promos_email)}')
+    print(f'  [INFO] Non-BAU active promos total : {len(all_promos_email)}')
+    print(f'  [INFO] BAU promos (insights only)  : {bau_count_insights}')
+
+    output_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        '..', 'output', 'email_preview.html'
+    )
+    _save_html_fallback(html, output_path)
+
+    smtp_ready = all([_gmail_addr, _gmail_pass, _recipient])
+    if not smtp_ready:
+        missing = [
+            name for name, val in [
+                ('GMAIL_ADDRESS',      _gmail_addr),
+                ('GMAIL_APP_PASSWORD', _gmail_pass),
+                ('RECIPIENT_EMAIL',    _recipient),
+            ] if not val
+        ]
+        print(f'  ❌ Missing {" / ".join(missing)} — email skipped')
+        print(f'  📄 HTML preview saved → {output_path}')
     else:
-        print("  ℹ️  Email skipped (credentials not set)")
+        try:
+            success = send_email(html_content=html, recipient=_recipient)
+            if success:
+                print(f'  ✅ Email sent → {_recipient}')
+            else:
+                print('  ❌ send_email() returned False')
+                print(f'  📄 HTML preview → {output_path}')
+        except Exception as e:
+            print(f'  ❌ Email failed: {e}')
+            print(f'  📄 HTML preview → {output_path}')
 
-    # ── Summary ───────────────────────────────────────────────────────────────
-    total_new = sum(len(v) for v in all_new.values())
-    print("\n" + "=" * 65)
-    print("📊  Run summary:")
-    for line in run_log:
-        print(f"    {line}")
-    print(f"\n    Total new promotions this run: {total_new}")
-    print("=" * 65)
+    print(f'\n{"═"*60}')
+    print(
+        f'  Done  |  '
+        f'🆕 {len(new_promos_email)} new (non-BAU)  |  '
+        f'✅ {len(all_promos_email)} active (non-BAU)  |  '
+        f'❌ {summary["expired_count"]} expired  |  '
+        f'🤖 deduped:{total_deduped} db-matched:{total_db_matched}  |  '
+        f'⚙️  {bau_count_insights} BAU (insights only)'
+    )
+    print(f'{"═"*60}\n')
 
-    conn.close()
+
+def _save_html_fallback(html: str, path: str):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(html)
+    print(f'  📄 HTML saved → {path}')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

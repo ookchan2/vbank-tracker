@@ -31,12 +31,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # ── Persist the SQLite database between daily runs ──────────────────────
-      # Without this, data/promotions.db is recreated blank every run:
-      #   • Every promo gets created_at = today → all appear "new today"
-      #   • No cross-run deduplication
-      #   • "New today" in email ≠ genuinely new
-      # Cache key is unique per run; restore-keys picks the most recent saved DB.
       - name: Restore promotions database
         id: cache-db
         uses: actions/cache@v4
@@ -66,23 +60,14 @@ jobs:
           cd scripts
           python main.py
 
-      # ── Commit docs/data.json ───────────────────────────────────────────────
-      # Only docs/data.json is explicitly staged; DB, logs, and other artefacts
-      # are intentionally ignored by this commit step.
-      #
-      # FIX: removed the old `git checkout -- .` that was reverting the file
-      # before staging it, causing the commit to always be a no-op.
-      #
-      # FIX: `git pull --rebase --autostash` (was `--rebase origin main --rebase`,
-      # duplicate flag).
       - name: Commit updated website data
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name  "VBank Tracker Bot 🤖"
           git config user.email "bot@vbank-tracker.github.io"
           git add docs/data.json
           git diff --staged --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore: update data.json [$(date '+%Y-%m-%d %H:%M')]"
-          git pull --rebase --autostash origin main
-          git push origin HEAD:main
+          git pull --rebase origin main --rebase --autostash
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

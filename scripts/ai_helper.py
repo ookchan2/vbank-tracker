@@ -17,10 +17,9 @@ MODELS_TO_TRY = [
     "Perplexity-Pro-Search",
 ]
 
-# FIX: added 定期存款 so time-deposit promotions can be classified
 ALLOWED_CATEGORIES = [
     "迎新", "消費", "投資", "旅遊", "保險",
-    "貸款", "存款", "定期存款", "外匯", "推薦", "新資金", "Others"
+    "貸款", "存款", "外匯", "推薦", "新資金", "Others"
 ]
 
 # ── Bank-specific BAU overrides ───────────────────────────────────────────────
@@ -46,10 +45,6 @@ BAU_GLOBAL_OVERRIDES: list[str] = [
 ]
 
 # ── Extraction prompt ─────────────────────────────────────────────────────────
-# NOTE: this is a plain string (no f-prefix).
-# FIX: changed {{ / }} → { / } — double-braces appeared literally in the AI
-#      prompt since this is NOT an f-string, causing the schema example to
-#      show "{{" and "}}" instead of valid JSON delimiters.
 
 _PROMPT_TMPL = """\
 You are a specialist at extracting bank promotion data from website text.
@@ -90,7 +85,7 @@ Source URL: URL_PLACEHOLDER
 ║     • Any referral / invite-a-friend / 推薦 program → tag 推薦     ║
 ║     • Any fund / 基金 / unit trust subscription fee promo → 投資   ║
 ║     • Any stock / crypto / securities trading fee promo → 投資     ║
-║     • Any fixed / time deposit promo → tag 定期存款                ║
+║     • Any travel / flight / hotel / 旅遊 promo → tag 旅遊          ║
 ║                                                                      ║
 ║  7. ⚠️  FOOTNOTES ARE REAL PROMOTIONS — ALWAYS EXTRACT THEM        ║
 ║     Lines starting with  *  †  #  ¹  ²  are often the most         ║
@@ -122,12 +117,12 @@ Source URL: URL_PLACEHOLDER
 ╚══════════════════════════════════════════════════════════════════════╝
 
 ALLOWED CATEGORY TAGS (Chinese, pick 1-3 per promotion):
-  迎新 / 消費 / 投資 / 旅遊 / 保險 / 貸款 / 存款 / 定期存款 / 外匯 / 推薦 / 新資金 / Others
+  迎新 / 消費 / 投資 / 旅遊 / 保險 / 貸款 / 存款 / 外匯 / 推薦 / 新資金 / Others
 
 REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
 
 Schema for each object:
-{
+{{
   "name":        "Full descriptive English name of the promotion",
   "types":       ["category1", "category2"],
   "is_bau":      false,
@@ -139,7 +134,7 @@ Schema for each object:
   "quota":       "Eligibility or quota info (e.g. First 1000 customers / New customers only / No cap)",
   "cost":        "Minimum spend or required cost, or Free",
   "tc_link":     "URL_PLACEHOLDER"
-}
+}}
 
 WEBSITE TEXT TO ANALYSE:
 ────────────────────────────────────────────────────────────────────────
@@ -305,16 +300,10 @@ def _trim_text(text: str, max_chars: int = 18000) -> str:
 
 def _stamp(promos: list, bank_id: str, bank_name: str, default_url: str) -> list:
     for p in promos:
-        p['bank']      = bank_id
-        p['bName']     = bank_name
-        # FIX: also set bank_name key for direct DB/JSON compatibility
-        p['bank_name'] = bank_name
-
-        # FIX: setdefault won't override an empty string already set by the AI;
-        # use explicit guard so the default URL is used when tc_link/link is falsy.
-        if not p.get('link'):    p['link']    = default_url
-        if not p.get('tc_link'): p['tc_link'] = default_url
-
+        p['bank']    = bank_id
+        p['bName']   = bank_name
+        p.setdefault('link',        default_url)
+        p.setdefault('tc_link',     default_url)
         p.setdefault('types',       ['Others'])
         p.setdefault('is_bau',      False)
         p.setdefault('start_date',  None)
@@ -335,9 +324,9 @@ def _apply_bau_overrides(promos: list, bank_id: str) -> list:
       • BAU_OVERRIDES[bank_id]  — bank-specific patterns
       • BAU_GLOBAL_OVERRIDES    — patterns that apply to ALL banks
     """
-    bank_specific = [o.lower() for o in BAU_OVERRIDES.get(bank_id.lower(), [])]
-    global_list   = [o.lower() for o in BAU_GLOBAL_OVERRIDES]
-    all_overrides = bank_specific + global_list
+    bank_specific  = [o.lower() for o in BAU_OVERRIDES.get(bank_id.lower(), [])]
+    global_list    = [o.lower() for o in BAU_GLOBAL_OVERRIDES]
+    all_overrides  = bank_specific + global_list
     if not all_overrides:
         return promos
     for p in promos:
@@ -360,6 +349,11 @@ _VAGUE_DETAIL_PATTERNS: list[str] = [
     r'no\s+\w+\s+promotions?\s+available',
 ]
 
+# ── FIX Issue 1: Added travel-specific concrete evidence patterns ─────────────
+# Previously, Travel best_for winners were being rejected because:
+#   a) _CONCRETE_EVIDENCE_RE had no travel keywords beyond trip.com / asia miles
+#   b) the gate fired on vague patterns even when evidence WAS present
+# Added: flight, hotel, lounge, travel insur, agoda, 旅遊 as valid evidence.
 _CONCRETE_EVIDENCE_RE = re.compile(
     r'HKD\s*[\d,]+'
     r'|\$\s*0\b'
@@ -378,10 +372,19 @@ _CONCRETE_EVIDENCE_RE = re.compile(
     r'|payment\s+connect'
     r'|global\s+wallet'
     r'|commission'
-    r'|cashback|cash\s*back',
+    r'|cashback|cash\s*back'
+    r'|\bflight\b'
+    r'|\bhotel\b'
+    r'|\blounge\b'
+    r'|travel\s*insur'
+    r'|\bagoda\b'
+    r'|旅遊',
     re.IGNORECASE,
 )
 
+# ── FIX Issue 1: Added '旅遊', 'travel', 'airline', 'airport' to Travel ───────
+# The cross-check fallback was unable to find Travel promos from bank_analysis
+# strengths because the Chinese tag '旅遊' was not in the keyword list.
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
     'Investment (Stock/Crypto Trading)': [
         'crypto', 'bitcoin', 'virtual asset', 'digital asset',
@@ -410,6 +413,7 @@ _CATEGORY_KEYWORDS: dict[str, list[str]] = {
         'trip.com', 'asia miles', 'flight', 'hotel',
         'travel insurance', 'lounge', 'agoda',
         'booking.com', 'travel cashback', 'travel reward',
+        '旅遊', 'travel', 'airline', 'airport', 'airfare',
     ],
     'Spending/CashBack': [
         'cashback', 'cash back', 'spending reward',
@@ -424,20 +428,23 @@ _CATEGORY_KEYWORDS: dict[str, list[str]] = {
         'loan', 'apr', 'instant loan', 'personal loan',
         'interest rate', '1.18%', 'tax loan', 'tax season',
     ],
-    # FIX: added Time Deposit category
-    'Time Deposit / 定期存款': [
-        '定期存款', 'time deposit', 'fixed deposit', 'td rate',
-        'term deposit', '存款利率', 'deposit rate',
-    ],
-    # FIX: added New Funds category for 新資金 promotions
-    'New Funds / 新資金': [
-        '新資金', 'new fund', 'fresh fund', 'new money',
-        'fund transfer bonus', 'fund injection',
-    ],
 }
 
 
 def _validate_best_for_evidence(best_for: list) -> list:
+    """
+    FIX Issue 1: Changed rejection logic.
+
+    OLD: reject if (is_vague OR no_evidence)
+      → A Travel detail mentioning Trip.com in a "year-round offers" sentence
+        was being rejected because the vague pattern fired, even though
+        trip.com IS concrete evidence.
+
+    NEW: reject ONLY if no_evidence.
+      Vague-pattern detection is now purely informational (logged as a warning).
+      If there is at least one concrete fact (%, HKD, trip.com, flight, hotel…)
+      the entry is kept regardless of sentence structure.
+    """
     validated    = []
     reject_count = 0
 
@@ -456,11 +463,18 @@ def _validate_best_for_evidence(best_for: list) -> list:
         )
         has_evidence = bool(_CONCRETE_EVIDENCE_RE.search(detail))
 
-        if is_vague or not has_evidence:
-            reason = 'vague pattern matched' if is_vague else 'no concrete fact found'
+        # Log vague matches as warnings (informational only — NOT a rejection gate)
+        if is_vague:
+            print(
+                f'  ⚠️  Vague-pattern flag [{cat}] "{bank}" — '
+                f'evidence present={has_evidence}: "{detail[:70]}"'
+            )
+
+        # Reject ONLY when there is zero concrete evidence
+        if not has_evidence:
             print(
                 f'  🚫 Evidence gate REJECTED [{cat}] winner "{bank}" '
-                f'({reason}) → detail was: "{detail}"'
+                f'(no concrete fact found) → detail was: "{detail}"'
             )
             validated.append({
                 **entry,
@@ -560,7 +574,7 @@ def analyze_promotions(bank_id: str,
     if not AI_AVAILABLE:
         return []
 
-    clean   = _trim_text(text.strip() if text else '')
+    clean = _trim_text(text.strip() if text else '')
     results: list = []
 
     if len(clean) >= 200:
@@ -570,7 +584,7 @@ def analyze_promotions(bank_id: str,
             raw    = _call([{'role': 'user', 'content': prompt}])
             parsed = _parse_array(raw)
             if parsed:
-                results   = parsed
+                results = parsed
                 bau_count = sum(1 for p in parsed if p.get('is_bau'))
                 print(
                     f'  📝 Text → {len(results)} promotions for {bank_name} '
@@ -810,17 +824,15 @@ def _build_bank_summary_lines(promos: list) -> list[str]:
     return lines
 
 
-# FIX: added 定期存款 / Time Deposit entry
 _DIAGNOSTIC_CATEGORIES: list[tuple[str, list[str]]] = [
     ('Investment (Stock/Crypto Trading)', ['投資', 'crypto', 'stock', '$0', 'commission']),
     ('Fund Investment',                   ['投資', 'fund', '基金', '$0認購費', 'subscription fee']),
     ('Referral Bonus',                    ['推薦', 'referral', '多友多賞', 'invite']),
-    ('Travel',                            ['旅遊', 'trip', 'travel', 'asia miles']),
+    ('Travel',                            ['旅遊', 'trip', 'travel', 'asia miles', 'flight', 'hotel']),
     ('Spending/CashBack',                 ['消費', 'cashback', 'cash back', 'rebate']),
     ('Welcome Bonus',                     ['迎新', 'welcome', 'new customer']),
     ('Loan APR',                          ['貸款', 'loan', 'apr']),
     ('FX/Multi-Currency',                 ['外匯', 'fx', 'multi-currency', 'global wallet']),
-    ('Time Deposit / 定期存款',           ['定期存款', 'time deposit', 'fixed deposit', 'td rate']),
 ]
 
 
@@ -1028,37 +1040,54 @@ promotions for all "best_for" slots.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 2 — CHINESE TYPE TAG → ENGLISH CATEGORY MAPPING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The promotion lines above use Chinese category tags inside [ ].
+Use this mapping to decide which best_for category each promotion belongs to:
+
   [推薦]           → "Referral Bonus"
   [投資] + fund    → "Fund Investment"
   [投資] + stock   → "Investment (Stock/Crypto Trading)"
   [投資] + crypto  → "Investment (Stock/Crypto Trading)"
   [消費]           → "Spending/CashBack"
   [迎新]           → "Welcome Bonus"
-  [旅遊]           → "Travel"
+  [旅遊]           → "Travel"   ← ANY promotion tagged [旅遊] MUST be evaluated for Travel
   [貸款]           → "Loan APR"
   [外匯]           → "FX/Multi-Currency"
-  [定期存款]       → "Time Deposit / 定期存款"
   [新資金]         → "Welcome Bonus" or "Spending/CashBack" (pick most relevant)
+
+A single promotion may carry multiple tags — evaluate ALL of them.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 3 — STRICT CATEGORY DEFINITIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 • Investment (Stock/Crypto Trading)
     → Stock or crypto trading fee waivers, brokerage commission, IPO rewards.
-• Fund Investment         → Fund subscription or switching fee promotions.
-• Spending/CashBack       → Card cashback or merchant spending rewards.
-• Welcome Bonus           → New customer account opening cash/gift rewards.
-• Travel                  → Travel insurance, flight/hotel discounts, Asia Miles.
-• Loan APR                → Personal loan with the lowest specific APR quoted.
-• FX/Multi-Currency       → FX rate promotions, global wallet, remittance.
-• Referral Bonus          → Referral programs with a stated HKD reward amount.
-• Time Deposit / 定期存款 → Fixed/time deposit rate promotions.
+    → BAU zero-fee crypto/stock features qualify.
+
+• Fund Investment
+    → Mutual fund / unit trust subscription or switching fee promotions.
+    → BAU zero-fee fund features qualify.
+
+• Spending/CashBack → Card cashback or merchant spending rewards.
+• Welcome Bonus    → New customer account opening cash/gift rewards.
+• Travel           → Travel insurance, flight/hotel discounts, Asia Miles,
+                     Trip.com discounts, lounge access, any 旅遊-tagged promo.
+• Loan APR         → Personal loan with the lowest specific APR rate quoted.
+• FX/Multi-Currency → FX rate promotions, global wallet, remittance.
+• Referral Bonus   → Referral programs with a stated HKD reward amount.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 4 — MANDATORY WINNER SELECTION RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Output "None" ONLY when there is absolutely zero evidence of any promotion
 across ALL banks that relates to that category.
+
+CHECKLIST — before writing "None" for any category, verify:
+  Fund Investment  → Search for ANY line containing fund / 基金 / $0認購費 / zero subscription
+  Referral Bonus   → Search for ANY line tagged [推薦] OR containing referral / 推薦 / 多友多賞
+  Travel           → Search for ANY line tagged [旅遊] OR containing trip.com / travel /
+                     flight / hotel / asia miles / lounge / agoda
+                     ⚠️  If ANY [旅遊] line exists → Travel winner MUST NOT be None
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 5 — KNOWN QUALIFIERS
@@ -1067,13 +1096,17 @@ SECTION 5 — KNOWN QUALIFIERS
   ✅ ZA Bank "0% Fund Subscription Fee until 31 Jul 2026" → Fund Investment winner
   ✅ WeLab "$0 Fund Trading Fee Mode" [BAU] → Fund Investment winner
   ✅ Mox "多友多賞 HKD300 per referral" → Referral Bonus winner
+  ✅ Mox "Trip.com year-round discount" [旅遊] → Travel winner
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 6 — EVIDENCE GATE: NO HALLUCINATION ALLOWED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 The "detail" field MUST contain at least ONE concrete verifiable fact:
   • Specific HKD/USD amount, percentage, $0/zero-fee fact, specific date,
-    named concrete product, or commission/fee/cashback keyword.
+    named concrete product (Trip.com, Asia Miles, Agoda…),
+    or travel/commission/fee/cashback keyword.
+  • For Travel: naming Trip.com, Asia Miles, a flight partner, or hotel brand
+    counts as concrete evidence — an exact % is NOT required.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 7 — SELF-CONSISTENCY CHECK
@@ -1088,12 +1121,11 @@ Return this EXACT JSON structure (no markdown, no code fences):
     {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific detail", "is_bau": false}},
     {{"category": "Spending/CashBack",                "bank": "BankName", "detail": "specific % or HKD amount", "is_bau": false}},
     {{"category": "Welcome Bonus",                    "bank": "BankName", "detail": "HKD amount", "is_bau": false}},
-    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit with % or named partner", "is_bau": false}},
+    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit with named partner or %", "is_bau": false}},
     {{"category": "Loan APR",                         "bank": "BankName", "detail": "X.XX% APR", "is_bau": false}},
     {{"category": "FX/Multi-Currency",                "bank": "BankName", "detail": "specific detail with named product or %", "is_bau": false}},
     {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail with 0% or $0", "is_bau": false}},
-    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount per referral", "is_bau": false}},
-    {{"category": "Time Deposit / 定期存款",          "bank": "BankName", "detail": "X.XX% p.a. or specific rate", "is_bau": false}}
+    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount per referral", "is_bau": false}}
   ],
   "bank_analysis": {{
     "ZA Bank": {{
@@ -1130,10 +1162,12 @@ Return this EXACT JSON structure (no markdown, no code fences):
     for bname in result.get('bank_analysis', {}):
         matched_key = name_lookup.get(bname.lower())
         if matched_key:
-            all_p     = promotions_by_bank[matched_key]
-            non_bau_p = [p for p in all_p if not p.get('is_bau')]
-            result['bank_analysis'][bname]['count']     = len(non_bau_p)
-            result['bank_analysis'][bname]['bau_count'] = len(all_p) - len(non_bau_p)
+            all_promos     = promotions_by_bank[matched_key]
+            non_bau_promos = [p for p in all_promos if not p.get('is_bau')]
+            result['bank_analysis'][bname]['count']     = len(non_bau_promos)
+            result['bank_analysis'][bname]['bau_count'] = (
+                len(all_promos) - len(non_bau_promos)
+            )
         else:
             result['bank_analysis'][bname]['count']     = 0
             result['bank_analysis'][bname]['bau_count'] = 0

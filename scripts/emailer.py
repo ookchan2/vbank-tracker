@@ -1,20 +1,28 @@
 # scripts/emailer.py
-"""
-VBank Tracker — daily HTML email digest.
-"""
 
-from __future__ import annotations
-
+import os
 import smtplib
-from datetime import date, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Optional
+from datetime import datetime, timedelta
 
+# ── Category metadata ─────────────────────────────────────────────────────────
 
-# ── Colour maps ───────────────────────────────────────────────────────────────
+CATEGORY_META = {
+    "迎新":   {"bg": "#10b981", "emoji": "🎉"},
+    "消費":   {"bg": "#f59e0b", "emoji": "💳"},
+    "投資":   {"bg": "#6366f1", "emoji": "📈"},
+    "旅遊":   {"bg": "#06b6d4", "emoji": "✈️"},
+    "保險":   {"bg": "#ef4444", "emoji": "🛡️"},
+    "貸款":   {"bg": "#dc2626", "emoji": "💰"},
+    "存款":   {"bg": "#3b82f6", "emoji": "🏦"},
+    "外匯":   {"bg": "#8b5cf6", "emoji": "🌐"},
+    "推薦":   {"bg": "#ec4899", "emoji": "👥"},
+    "新資金": {"bg": "#0ea5e9", "emoji": "💵"},
+    "Others": {"bg": "#6b7280", "emoji": "📋"},
+}
 
-_BANK_COLORS: dict[str, str] = {
+BANK_COLORS = {
     "ZA Bank":      "#25CD9C",
     "Mox Bank":     "#ec4899",
     "WeLab Bank":   "#7c3aed",
@@ -25,332 +33,621 @@ _BANK_COLORS: dict[str, str] = {
     "Ant Bank":     "#1677ff",
 }
 
-_CAT_COLORS: dict[str, str] = {
-    "迎新":   "#10b981",
-    "消費":   "#f59e0b",
-    "投資":   "#6366f1",
-    "旅遊":   "#06b6d4",
-    "保險":   "#ef4444",
-    "貸款":   "#dc2626",
-    "存款":   "#3b82f6",
-    "定期存款": "#0369a1",
-    "外匯":   "#8b5cf6",
-    "推薦":   "#ec4899",
-    "新資金": "#0ea5e9",
-    "Others": "#6b7280",
+BANK_DISPLAY_NAMES = {
+    "ZA Bank":      "ZA",
+    "Airstar Bank": "Airstar",
+    "Ant Bank":     "Ant",
+    "Fusion Bank":  "Fusion",
+    "Mox Bank":     "Mox",
+    "PAObank":      "PAO",
+    "WeLab Bank":   "WeLab",
+    "livi bank":    "Livi",
 }
 
+CATEGORY_EMOJIS = {k: v["emoji"] for k, v in CATEGORY_META.items()}
 
-def _bank_color(name: str) -> str:
-    n = (name or "").lower()
-    for k, v in _BANK_COLORS.items():
-        if k.lower() in n:
-            return v
+# ── Generic words that must never match a bank entry ─────────────────────────
+_BANK_NAME_GENERIC = {'bank', 'banking', 'digital', 'virtual', 'bank hk', ''}
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _bank_color(bank_name: str) -> str:
+    """Bidirectional substring match — handles both 'Mox Bank' and 'Mox'."""
+    name_lower = (bank_name or "").lower().strip()
+    if name_lower in _BANK_NAME_GENERIC:
+        return "#6b7280"
+    for key, color in BANK_COLORS.items():
+        key_lower = key.lower()
+        if key_lower in name_lower or name_lower in key_lower:
+            return color
     return "#6b7280"
 
 
-def _status(p: dict) -> tuple[str, str]:
-    """Return (label, hex_colour)."""
-    if not p.get("active"):
-        return "Expired", "#9ca3af"
-    end = p.get("end_date")
-    if not end or (p.get("period") or "").lower() == "ongoing":
-        return "Valid", "#10b981"
-    try:
-        diff = (datetime.strptime(end, "%Y-%m-%d").date() - date.today()).days
-        if diff < 0:
-            return "Expired", "#9ca3af"
-        if diff <= 30:
-            return f"{diff}d left", "#f97316"
-        return "Valid", "#10b981"
-    except Exception:
-        return "Valid", "#10b981"
+def _bank_display_name(bank_name: str) -> str:
+    """Bidirectional match for display names."""
+    name_lower = (bank_name or "").lower().strip()
+    if name_lower in _BANK_NAME_GENERIC:
+        return bank_name
+    for key, short in BANK_DISPLAY_NAMES.items():
+        key_lower = key.lower()
+        if key_lower in name_lower or name_lower in key_lower:
+            return short
+    return bank_name
 
 
-def _cat_tags(types: list[str]) -> str:
-    html = []
-    for t in types or []:
-        color = "#6b7280"
-        for k, v in _CAT_COLORS.items():
-            if k.lower() in t.lower():
-                color = v
-                break
-        html.append(
-            f'<span style="display:inline-block;background:{color};color:#fff;'
-            f'padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700;'
-            f'margin:1px 2px;">{t}</span>'
-        )
-    return "".join(html)
+def _get_cat_meta(type_str: str) -> dict:
+    if type_str in CATEGORY_META:
+        return CATEGORY_META[type_str]
+    t = (type_str or "").lower()
+    if any(k in t for k in ['welcome', 'new customer', 'onboard', '迎新']):
+        return CATEGORY_META["迎新"]
+    if any(k in t for k in ['spend', 'cashback', 'card', '消費']):
+        return CATEGORY_META["消費"]
+    if any(k in t for k in ['invest', 'stock', 'fund', 'crypto', '投資']):
+        return CATEGORY_META["投資"]
+    if any(k in t for k in ['travel', 'flight', 'hotel', 'mile', '旅遊']):
+        return CATEGORY_META["旅遊"]
+    if any(k in t for k in ['insur', '保險']):
+        return CATEGORY_META["保險"]
+    if any(k in t for k in ['loan', 'borrow', '貸款']):
+        return CATEGORY_META["貸款"]
+    if any(k in t for k in ['deposit', 'saving', 'time deposit', '存款']):
+        return CATEGORY_META["存款"]
+    if any(k in t for k in ['fx', 'currency', 'exchange', 'remit', '外匯']):
+        return CATEGORY_META["外匯"]
+    if any(k in t for k in ['refer', '推薦']):
+        return CATEGORY_META["推薦"]
+    if any(k in t for k in ['new fund', 'fresh', '新資金']):
+        return CATEGORY_META["新資金"]
+    return CATEGORY_META["Others"]
 
 
-# ── Section builders ──────────────────────────────────────────────────────────
-
-def _new_today_section(new_promotions: dict[str, list]) -> str:
-    if not new_promotions:
-        return ""
-
-    rows = ""
-    total = 0
-    for bank_name, promos in new_promotions.items():
-        color = _bank_color(bank_name)
-        for p in promos:
-            label, badge_color = _status(p)
-            title     = p.get("title") or p.get("name") or "—"
-            highlight = p.get("highlight") or ""
-            cats      = _cat_tags(p.get("types") or [])
-            link      = p.get("tc_link") or p.get("url") or "#"
-            rows += f"""
-            <tr>
-              <td style="padding:8px 12px;border-bottom:1px solid #fde68a;white-space:nowrap;">
-                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;
-                             background:{color};margin-right:5px;vertical-align:middle;"></span>
-                <b style="color:#92400e;">{bank_name}</b>
-              </td>
-              <td style="padding:8px 12px;border-bottom:1px solid #fde68a;max-width:260px;">
-                <a href="{link}" style="color:#1d4ed8;font-weight:600;text-decoration:none;">
-                  {title}</a><br>
-                <span style="color:#6b7280;font-size:11px;">{highlight}</span>
-              </td>
-              <td style="padding:8px 12px;border-bottom:1px solid #fde68a;">{cats}</td>
-              <td style="padding:8px 12px;border-bottom:1px solid #fde68a;white-space:nowrap;">
-                <span style="background:{badge_color};color:#fff;padding:2px 8px;
-                             border-radius:20px;font-size:11px;font-weight:700;">{label}</span>
-              </td>
-            </tr>"""
-            total += 1
-
-    if not total:
-        return ""
-
-    return f"""
-    <div style="margin-bottom:24px;">
-      <div style="background:linear-gradient(to right,#f97316,#fbbf24);
-                  border-radius:12px 12px 0 0;padding:14px 18px;">
-        <span style="font-size:20px;">🆕</span>
-        <span style="color:#fff;font-weight:800;font-size:16px;margin-left:8px;">
-          New Promotions Today</span><br>
-        <span style="color:#fed7aa;font-size:11px;">今日首次偵測到的優惠</span>
-        <span style="float:right;background:rgba(255,255,255,0.25);color:#fff;
-                     font-weight:700;padding:3px 12px;border-radius:20px;font-size:13px;">
-          {total} new</span>
-      </div>
-      <div style="background:#fffbeb;border:1px solid #fde68a;border-top:none;
-                  border-radius:0 0 12px 12px;overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <thead>
-            <tr style="background:#fef3c7;">
-              <th style="text-align:left;padding:8px 12px;color:#92400e;
-                         font-size:11px;text-transform:uppercase;">Bank</th>
-              <th style="text-align:left;padding:8px 12px;color:#92400e;
-                         font-size:11px;text-transform:uppercase;">Promotion</th>
-              <th style="text-align:left;padding:8px 12px;color:#92400e;
-                         font-size:11px;text-transform:uppercase;">Category</th>
-              <th style="text-align:left;padding:8px 12px;color:#92400e;
-                         font-size:11px;text-transform:uppercase;">Status</th>
-            </tr>
-          </thead>
-          <tbody>{rows}</tbody>
-        </table>
-      </div>
-    </div>"""
-
-
-def _insights_section(insights: dict) -> str:
-    best_for = (insights or {}).get("best_for") or []
-    cards = ""
-    for item in best_for:
-        cat    = item.get("category") or ""
-        bank   = item.get("bank")     or ""
-        detail = item.get("detail")   or ""
-        is_bau = item.get("is_bau",   False)
-        if bank.lower() in ("none", "", "n/a"):
-            continue
-        color    = _bank_color(bank)
-        bau_pill = (
-            '<span style="background:#64748b;color:#fff;font-size:10px;'
-            'padding:1px 6px;border-radius:10px;margin-left:5px;">BAU</span>'
-            if is_bau else ""
-        )
-        cards += f"""
-        <div style="border:1px solid #e5e7eb;border-left:4px solid {color};
-                    border-radius:8px;padding:10px 14px;margin-bottom:8px;
-                    background:#fff;">
-          <div style="font-size:11px;color:#6b7280;text-transform:uppercase;
-                      font-weight:700;letter-spacing:.04em;">{cat}</div>
-          <div style="font-weight:800;color:{color};margin-top:3px;">
-            {bank}{bau_pill}</div>
-          <div style="font-size:12px;color:#374151;margin-top:3px;">{detail}</div>
-        </div>"""
-
-    if not cards:
-        return ""
-
-    return f"""
-    <div style="margin-bottom:24px;">
-      <div style="background:linear-gradient(to right,#4f46e5,#7c3aed);
-                  border-radius:12px 12px 0 0;padding:14px 18px;">
-        <span style="font-size:18px;">🏆</span>
-        <span style="color:#fff;font-weight:800;font-size:16px;margin-left:8px;">
-          Best In Market Today</span><br>
-        <span style="color:#c7d2fe;font-size:11px;">今日最佳優惠類別</span>
-      </div>
-      <div style="background:#f5f3ff;border:1px solid #ede9fe;border-top:none;
-                  border-radius:0 0 12px 12px;padding:14px;">
-        {cards}
-      </div>
-    </div>"""
-
-
-def _bank_overview_section(all_promotions: list[dict]) -> str:
-    counts: dict[str, dict[str, int]] = {}
-    for p in all_promotions:
-        if p.get("is_bau"):
-            continue
-        bname = p.get("bank_name") or "Unknown"
-        if bname not in counts:
-            counts[bname] = {"active": 0, "expiring": 0}
-        label, _ = _status(p)
-        if "left" in label:
-            counts[bname]["expiring"] += 1
-        elif label == "Valid":
-            counts[bname]["active"] += 1
-
-    rows = ""
-    for bname in sorted(counts):
-        color    = _bank_color(bname)
-        active   = counts[bname]["active"]
-        expiring = counts[bname]["expiring"]
-        if expiring:
-            exp_html = (
-                f'<span style="background:#fed7aa;color:#92400e;font-size:11px;'
-                f'font-weight:700;padding:2px 8px;border-radius:20px;">'
-                f'⚡ {expiring} expiring</span>'
-            )
-        else:
-            exp_html = "—"
-        rows += f"""
-        <tr>
-          <td style="padding:7px 14px;border-bottom:1px solid #f3f4f6;">
-            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;
-                         background:{color};margin-right:6px;vertical-align:middle;"></span>
-            <b style="color:#374151;">{bname}</b>
-          </td>
-          <td style="padding:7px 14px;border-bottom:1px solid #f3f4f6;text-align:center;">
-            <span style="background:#d1fae5;color:#065f46;font-size:11px;
-                         font-weight:700;padding:2px 8px;border-radius:20px;">
-              {active} active</span>
-          </td>
-          <td style="padding:7px 14px;border-bottom:1px solid #f3f4f6;text-align:center;">
-            {exp_html}
-          </td>
-        </tr>"""
-
-    return f"""
-    <div style="margin-bottom:24px;">
-      <div style="background:linear-gradient(to right,#111827,#374151);
-                  border-radius:12px 12px 0 0;padding:14px 18px;">
-        <span style="font-size:18px;">🏦</span>
-        <span style="color:#fff;font-weight:800;font-size:16px;margin-left:8px;">
-          Bank Overview</span>
-      </div>
-      <div style="border:1px solid #e5e7eb;border-top:none;
-                  border-radius:0 0 12px 12px;overflow:hidden;">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;">
-          <thead>
-            <tr style="background:#f9fafb;">
-              <th style="text-align:left;padding:8px 14px;color:#6b7280;
-                         font-size:11px;text-transform:uppercase;">Bank</th>
-              <th style="text-align:center;padding:8px 14px;color:#6b7280;
-                         font-size:11px;text-transform:uppercase;">Active</th>
-              <th style="text-align:center;padding:8px 14px;color:#6b7280;
-                         font-size:11px;text-transform:uppercase;">Expiring ≤30d</th>
-            </tr>
-          </thead>
-          <tbody>{rows}</tbody>
-        </table>
-      </div>
-    </div>"""
-
-
-# ── Public API ────────────────────────────────────────────────────────────────
-
-def send_daily_email(
-    sender_address: str,
-    app_password:   str,
-    recipient:      str,
-    all_promotions: list[dict],
-    new_promotions: dict[str, list],
-    insights:       Optional[dict] = None,
-    run_date:       str            = "",
-) -> None:
-    run_date  = run_date or datetime.now().strftime("%Y-%m-%d")
-    new_total = sum(len(v) for v in new_promotions.values())
-    non_bau   = [p for p in all_promotions if not p.get("is_bau")]
-    total_n   = len(non_bau)
-
-    subject = (
-        f"🏦 VBank Tracker {run_date} — "
-        + (f"🆕 {new_total} new promotion(s)" if new_total else "Daily digest")
+def _cat_tag(text: str) -> str:
+    meta  = _get_cat_meta(text)
+    emoji = meta.get("emoji", "📋")
+    bg    = meta.get("bg",    "#6b7280")
+    return (
+        f'<span style="display:inline-block;padding:3px 10px;margin:2px 3px 2px 0;'
+        f'border-radius:20px;font-size:11px;color:#fff;font-weight:700;'
+        f'background:{bg};">{emoji} {text}</span>'
     )
 
-    body = f"""<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-</head>
-<body style="margin:0;padding:0;background:#f3f4f6;
-             font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:680px;margin:24px auto;background:#fff;border-radius:16px;
-              box-shadow:0 4px 24px rgba(0,0,0,0.08);overflow:hidden;">
 
-    <!-- Header -->
-    <div style="background:linear-gradient(to right,#111827,#374151);padding:24px 28px;">
-      <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px;">
-        🏦 HK Virtual Bank Promotions</div>
-      <div style="color:#9ca3af;font-size:13px;margin-top:6px;">
-        Daily Digest · {run_date} · 香港虛擬銀行優惠追蹤</div>
-      <div style="margin-top:16px;display:inline-flex;gap:12px;">
-        <div style="background:rgba(255,255,255,0.1);border-radius:8px;
-                    padding:8px 18px;text-align:center;display:inline-block;">
-          <div style="color:#fff;font-size:22px;font-weight:900;">{total_n}</div>
-          <div style="color:#9ca3af;font-size:11px;text-transform:uppercase;">Total</div>
-        </div>
-        <div style="background:rgba(16,185,129,0.2);border-radius:8px;
-                    padding:8px 18px;text-align:center;display:inline-block;">
-          <div style="color:#6ee7b7;font-size:22px;font-weight:900;">{new_total}</div>
-          <div style="color:#9ca3af;font-size:11px;text-transform:uppercase;">New Today</div>
-        </div>
-      </div>
-    </div>
+def _bau_tag() -> str:
+    return (
+        '<span style="display:inline-block;padding:3px 10px;margin:2px 3px 2px 0;'
+        'border-radius:20px;font-size:11px;color:#fff;font-weight:700;'
+        'background:#64748b;">⚙️ BAU</span>'
+    )
 
-    <div style="padding:24px 28px;">
-      {_new_today_section(new_promotions)}
-      {_insights_section(insights)}
-      {_bank_overview_section(all_promotions)}
 
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;
-                  text-align:center;color:#9ca3af;font-size:11px;">
-        <a href="https://vbank-tracker.github.io"
-           style="color:#6366f1;font-weight:600;text-decoration:none;">
-          🌐 View Live Dashboard ↗
-        </a>
-        &nbsp;·&nbsp;
-        VBank Tracker Bot 🤖 · Auto-generated {run_date} HKT
-      </div>
-    </div>
+def _types_to_list(types_raw) -> list:
+    if isinstance(types_raw, list):
+        return [str(t).strip() for t in types_raw if str(t).strip()]
+    if isinstance(types_raw, str):
+        return [t.strip() for t in types_raw.split(",") if t.strip()]
+    return []
+
+
+# ── Promotion card ────────────────────────────────────────────────────────────
+
+def _promo_card(promo: dict, color: str) -> str:
+    title     = (promo.get("title") or promo.get("name") or "Untitled")[:100]
+    highlight = promo.get("highlight") or promo.get("description") or ""
+    period    = promo.get("period") or promo.get("validity") or "Ongoing"
+    quota     = promo.get("quota") or ""
+    cost      = promo.get("cost")  or ""
+    tc_link   = promo.get("tc_link") or promo.get("url") or promo.get("link") or ""
+    types_raw = promo.get("types") or promo.get("type") or promo.get("promo_type") or ""
+    is_bau    = bool(promo.get("is_bau", False))
+
+    type_list = _types_to_list(types_raw)[:4]
+    cat_tags  = "".join(_cat_tag(t) for t in type_list) if type_list else _cat_tag("Others")
+    if is_bau:
+        cat_tags += _bau_tag()
+
+    quota_row = (
+        f'<span style="font-size:11px;color:#6b7280;margin-right:12px;">👥 {quota}</span>'
+        if quota else ""
+    )
+    cost_row = (
+        f'<span style="font-size:11px;color:#6b7280;margin-right:12px;">💲 {cost}</span>'
+        if cost else ""
+    )
+    tc_row = (
+        f'<a href="{tc_link}" style="font-size:11px;color:#6366f1;text-decoration:none;">'
+        f'📄 T&amp;C</a>'
+        if tc_link else ""
+    )
+
+    return f"""
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+<tr><td style="background:#ffffff;border-radius:10px;padding:14px 16px;
+               border-left:4px solid {color};
+               box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  <div style="margin-bottom:8px;">{cat_tags}</div>
+  <div style="font-weight:700;font-size:14px;color:#1f2937;margin-bottom:6px;">{title}</div>
+  <div style="font-size:13px;color:#4b5563;line-height:1.6;margin-bottom:8px;">{highlight}</div>
+  <div style="margin-top:6px;">
+    <span style="font-size:11px;color:#9ca3af;margin-right:12px;">📅 {period}</span>
+    {quota_row}{cost_row}{tc_row}
   </div>
+</td></tr>
+</table>"""
+
+
+# ── Bank section ──────────────────────────────────────────────────────────────
+
+def _bank_section(bank_name: str, promos: list) -> str:
+    color        = _bank_color(bank_name)
+    display_name = _bank_display_name(bank_name)
+    count        = len(promos)
+    cards        = "".join(_promo_card(p, color) for p in promos)
+    return f"""
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+<tr><td style="padding-bottom:10px;border-bottom:3px solid {color};">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr>
+    <td style="vertical-align:middle;">
+      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;
+                   background:{color};vertical-align:middle;margin-right:8px;"></span>
+      <span style="font-weight:800;font-size:17px;color:#1f2937;vertical-align:middle;">
+        {display_name}
+      </span>
+    </td>
+    <td style="text-align:right;vertical-align:middle;">
+      <span style="background:{color};color:#fff;padding:3px 12px;border-radius:20px;
+                   font-size:12px;font-weight:700;">
+        {count} promo{"s" if count != 1 else ""}
+      </span>
+    </td>
+  </tr></table>
+</td></tr>
+<tr><td style="padding-top:12px;">{cards}</td></tr>
+</table>"""
+
+
+# ── Strategic Insights ────────────────────────────────────────────────────────
+
+def _insights_html(insights: dict) -> str:
+    if not insights:
+        return ""
+
+    best_rows = ""
+    for item in insights.get("best_for", []):
+        cat    = item.get("category", "")
+        bank   = item.get("bank", "")
+        detail = item.get("detail", "")
+        bc     = _bank_color(bank)
+        em     = _get_cat_meta(cat).get("emoji", "🏆")
+        bank_short = _bank_display_name(bank)
+        best_rows += f"""
+<tr style="border-bottom:1px solid #f3f4f6;">
+  <td style="padding:9px 12px;font-size:13px;color:#374151;font-weight:600;white-space:nowrap;">
+    {em}&nbsp;Best for {cat}
+  </td>
+  <td style="padding:9px 12px;white-space:nowrap;">
+    <span style="background:{bc};color:#fff;padding:3px 10px;border-radius:20px;
+                 font-size:12px;font-weight:700;">{bank_short}</span>
+  </td>
+  <td style="padding:9px 12px;font-size:13px;color:#6b7280;">{detail}</td>
+</tr>"""
+
+    best_table = f"""
+<table width="100%" cellpadding="0" cellspacing="0"
+       style="border-collapse:collapse;background:#ffffff;border-radius:10px;
+              overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);margin-bottom:24px;">
+  <thead>
+    <tr style="background:#f9fafb;">
+      <th style="padding:9px 12px;text-align:left;font-size:11px;color:#6b7280;
+                 font-weight:700;text-transform:uppercase;">Category</th>
+      <th style="padding:9px 12px;text-align:left;font-size:11px;color:#6b7280;
+                 font-weight:700;text-transform:uppercase;">Winner</th>
+      <th style="padding:9px 12px;text-align:left;font-size:11px;color:#6b7280;
+                 font-weight:700;text-transform:uppercase;">Why</th>
+    </tr>
+  </thead>
+  <tbody>{best_rows}</tbody>
+</table>"""
+
+    bank_cards  = ""
+    sorted_banks = sorted(
+        insights.get("bank_analysis", {}).items(),
+        key=lambda x: (0 if "za" in x[0].lower() else 1, x[0]),
+    )
+
+    for bank_name, data in sorted_banks:
+        bc        = _bank_color(bank_name)
+        count     = data.get("count", 0)
+        focus     = data.get("focus", "")
+        strengths = data.get("strengths", [])[:3]
+        expiring  = data.get("expiring_alert", "")
+        pros      = data.get("vs_za_pros")
+        cons      = data.get("vs_za_cons")
+        is_za     = "za" in bank_name.lower()
+
+        hdr_bg    = bc if is_za else "#f9fafb"
+        hdr_color = "#ffffff" if is_za else "#1f2937"
+        display_name = _bank_display_name(bank_name)
+
+        strengths_html = "".join(
+            f'<tr><td style="padding:3px 0;font-size:13px;color:#374151;">'
+            f'✓&nbsp;{s}</td></tr>'
+            for s in strengths
+        )
+        expiring_html = (
+            f'<tr><td style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;'
+            f'padding:7px 12px;font-size:12px;color:#92400e;font-weight:600;margin-top:10px;">'
+            f'⚡&nbsp;{expiring}</td></tr>'
+            if expiring else ""
+        )
+
+        vs_za_html = ""
+        if is_za:
+            vs_za_html = (
+                '<tr><td style="background:#fef2f2;border-radius:8px;padding:6px 12px;'
+                'font-size:12px;color:#dc2626;font-weight:700;margin-top:10px;">'
+                '🏆 Base Comparison Bank</td></tr>'
+            )
+        elif pros or cons:
+            pros_row = (
+                f'<tr><td style="font-size:12px;color:#059669;padding:2px 0;">'
+                f'✅&nbsp;{pros}</td></tr>'
+                if pros else ""
+            )
+            cons_row = (
+                f'<tr><td style="font-size:12px;color:#dc2626;padding:2px 0;">'
+                f'❌&nbsp;{cons}</td></tr>'
+                if cons else ""
+            )
+            vs_za_html = f"""
+<tr><td style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
+               padding:8px 0 4px;letter-spacing:.05em;">vs ZA Bank</td></tr>
+{pros_row}{cons_row}"""
+
+        bank_cards += f"""
+<table width="100%" cellpadding="0" cellspacing="0"
+       style="margin-bottom:16px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+  <tr>
+    <td style="background:{hdr_bg};padding:12px 16px;">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td>
+          <span style="font-weight:800;font-size:15px;color:{hdr_color};">{display_name}</span>
+        </td>
+        <td style="text-align:right;">
+          <span style="background:rgba(0,0,0,0.1);color:{hdr_color};padding:2px 10px;
+                       border-radius:20px;font-size:12px;font-weight:700;">{count} active</span>
+        </td>
+      </tr></table>
+    </td>
+  </tr>
+  <tr>
+    <td style="background:#ffffff;padding:14px 16px;">
+      <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
+                  margin-bottom:4px;">Focus</div>
+      <div style="font-size:13px;color:#374151;margin-bottom:12px;">{focus}</div>
+      <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
+                  margin-bottom:6px;">Key Strengths</div>
+      <table cellpadding="0" cellspacing="0">
+        {strengths_html}{expiring_html}{vs_za_html}
+      </table>
+    </td>
+  </tr>
+</table>"""
+
+    return f"""
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:16px;">
+  <tr><td style="padding:24px;">
+    <div style="font-size:20px;font-weight:800;color:#1f2937;margin-bottom:4px;">
+      🧠 Strategic Insights
+    </div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">
+      AI-generated analysis • Updated daily • Base comparison: ZA Bank
+    </div>
+    <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;
+                margin-bottom:12px;">🏆 Best in Category</div>
+    {best_table}
+    <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;
+                margin-bottom:14px;">📋 Bank-by-Bank Analysis</div>
+    {bank_cards}
+  </td></tr>
+</table>"""
+
+
+# ── Main HTML builder ─────────────────────────────────────────────────────────
+
+def build_html_email(
+    promotions_data:    list,
+    scraped_data:       dict,
+    strategic_insights: dict = None,
+    new_promos:         list = None,
+) -> str:
+    new_promos = new_promos or []
+    now        = datetime.now().strftime("%d %b %Y, %H:%M HKT")
+
+    # promotions_data is already non-BAU (filtered in main.py before passing in)
+    non_bau_data    = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
+    new_promos_show = [p for p in new_promos              if not p.get('is_bau', False)]
+
+    # Build bank → promos map
+    banks: dict = {}
+    for p in non_bau_data:
+        bank = p.get("bName") or p.get("bank_name") or p.get("bank") or "Unknown"
+        banks.setdefault(bank, []).append(p)
+
+    total_promos = len(non_bau_data)
+    total_banks  = len(BANK_COLORS)
+
+    # ── Expiring soon (end_date arithmetic, matches website logic exactly) ────
+    _now       = datetime.now()
+    _today_d   = _now.date()
+    _threshold = (_now + timedelta(days=30)).date()
+    _this_m    = _now.strftime('%b').lower()
+    _next_m    = ['jan','feb','mar','apr','may','jun',
+                  'jul','aug','sep','oct','nov','dec'][_now.month % 12]
+
+    expiring_count = 0
+    for _p in non_bau_data:
+        _ed = _p.get('end_date')
+        if _ed:
+            try:
+                _end_d = datetime.strptime(str(_ed)[:10], '%Y-%m-%d').date()
+                if _today_d <= _end_d <= _threshold:
+                    expiring_count += 1
+            except (ValueError, TypeError):
+                pass
+        else:
+            # Fallback: period text for promos without a structured end_date
+            _period = str(_p.get('period', '')).lower()
+            if _this_m in _period or _next_m in _period:
+                expiring_count += 1
+
+    # ── Scrape status rows ────────────────────────────────────────
+    scrape_rows = ""
+    for bank_name, result in sorted((scraped_data or {}).items()):
+        raw_status   = result.get("status")
+        raw_ok       = result.get("success")
+        ok           = (raw_status == "success") or (raw_ok is True)
+        count        = result.get("count") or len(banks.get(bank_name, []))
+        dot          = "#10b981" if ok else "#ef4444"
+        label        = f"{'✅' if ok else '❌'} {'success' if ok else (raw_status or 'failed')}"
+        display      = _bank_display_name(bank_name)
+        scrape_rows += f"""
+<tr style="border-bottom:1px solid #f3f4f6;">
+  <td style="padding:9px 12px;font-size:13px;color:#374151;font-weight:600;">{display}</td>
+  <td style="padding:9px 12px;text-align:center;font-size:13px;color:{dot};">{label}</td>
+  <td style="padding:9px 12px;text-align:center;font-size:14px;font-weight:800;
+             color:#6366f1;">{count}</td>
+</tr>"""
+
+    sorted_banks = sorted(
+        banks.items(), key=lambda x: (0 if "za" in x[0].lower() else 1, x[0])
+    )
+    promos_html    = "".join(_bank_section(bn, bp) for bn, bp in sorted_banks)
+    insights_block = _insights_html(strategic_insights) if strategic_insights else ""
+    insights_row   = (
+        f"<tr><td>{insights_block}</td></tr><tr><td style='height:16px;'></td></tr>"
+        if insights_block else ""
+    )
+
+    # ── Newly launched section ────────────────────────────────────
+    if new_promos_show:
+        new_rows = ""
+        for p in new_promos_show:
+            bank_name    = p.get('bName') or p.get('bank_name') or p.get('bank') or '—'
+            display_name = _bank_display_name(bank_name)
+            title        = p.get('title') or p.get('name') or '—'
+            types_raw    = p.get('types') or p.get('type') or p.get('promo_type') or ''
+            types_str    = ', '.join(_types_to_list(types_raw)) if types_raw else '—'
+            period       = p.get('period') or p.get('validity') or 'Ongoing'
+            bc           = _bank_color(bank_name)
+            new_rows += f"""
+<tr style="border-bottom:1px solid #f0f0f0;">
+  <td style="padding:8px 12px;font-size:13px;font-weight:700;color:{bc};">{display_name}</td>
+  <td style="padding:8px 12px;font-size:13px;color:#374151;">{title}</td>
+  <td style="padding:8px 12px;font-size:13px;color:#6b7280;">{types_str}</td>
+  <td style="padding:8px 12px;font-size:13px;color:#6b7280;">{period}</td>
+</tr>"""
+
+        new_section_html = f"""
+<tr><td style="border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background:linear-gradient(135deg,#ff6b35,#f7931e);padding:14px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td>
+            <span style="font-size:18px;">🆕</span>
+            <span style="font-weight:800;font-size:16px;color:#fff;margin-left:8px;">
+              NEWLY LAUNCHED PROMOTIONS
+            </span>
+          </td>
+          <td style="text-align:right;">
+            <span style="background:rgba(255,255,255,0.25);color:#fff;border-radius:20px;
+                         padding:3px 12px;font-size:12px;font-weight:700;">
+              {len(new_promos_show)} new
+            </span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+    <tr>
+      <td style="background:#fffdf9;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+          <thead>
+            <tr style="background:#fff3e8;">
+              <th style="padding:10px 12px;text-align:left;color:#e65c00;
+                         font-weight:700;font-size:12px;">Bank</th>
+              <th style="padding:10px 12px;text-align:left;color:#e65c00;
+                         font-weight:700;font-size:12px;">Promotion</th>
+              <th style="padding:10px 12px;text-align:left;color:#e65c00;
+                         font-weight:700;font-size:12px;">Category</th>
+              <th style="padding:10px 12px;text-align:left;color:#e65c00;
+                         font-weight:700;font-size:12px;">Period</th>
+            </tr>
+          </thead>
+          <tbody>{new_rows}</tbody>
+        </table>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+<tr><td style="height:16px;"></td></tr>"""
+    else:
+        new_section_html = """
+<tr><td style="background:#f9f9f9;border-radius:12px;padding:16px 20px;
+               border:1px dashed #ddd;text-align:center;
+               color:#9ca3af;font-size:13px;">
+  🔍 No new promotions detected since the last run.
+</td></tr>
+<tr><td style="height:16px;"></td></tr>"""
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VBank Daily Report</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;
+             font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:20px 10px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:660px;">
+
+  <!-- HEADER -->
+  <tr><td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+                 border-radius:16px;padding:28px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:8px;">🏦</div>
+    <div style="font-size:22px;font-weight:800;color:#fff;">VBank Tracker Daily Report</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.65);margin-top:6px;">{now}</div>
+  </td></tr>
+  <tr><td style="height:16px;"></td></tr>
+
+  <!-- STATS (non-BAU only, matches website exactly) -->
+  <tr><td style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td width="33%" style="text-align:center;padding:18px 12px;
+                              border-right:1px solid #f3f4f6;">
+        <div style="font-size:30px;font-weight:800;color:#6366f1;">{total_promos}</div>
+        <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
+                    margin-top:4px;">Active Promos</div>
+      </td>
+      <td width="33%" style="text-align:center;padding:18px 12px;
+                              border-right:1px solid #f3f4f6;">
+        <div style="font-size:30px;font-weight:800;color:#10b981;">{total_banks}</div>
+        <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
+                    margin-top:4px;">Banks Tracked</div>
+      </td>
+      <td width="33%" style="text-align:center;padding:18px 12px;">
+        <div style="font-size:30px;font-weight:800;color:#f59e0b;">{expiring_count}</div>
+        <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;
+                    margin-top:4px;">Expiring Soon</div>
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="height:16px;"></td></tr>
+
+  <!-- SCRAPE STATUS -->
+  <tr><td style="background:#fff;border-radius:12px;padding:20px;
+                 box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <div style="font-size:16px;font-weight:800;color:#1f2937;margin-bottom:14px;">
+      📡 Today's Scrape Status
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+      <thead><tr style="background:#f9fafb;">
+        <th style="padding:9px 12px;text-align:left;font-size:11px;color:#6b7280;
+                   font-weight:700;text-transform:uppercase;">Bank</th>
+        <th style="padding:9px 12px;text-align:center;font-size:11px;color:#6b7280;
+                   font-weight:700;text-transform:uppercase;">Status</th>
+        <th style="padding:9px 12px;text-align:center;font-size:11px;color:#6b7280;
+                   font-weight:700;text-transform:uppercase;">Count</th>
+      </tr></thead>
+      <tbody>{scrape_rows}</tbody>
+    </table>
+  </td></tr>
+  <tr><td style="height:16px;"></td></tr>
+
+  <!-- STRATEGIC INSIGHTS -->
+  {insights_row}
+
+  <!-- NEWLY LAUNCHED PROMOTIONS -->
+  {new_section_html}
+
+  <!-- ALL ACTIVE PROMOTIONS (non-BAU only) -->
+  <tr><td style="background:#fff;border-radius:12px;padding:24px;
+                 box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <div style="font-size:18px;font-weight:800;color:#1f2937;margin-bottom:20px;">
+      🎯 All Active Promotions
+    </div>
+    {promos_html}
+  </td></tr>
+  <tr><td style="height:16px;"></td></tr>
+
+  <!-- FOOTER -->
+  <tr><td style="text-align:center;padding:12px;">
+    <div style="font-size:12px;color:#9ca3af;">
+      VBank Tracker • Auto-generated daily at 09:00 HKT<br>
+      Data sourced from official bank websites only
+    </div>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
 </body>
 </html>"""
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"]    = sender_address
-    msg["To"]      = recipient
-    msg.attach(MIMEText(body, "html", "utf-8"))
 
-    print(f"\n📧  Sending to {recipient}…")
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(sender_address, app_password)
-        smtp.sendmail(sender_address, recipient, msg.as_string())
-    print(f"    ✅ Sent: {subject}")
+# ── Sender ────────────────────────────────────────────────────────────────────
+
+def send_email(html_content: str, subject: str = None, recipient: str = None) -> bool:
+    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+
+    smtp_user = (
+        os.getenv("GMAIL_ADDRESS")      or
+        os.getenv("SMTP_USER")          or
+        os.getenv("EMAIL_FROM")
+    )
+    smtp_pass = (
+        os.getenv("GMAIL_APP_PASSWORD") or
+        os.getenv("SMTP_PASS")          or
+        os.getenv("EMAIL_PASS")
+    )
+    email_to = (
+        recipient                       or
+        os.getenv("RECIPIENT_EMAIL")    or
+        os.getenv("EMAIL_RECIPIENT")    or
+        os.getenv("EMAIL_TO")
+    )
+
+    if not all([smtp_user, smtp_pass, email_to]):
+        missing = [
+            name for name, val in [
+                ("GMAIL_ADDRESS",      smtp_user),
+                ("GMAIL_APP_PASSWORD", smtp_pass),
+                ("RECIPIENT_EMAIL",    email_to),
+            ] if not val
+        ]
+        print(f"❌ Missing env vars: {', '.join(missing)}")
+        return False
+
+    subject = subject or f"🏦 VBank Daily Report — {datetime.now().strftime('%d %b %Y')}"
+
+    msg            = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"]    = smtp_user
+    msg["To"]      = email_to
+    msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, [email_to], msg.as_string())
+        print(f"✅ Email sent → {email_to}")
+        return True
+    except Exception as e:
+        print(f"❌ Email send failed: {e}")
+        return False
