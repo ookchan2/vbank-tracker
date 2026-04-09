@@ -20,15 +20,119 @@ def _get_conn() -> sqlite3.Connection:
     return conn
 
 
+# ── 0. Schema rebuild helper ──────────────────────────────────────────────────
+
+def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
+    """
+    Rebuild the promotions table with the canonical schema.
+
+    Invoked when a legacy 'bank' column (the old name for bank_id, declared
+    NOT NULL with no default) is detected — either alone or co-existing with
+    the newer 'bank_id' column that a previous partial migration added.
+
+    Strategy:
+      • CREATE _promotions_rebuild with the correct schema and safe defaults
+      • INSERT SELECT from the old table, coalescing bank_id / bank as needed
+      • DROP the old table and rename the rebuild into place
+    """
+    existing = {
+        row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
+    }
+
+    # Best-effort expression to recover the bank identifier
+    if 'bank_id' in existing and 'bank' in existing:
+        # Both exist: bank_id was added as '' by the previous partial migration;
+        # the real data is still in the old 'bank' column.
+        bank_id_expr = "COALESCE(NULLIF(bank_id, ''), bank, '')"
+    elif 'bank' in existing:
+        bank_id_expr = "COALESCE(bank, '')"
+    else:
+        bank_id_expr = "COALESCE(bank_id, '')"
+
+    def _col(name: str, default: str = "''") -> str:
+        """Return a safe SELECT expression for an optional column."""
+        return f'COALESCE({name}, {default})' if name in existing else default
+
+    def _nullable(name: str) -> str:
+        """Return column name if it exists, otherwise NULL."""
+        return name if name in existing else 'NULL'
+
+    # Guard: drop any leftover rebuild table from a previous aborted attempt
+    conn.execute('DROP TABLE IF EXISTS _promotions_rebuild')
+
+    conn.execute('''
+        CREATE TABLE _promotions_rebuild (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            bank_id       TEXT    NOT NULL DEFAULT '',
+            bank_name     TEXT    NOT NULL DEFAULT '',
+            title         TEXT    NOT NULL DEFAULT '',
+            description   TEXT    DEFAULT '',
+            highlight     TEXT    DEFAULT '',
+            category      TEXT    DEFAULT '',
+            url           TEXT    DEFAULT '',
+            tc_link       TEXT    DEFAULT '',
+            start_date    TEXT    DEFAULT NULL,
+            period        TEXT    DEFAULT '',
+            end_date      TEXT    DEFAULT NULL,
+            quota         TEXT    DEFAULT '',
+            cost          TEXT    DEFAULT '',
+            interest_rate TEXT    DEFAULT '',
+            min_deposit   TEXT    DEFAULT '',
+            promo_type    TEXT    DEFAULT '',
+            is_bau        INTEGER DEFAULT 0,
+            first_run_id  INTEGER DEFAULT NULL,
+            created_at    TEXT    NOT NULL DEFAULT '',
+            last_seen     TEXT    NOT NULL DEFAULT '',
+            active        INTEGER NOT NULL DEFAULT 1
+        )
+    ''')
+
+    conn.execute(f'''
+        INSERT INTO _promotions_rebuild
+            (id, bank_id, bank_name, title, description, highlight, category,
+             url, tc_link, start_date, period, end_date, quota, cost,
+             interest_rate, min_deposit, promo_type, is_bau, first_run_id,
+             created_at, last_seen, active)
+        SELECT
+            id,
+            {bank_id_expr},
+            {_col('bank_name')},
+            {_col('title')},
+            {_col('description')},
+            {_col('highlight')},
+            {_col('category')},
+            {_col('url')},
+            {_col('tc_link')},
+            {_nullable('start_date')},
+            {_col('period')},
+            {_nullable('end_date')},
+            {_col('quota')},
+            {_col('cost')},
+            {_col('interest_rate')},
+            {_col('min_deposit')},
+            {_col('promo_type')},
+            {_col('is_bau', '0')},
+            {_nullable('first_run_id')},
+            {_col('created_at')},
+            {_col('last_seen')},
+            {_col('active', '1')}
+        FROM promotions
+    ''')
+
+    conn.execute('DROP TABLE promotions')
+    conn.execute('ALTER TABLE _promotions_rebuild RENAME TO promotions')
+    conn.commit()
+
+
 # ── 1. Init ───────────────────────────────────────────────────────────────────
 
 def init_db():
     conn = _get_conn()
     try:
         # ── Step 1: tables only (no indexes yet) ─────────────────────────────
-        # executescript() issues an implicit COMMIT first, so we keep index
-        # creation separate to guarantee all columns exist before any index
-        # that references them is created.
+        # executescript() issues an implicit COMMIT first, so keep index
+        # creation separate so all columns exist before any index that
+        # references them is built.
         conn.executescript('''
             CREATE TABLE IF NOT EXISTS promotions (
                 id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,20 +166,32 @@ def init_db():
             );
         ''')
 
-        # ── Step 2: migrate any missing columns on pre-existing DBs ──────────
-        # NOTE: bank_id / bank_name / url were absent from the old migrations
-        # list — that was the proximate cause of the crash.  They are listed
-        # first so subsequent column migrations (which may reference bank_id)
-        # can rely on it existing.
+        # ── Step 2: inspect what columns actually exist ───────────────────────
         existing_cols = {
             row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
         }
+
+        # ── Step 2a: handle the legacy 'bank' column ─────────────────────────
+        # The old schema used a column named 'bank' (NOT NULL, no default).
+        # The current schema calls it 'bank_id'.  A previous partial migration
+        # may have added 'bank_id' as an empty companion column alongside the
+        # still-present 'bank', which causes every INSERT to fail with a NOT
+        # NULL violation on 'bank'.  Detect either scenario and rebuild.
+        if 'bank' in existing_cols:
+            _rebuild_promotions_table(conn)
+            existing_cols = {
+                row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
+            }
+            print('  🔧 DB migration: rebuilt table (legacy "bank" column → "bank_id")')
+
+        # ── Step 2b: ADD COLUMN migrations for older databases ───────────────
+        # 'bank_id' is listed here as a safety net for any edge-case database
+        # that somehow has neither 'bank' nor 'bank_id' (e.g. very early schema).
+        # After a rebuild above it is already present and this entry is a no-op.
         migrations = [
-            # ── columns that were previously missing from this list ───────────
             ('bank_id',       "ALTER TABLE promotions ADD COLUMN bank_id       TEXT NOT NULL DEFAULT ''"),
             ('bank_name',     "ALTER TABLE promotions ADD COLUMN bank_name     TEXT NOT NULL DEFAULT ''"),
             ('url',           "ALTER TABLE promotions ADD COLUMN url           TEXT DEFAULT ''"),
-            # ── columns added in earlier schema iterations ───────────────────
             ('highlight',     "ALTER TABLE promotions ADD COLUMN highlight     TEXT DEFAULT ''"),
             ('tc_link',       "ALTER TABLE promotions ADD COLUMN tc_link       TEXT DEFAULT ''"),
             ('start_date',    "ALTER TABLE promotions ADD COLUMN start_date    TEXT DEFAULT NULL"),
@@ -95,9 +211,9 @@ def init_db():
                 conn.execute(sql)
                 print(f'  🔧 DB migration: added column "{col}"')
 
-        # ── Step 3: indexes — run AFTER migrations so every referenced ────────
-        # column is guaranteed to exist (executescript commits the migration
-        # writes above before proceeding).
+        # ── Step 3: indexes — run AFTER all column work is done ───────────────
+        # executescript() commits whatever is pending before proceeding, which
+        # is exactly what we want here.
         conn.executescript('''
             CREATE INDEX IF NOT EXISTS idx_bank_id    ON promotions(bank_id);
             CREATE INDEX IF NOT EXISTS idx_active     ON promotions(active);
