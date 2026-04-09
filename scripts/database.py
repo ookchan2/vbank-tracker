@@ -1,9 +1,12 @@
 # scripts/database.py
+
 import json
 import os
 import re
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timedelta
+from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
 DB_PATH = os.path.join(
@@ -20,29 +23,28 @@ def _get_conn() -> sqlite3.Connection:
     return conn
 
 
+@contextmanager
+def _db_connection():
+    """
+    Context manager that opens, yields, and closes a connection.
+    Replaces the repetitive try/finally/conn.close() pattern in every function
+    and ensures the connection is always closed even if the caller raises.
+    """
+    conn = _get_conn()
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
 # ── 0. Schema rebuild helper ──────────────────────────────────────────────────
 
 def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
-    """
-    Rebuild the promotions table with the canonical schema.
-
-    Invoked when a legacy 'bank' column (the old name for bank_id, declared
-    NOT NULL with no default) is detected — either alone or co-existing with
-    the newer 'bank_id' column that a previous partial migration added.
-
-    Strategy:
-      • CREATE _promotions_rebuild with the correct schema and safe defaults
-      • INSERT SELECT from the old table, coalescing bank_id / bank as needed
-      • DROP the old table and rename the rebuild into place
-    """
     existing = {
         row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
     }
 
-    # Best-effort expression to recover the bank identifier
     if 'bank_id' in existing and 'bank' in existing:
-        # Both exist: bank_id was added as '' by the previous partial migration;
-        # the real data is still in the old 'bank' column.
         bank_id_expr = "COALESCE(NULLIF(bank_id, ''), bank, '')"
     elif 'bank' in existing:
         bank_id_expr = "COALESCE(bank, '')"
@@ -50,16 +52,12 @@ def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
         bank_id_expr = "COALESCE(bank_id, '')"
 
     def _col(name: str, default: str = "''") -> str:
-        """Return a safe SELECT expression for an optional column."""
         return f'COALESCE({name}, {default})' if name in existing else default
 
     def _nullable(name: str) -> str:
-        """Return column name if it exists, otherwise NULL."""
         return name if name in existing else 'NULL'
 
-    # Guard: drop any leftover rebuild table from a previous aborted attempt
     conn.execute('DROP TABLE IF EXISTS _promotions_rebuild')
-
     conn.execute('''
         CREATE TABLE _promotions_rebuild (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -129,10 +127,6 @@ def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
 def init_db():
     conn = _get_conn()
     try:
-        # ── Step 1: tables only (no indexes yet) ─────────────────────────────
-        # executescript() issues an implicit COMMIT first, so keep index
-        # creation separate so all columns exist before any index that
-        # references them is built.
         conn.executescript('''
             CREATE TABLE IF NOT EXISTS promotions (
                 id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -166,28 +160,17 @@ def init_db():
             );
         ''')
 
-        # ── Step 2: inspect what columns actually exist ───────────────────────
         existing_cols = {
             row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
         }
 
-        # ── Step 2a: handle the legacy 'bank' column ─────────────────────────
-        # The old schema used a column named 'bank' (NOT NULL, no default).
-        # The current schema calls it 'bank_id'.  A previous partial migration
-        # may have added 'bank_id' as an empty companion column alongside the
-        # still-present 'bank', which causes every INSERT to fail with a NOT
-        # NULL violation on 'bank'.  Detect either scenario and rebuild.
         if 'bank' in existing_cols:
             _rebuild_promotions_table(conn)
             existing_cols = {
                 row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
             }
-            print('  🔧 DB migration: rebuilt table (legacy "bank" column → "bank_id")')
+            print('  🔧 DB migration: rebuilt table (legacy "bank" → "bank_id")')
 
-        # ── Step 2b: ADD COLUMN migrations for older databases ───────────────
-        # 'bank_id' is listed here as a safety net for any edge-case database
-        # that somehow has neither 'bank' nor 'bank_id' (e.g. very early schema).
-        # After a rebuild above it is already present and this entry is a no-op.
         migrations = [
             ('bank_id',       "ALTER TABLE promotions ADD COLUMN bank_id       TEXT NOT NULL DEFAULT ''"),
             ('bank_name',     "ALTER TABLE promotions ADD COLUMN bank_name     TEXT NOT NULL DEFAULT ''"),
@@ -211,9 +194,6 @@ def init_db():
                 conn.execute(sql)
                 print(f'  🔧 DB migration: added column "{col}"')
 
-        # ── Step 3: indexes — run AFTER all column work is done ───────────────
-        # executescript() commits whatever is pending before proceeding, which
-        # is exactly what we want here.
         conn.executescript('''
             CREATE INDEX IF NOT EXISTS idx_bank_id    ON promotions(bank_id);
             CREATE INDEX IF NOT EXISTS idx_active     ON promotions(active);
@@ -221,12 +201,13 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_created_at ON promotions(created_at);
             CREATE INDEX IF NOT EXISTS idx_first_run  ON promotions(first_run_id);
             CREATE INDEX IF NOT EXISTS idx_is_bau     ON promotions(is_bau);
+            CREATE INDEX IF NOT EXISTS idx_bank_name  ON promotions(bank_name);
         ''')
 
         conn.commit()
         print('  ✅ Database ready')
-    except Exception as e:
-        print(f'  ❌ init_db error: {e}')
+    except Exception as exc:
+        print(f'  ❌ init_db error: {exc}')
         raise
     finally:
         conn.close()
@@ -235,39 +216,35 @@ def init_db():
 # ── 2. Run tracking ───────────────────────────────────────────────────────────
 
 def start_new_run(banks: List[str] = None) -> int:
-    conn = _get_conn()
-    try:
-        cur = conn.execute(
-            "INSERT INTO scrape_runs (run_at, banks_scraped) VALUES (?, ?)",
-            (
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                ','.join(banks or []),
-            ),
-        )
-        conn.commit()
-        run_id = cur.lastrowid
-        print(f'  🏃 Scrape run #{run_id} started')
-        return run_id
-    except Exception as e:
-        print(f'  ❌ start_new_run error: {e}')
-        return 0
-    finally:
-        conn.close()
+    with _db_connection() as conn:
+        try:
+            cur = conn.execute(
+                "INSERT INTO scrape_runs (run_at, banks_scraped) VALUES (?, ?)",
+                (
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    ','.join(banks or []),
+                ),
+            )
+            conn.commit()
+            run_id = cur.lastrowid
+            print(f'  🏃 Scrape run #{run_id} started')
+            return run_id
+        except Exception as exc:
+            print(f'  ❌ start_new_run error: {exc}')
+            return 0
 
 
 def get_previous_run_id(current_run_id: int) -> Optional[int]:
-    conn = _get_conn()
-    try:
-        row = conn.execute(
-            "SELECT id FROM scrape_runs WHERE id < ? ORDER BY id DESC LIMIT 1",
-            (current_run_id,),
-        ).fetchone()
-        return row['id'] if row else None
-    except Exception as e:
-        print(f'  ❌ get_previous_run_id error: {e}')
-        return None
-    finally:
-        conn.close()
+    with _db_connection() as conn:
+        try:
+            row = conn.execute(
+                "SELECT id FROM scrape_runs WHERE id < ? ORDER BY id DESC LIMIT 1",
+                (current_run_id,),
+            ).fetchone()
+            return row['id'] if row else None
+        except Exception as exc:
+            print(f'  ❌ get_previous_run_id error: {exc}')
+            return None
 
 
 # ── 3. Dedup helpers ──────────────────────────────────────────────────────────
@@ -378,9 +355,7 @@ _SYNONYM_PATTERNS: list[tuple[re.Pattern, str]] = [
         r')',
         re.IGNORECASE,
     ), 'zfee'),
-    (re.compile(
-        r'\b(?:quick|fast|instant|rapid|express|immediate)\b', re.IGNORECASE
-    ), 'fastspd'),
+    (re.compile(r'\b(?:quick|fast|instant|rapid|express|immediate)\b', re.IGNORECASE), 'fastspd'),
     (re.compile(
         r'\b(?:flexible|custom(?:iz\w*)?|select(?:able|ion)?|personali[sz]\w*)\b',
         re.IGNORECASE,
@@ -403,7 +378,6 @@ _NOISE_WORDS = (
     'rebate', 'exclusive', 'special',
     'with', 'from', 'for', 'and', 'the', 'your',
 )
-
 _NOISE_PATTERNS: list[re.Pattern] = [
     re.compile(r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])', re.IGNORECASE)
     for w in _NOISE_WORDS
@@ -424,6 +398,12 @@ _JACCARD_STOPWORDS = frozenset({
 })
 
 
+# FIX: LRU cache on both heavy normalization functions.
+# _find_duplicate_id iterates every DB row for every incoming promo, calling
+# these functions O(n²) times.  For a bank with 30 DB rows and 20 new promos
+# that is 1,200 calls — the cache reduces this to at most 50 unique calls.
+
+@lru_cache(maxsize=4096)
 def _normalize_title(title: str) -> str:
     if not title:
         return ''
@@ -444,6 +424,7 @@ def _stem(tok: str) -> str:
     return tok
 
 
+@lru_cache(maxsize=4096)
 def _tokenize_for_jaccard(title: str) -> frozenset:
     if not title:
         return frozenset()
@@ -547,123 +528,118 @@ def save_promotions(
     promotions: List[Dict],
     current_run_id: int = 0,
 ) -> Dict:
-    conn  = _get_conn()
     today = datetime.now().strftime('%Y-%m-%d')
     stats = {'new': 0, 'updated': 0, 'skipped': 0}
 
-    try:
-        for p in promotions:
-            title = (
-                p.get('title') or p.get('name') or
-                p.get('promotion_name') or p.get('promo_name') or ''
-            ).strip()
-            highlight = (p.get('highlight') or '').strip()
+    with _db_connection() as conn:
+        try:
+            for p in promotions:
+                title = (
+                    p.get('title') or p.get('name') or
+                    p.get('promotion_name') or p.get('promo_name') or ''
+                ).strip()
+                highlight = (p.get('highlight') or '').strip()
 
-            if not title:
-                stats['skipped'] += 1
-                print(
-                    f'  ⚠️  [{bank_id}] skipped promo with empty title '
-                    f'— keys: {list(p.keys())}'
+                if not title:
+                    stats['skipped'] += 1
+                    print(
+                        f'  ⚠️  [{bank_id}] skipped promo with empty title '
+                        f'— keys: {list(p.keys())}'
+                    )
+                    continue
+
+                types_raw  = p.get('types') or p.get('promo_type') or []
+                promo_type = ','.join(types_raw) if isinstance(types_raw, list) else str(types_raw)
+                is_bau     = int(bool(p.get('is_bau', False)))
+                start_date = p.get('start_date') or None
+                end_date   = p.get('end_date')   or None
+
+                period = (p.get('period') or '').strip()
+                if start_date and end_date:
+                    period = f'{start_date} to {end_date}'
+                elif start_date:
+                    period = f'From {start_date}'
+                elif end_date:
+                    period = f'Until {end_date}'
+                elif not period:
+                    period = 'Ongoing'
+
+                pre_match_id = p.pop('_matched_id', None)
+                dup_id = (
+                    pre_match_id
+                    if pre_match_id is not None
+                    else _find_duplicate_id(conn, bank_id, title, highlight)
                 )
-                continue
 
-            types_raw  = p.get('types') or p.get('promo_type') or []
-            promo_type = ','.join(types_raw) if isinstance(types_raw, list) else str(types_raw)
+                if dup_id:
+                    existing = conn.execute(
+                        "SELECT title FROM promotions WHERE id = ?", (dup_id,)
+                    ).fetchone()
+                    keep_title = (
+                        title
+                        if (existing and len(title) >= len(existing['title']))
+                        else (existing['title'] if existing else title)
+                    )
+                    conn.execute("""
+                        UPDATE promotions SET
+                            title       = ?,
+                            highlight   = COALESCE(NULLIF(?, ''), highlight),
+                            description = COALESCE(NULLIF(?, ''), description),
+                            category    = COALESCE(NULLIF(?, ''), category),
+                            start_date  = COALESCE(NULLIF(?, ''), start_date),
+                            end_date    = COALESCE(NULLIF(?, ''), end_date),
+                            period      = COALESCE(NULLIF(?, ''), period),
+                            quota       = COALESCE(NULLIF(?, ''), quota),
+                            cost        = COALESCE(NULLIF(?, ''), cost),
+                            promo_type  = COALESCE(NULLIF(?, ''), promo_type),
+                            url         = COALESCE(NULLIF(?, ''), url),
+                            tc_link     = COALESCE(NULLIF(?, ''), tc_link),
+                            is_bau      = ?,
+                            active      = 1,
+                            last_seen   = ?
+                        WHERE id = ?
+                    """, (
+                        keep_title,
+                        highlight,
+                        p.get('description', ''), p.get('category', ''),
+                        start_date, end_date, period,
+                        p.get('quota', ''), p.get('cost', ''),
+                        promo_type, p.get('url', ''), p.get('tc_link', ''),
+                        is_bau, today, dup_id,
+                    ))
+                    stats['updated'] += 1
+                else:
+                    conn.execute("""
+                        INSERT INTO promotions
+                            (bank_id, bank_name, title, highlight, description,
+                             category, start_date, period, end_date, quota, cost,
+                             promo_type, url, tc_link, is_bau,
+                             first_run_id, active, created_at, last_seen)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                    """, (
+                        bank_id, bank_name, title, highlight,
+                        p.get('description', ''), p.get('category', ''),
+                        start_date, period, end_date,
+                        p.get('quota', ''), p.get('cost', ''),
+                        promo_type, p.get('url', ''), p.get('tc_link', ''),
+                        is_bau,
+                        current_run_id if current_run_id else None,
+                        today, today,
+                    ))
+                    stats['new'] += 1
 
-            is_bau = int(bool(p.get('is_bau', False)))
-
-            start_date = p.get('start_date') or None
-            end_date   = p.get('end_date')   or None
-
-            period = (p.get('period') or '').strip()
-            if start_date and end_date:
-                period = f'{start_date} to {end_date}'
-            elif start_date:
-                period = f'From {start_date}'
-            elif end_date:
-                period = f'Until {end_date}'
-            elif not period:
-                period = 'Ongoing'
-
-            pre_match_id = p.pop('_matched_id', None)
-            dup_id = (
-                pre_match_id
-                if pre_match_id is not None
-                else _find_duplicate_id(conn, bank_id, title, highlight)
+            conn.commit()
+            print(
+                f"  [{bank_id}] saved → "
+                f"new:{stats['new']}  updated:{stats['updated']}  "
+                f"skipped:{stats['skipped']}"
             )
+            return stats
 
-            if dup_id:
-                existing = conn.execute(
-                    "SELECT title FROM promotions WHERE id = ?", (dup_id,)
-                ).fetchone()
-                keep_title = (
-                    title
-                    if (existing and len(title) >= len(existing['title']))
-                    else (existing['title'] if existing else title)
-                )
-                conn.execute("""
-                    UPDATE promotions SET
-                        title       = ?,
-                        highlight   = COALESCE(NULLIF(?, ''), highlight),
-                        description = COALESCE(NULLIF(?, ''), description),
-                        category    = COALESCE(NULLIF(?, ''), category),
-                        start_date  = COALESCE(NULLIF(?, ''), start_date),
-                        end_date    = COALESCE(NULLIF(?, ''), end_date),
-                        period      = COALESCE(NULLIF(?, ''), period),
-                        quota       = COALESCE(NULLIF(?, ''), quota),
-                        cost        = COALESCE(NULLIF(?, ''), cost),
-                        promo_type  = COALESCE(NULLIF(?, ''), promo_type),
-                        url         = COALESCE(NULLIF(?, ''), url),
-                        tc_link     = COALESCE(NULLIF(?, ''), tc_link),
-                        is_bau      = ?,
-                        active      = 1,
-                        last_seen   = ?
-                    WHERE id = ?
-                """, (
-                    keep_title,
-                    highlight,
-                    p.get('description', ''), p.get('category', ''),
-                    start_date, end_date, period,
-                    p.get('quota', ''), p.get('cost', ''),
-                    promo_type, p.get('url', ''), p.get('tc_link', ''),
-                    is_bau, today, dup_id,
-                ))
-                stats['updated'] += 1
-
-            else:
-                conn.execute("""
-                    INSERT INTO promotions
-                        (bank_id, bank_name, title, highlight, description,
-                         category, start_date, period, end_date, quota, cost,
-                         promo_type, url, tc_link, is_bau,
-                         first_run_id, active, created_at, last_seen)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-                """, (
-                    bank_id, bank_name, title, highlight,
-                    p.get('description', ''), p.get('category', ''),
-                    start_date, period, end_date,
-                    p.get('quota', ''), p.get('cost', ''),
-                    promo_type, p.get('url', ''), p.get('tc_link', ''),
-                    is_bau,
-                    current_run_id if current_run_id else None,
-                    today, today,
-                ))
-                stats['new'] += 1
-
-        conn.commit()
-        print(
-            f"  [{bank_id}] saved → "
-            f"new:{stats['new']}  updated:{stats['updated']}  "
-            f"skipped:{stats['skipped']}"
-        )
-        return stats
-
-    except Exception as e:
-        conn.rollback()
-        print(f'  ❌ save_promotions error: {e}')
-        raise
-    finally:
-        conn.close()
+        except Exception as exc:
+            conn.rollback()
+            print(f'  ❌ save_promotions error: {exc}')
+            raise
 
 
 # ── 5. Mark stale / old inactive ─────────────────────────────────────────────
@@ -672,46 +648,42 @@ def mark_stale_as_inactive(bank_ids_scraped: List[str], today_str: str = None) -
     if not bank_ids_scraped:
         return 0
     today_str = today_str or datetime.now().strftime('%Y-%m-%d')
-    conn = _get_conn()
     total = 0
-    try:
-        for bank_id in bank_ids_scraped:
-            cur = conn.execute('''
-                UPDATE promotions SET active = 0
-                WHERE bank_id = ?
-                  AND active  = 1
-                  AND DATE(last_seen) < ?
-            ''', (bank_id, today_str))
-            if cur.rowcount:
-                print(f'  🗑️  {bank_id}: {cur.rowcount} promo(s) marked inactive')
-            total += cur.rowcount
-        conn.commit()
-        return total
-    except Exception as e:
-        conn.rollback()
-        print(f'  ❌ mark_stale_as_inactive error: {e}')
-        return 0
-    finally:
-        conn.close()
+    with _db_connection() as conn:
+        try:
+            for bank_id in bank_ids_scraped:
+                cur = conn.execute('''
+                    UPDATE promotions SET active = 0
+                    WHERE bank_id = ?
+                      AND active  = 1
+                      AND DATE(last_seen) < ?
+                ''', (bank_id, today_str))
+                if cur.rowcount:
+                    print(f'  🗑️  {bank_id}: {cur.rowcount} promo(s) marked inactive')
+                total += cur.rowcount
+            conn.commit()
+            return total
+        except Exception as exc:
+            conn.rollback()
+            print(f'  ❌ mark_stale_as_inactive error: {exc}')
+            return 0
 
 
 def mark_inactive_old(days_threshold: int = 90) -> int:
     cutoff = (datetime.now() - timedelta(days=days_threshold)).strftime('%Y-%m-%d %H:%M:%S')
-    conn = _get_conn()
-    try:
-        cur = conn.execute(
-            'UPDATE promotions SET active = 0 WHERE last_seen < ? AND active = 1',
-            (cutoff,)
-        )
-        conn.commit()
-        print(f'  🗑️  {cur.rowcount} old promos marked inactive (>{days_threshold}d)')
-        return cur.rowcount
-    except Exception as e:
-        conn.rollback()
-        print(f'  ❌ mark_inactive_old error: {e}')
-        return 0
-    finally:
-        conn.close()
+    with _db_connection() as conn:
+        try:
+            cur = conn.execute(
+                'UPDATE promotions SET active = 0 WHERE last_seen < ? AND active = 1',
+                (cutoff,)
+            )
+            conn.commit()
+            print(f'  🗑️  {cur.rowcount} old promos marked inactive (>{days_threshold}d)')
+            return cur.rowcount
+        except Exception as exc:
+            conn.rollback()
+            print(f'  ❌ mark_inactive_old error: {exc}')
+            return 0
 
 
 # ── 6. Queries ────────────────────────────────────────────────────────────────
@@ -724,69 +696,106 @@ def get_new_promotions_for_run(
     current_run_id: int,
     include_bau: bool = False,
 ) -> List[Dict[str, Any]]:
-    conn = _get_conn()
-    try:
-        bau_clause = '' if include_bau else 'AND is_bau = 0'
-        return _to_dicts(conn.execute(f'''
-            SELECT * FROM promotions
-            WHERE first_run_id = ?
-              AND active = 1
-              {bau_clause}
-            ORDER BY bank_id ASC, id ASC
-        ''', (current_run_id,)).fetchall())
-    except Exception as e:
-        print(f'  ❌ get_new_promotions_for_run error: {e}')
-        return []
-    finally:
-        conn.close()
+    with _db_connection() as conn:
+        try:
+            bau_clause = '' if include_bau else 'AND is_bau = 0'
+            return _to_dicts(conn.execute(f'''
+                SELECT * FROM promotions
+                WHERE first_run_id = ?
+                  AND active = 1
+                  {bau_clause}
+                ORDER BY bank_id ASC, id ASC
+            ''', (current_run_id,)).fetchall())
+        except Exception as exc:
+            print(f'  ❌ get_new_promotions_for_run error: {exc}')
+            return []
 
 
 def get_active_promotions(include_bau: bool = True) -> List[Dict[str, Any]]:
-    conn = _get_conn()
-    try:
-        bau_clause = '' if include_bau else 'AND is_bau = 0'
-        return _to_dicts(conn.execute(f'''
-            SELECT * FROM promotions
-            WHERE active = 1 {bau_clause}
-            ORDER BY bank_id ASC, last_seen DESC
-        ''').fetchall())
-    except Exception as e:
-        print(f'  ❌ get_active_promotions error: {e}')
-        return []
-    finally:
-        conn.close()
+    with _db_connection() as conn:
+        try:
+            bau_clause = '' if include_bau else 'AND is_bau = 0'
+            return _to_dicts(conn.execute(f'''
+                SELECT * FROM promotions
+                WHERE active = 1 {bau_clause}
+                ORDER BY bank_id ASC, last_seen DESC
+            ''').fetchall())
+        except Exception as exc:
+            print(f'  ❌ get_active_promotions error: {exc}')
+            return []
 
 
 def get_expired_promotions() -> List[Dict[str, Any]]:
     yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-    conn = _get_conn()
-    try:
-        return _to_dicts(conn.execute('''
-            SELECT * FROM promotions
-            WHERE active = 0
-              AND is_bau  = 0
-              AND DATE(last_seen) >= ?
-            ORDER BY bank_id ASC, last_seen DESC
-        ''', (yesterday,)).fetchall())
-    except Exception as e:
-        print(f'  ❌ get_expired_promotions error: {e}')
-        return []
-    finally:
-        conn.close()
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute('''
+                SELECT * FROM promotions
+                WHERE active = 0
+                  AND is_bau  = 0
+                  AND DATE(last_seen) >= ?
+                ORDER BY bank_id ASC, last_seen DESC
+            ''', (yesterday,)).fetchall())
+        except Exception as exc:
+            print(f'  ❌ get_expired_promotions error: {exc}')
+            return []
 
 
 def get_active_promos_for_bank(bank_id: str) -> List[Dict[str, Any]]:
-    conn = _get_conn()
-    try:
-        return _to_dicts(conn.execute(
-            'SELECT id, title FROM promotions WHERE bank_id = ? AND active = 1',
-            (bank_id,)
-        ).fetchall())
-    except Exception as e:
-        print(f'  ❌ get_active_promos_for_bank error: {e}')
-        return []
-    finally:
-        conn.close()
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute(
+                'SELECT id, title FROM promotions WHERE bank_id = ? AND active = 1',
+                (bank_id,)
+            ).fetchall())
+        except Exception as exc:
+            print(f'  ❌ get_active_promos_for_bank error: {exc}')
+            return []
+
+
+def get_promotions_by_bank_name(bank_name: str) -> List[Dict[str, Any]]:
+    """
+    Return all active promotions (full rows) for a given bank_name string.
+    Used as the db_fetch_fn passed to ai_helper.generate_strategic_insights()
+    so that supplement_from_db() can fill sparse banks from the DB.
+    """
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute(
+                'SELECT * FROM promotions WHERE bank_name = ? AND active = 1 '
+                'ORDER BY last_seen DESC',
+                (bank_name,)
+            ).fetchall())
+        except Exception as exc:
+            print(f'  ❌ get_promotions_by_bank_name error: {exc}')
+            return []
+
+
+def get_db_stats() -> Dict[str, Any]:
+    """
+    Lightweight summary of DB state — used in the main() final log line and
+    useful for health-check scripts.
+    """
+    with _db_connection() as conn:
+        try:
+            total    = conn.execute('SELECT COUNT(*) FROM promotions').fetchone()[0]
+            active   = conn.execute('SELECT COUNT(*) FROM promotions WHERE active=1').fetchone()[0]
+            bau      = conn.execute('SELECT COUNT(*) FROM promotions WHERE active=1 AND is_bau=1').fetchone()[0]
+            runs     = conn.execute('SELECT COUNT(*) FROM scrape_runs').fetchone()[0]
+            last_run = conn.execute(
+                'SELECT run_at FROM scrape_runs ORDER BY id DESC LIMIT 1'
+            ).fetchone()
+            return {
+                'total_promotions':  total,
+                'active_promotions': active,
+                'bau_promotions':    bau,
+                'non_bau_active':    active - bau,
+                'total_runs':        runs,
+                'last_run_at':       last_run['run_at'] if last_run else None,
+            }
+        except Exception as exc:
+            print(f'  ❌ get_db_stats error: {exc}')
+            return {}
 
 
 def generate_daily_report(current_run_id: int) -> Dict[str, Any]:
@@ -815,132 +824,139 @@ def generate_daily_report(current_run_id: int) -> Dict[str, Any]:
     }
 
 
-# ── 7. Merge duplicates (bulk cleanup) ───────────────────────────────────────
+# ── 7. Merge duplicates (bulk cleanup utility) ────────────────────────────────
 
 def merge_duplicate_promotions(dry_run: bool = True) -> int:
-    conn = _get_conn()
-    merged = 0
-    try:
-        rows = conn.execute(
-            "SELECT id, bank_id, title, highlight "
-            "FROM promotions WHERE active = 1 ORDER BY id ASC"
-        ).fetchall()
+    with _db_connection() as conn:
+        try:
+            rows = conn.execute(
+                "SELECT id, bank_id, title, highlight "
+                "FROM promotions WHERE active = 1 ORDER BY id ASC"
+            ).fetchall()
 
-        by_bank: Dict[str, List[Dict]] = {}
-        for row in rows:
-            by_bank.setdefault(row['bank_id'], []).append(dict(row))
+            by_bank: Dict[str, List[Dict]] = {}
+            for row in rows:
+                by_bank.setdefault(row['bank_id'], []).append(dict(row))
 
-        discard_ids: set = set()
+            discard_ids: set = set()
 
-        for bank_id, promos in by_bank.items():
-            for i, pa in enumerate(promos):
-                if pa['id'] in discard_ids:
-                    continue
-                norm_a      = _normalize_title(pa['title'])
-                hi_a        = (pa['highlight'] or '').strip()[:150]
-                code_stem_a = _extract_promo_code_stem(pa['title'])
-                toks_a      = _tokenize_for_jaccard(pa['title'])
-
-                for pb in promos[i + 1:]:
-                    if pb['id'] in discard_ids:
+            for bank_id, promos in by_bank.items():
+                for i, pa in enumerate(promos):
+                    if pa['id'] in discard_ids:
                         continue
-                    norm_b      = _normalize_title(pb['title'])
-                    hi_b        = (pb['highlight'] or '').strip()[:150]
-                    code_stem_b = _extract_promo_code_stem(pb['title'])
-                    toks_b      = _tokenize_for_jaccard(pb['title'])
+                    norm_a      = _normalize_title(pa['title'])
+                    hi_a        = (pa['highlight'] or '').strip()[:150]
+                    code_stem_a = _extract_promo_code_stem(pa['title'])
+                    toks_a      = _tokenize_for_jaccard(pa['title'])
 
-                    is_dup, reason = False, ''
+                    for pb in promos[i + 1:]:
+                        if pb['id'] in discard_ids:
+                            continue
+                        norm_b      = _normalize_title(pb['title'])
+                        hi_b        = (pb['highlight'] or '').strip()[:150]
+                        code_stem_b = _extract_promo_code_stem(pb['title'])
+                        toks_b      = _tokenize_for_jaccard(pb['title'])
 
-                    if code_stem_a and code_stem_b and code_stem_a == code_stem_b:
-                        is_dup, reason = True, f'promo-code={code_stem_a}'
+                        is_dup, reason = False, ''
 
-                    elif norm_a and norm_b:
-                        if norm_a == norm_b:
-                            is_dup, reason = True, 'exact'
-                        else:
-                            min_len = min(len(norm_a), len(norm_b))
-                            max_len = max(len(norm_a), len(norm_b))
-                            if (
-                                min_len >= _MIN_NORM_LEN
-                                and min_len >= max_len * 0.35
-                                and (norm_a in norm_b or norm_b in norm_a)
-                            ):
-                                is_dup, reason = True, 'substring'
+                        if code_stem_a and code_stem_b and code_stem_a == code_stem_b:
+                            is_dup, reason = True, f'promo-code={code_stem_a}'
+                        elif norm_a and norm_b:
+                            if norm_a == norm_b:
+                                is_dup, reason = True, 'exact'
+                            else:
+                                min_len = min(len(norm_a), len(norm_b))
+                                max_len = max(len(norm_a), len(norm_b))
+                                if (
+                                    min_len >= _MIN_NORM_LEN
+                                    and min_len >= max_len * 0.35
+                                    and (norm_a in norm_b or norm_b in norm_a)
+                                ):
+                                    is_dup, reason = True, 'substring'
 
-                        if not is_dup:
-                            shared = toks_a & toks_b
-                            if (
-                                len(toks_a) >= _MIN_TOKENS
-                                and len(toks_b) >= _MIN_TOKENS
-                                and len(shared) >= _MIN_TOKENS
-                            ):
-                                j = len(shared) / len(toks_a | toks_b)
-                                if j >= _JACCARD_THRESHOLD:
-                                    is_dup, reason = True, f'Jaccard={j:.2f}'
+                            if not is_dup:
+                                shared = toks_a & toks_b
+                                if (
+                                    len(toks_a) >= _MIN_TOKENS
+                                    and len(toks_b) >= _MIN_TOKENS
+                                    and len(shared) >= _MIN_TOKENS
+                                ):
+                                    j = len(shared) / len(toks_a | toks_b)
+                                    if j >= _JACCARD_THRESHOLD:
+                                        is_dup, reason = True, f'Jaccard={j:.2f}'
 
-                        if not is_dup:
-                            if (
-                                len(norm_a) >= _MIN_NORM_LEN
-                                and len(norm_b) >= _MIN_NORM_LEN
-                            ):
+                            if not is_dup and len(norm_a) >= _MIN_NORM_LEN and len(norm_b) >= _MIN_NORM_LEN:
                                 lcp = _common_prefix_ratio(norm_a, norm_b)
                                 if lcp >= _LCP_THRESHOLD:
                                     is_dup, reason = True, f'LCP={lcp:.2f}'
 
-                    if not is_dup and hi_a and hi_b and hi_a == hi_b:
-                        is_dup, reason = True, 'same-highlight'
+                        if not is_dup and hi_a and hi_b and hi_a == hi_b:
+                            is_dup, reason = True, 'same-highlight'
 
-                    if is_dup:
-                        keep    = pa if len(pa['title']) >= len(pb['title']) else pb
-                        discard = pb if keep['id'] == pa['id'] else pa
-                        discard_ids.add(discard['id'])
-                        tag = '[DRY RUN] ' if dry_run else ''
-                        print(
-                            f"    🔀 {tag}[{reason}]\n"
-                            f"       KEEP    #{keep['id']:>5}  '{keep['title'][:70]}'\n"
-                            f"       DISCARD #{discard['id']:>5}  '{discard['title'][:70]}'"
-                        )
+                        if is_dup:
+                            keep    = pa if len(pa['title']) >= len(pb['title']) else pb
+                            discard = pb if keep['id'] == pa['id'] else pa
+                            discard_ids.add(discard['id'])
+                            tag = '[DRY RUN] ' if dry_run else ''
+                            print(
+                                f"    🔀 {tag}[{reason}]\n"
+                                f"       KEEP    #{keep['id']:>5}  '{keep['title'][:70]}'\n"
+                                f"       DISCARD #{discard['id']:>5}  '{discard['title'][:70]}'"
+                            )
 
-        if not dry_run and discard_ids:
-            conn.execute(
-                f"UPDATE promotions SET active = 0 "
-                f"WHERE id IN ({','.join('?' * len(discard_ids))})",
-                list(discard_ids),
-            )
-            conn.commit()
+            if not dry_run and discard_ids:
+                conn.execute(
+                    f"UPDATE promotions SET active = 0 "
+                    f"WHERE id IN ({','.join('?' * len(discard_ids))})",
+                    list(discard_ids),
+                )
+                conn.commit()
 
-        merged = len(discard_ids)
-        tag = '[DRY RUN] ' if dry_run else ''
-        print(f"  {tag}merge_duplicate_promotions: {merged} removed")
-        return merged
+            merged = len(discard_ids)
+            tag    = '[DRY RUN] ' if dry_run else ''
+            print(f"  {tag}merge_duplicate_promotions: {merged} removed")
+            return merged
 
-    except Exception as e:
-        conn.rollback()
-        print(f'  ❌ merge_duplicate_promotions error: {e}')
-        return 0
-    finally:
-        conn.close()
+        except Exception as exc:
+            conn.rollback()
+            print(f'  ❌ merge_duplicate_promotions error: {exc}')
+            return 0
 
 
-# ── 8. Load & Export ──────────────────────────────────────────────────────────
+# ── 8. Maintenance ────────────────────────────────────────────────────────────
+
+def vacuum_db() -> None:
+    """
+    Reclaim disk space after large deletions (e.g. after mark_inactive_old).
+    SQLite does not reclaim pages automatically; calling VACUUM rewrites the
+    entire database file.  Run this periodically (e.g. weekly) rather than
+    after every run — it is slow on large databases.
+    """
+    with _db_connection() as conn:
+        try:
+            conn.execute('VACUUM')
+            print('  🧹 VACUUM completed')
+        except Exception as exc:
+            print(f'  ❌ vacuum_db error: {exc}')
+
+
+# ── 9. Load & Export ──────────────────────────────────────────────────────────
 
 def load_promotions(active_only: bool = True) -> List[Dict[str, Any]]:
-    conn = _get_conn()
-    try:
-        where = 'WHERE active = 1' if active_only else ''
-        return [dict(r) for r in conn.execute(
-            f'SELECT * FROM promotions {where} ORDER BY bank_id ASC, last_seen DESC'
-        ).fetchall()]
-    except Exception as e:
-        print(f'  ❌ load_promotions error: {e}')
-        return []
-    finally:
-        conn.close()
+    with _db_connection() as conn:
+        try:
+            where = 'WHERE active = 1' if active_only else ''
+            return [dict(r) for r in conn.execute(
+                f'SELECT * FROM promotions {where} ORDER BY bank_id ASC, last_seen DESC'
+            ).fetchall()]
+        except Exception as exc:
+            print(f'  ❌ load_promotions error: {exc}')
+            return []
 
 
 def export_to_json(output_path: str):
     all_promos = load_promotions(active_only=False)
-    records = []
+    records    = []
     for p in all_promos:
         raw_type   = p.get('promo_type') or p.get('category') or ''
         types_list = (
