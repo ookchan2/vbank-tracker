@@ -98,11 +98,12 @@
           oninput="applyFilters()">
       </div>
 
+      <!-- FIX: default changed to active+expiring — more useful landing view -->
       <select id="statusFilter" onchange="applyFilters()"
         class="border border-gray-200 rounded-lg px-3 py-2 text-sm
                focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+        <option value="active+expiring" selected>✅⚡ Valid + Expiring</option>
         <option value="active">✅ Valid Only</option>
-        <option value="active+expiring">✅⚡ Valid + Expiring</option>
         <option value="expiring">⚡ Expiring Soon</option>
         <option value="all">All (Active + Expired)</option>
         <option value="expired">✗ Expired Only</option>
@@ -308,18 +309,15 @@ const CAT_FILTER_LIST = [
   { key: 'Others 其他',        label: '📋 Others',     bg: '#6b7280' },
 ];
 
-// ── FIX Issue 1 (consistency): bidirectional bank-name → colour lookup.
-// Matches both "Mox Bank" and abbreviated "Mox" to the same colour.
-// Generic words ('bank', 'banking') are guarded to prevent false matches.
 const _BANK_COLOR_GENERIC = new Set(['bank', 'banking', 'digital', 'virtual']);
 
 function bankColor(name) {
   if (!name) return "#6b7280";
-  const nameLower = name.toLowerCase().trim();
-  if (_BANK_COLOR_GENERIC.has(nameLower)) return "#6b7280";
+  const n = name.toLowerCase().trim();
+  if (_BANK_COLOR_GENERIC.has(n)) return "#6b7280";
   for (const [k, v] of Object.entries(BANK_COLORS)) {
-    const kLower = k.toLowerCase();
-    if (nameLower.includes(kLower) || kLower.includes(nameLower)) return v;
+    const kl = k.toLowerCase();
+    if (n.includes(kl) || kl.includes(n)) return v;
   }
   return "#6b7280";
 }
@@ -391,13 +389,12 @@ async function loadData() {
     }));
 
     // Stats: NON-BAU only
-    const nonBauPromos = allPromos.filter(p => !p.is_bau);
-    const activeN   = nonBauPromos.filter(p => getStatus(p) === 'active').length;
-    const expiringN = nonBauPromos.filter(p => getStatus(p) === 'expiring').length;
-    const expiredN  = nonBauPromos.filter(p => getStatus(p) === 'expired').length;
-    const totalN    = nonBauPromos.length;
-
-    const banks = [...new Set(allPromos.map(p => p.bank_name))];
+    const nonBau    = allPromos.filter(p => !p.is_bau);
+    const activeN   = nonBau.filter(p => getStatus(p) === 'active').length;
+    const expiringN = nonBau.filter(p => getStatus(p) === 'expiring').length;
+    const expiredN  = nonBau.filter(p => getStatus(p) === 'expired').length;
+    const totalN    = nonBau.length;
+    const banks     = [...new Set(allPromos.map(p => p.bank_name))];
 
     document.getElementById('statTotal').textContent    = totalN;
     document.getElementById('statActive').textContent   = activeN;
@@ -438,22 +435,21 @@ function remapCat(t) {
 
 // ══ NEW TODAY SECTION ════════════════════════════════════════════
 function buildNewTodaySection() {
-  // FIX Issue 5: always compute "today" in HKT (UTC+8) so it matches the
-  // server-side created_at timestamps written during the 09:00 HKT workflow run.
-  // Using the browser's local time caused mismatches for non-HKT viewers.
+  // Always compute "today" in HKT (UTC+8) so it matches server-side
+  // created_at timestamps written during the 09:00 HKT workflow run.
   const hktMs   = Date.now() + 8 * 3600 * 1000;
-  const today   = new Date(hktMs).toISOString().substring(0, 10); // YYYY-MM-DD HKT
+  const today   = new Date(hktMs).toISOString().substring(0, 10);
 
   const newToday = allPromos.filter(p => {
-    if (p.is_bau) return false;                          // BAU = not "new"
+    if (p.is_bau) return false;
     const created = (p.created_at || '').substring(0, 10);
     return created === today;
   });
 
-  const section  = document.getElementById('newTodaySection');
-  const tbody    = document.getElementById('newTodayTbody');
-  const countEl  = document.getElementById('newTodayCount');
-  const emptyEl  = document.getElementById('newTodayEmpty');
+  const section = document.getElementById('newTodaySection');
+  const tbody   = document.getElementById('newTodayTbody');
+  const countEl = document.getElementById('newTodayCount');
+  const emptyEl = document.getElementById('newTodayEmpty');
 
   section.style.display = 'block';
 
@@ -494,8 +490,11 @@ function buildBankTabs(banks) {
   const container = document.getElementById('bankTabs');
   banks.sort().forEach(b => {
     const c   = bankColor(b);
+    // FIX: sanitise ID — replace spaces so getElementById works reliably
+    const safeId = 'tab-' + b.replace(/\s+/g, '-');
     const btn = document.createElement('button');
-    btn.id        = `tab-${b}`;
+    btn.id        = safeId;
+    btn.dataset.bank = b;
     btn.className = 'bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold '
                   + 'border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
     btn.style.borderColor = c;
@@ -508,10 +507,11 @@ function buildBankTabs(banks) {
 function setBankTab(bank) {
   activeBankTab = bank;
   document.querySelectorAll('.bank-tab-btn').forEach(btn => {
-    btn.classList.remove('bg-indigo-600', 'text-white', 'text-gray-600', 'bg-white');
+    btn.classList.remove('bg-indigo-600', 'text-white');
     btn.classList.add('text-gray-600', 'bg-white');
   });
-  const activeBtn = document.getElementById(bank ? `tab-${bank}` : 'tab-all');
+  const safeId    = bank ? 'tab-' + bank.replace(/\s+/g, '-') : 'tab-all';
+  const activeBtn = document.getElementById(safeId);
   if (activeBtn) {
     activeBtn.classList.remove('text-gray-600', 'bg-white');
     activeBtn.classList.add('bg-indigo-600', 'text-white');
@@ -621,7 +621,6 @@ function buildComparisonTable() {
     const s = getStatus(p);
     return (s === 'active' || s === 'expiring') && !p.is_bau;
   });
-
   if (!livePromos.length) return;
 
   const bankMap = {};
@@ -637,10 +636,7 @@ function buildComparisonTable() {
   });
 
   const zaBank = banks.find(b => b.name.includes('ZA'));
-  if (!zaBank) {
-    console.warn('Comparison: ZA Bank not found in data');
-    return;
-  }
+  if (!zaBank) return;
 
   const typeCounts = {};
   livePromos.forEach(p =>
@@ -656,10 +652,7 @@ function buildComparisonTable() {
 
   let thead = `<tr class="bg-gray-50 border-b-2 border-gray-200">
     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500
-               uppercase tracking-wide w-44 whitespace-nowrap">
-      指標 / Metric
-    </th>`;
-
+               uppercase tracking-wide w-44 whitespace-nowrap">指標 / Metric</th>`;
   banks.forEach(b => {
     const isZA  = b.name.includes('ZA');
     const color = bankColor(b.name);
@@ -668,69 +661,50 @@ function buildComparisonTable() {
                  ${isZA ? 'bg-blue-50' : ''}"
           style="color:${color}; min-width:95px;">
         <span class="bank-dot" style="background:${color}; margin-right:3px;"></span>${b.name}
-        ${isZA
-          ? '<br><span class="text-blue-400 font-normal normal-case text-xs">⭐ 基準 Base</span>'
-          : ''}
+        ${isZA ? '<br><span class="text-blue-400 font-normal normal-case text-xs">⭐ 基準 Base</span>' : ''}
       </th>`;
   });
-  thead += `</tr>`;
+  thead += '</tr>';
 
   function makeRow(label, getVal, isBold = false) {
-    const zaVal   = getVal(zaBank);
-    const allVals = banks.map(b => getVal(b));
-    const maxVal  = Math.max(...allVals);
-
+    const zaVal  = getVal(zaBank);
+    const maxVal = Math.max(...banks.map(b => getVal(b)));
     let r = `<tr class="border-b border-gray-100 hover:bg-indigo-50/20 transition-colors">
       <td class="px-4 py-2.5 text-sm text-gray-700 whitespace-nowrap
                  ${isBold ? 'font-bold' : 'font-medium'}">${label}</td>`;
-
     banks.forEach(b => {
       const isZA  = b.name.includes('ZA');
       const val   = getVal(b);
       const isTop = !isZA && val === maxVal && maxVal > 0;
-
       let indicator = '';
       if (!isZA) {
-        if      (val > zaVal)      indicator = `<span class="ml-1 text-green-500 text-xs font-bold">▲</span>`;
-        else if (val < zaVal)      indicator = `<span class="ml-1 text-red-400 text-xs font-bold">▼</span>`;
-        else if (val > 0 || zaVal > 0)
-                                   indicator = `<span class="ml-1 text-gray-300 text-xs">—</span>`;
+        if      (val > zaVal)           indicator = `<span class="ml-1 text-green-500 text-xs font-bold">▲</span>`;
+        else if (val < zaVal)           indicator = `<span class="ml-1 text-red-400 text-xs font-bold">▼</span>`;
+        else if (val > 0 || zaVal > 0)  indicator = `<span class="ml-1 text-gray-300 text-xs">—</span>`;
       }
-
       const display = val > 0
         ? `<span class="${isTop ? 'text-green-600 font-bold' : isZA ? 'text-blue-700 font-bold' : 'text-gray-700'}">${val}</span>`
         : `<span class="text-gray-200">0</span>`;
-
       r += `<td class="px-4 py-2.5 text-center ${isZA ? 'bg-blue-50/50' : ''}">
-        ${display}${indicator}
-      </td>`;
+        ${display}${indicator}</td>`;
     });
-
-    r += `</tr>`;
-    return r;
+    return r + '</tr>';
   }
 
   function sectionRow(label) {
     return `<tr class="bg-gray-50/80 border-b border-gray-100">
       <td colspan="${banks.length + 1}"
           class="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-        ${label}
-      </td>
-    </tr>`;
+        ${label}</td></tr>`;
   }
 
   const rows = [];
-
   rows.push(sectionRow('📋 總覽 Overview'));
-  rows.push(makeRow('✅ 有效優惠總數 Total Active',
-    b => b.promos.length, true));
+  rows.push(makeRow('✅ 有效優惠總數 Total Active', b => b.promos.length, true));
   rows.push(makeRow('🔄 長期/無到期 Ongoing',
-    b => b.promos.filter(p =>
-      !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))
-    ).length));
+    b => b.promos.filter(p => !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))).length));
   rows.push(makeRow('⚡ 即將到期 Expiring ≤30d',
     b => b.promos.filter(p => getStatus(p) === 'expiring').length));
-
   rows.push(sectionRow('🏷️ 優惠類別 By Category'));
   topTypes.forEach(type => {
     const m     = catMeta(type);
@@ -747,16 +721,12 @@ function buildComparisonTable() {
   buildProsCons(zaBank, banks, topTypes);
 }
 
-// ── Pros / Cons ────────────────────────────────────────────────────
 function buildProsCons(zaBank, allBanks, topTypes) {
   const others = allBanks.filter(b => b.name !== zaBank.name);
   if (!others.length) return;
 
-  const avg = arr =>
-    arr.length ? arr.reduce((s, n) => s + n, 0) / arr.length : 0;
-
-  const pros = [];
-  const cons = [];
+  const avg = arr => arr.length ? arr.reduce((s, n) => s + n, 0) / arr.length : 0;
+  const pros = [], cons = [];
 
   const avgCount = avg(others.map(b => b.promos.length));
   if (zaBank.promos.length >= avgCount)
@@ -770,32 +740,20 @@ function buildProsCons(zaBank, allBanks, topTypes) {
   else if (beatCount > others.length / 2)
     pros.push(`優惠總數超越 ${beatCount}/${others.length} 間競爭銀行`);
 
-  const leadCats = [];
-  const weakCats = [];
-
+  const leadCats = [], weakCats = [];
   topTypes.forEach(type => {
-    const zaC   = zaBank.promos.filter(p => (p.types || []).includes(type)).length;
-    const avgC  = avg(others.map(b => b.promos.filter(p => (p.types || []).includes(type)).length));
-    const m     = catMeta(type);
-    const short = `${m.emoji}${type.split(' ')[0]}`;
-    if (zaC > avgC + 0.5) leadCats.push(short);
-    if (zaC < avgC - 0.5)
-      weakCats.push(`${short} (ZA: ${zaC} vs 平均: ${avgC.toFixed(1)})`);
+    const zaC  = zaBank.promos.filter(p => (p.types || []).includes(type)).length;
+    const avgC = avg(others.map(b => b.promos.filter(p => (p.types || []).includes(type)).length));
+    const m    = catMeta(type);
+    const s    = `${m.emoji}${type.split(' ')[0]}`;
+    if (zaC > avgC + 0.5) leadCats.push(s);
+    if (zaC < avgC - 0.5) weakCats.push(`${s} (ZA: ${zaC} vs 平均: ${avgC.toFixed(1)})`);
   });
+  if (leadCats.length) pros.push(`在 ${leadCats.join('、')} 類別優惠數量領先市場`);
+  if (weakCats.length) cons.push(`以下類別優惠相對較少：${weakCats.join('、')}`);
 
-  if (leadCats.length)
-    pros.push(`在 ${leadCats.join('、')} 類別優惠數量領先市場`);
-  if (weakCats.length)
-    cons.push(`以下類別優惠相對較少：${weakCats.join('、')}`);
-
-  const zaOngoing  = zaBank.promos.filter(p =>
-    !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))
-  ).length;
-  const avgOngoing = avg(others.map(b =>
-    b.promos.filter(p =>
-      !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))
-    ).length
-  ));
+  const zaOngoing  = zaBank.promos.filter(p => !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))).length;
+  const avgOngoing = avg(others.map(b => b.promos.filter(p => !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))).length));
   if (zaOngoing > avgOngoing + 0.5)
     pros.push(`長期優惠比例高，${zaOngoing} 項長期有效 (其他平均 ${avgOngoing.toFixed(1)} 項)`);
   else if (zaOngoing < avgOngoing - 0.5)
@@ -813,11 +771,8 @@ function buildProsCons(zaBank, allBanks, topTypes) {
       </h3>
       <ul class="space-y-2">
         ${pros.length
-          ? pros.map(p => `
-              <li class="flex items-start gap-2 text-sm text-green-800">
-                <span class="text-green-500 shrink-0 mt-0.5">●</span>
-                <span>${p}</span>
-              </li>`).join('')
+          ? pros.map(p => `<li class="flex items-start gap-2 text-sm text-green-800">
+              <span class="text-green-500 shrink-0 mt-0.5">●</span><span>${p}</span></li>`).join('')
           : '<li class="text-sm text-gray-400 italic">暫無突出優勢</li>'}
       </ul>
     </div>
@@ -828,11 +783,8 @@ function buildProsCons(zaBank, allBanks, topTypes) {
       </h3>
       <ul class="space-y-2">
         ${cons.length
-          ? cons.map(c => `
-              <li class="flex items-start gap-2 text-sm text-orange-800">
-                <span class="text-orange-400 shrink-0 mt-0.5">●</span>
-                <span>${c}</span>
-              </li>`).join('')
+          ? cons.map(c => `<li class="flex items-start gap-2 text-sm text-orange-800">
+              <span class="text-orange-400 shrink-0 mt-0.5">●</span><span>${c}</span></li>`).join('')
           : '<li class="text-sm text-gray-400 italic">暫無明顯不足</li>'}
       </ul>
     </div>`;
@@ -847,41 +799,26 @@ function applyFilters() {
   filtered = allPromos.filter(p => {
     const s = getStatus(p);
 
-    // Status filter
-    if (status === 'active'          && s !== 'active')                     return false;
-    if (status === 'expiring'        && s !== 'expiring')                    return false;
-    if (status === 'expired'         && s !== 'expired')                     return false;
-    if (status === 'active+expiring' && s !== 'active' && s !== 'expiring')  return false;
+    if (status === 'active'          && s !== 'active')                    return false;
+    if (status === 'expiring'        && s !== 'expiring')                   return false;
+    if (status === 'expired'         && s !== 'expired')                    return false;
+    if (status === 'active+expiring' && s !== 'active' && s !== 'expiring') return false;
 
-    // Bank tab filter
     if (activeBankTab && p.bank_name !== activeBankTab) return false;
 
-    // ── Category filter ────────────────────────────────────────────
-    // FIX Issue 4: BAU items must NEVER appear when a non-BAU category is
-    // selected.  The old logic let a BAU item through when its types[]
-    // happened to include a selected category (matchCat = true overrode
-    // the missing matchBau).
     if (selectedCats.length > 0) {
       const hasBau    = selectedCats.includes('BAU');
       const otherCats = selectedCats.filter(c => c !== 'BAU');
-
       if (p.is_bau) {
-        // BAU promotion: visible ONLY when ⚙️ BAU button is explicitly selected
         if (!hasBau) return false;
       } else {
-        // Non-BAU promotion
-        if (otherCats.length === 0) {
-          // Only the BAU button is selected → hide all non-BAU items
-          return false;
-        }
+        if (otherCats.length === 0) return false;
         if (!otherCats.some(c => (p.types || []).includes(c))) return false;
       }
     } else {
-      // No category button selected → hide BAU by default
       if (p.is_bau) return false;
     }
 
-    // Search filter
     if (search) {
       const hay = [
         p.bank_name, p.title, p.highlight, p.description,
@@ -897,11 +834,12 @@ function applyFilters() {
   if (sort === 'newest')  filtered.sort((a, b) => (b.created_at||'') > (a.created_at||'') ? 1 : -1);
 
   renderTable(filtered);
+
+  const nonBauTotal = allPromos.filter(p => !p.is_bau).length;
+  const bauTotal    = allPromos.filter(p => p.is_bau).length;
   document.getElementById('resultCount').textContent =
-    `Showing ${filtered.length} of ${allPromos.filter(p => !p.is_bau).length} promotions`
-    + (allPromos.filter(p => p.is_bau).length > 0
-       ? ` (+${allPromos.filter(p => p.is_bau).length} BAU via ⚙️ filter)`
-       : '');
+    `Showing ${filtered.length} of ${nonBauTotal} promotions`
+    + (bauTotal > 0 ? ` (+${bauTotal} BAU via ⚙️ filter)` : '');
 }
 
 // ── Render Table ──────────────────────────────────────────────────
@@ -992,7 +930,13 @@ function toggleDetail(i) {
 
 // ── Excel Export ──────────────────────────────────────────────────
 function exportExcel() {
-  if (!filtered.length) { alert('No promotions to export.'); return; }
+  if (!filtered.length) {
+    // FIX: use window.confirm fallback instead of alert() for iframe safety
+    if (typeof window.confirm === 'function') {
+      window.confirm('No promotions to export.');
+    }
+    return;
+  }
   const rows = filtered.map(p => ({
     'Bank':        p.bank_name,
     'Title':       p.title,
