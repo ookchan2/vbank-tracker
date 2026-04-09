@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  
+  contents: write
 
 jobs:
   run-tracker:
@@ -31,6 +31,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      # ── FIX: Persist the SQLite database between daily runs ──────────────────
+      # Without this, data/promotions.db is recreated blank every run:
+      #   • Every promo gets created_at = today → all appear "new today"
+      #   • No cross-run deduplication
+      #   • "New today" in email ≠ genuinely new
+      # Cache key is unique per run; restore-keys picks the most recent saved DB.
+      - name: Restore promotions database
+        id: cache-db
+        uses: actions/cache@v4
+        with:
+          path: data/promotions.db
+          key: promotions-db-${{ github.run_id }}
+          restore-keys: |
+            promotions-db-
+
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
@@ -51,11 +66,20 @@ jobs:
           cd scripts
           python main.py
 
+      # ── FIX: Removed `git checkout -- .` ────────────────────────────────────
+      # The old step ran:
+      #   git checkout -- .          ← reverted docs/data.json written by main.py
+      #   git add docs/data.json     ← staged the OLD reverted file
+      #   git diff --staged --quiet  ← saw no diff → committed nothing
+      # Result: website served the same stale data.json every single day.
+      #
+      # Fix: drop git checkout -- . entirely.
+      # Only docs/data.json is explicitly staged; all other modified/untracked
+      # files (DB, HTML preview, logs) are simply ignored by the commit step.
       - name: Commit updated website data
         run: |
           git config user.name  "VBank Tracker Bot 🤖"
           git config user.email "bot@vbank-tracker.github.io"
-          git checkout -- .
           git add docs/data.json
           git diff --staged --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore: update data.json [$(date '+%Y-%m-%d %H:%M')]"

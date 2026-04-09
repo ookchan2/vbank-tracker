@@ -11,6 +11,7 @@ print("PASS:", ("SET=" + os.getenv("GMAIL_APP_PASSWORD", "")[:4] + "...")
 print("TO:  ", os.getenv("RECIPIENT_EMAIL"))
 
 import sys
+import json as _json
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -32,7 +33,7 @@ from database  import (
     generate_daily_report,
     export_to_json,
     get_active_promos_for_bank,
-    get_active_promotions,        # ← ADDED: needed for BAU-inclusive insights input
+    get_active_promotions,
 )
 from emailer   import build_html_email, send_email
 
@@ -186,16 +187,27 @@ def main():
     print('\nStep 6 ── Export data.json for website')
     export_to_json(DATA_JSON_PATH)
 
+    # FIX Issue 2: force the 'updated' / 'last_updated' timestamp in data.json
+    # to always reflect the current run time.  database.py may cache or omit
+    # this field; this patch guarantees the website shows today's date.
+    _run_ts = datetime.now().strftime('%Y-%m-%d %H:%M')
+    try:
+        with open(DATA_JSON_PATH, 'r', encoding='utf-8') as _f:
+            _jdata = _json.load(_f)
+        _jdata['updated']      = _run_ts
+        _jdata['last_updated'] = _run_ts
+        with open(DATA_JSON_PATH, 'w', encoding='utf-8') as _f:
+            _json.dump(_jdata, _f, ensure_ascii=False, indent=2)
+        print(f'  ✅ data.json timestamp patched → {_run_ts}')
+    except Exception as _patch_err:
+        print(f'  ⚠️  data.json timestamp patch failed: {_patch_err}')
+
     # ── Step 7: Generate daily report ────────────────────────────
     print('\nStep 7 ── Generate daily report')
-    # generate_daily_report() returns NON-BAU only (is_bau=0 filter in DB):
-    #   report['new']    → newly detected this run,    BAU excluded
-    #   report['active'] → all other active promos,    BAU excluded
-    #   report['expired']→ recently expired promos,    BAU excluded
     report         = generate_daily_report(current_run_id)
-    new_promos     = report['new']       # non-BAU, new this run
-    active_promos  = report['active']    # non-BAU, seen before
-    expired_promos = report['expired']   # non-BAU, just expired
+    new_promos     = report['new']
+    active_promos  = report['active']
+    expired_promos = report['expired']
     summary        = report['summary']
 
     print(f'  🆕 New:     {summary["new_count"]}')
@@ -205,9 +217,6 @@ def main():
         print(f'    {bid.upper()}: {count} active')
 
     # ── Email slices (non-BAU only) ───────────────────────────────
-    # Both new_promos and active_promos are already non-BAU from the DB query,
-    # but we apply an explicit filter as a safety layer in case any BAU row
-    # slips through (e.g. a row whose is_bau flag was set after the last run).
     all_promos_email = [p for p in (new_promos + active_promos)
                         if not p.get('is_bau', False)]
     new_promos_email = [p for p in new_promos
@@ -215,24 +224,6 @@ def main():
 
     # ── Step 8: Strategic insights ────────────────────────────────
     print('\nStep 8 ── Generate AI strategic insights')
-    #
-    # ┌─────────────────────────────────────────────────────────────┐
-    # │  WHY we use get_active_promotions(include_bau=True) here:  │
-    # │                                                             │
-    # │  generate_daily_report() strips BAU before returning, so   │
-    # │  new_promos + active_promos contains NO BAU items.         │
-    # │                                                             │
-    # │  BAU features are CRITICAL competitive signals for the AI: │
-    # │    • ZA Bank "$0 crypto platform fee"  → Investment winner │
-    # │    • WeLab "$0 Fund Trading Fee Mode"  → Fund winner       │
-    # │    • Mox referral programme            → Referral winner   │
-    # │                                                             │
-    # │  Without BAU in the prompt, the AI cannot correctly        │
-    # │  populate best_for categories and writes "None" instead.   │
-    # │                                                             │
-    # │  Solution: fetch ALL active promos (BAU included) from DB  │
-    # │  specifically for the insights call.                       │
-    # └─────────────────────────────────────────────────────────────┘
     all_active_with_bau = get_active_promotions(include_bau=True)
 
     bau_count_insights = sum(1 for p in all_active_with_bau if p.get('is_bau', False))
@@ -242,7 +233,6 @@ def main():
 
     promos_by_name: dict = {}
     for p in all_active_with_bau:
-        # DB rows use 'bank_name'; AI-stamped dicts may use 'bName'
         bname = p.get('bank_name') or p.get('bName') or p.get('bank') or 'Unknown'
         promos_by_name.setdefault(bname, []).append(p)
 
@@ -257,16 +247,11 @@ def main():
 
     # ── Step 9: Build & send email ────────────────────────────────
     print('\nStep 9 ── Build & send email')
-    #
-    # emailer.build_html_email() also has its own internal BAU filter
-    # (added in the latest emailer.py), so passing non-BAU lists here
-    # is belt-and-suspenders — the email will never show BAU items
-    # even if a stray BAU row somehow reaches this point.
     html = build_html_email(
-        promotions_data    = all_promos_email,   # non-BAU: "All Active Promotions"
+        promotions_data    = all_promos_email,
         scraped_data       = scraped_by_name,
         strategic_insights = strategic_insights,
-        new_promos         = new_promos_email,   # non-BAU: "Newly Launched" section
+        new_promos         = new_promos_email,
     )
     print('  ✅ HTML email built')
     print(f'  [INFO] Non-BAU new promos this run : {len(new_promos_email)}')

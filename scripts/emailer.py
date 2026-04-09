@@ -4,7 +4,7 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from datetime import datetime
+from datetime import datetime, timedelta          # ← added timedelta
 
 # ── Category metadata ─────────────────────────────────────────────────────────
 
@@ -46,19 +46,39 @@ BANK_DISPLAY_NAMES = {
 
 CATEGORY_EMOJIS = {k: v["emoji"] for k, v in CATEGORY_META.items()}
 
+# ── Generic words that must never match a bank entry ─────────────────────────
+_BANK_NAME_GENERIC = {'bank', 'banking', 'digital', 'virtual', 'bank hk', ''}
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _bank_color(bank_name: str) -> str:
+    """
+    FIX Issue 1 — bidirectional substring match.
+    Old logic:  key in name  (only)
+      → "mox bank" in "mox"  = False → grey pill in insights
+    New logic:  key in name  OR  name in key
+      → "mox" in "mox bank"  = True  → correct pink colour
+    Generic-word guard prevents "bank" alone matching every entry.
+    """
+    name_lower = (bank_name or "").lower().strip()
+    if name_lower in _BANK_NAME_GENERIC:
+        return "#6b7280"
     for key, color in BANK_COLORS.items():
-        if key.lower() in (bank_name or "").lower():
+        key_lower = key.lower()
+        if key_lower in name_lower or name_lower in key_lower:
             return color
     return "#6b7280"
 
 
 def _bank_display_name(bank_name: str) -> str:
+    """FIX Issue 1 — same bidirectional match as _bank_color."""
+    name_lower = (bank_name or "").lower().strip()
+    if name_lower in _BANK_NAME_GENERIC:
+        return bank_name
     for key, short in BANK_DISPLAY_NAMES.items():
-        if key.lower() in (bank_name or "").lower():
+        key_lower = key.lower()
+        if key_lower in name_lower or name_lower in key_lower:
             return short
     return bank_name
 
@@ -205,9 +225,9 @@ def _insights_html(insights: dict) -> str:
         cat    = item.get("category", "")
         bank   = item.get("bank", "")
         detail = item.get("detail", "")
-        bc     = _bank_color(bank)
+        bc     = _bank_color(bank)          # ← now uses bidirectional fix
         em     = _get_cat_meta(cat).get("emoji", "🏆")
-        bank_short = _bank_display_name(bank)
+        bank_short = _bank_display_name(bank)  # ← now uses bidirectional fix
         best_rows += f"""
 <tr style="border-bottom:1px solid #f3f4f6;">
   <td style="padding:9px 12px;font-size:13px;color:#374151;font-weight:600;white-space:nowrap;">
@@ -353,10 +373,6 @@ def build_html_email(
     now        = datetime.now().strftime("%d %b %Y, %H:%M HKT")
 
     # ── BAU filtering ─────────────────────────────────────────────
-    # The email shows ONLY non-BAU promotions in all listing sections.
-    # BAU = permanent product features (always available, no end date).
-    # This is a safety layer; main.py also pre-filters before calling here.
-    # ← CHANGED: both lists are filtered before any section is built
     non_bau_data    = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
     new_promos_show = [p for p in new_promos              if not p.get('is_bau', False)]
 
@@ -366,25 +382,37 @@ def build_html_email(
         bank = p.get("bName") or p.get("bank_name") or p.get("bank") or "Unknown"
         banks.setdefault(bank, []).append(p)
 
-    # ── Stats: count NON-BAU only (consistent with what is listed below) ──
-    # ← CHANGED: was len(promotions_data), now len(non_bau_data)
     total_promos = len(non_bau_data)
-    # Banks tracked: always the number of banks in BANK_COLORS (8 banks)
-    # ← CHANGED: was len(banks) which could undercount if a bank only has BAU
     total_banks  = len(BANK_COLORS)
 
-    # Expiring soon: non-BAU only
-    # ← CHANGED: was (promotions_data or []), now non_bau_data
-    this_month = datetime.now().strftime("%b").lower()
-    next_month = ["jan","feb","mar","apr","may","jun",
-                  "jul","aug","sep","oct","nov","dec"][datetime.now().month % 12]
-    expiring_count = sum(
-        1 for p in non_bau_data
-        if this_month in str(p.get("period", "")).lower()
-        or next_month in str(p.get("period", "")).lower()
-    )
+    # ── Expiring soon ─────────────────────────────────────────────
+    # FIX Issue 3: use end_date arithmetic instead of period text matching.
+    # Text matching ("apr" in period) silently returns 0 when dates are stored
+    # in ISO format ("2026-04-30") because "apr" is not present in that string.
+    _now        = datetime.now()
+    _today_d    = _now.date()
+    _threshold  = (_now + timedelta(days=30)).date()
+    _this_m     = _now.strftime('%b').lower()
+    _next_m     = ['jan','feb','mar','apr','may','jun',
+                   'jul','aug','sep','oct','nov','dec'][_now.month % 12]
 
-    # ── Scrape status rows (count = non-BAU promos per bank) ──────
+    expiring_count = 0
+    for _p in non_bau_data:
+        _ed = _p.get('end_date')
+        if _ed:
+            try:
+                _end_d = datetime.strptime(str(_ed)[:10], '%Y-%m-%d').date()
+                if _today_d <= _end_d <= _threshold:
+                    expiring_count += 1
+            except (ValueError, TypeError):
+                pass
+        else:
+            # Fallback: period text for promos without a structured end_date
+            _period = str(_p.get('period', '')).lower()
+            if _this_m in _period or _next_m in _period:
+                expiring_count += 1
+
+    # ── Scrape status rows ────────────────────────────────────────
     scrape_rows = ""
     for bank_name, result in sorted((scraped_data or {}).items()):
         raw_status   = result.get("status")
@@ -412,9 +440,7 @@ def build_html_email(
         if insights_block else ""
     )
 
-    # ── Newly launched section (non-BAU only) ─────────────────────
-    # ← CHANGED: was if new_promos / for p in new_promos
-    #            now  if new_promos_show / for p in new_promos_show
+    # ── Newly launched section ────────────────────────────────────
     if new_promos_show:
         new_rows = ""
         for p in new_promos_show:
@@ -507,7 +533,7 @@ def build_html_email(
   </td></tr>
   <tr><td style="height:16px;"></td></tr>
 
-  <!-- STATS (non-BAU only — consistent with All Active Promotions section below) -->
+  <!-- STATS (non-BAU only) -->
   <tr><td style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
       <td width="33%" style="text-align:center;padding:18px 12px;
@@ -554,7 +580,7 @@ def build_html_email(
   <!-- STRATEGIC INSIGHTS -->
   {insights_row}
 
-  <!-- NEWLY LAUNCHED PROMOTIONS (non-BAU only) -->
+  <!-- NEWLY LAUNCHED PROMOTIONS -->
   {new_section_html}
 
   <!-- ALL ACTIVE PROMOTIONS (non-BAU only) -->

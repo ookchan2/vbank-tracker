@@ -308,9 +308,18 @@ const CAT_FILTER_LIST = [
   { key: 'Others 其他',        label: '📋 Others',     bg: '#6b7280' },
 ];
 
+// ── FIX Issue 1 (consistency): bidirectional bank-name → colour lookup.
+// Matches both "Mox Bank" and abbreviated "Mox" to the same colour.
+// Generic words ('bank', 'banking') are guarded to prevent false matches.
+const _BANK_COLOR_GENERIC = new Set(['bank', 'banking', 'digital', 'virtual']);
+
 function bankColor(name) {
+  if (!name) return "#6b7280";
+  const nameLower = name.toLowerCase().trim();
+  if (_BANK_COLOR_GENERIC.has(nameLower)) return "#6b7280";
   for (const [k, v] of Object.entries(BANK_COLORS)) {
-    if (name && name.toLowerCase().includes(k.toLowerCase())) return v;
+    const kLower = k.toLowerCase();
+    if (nameLower.includes(kLower) || kLower.includes(nameLower)) return v;
   }
   return "#6b7280";
 }
@@ -381,16 +390,13 @@ async function loadData() {
         .map(t => remapCat(t)),
     }));
 
-    // ── Stats: NON-BAU only — consistent with email and default table view ──
-    // ← CHANGED: was counting allPromos which included BAU items.
-    //   Now counts only non-BAU so numbers match the email's "Active Promos" stat.
+    // Stats: NON-BAU only
     const nonBauPromos = allPromos.filter(p => !p.is_bau);
     const activeN   = nonBauPromos.filter(p => getStatus(p) === 'active').length;
     const expiringN = nonBauPromos.filter(p => getStatus(p) === 'expiring').length;
     const expiredN  = nonBauPromos.filter(p => getStatus(p) === 'expired').length;
     const totalN    = nonBauPromos.length;
 
-    // bankCount: count unique banks from ALL promos (including BAU) — always 8
     const banks = [...new Set(allPromos.map(p => p.bank_name))];
 
     document.getElementById('statTotal').textContent    = totalN;
@@ -432,13 +438,16 @@ function remapCat(t) {
 
 // ══ NEW TODAY SECTION ════════════════════════════════════════════
 function buildNewTodaySection() {
-  const now   = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  // FIX Issue 5: always compute "today" in HKT (UTC+8) so it matches the
+  // server-side created_at timestamps written during the 09:00 HKT workflow run.
+  // Using the browser's local time caused mismatches for non-HKT viewers.
+  const hktMs   = Date.now() + 8 * 3600 * 1000;
+  const today   = new Date(hktMs).toISOString().substring(0, 10); // YYYY-MM-DD HKT
 
-  // ← CHANGED: added && !p.is_bau — BAU features are not "new promotions"
   const newToday = allPromos.filter(p => {
+    if (p.is_bau) return false;                          // BAU = not "new"
     const created = (p.created_at || '').substring(0, 10);
-    return created === today && !p.is_bau;
+    return created === today;
   });
 
   const section  = document.getElementById('newTodaySection');
@@ -575,7 +584,6 @@ function buildBankSummary(banks) {
   };
 
   el.innerHTML = banks.sort().map(b => {
-    // Sidebar counts non-BAU promos only
     const promos   = allPromos.filter(p => p.bank_name === b && !p.is_bau);
     const active   = promos.filter(p => getStatus(p) === 'active').length;
     const expiring = promos.filter(p => getStatus(p) === 'expiring').length;
@@ -609,7 +617,6 @@ function buildBankSummary(banks) {
 function buildComparisonTable() {
   document.getElementById('comparisonSection').style.display = 'block';
 
-  // ← CHANGED: added && !p.is_bau — comparison is about time-limited promos
   const livePromos = allPromos.filter(p => {
     const s = getStatus(p);
     return (s === 'active' || s === 'expiring') && !p.is_bau;
@@ -850,17 +857,27 @@ function applyFilters() {
     if (activeBankTab && p.bank_name !== activeBankTab) return false;
 
     // ── Category filter ────────────────────────────────────────────
-    // ← CHANGED: default (no category selected) now EXCLUDES BAU items.
-    //   BAU items are only shown when the ⚙️ BAU category button is selected.
-    //   This makes the default table view match the email's "All Active Promotions".
+    // FIX Issue 4: BAU items must NEVER appear when a non-BAU category is
+    // selected.  The old logic let a BAU item through when its types[]
+    // happened to include a selected category (matchCat = true overrode
+    // the missing matchBau).
     if (selectedCats.length > 0) {
       const hasBau    = selectedCats.includes('BAU');
       const otherCats = selectedCats.filter(c => c !== 'BAU');
-      const matchBau  = hasBau && !!p.is_bau;
-      const matchCat  = otherCats.length > 0 && otherCats.some(c => (p.types || []).includes(c));
-      if (!matchBau && !matchCat) return false;
+
+      if (p.is_bau) {
+        // BAU promotion: visible ONLY when ⚙️ BAU button is explicitly selected
+        if (!hasBau) return false;
+      } else {
+        // Non-BAU promotion
+        if (otherCats.length === 0) {
+          // Only the BAU button is selected → hide all non-BAU items
+          return false;
+        }
+        if (!otherCats.some(c => (p.types || []).includes(c))) return false;
+      }
     } else {
-      // Default: hide BAU items — they are accessible via the ⚙️ BAU filter button
+      // No category button selected → hide BAU by default
       if (p.is_bau) return false;
     }
 
