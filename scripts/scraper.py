@@ -50,11 +50,12 @@ BANK_CONFIGS = {
         'name':       'livi bank',
         'color':      '#f97316',
         'urls': [
-            'https://www.livibank.com.hk/',
+            # ── Correct domain (NOT .com.hk — that domain does not exist) ──
             'https://www.livibank.com/',
+            'https://www.livibank.com/zh_HK/',
         ],
-        'link':       'https://www.livibank.com.hk/',
-        'wait_extra': 4000,
+        'link':       'https://www.livibank.com/',
+        'wait_extra': 6000,   # increased from 4000 — livi loads slowly
     },
     'welab': {
         'name':       'WeLab Bank',

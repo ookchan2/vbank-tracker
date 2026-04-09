@@ -25,7 +25,7 @@ from ai_helper import (
 )
 from database  import (
     init_db,
-    start_new_run,                   # ← ADDED: required for run-based "new" tracking
+    start_new_run,
     save_promotions,
     mark_stale_as_inactive,
     mark_inactive_old,
@@ -64,12 +64,6 @@ def main():
     # ── Step 1: Database ──────────────────────────────────────────
     print('\nStep 1 ── Init database')
     init_db()
-
-    # ┌─────────────────────────────────────────────────────────────┐
-    # │  FIXED: start_new_run() MUST be called once per execution  │
-    # │  so that "newly launched" promos are correctly identified   │
-    # │  even if main.py is re-run multiple times on the same day. │
-    # └─────────────────────────────────────────────────────────────┘
     current_run_id = start_new_run(banks=list(BANK_CONFIGS.keys()))
 
     # ── Step 2: AI ────────────────────────────────────────────────
@@ -132,10 +126,7 @@ def main():
             print(f'    ⚠️  0 promotions extracted for {bank_name}')
             continue
 
-        # ── 4b: Within-batch dedup (name-based) ───────────────────
-        # Catches cases where AI extracted the same offer twice in one
-        # run with different wording.  Checks both title AND highlight
-        # content — whichever matches first triggers removal.
+        # ── 4b: Within-batch dedup ────────────────────────────────
         try:
             titles  = [p.get('name') or p.get('title', '') for p in promos]
             dup_map = ai_dedup_titles(titles, bank_name)
@@ -154,10 +145,6 @@ def main():
             continue
 
         # ── 4c: Match against existing DB records ─────────────────
-        # Catches semantic variants the formula pass misses —
-        # both name variants AND highlight content matches.
-        # Matched promos get _matched_id stamped so save_promotions
-        # does UPDATE (not INSERT) for those rows.
         try:
             existing_db = get_active_promos_for_bank(bank_id)
             if existing_db:
@@ -172,15 +159,12 @@ def main():
             print(f'    ⚠️  DB-match error for {bank_name}: {e} — formula pass only')
 
         # ── 4d: Save to DB ────────────────────────────────────────
-        # FIXED: current_run_id is now passed so first_run_id gets
-        # stamped on every genuinely new row.  Without this, the
-        # "newly launched" email section would always be empty.
         total_extracted += len(promos)
         db_result = save_promotions(
             bank_id,
             bank_name,
             promos,
-            current_run_id = current_run_id,   # ← FIXED
+            current_run_id = current_run_id,
         )
         total_new     += db_result['new']
         total_updated += db_result['updated']
@@ -203,10 +187,7 @@ def main():
 
     # ── Step 7: Generate daily report ────────────────────────────
     print('\nStep 7 ── Generate daily report')
-    # FIXED: generate_daily_report() requires current_run_id so it
-    # can distinguish "new this run" from "seen before".
-    # Calling it without the argument causes a TypeError.
-    report         = generate_daily_report(current_run_id)   # ← FIXED
+    report         = generate_daily_report(current_run_id)
     new_promos     = report['new']
     active_promos  = report['active']
     expired_promos = report['expired']
@@ -218,15 +199,26 @@ def main():
     for bid, count in summary['by_bank'].items():
         print(f'    {bid.upper()}: {count} active')
 
-    # BAU items are already excluded by generate_daily_report (is_bau=0 filter).
-    # new_promos  = only first seen THIS run  (not in any previous run)
-    # active_promos = all other currently active non-BAU promos
-    all_promos = new_promos + active_promos
+    # ── BAU separation ────────────────────────────────────────────
+    # generate_daily_report excludes BAU (is_bau=0 filter in DB).
+    # The explicit filters below are a safety layer in case BAU slips through.
+    #
+    # ┌─ all_promos_full  ─── for strategic insights
+    # │    BAU features (e.g. "$0 crypto fee") are CRITICAL competitive signals.
+    # │    Use the full list so insights can see them.
+    # │
+    # └─ all_promos_email ─── for email display sections
+    #      Email shows ONLY non-BAU promotions.
+    #      Both "All Active" and "Newly Launched" sections exclude BAU.
+    # ← CHANGED: was a single all_promos = new_promos + active_promos
+    all_promos_full  = new_promos + active_promos
+    all_promos_email = [p for p in all_promos_full if not p.get('is_bau', False)]
+    new_promos_email = [p for p in new_promos      if not p.get('is_bau', False)]
 
     # ── Step 8: Strategic insights ────────────────────────────────
     print('\nStep 8 ── Generate AI strategic insights')
     promos_by_name: dict = {}
-    for p in all_promos:
+    for p in all_promos_full:   # ← uses FULL list (BAU included if present)
         bname = p.get('bName') or p.get('bank_name') or p.get('bank') or 'Unknown'
         promos_by_name.setdefault(bname, []).append(p)
 
@@ -241,14 +233,16 @@ def main():
 
     # ── Step 9: Build & send email ────────────────────────────────
     print('\nStep 9 ── Build & send email')
+    # ← CHANGED: pass email-specific (non-BAU) lists to the emailer
     html = build_html_email(
-        promotions_data    = all_promos,
+        promotions_data    = all_promos_email,
         scraped_data       = scraped_by_name,
         strategic_insights = strategic_insights,
-        new_promos         = new_promos,
+        new_promos         = new_promos_email,
     )
     print('  ✅ HTML email built')
-    print(f'  [INFO] New promos this run: {len(new_promos)}')
+    print(f'  [INFO] Non-BAU new promos this run : {len(new_promos_email)}')
+    print(f'  [INFO] Non-BAU active promos total : {len(all_promos_email)}')
 
     output_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -282,8 +276,8 @@ def main():
     print(f'\n{"═"*60}')
     print(
         f'  Done  |  '
-        f'🆕 {summary["new_count"]} new  |  '
-        f'✅ {len(active_promos)} active  |  '
+        f'🆕 {len(new_promos_email)} new (non-BAU)  |  '
+        f'✅ {len(all_promos_email)} active (non-BAU)  |  '
         f'❌ {summary["expired_count"]} expired  |  '
         f'🤖 deduped:{total_deduped} db-matched:{total_db_matched}'
     )

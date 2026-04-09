@@ -330,7 +330,6 @@ function catTag(cat) {
   return `<span class="cat-tag" style="background:${m.bg}">${m.emoji} ${cat}</span>`;
 }
 
-// ← CHANGED: renders ⚙️ BAU badge for promotions with is_bau = true
 function bauTag(p) {
   if (!p.is_bau) return '';
   return `<span class="cat-tag" style="background:#64748b">⚙️ BAU</span>`;
@@ -382,12 +381,19 @@ async function loadData() {
         .map(t => remapCat(t)),
     }));
 
-    const activeN   = allPromos.filter(p => getStatus(p) === 'active').length;
-    const expiringN = allPromos.filter(p => getStatus(p) === 'expiring').length;
-    const expiredN  = allPromos.filter(p => getStatus(p) === 'expired').length;
-    const banks     = [...new Set(allPromos.map(p => p.bank_name))];
+    // ── Stats: NON-BAU only — consistent with email and default table view ──
+    // ← CHANGED: was counting allPromos which included BAU items.
+    //   Now counts only non-BAU so numbers match the email's "Active Promos" stat.
+    const nonBauPromos = allPromos.filter(p => !p.is_bau);
+    const activeN   = nonBauPromos.filter(p => getStatus(p) === 'active').length;
+    const expiringN = nonBauPromos.filter(p => getStatus(p) === 'expiring').length;
+    const expiredN  = nonBauPromos.filter(p => getStatus(p) === 'expired').length;
+    const totalN    = nonBauPromos.length;
 
-    document.getElementById('statTotal').textContent    = allPromos.length;
+    // bankCount: count unique banks from ALL promos (including BAU) — always 8
+    const banks = [...new Set(allPromos.map(p => p.bank_name))];
+
+    document.getElementById('statTotal').textContent    = totalN;
     document.getElementById('statActive').textContent   = activeN;
     document.getElementById('statExpiring').textContent = expiringN;
     document.getElementById('statExpired').textContent  = expiredN;
@@ -429,9 +435,10 @@ function buildNewTodaySection() {
   const now   = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
+  // ← CHANGED: added && !p.is_bau — BAU features are not "new promotions"
   const newToday = allPromos.filter(p => {
     const created = (p.created_at || '').substring(0, 10);
-    return created === today;
+    return created === today && !p.is_bau;
   });
 
   const section  = document.getElementById('newTodaySection');
@@ -453,9 +460,7 @@ function buildNewTodaySection() {
 
   tbody.innerHTML = newToday.map(p => {
     const color = bankColor(p.bank_name);
-    // ← CHANGED: include BAU tag in new-today table
-    const bau   = bauTag(p);
-    const cats  = (p.types || ['Others 其他']).map(catTag).join('') + bau;
+    const cats  = (p.types || ['Others 其他']).map(catTag).join('');
     const badge = statusBadge(p);
     return `
       <tr class="border-b border-orange-100 hover:bg-orange-100/60 transition-colors">
@@ -570,7 +575,8 @@ function buildBankSummary(banks) {
   };
 
   el.innerHTML = banks.sort().map(b => {
-    const promos   = allPromos.filter(p => p.bank_name === b);
+    // Sidebar counts non-BAU promos only
+    const promos   = allPromos.filter(p => p.bank_name === b && !p.is_bau);
     const active   = promos.filter(p => getStatus(p) === 'active').length;
     const expiring = promos.filter(p => getStatus(p) === 'expiring').length;
     const color    = bankColor(b);
@@ -603,9 +609,10 @@ function buildBankSummary(banks) {
 function buildComparisonTable() {
   document.getElementById('comparisonSection').style.display = 'block';
 
+  // ← CHANGED: added && !p.is_bau — comparison is about time-limited promos
   const livePromos = allPromos.filter(p => {
     const s = getStatus(p);
-    return s === 'active' || s === 'expiring';
+    return (s === 'active' || s === 'expiring') && !p.is_bau;
   });
 
   if (!livePromos.length) return;
@@ -832,20 +839,32 @@ function applyFilters() {
 
   filtered = allPromos.filter(p => {
     const s = getStatus(p);
+
+    // Status filter
     if (status === 'active'          && s !== 'active')                     return false;
     if (status === 'expiring'        && s !== 'expiring')                    return false;
     if (status === 'expired'         && s !== 'expired')                     return false;
     if (status === 'active+expiring' && s !== 'active' && s !== 'expiring')  return false;
+
+    // Bank tab filter
     if (activeBankTab && p.bank_name !== activeBankTab) return false;
 
+    // ── Category filter ────────────────────────────────────────────
+    // ← CHANGED: default (no category selected) now EXCLUDES BAU items.
+    //   BAU items are only shown when the ⚙️ BAU category button is selected.
+    //   This makes the default table view match the email's "All Active Promotions".
     if (selectedCats.length > 0) {
       const hasBau    = selectedCats.includes('BAU');
       const otherCats = selectedCats.filter(c => c !== 'BAU');
       const matchBau  = hasBau && !!p.is_bau;
       const matchCat  = otherCats.length > 0 && otherCats.some(c => (p.types || []).includes(c));
       if (!matchBau && !matchCat) return false;
+    } else {
+      // Default: hide BAU items — they are accessible via the ⚙️ BAU filter button
+      if (p.is_bau) return false;
     }
 
+    // Search filter
     if (search) {
       const hay = [
         p.bank_name, p.title, p.highlight, p.description,
@@ -862,7 +881,10 @@ function applyFilters() {
 
   renderTable(filtered);
   document.getElementById('resultCount').textContent =
-    `Showing ${filtered.length} of ${allPromos.length} promotions`;
+    `Showing ${filtered.length} of ${allPromos.filter(p => !p.is_bau).length} promotions`
+    + (allPromos.filter(p => p.is_bau).length > 0
+       ? ` (+${allPromos.filter(p => p.is_bau).length} BAU via ⚙️ filter)`
+       : '');
 }
 
 // ── Render Table ──────────────────────────────────────────────────
@@ -882,7 +904,6 @@ function renderTable(promos) {
 
   tbody.innerHTML = promos.map((p, i) => {
     const color    = bankColor(p.bank_name);
-    // ← CHANGED: append BAU tag to category tags in main table
     const bau      = bauTag(p);
     const cats     = (p.types || ['Others 其他']).map(catTag).join('') + bau;
     const badge    = statusBadge(p);
