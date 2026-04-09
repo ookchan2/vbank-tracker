@@ -7,14 +7,28 @@ from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 
 # ── Bank configs ──────────────────────────────────────────────────────────────
+#
+#  URL STRATEGY (3 tiers per bank):
+#  1. Overview/home pages      → general promotions listing
+#  2. Product/BAU pages        → feature pages without "promotion" in URL
+#                                 (fund, stock, crypto, etc.)
+#  3. MGM / referral pages     → URLs containing "mgm" or referral keyword
+#
 BANK_CONFIGS = {
     'za': {
         'name':       'ZA Bank',
         'color':      '#25CD9C',
         'urls': [
+            # ── Tier 1: Overview / promotion listing ──
             'https://bank.za.group/en/promotion',
             'https://bank.za.group/en',
             'https://bank.za.group/',
+            # ── Tier 2: Product / BAU pages (no "promotion" in URL) ──
+            'https://bank.za.group/hk/usstock',        # US stocks + StockBack promo
+            'https://bank.za.group/hkstock',           # HK stocks 0 commission
+            'https://bank.za.group/hk/fund',           # Fund 0% subscription fee
+            # ── Tier 3: Referral / MGM ──
+            'https://bank.za.group/hk/open-account-mgm',  # Refer-a-friend up to HKD 110,000
         ],
         'link':       'https://bank.za.group/en/promotion',
         'wait_extra': 3000,
@@ -23,8 +37,11 @@ BANK_CONFIGS = {
         'name':       'Mox Bank',
         'color':      '#ec4899',
         'urls': [
+            # ── Tier 1: Overview ──
             'https://mox.com/promotions/',
             'https://mox.com/',
+            # ── Tier 3: Referral / MGM ──
+            'https://mox.com/zh/promotions/Mox-Referral-Programme/',  # 多友多賞 HKD 300/referral
         ],
         'link':       'https://mox.com/promotions/',
         'wait_extra': 3000,
@@ -43,9 +60,17 @@ BANK_CONFIGS = {
         'name':       'WeLab Bank',
         'color':      '#7c3aed',
         'urls': [
+            # ── Tier 1: Overview ──
             'https://www.welab.bank/en/feature/',
             'https://www.welab.bank/en/',
             'https://www.welab.bank/',
+            # ── Tier 2: Product / feature pages (under /feature/ NOT /promotion/) ──
+            'https://www.welab.bank/zh/feature/dcp-easter-lucky-draw-2026/',    # Travel lucky draw
+            'https://www.welab.bank/zh/feature/2-in-1-welcome-rewards-apr26/', # Welcome bonus HKD 5,000
+            'https://www.welab.bank/zh/feature/tesla-mega-combo/',             # Tesla loan 4.55% APR
+            'https://www.welab.bank/zh/feature/fund/',                         # Fund 0% fee (BAU)
+            # ── Tier 3: Referral / MGM ──
+            'https://www.welab.bank/zh/feature/loan_mgm/',                     # Loan referral HKD 800
         ],
         'link':       'https://www.welab.bank/',
         'wait_extra': 3000,
@@ -54,8 +79,13 @@ BANK_CONFIGS = {
         'name':       'PAObank',
         'color':      '#0ea5e9',
         'urls': [
+            # ── Tier 1: Overview ──
             'https://www.pingandb.com/en/',
             'https://www.pingandb.com/tc/',
+            # ── Tier 2: Product / BAU pages ──
+            'https://www.pingandb.com/tc/money-market-fund.html',
+            'https://www.pingandb.com/tc/investment.html',
+            'https://www.pingandb.com/tc/stock.html',
         ],
         'link':       'https://www.pingandb.com/en/',
         'wait_extra': 5000,
@@ -74,8 +104,15 @@ BANK_CONFIGS = {
         'name':       'Fusion Bank',
         'color':      '#14b8a6',
         'urls': [
+            # ── Tier 1: Overview ──
             'https://www.fusionbank.com/?lang=en',
             'https://www.fusionbank.com/?lang=zh-HK',
+            # ── Tier 2: Key-based promotion detail pages (no "promotion" in path) ──
+            'https://www.fusionbank.com/common/detail.html?key=fxtd2023&lang=tc',
+            'https://www.fusionbank.com/common/detail.html?key=fusionflash&lang=tc',
+            'https://www.fusionbank.com/common/detail.html?key=savinginterestplus&lang=tc',
+            # ── Tier 3: Referral / MGM ──
+            'https://www.fusionbank.com/common/detail.html?key=mgm_4&lang=tc',
         ],
         'link':       'https://www.fusionbank.com/?lang=en',
         'wait_extra': 6000,
@@ -84,9 +121,12 @@ BANK_CONFIGS = {
         'name':       'Ant Bank',
         'color':      '#1677ff',
         'urls': [
+            # ── Tier 1: Overview ──
             'https://www.antbank.hk/em-plus-offer?lang=en_us',
             'https://www.antbank.hk/em-plus-offer?lang=zh_hk',
             'https://www.antbank.hk/',
+            # ── Tier 2: Product / BAU pages ──
+            'https://www.antbank.hk/fund?lang=zh_hk',  # Fund investment page
         ],
         'link':       'https://www.antbank.hk/em-plus-offer?lang=en_us',
         'wait_extra': 8000,
@@ -178,7 +218,12 @@ async def _try_url(page, url: str, wait_extra: int = 3000):
 
 
 # ── Scrape one bank ───────────────────────────────────────────────────────────
-
+#
+#  KEY CHANGE vs old scraper:
+#  OLD → pick the single "best" (longest) URL, break early at 3,000 chars
+#  NEW → scrape ALL URLs, combine with === SOURCE === headers so the AI
+#        sees every product/MGM/BAU page, not just the overview page
+#
 async def _scrape_bank(browser, bank_id: str) -> dict:
     cfg        = BANK_CONFIGS[bank_id]
     wait_extra = cfg.get('wait_extra', 3000)
@@ -193,9 +238,9 @@ async def _scrape_bank(browser, bank_id: str) -> dict:
         },
     )
 
-    best_text = ''
-    best_shot = None
-    best_url  = cfg['link']
+    sections   = []   # [(url, text), ...] — one entry per successfully scraped URL
+    best_shot  = None
+    best_url   = cfg['link']
 
     try:
         page = await context.new_page()
@@ -206,32 +251,37 @@ async def _scrape_bank(browser, bank_id: str) -> dict:
             lambda r: r.abort(),
         )
 
-        # ── Playwright pass ────────────────────────────────────────
+        # ── Playwright pass: visit EVERY URL, collect ALL sections ─
         for url in cfg['urls']:
             print(f'    → Playwright: {url}')
             text, shot = await _try_url(page, url, wait_extra)
-            if text and len(text.strip()) > len(best_text.strip()):
-                best_text = text
-                best_shot = shot
-                best_url  = url
-                print(f'    ✓ {len(text):,} chars')
-                if len(text) > 3000:
-                    break
 
-        # ── requests fallback ──────────────────────────────────────
-        if len(best_text.strip()) < 300:
-            print(f'    🔁 Playwright thin ({len(best_text)} chars) → requests fallback...')
-            for url in cfg['urls']:
-                fb = scrape_with_requests(url)
-                if fb and len(fb) > len(best_text):
-                    best_text = fb
+            if text and len(text.strip()) > 200:
+                # ✅ Good content — add as a named section
+                sections.append((url, text.strip()))
+                if best_shot is None and shot:
+                    best_shot = shot
                     best_url  = url
+                print(f'    ✓ {len(text):,} chars')
+            else:
+                # ⚠ Thin result — try requests fallback for this URL
+                print(f'    🔁 thin ({len(text)} chars) → requests fallback for {url}')
+                fb = scrape_with_requests(url)
+                if fb and len(fb.strip()) > 200:
+                    sections.append((url, fb.strip()))
                     print(f'    ✓ requests: {len(fb):,} chars')
-                    if len(fb) > 1000:
-                        break
+                else:
+                    print(f'    ⚠ skipping {url} — insufficient content from both methods')
 
-        # ── Screenshot-only fallback ───────────────────────────────
-        if best_shot is None and len(best_text.strip()) < 300:
+        # ── Combine every section with a clear URL separator ───────
+        #    The AI can now see which bank page each piece came from
+        combined_text = '\n\n'.join(
+            f'=== SOURCE: {url} ===\n{text}'
+            for url, text in sections
+        ).strip()
+
+        # ── Screenshot-only fallback if combined text is still empty
+        if best_shot is None and len(combined_text) < 300:
             print('    📸 Still thin → screenshot for Vision fallback...')
             try:
                 await page.unroute(
@@ -248,12 +298,13 @@ async def _scrape_bank(browser, bank_id: str) -> dict:
         await context.close()
 
     return {
-        'bank_id':    bank_id,
-        'bank_name':  cfg['name'],
-        'url':        best_url,
-        'text':       best_text,
-        'screenshot': best_shot,
-        'success':    len(best_text.strip()) > 200,
+        'bank_id':        bank_id,
+        'bank_name':      cfg['name'],
+        'url':            best_url,
+        'text':           combined_text,
+        'screenshot':     best_shot,
+        'success':        len(combined_text.strip()) > 200,
+        'sections_count': len(sections),   # how many URLs contributed content
     }
 
 
@@ -268,8 +319,14 @@ async def _run_all() -> dict:
             print(f'\n{header}{"═" * max(1, 50 - len(header))}')
             result           = await _scrape_bank(browser, bank_id)
             results[bank_id] = result
-            mark = '✅' if result['success'] else '❌'
-            print(f'  {mark}  {cfg["name"]}: {len(result["text"]):,} chars')
+            mark    = '✅' if result['success'] else '❌'
+            n_urls  = result.get('sections_count', 0)
+            total   = len(cfg['urls'])
+            print(
+                f'  {mark}  {cfg["name"]}: '
+                f'{len(result["text"]):,} chars '
+                f'from {n_urls}/{total} URLs'
+            )
         await browser.close()
     return results
 
