@@ -25,6 +25,10 @@ def _get_conn() -> sqlite3.Connection:
 def init_db():
     conn = _get_conn()
     try:
+        # ── Step 1: tables only (no indexes yet) ─────────────────────────────
+        # executescript() issues an implicit COMMIT first, so we keep index
+        # creation separate to guarantee all columns exist before any index
+        # that references them is created.
         conn.executescript('''
             CREATE TABLE IF NOT EXISTS promotions (
                 id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,19 +60,22 @@ def init_db():
                 run_at        TEXT    NOT NULL,
                 banks_scraped TEXT    DEFAULT ''
             );
-
-            CREATE INDEX IF NOT EXISTS idx_bank_id    ON promotions(bank_id);
-            CREATE INDEX IF NOT EXISTS idx_active     ON promotions(active);
-            CREATE INDEX IF NOT EXISTS idx_last_seen  ON promotions(last_seen);
-            CREATE INDEX IF NOT EXISTS idx_created_at ON promotions(created_at);
-            CREATE INDEX IF NOT EXISTS idx_first_run  ON promotions(first_run_id);
-            CREATE INDEX IF NOT EXISTS idx_is_bau     ON promotions(is_bau);
         ''')
 
+        # ── Step 2: migrate any missing columns on pre-existing DBs ──────────
+        # NOTE: bank_id / bank_name / url were absent from the old migrations
+        # list — that was the proximate cause of the crash.  They are listed
+        # first so subsequent column migrations (which may reference bank_id)
+        # can rely on it existing.
         existing_cols = {
             row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
         }
         migrations = [
+            # ── columns that were previously missing from this list ───────────
+            ('bank_id',       "ALTER TABLE promotions ADD COLUMN bank_id       TEXT NOT NULL DEFAULT ''"),
+            ('bank_name',     "ALTER TABLE promotions ADD COLUMN bank_name     TEXT NOT NULL DEFAULT ''"),
+            ('url',           "ALTER TABLE promotions ADD COLUMN url           TEXT DEFAULT ''"),
+            # ── columns added in earlier schema iterations ───────────────────
             ('highlight',     "ALTER TABLE promotions ADD COLUMN highlight     TEXT DEFAULT ''"),
             ('tc_link',       "ALTER TABLE promotions ADD COLUMN tc_link       TEXT DEFAULT ''"),
             ('start_date',    "ALTER TABLE promotions ADD COLUMN start_date    TEXT DEFAULT NULL"),
@@ -87,6 +94,18 @@ def init_db():
             if col not in existing_cols:
                 conn.execute(sql)
                 print(f'  🔧 DB migration: added column "{col}"')
+
+        # ── Step 3: indexes — run AFTER migrations so every referenced ────────
+        # column is guaranteed to exist (executescript commits the migration
+        # writes above before proceeding).
+        conn.executescript('''
+            CREATE INDEX IF NOT EXISTS idx_bank_id    ON promotions(bank_id);
+            CREATE INDEX IF NOT EXISTS idx_active     ON promotions(active);
+            CREATE INDEX IF NOT EXISTS idx_last_seen  ON promotions(last_seen);
+            CREATE INDEX IF NOT EXISTS idx_created_at ON promotions(created_at);
+            CREATE INDEX IF NOT EXISTS idx_first_run  ON promotions(first_run_id);
+            CREATE INDEX IF NOT EXISTS idx_is_bau     ON promotions(is_bau);
+        ''')
 
         conn.commit()
         print('  ✅ Database ready')
@@ -137,12 +156,10 @@ def get_previous_run_id(current_run_id: int) -> Optional[int]:
 
 # ── 3. Dedup helpers ──────────────────────────────────────────────────────────
 
-# ── CHANGE 1: module-level threshold constants (used by both _find_duplicate_id
-#              and merge_duplicate_promotions so they are always in sync) ───────
-_JACCARD_THRESHOLD = 0.50   # raised from 0.25 — eliminates most false positives
-_LCP_THRESHOLD     = 0.72   # raised from 0.58
-_MIN_NORM_LEN      = 10     # minimum chars in a normalised string to attempt substring
-_MIN_TOKENS        = 2      # minimum token-set size to attempt Jaccard
+_JACCARD_THRESHOLD = 0.50
+_LCP_THRESHOLD     = 0.72
+_MIN_NORM_LEN      = 10
+_MIN_TOKENS        = 2
 
 _RE_NONALNUM   = re.compile(r'[\s\W]+')
 _RE_INSTALMENT = re.compile(r'installment', re.IGNORECASE)
@@ -173,8 +190,6 @@ def _extract_promo_code_stem(title: str) -> Optional[str]:
 
 
 _SYNONYM_PATTERNS: list[tuple[re.Pattern, str]] = [
-
-    # ── Deposit Plus / 余額+ / Balance+ ────────────────────────────────────────
     (re.compile(r'余[額额]\+'), 'depositplus'),
     (re.compile(r'\bdeposit[- ]?plus\b', re.IGNORECASE), 'depositplus'),
     (re.compile(r'balance\+', re.IGNORECASE), 'depositplus'),
@@ -182,8 +197,6 @@ _SYNONYM_PATTERNS: list[tuple[re.Pattern, str]] = [
         r'\b(?:daily|high|boosted?|tiered?)[- ]?interest[- ]?(?:saving\w*|earn\w*|account\w*)?\b',
         re.IGNORECASE,
     ), 'hisavings'),
-
-    # ── Stock brokerage / commission-free ─────────────────────────────────────
     (re.compile(
         r'(?:'
         r'(?:zero|0)[- ]?(?:brokerage|commission)[- ]?fees?'
@@ -194,12 +207,8 @@ _SYNONYM_PATTERNS: list[tuple[re.Pattern, str]] = [
         r')',
         re.IGNORECASE,
     ), 'zerobrokfee'),
-
-    # ── SWIFT / Payment Connect ────────────────────────────────────────────────
     (re.compile(r'\bswift\b', re.IGNORECASE), 'swifttransfer'),
     (re.compile(r'\bpayment[- ]?connect\b', re.IGNORECASE), 'swifttransfer'),
-
-    # ── Fund subscription / zero-fee funds ────────────────────────────────────
     (re.compile(
         r'(?:'
         r'zero[- ]?(?:subscription[- ]?)?fees?[- ]?(?:on[- ]?(?:all[- ]?)?)?funds?'
@@ -209,24 +218,14 @@ _SYNONYM_PATTERNS: list[tuple[re.Pattern, str]] = [
         r')',
         re.IGNORECASE,
     ), 'zerosubfee'),
-
-    # ── Crypto / digital / virtual assets ─────────────────────────────────────
     (re.compile(r'\bcrypto(?:currency|currencies|currenc\w*)?\b', re.IGNORECASE), 'crypto'),
     (re.compile(r'\bdigital[- ]?assets?\b', re.IGNORECASE), 'crypto'),
     (re.compile(r'\bvirtual[- ]?assets?\b', re.IGNORECASE), 'crypto'),
-
-    # ── FX / foreign exchange / global wallet ─────────────────────────────────
     (re.compile(r'\b(?:fx|foreign[- ]?exchange|currency[- ]?exchange|forex)\b', re.IGNORECASE), 'fxexchange'),
     (re.compile(r'\bglobal[- ]?(?:remittance|wallet)\b', re.IGNORECASE), 'fxexchange'),
     (re.compile(r'\bwelab[- ]?global[- ]?wallet\b', re.IGNORECASE), 'welabwallet'),
-
-    # ── Time deposit ──────────────────────────────────────────────────────────
     (re.compile(r'\btime[- ]?deposit\b', re.IGNORECASE), 'timedeposit'),
-
-    # ── PowerDraw (ZA Bank) ────────────────────────────────────────────────────
     (re.compile(r'\bpowerdraw\b', re.IGNORECASE), 'powerdraw'),
-
-    # ── Insurance with interest rate or rebate ────────────────────────────────
     (re.compile(
         r'insurance[- ]?(?:product\w*)?[- ]?(?:with[- ]?)?(?:annual[- ]?rate|premium[- ]?rebate|\d+(?:\.\d+)?%)',
         re.IGNORECASE,
@@ -235,59 +234,25 @@ _SYNONYM_PATTERNS: list[tuple[re.Pattern, str]] = [
         r'\d+(?:\.\d+)?%[- ]?(?:annuali[sz]ed|annual)[- ]?rate',
         re.IGNORECASE,
     ), 'insurance_rate'),
-
-    # ── Payroll switch/deposit (Mox) ──────────────────────────────────────────
     (re.compile(r'\bpayroll[- ]?(?:switch(?:ing)?|deposit|benefit\w*)?\b', re.IGNORECASE), 'payroll'),
-
-    # ── Account opening ───────────────────────────────────────────────────────
     (re.compile(
         r'\b(?:(?:quick|fast|instant|mobile|online|digital)[- ]?)?account[- ]?open(?:ing)?\b',
         re.IGNORECASE,
     ), 'accountopen'),
-
-    # ── 24/7 banking ─────────────────────────────────────────────────────────
     (re.compile(r'\b24[/×x]7\b'), 'banking247'),
-
-    # ── Asia Miles / miles reward ─────────────────────────────────────────────
     (re.compile(r'\basia[- ]?miles?\b', re.IGNORECASE), 'asiamiles'),
     (re.compile(r'\bmiles?[- ]?(?:reward|earn|redeem)\w*\b', re.IGNORECASE), 'milesreward'),
-
-    # ── GoSave (WeLab specific) ───────────────────────────────────────────────
     (re.compile(r'\bgosave\b', re.IGNORECASE), 'gosave'),
-
-    # ── liviSave (Livi specific) ──────────────────────────────────────────────
     (re.compile(r'\blivisave\b', re.IGNORECASE), 'livisave'),
-
-    # ── Trip.com (Mox specific) ────────────────────────────────────────────────
     (re.compile(r'\btrip\.com\b', re.IGNORECASE), 'tripcom'),
-
-    # ── Xiaomi (Mox specific) ─────────────────────────────────────────────────
     (re.compile(r'\bxiaomi\b', re.IGNORECASE), 'xiaomi'),
-
-    # ── Samsung (Mox × The Club) ──────────────────────────────────────────────
     (re.compile(r'\bsamsung[- ]?s\d+\b', re.IGNORECASE), 'samsung_phone'),
-
-    # ── Mox × CSL Best-in-Town ────────────────────────────────────────────────
     (re.compile(r'\bbest[- ]?in[- ]?town\b', re.IGNORECASE), 'bestintown'),
     (re.compile(r'\bdevice[- ]?plans?\b', re.IGNORECASE), 'deviceplan'),
-
-    # ── Integrated investment platform (PAO) ──────────────────────────────────
     (re.compile(r'\bintegrated[- ]?investment\b', re.IGNORECASE), 'intinvest'),
-
-    # ── One-stop trading platform (Ant) ───────────────────────────────────────
     (re.compile(r'\bone[- ]?stop[- ]?(?:trading|investment)[- ]?platform\b', re.IGNORECASE), 'onestoplatform'),
-
-    # ── Ant Bank investment fund platform ─────────────────────────────────────
     (re.compile(r'\bant[- ]?bank[- ]?investment[- ]?fund[- ]?platform\b', re.IGNORECASE), 'antfundplatform'),
-
-    # ── Personal loan / revolving credit ──────────────────────────────────────
     (re.compile(r'\bpersonal[- ]?(?:revolving[- ]?)?loan\b', re.IGNORECASE), 'personalloan'),
-
-    # ── Zero fee (specific compound phrases only) ─────────────────────────────
-    # CHANGE 2: removed standalone \bzero\b → 'zfee' and \bfree\b → 'zfee'
-    # because they caused completely unrelated promotions to share the 'zfee'
-    # token and then falsely match via Jaccard/substring.
-    # Kept only compound phrases that are unambiguous.
     (re.compile(
         r'(?:'
         r'zero[- ]?(?:\w+[- ]?)?fees?'
@@ -297,37 +262,24 @@ _SYNONYM_PATTERNS: list[tuple[re.Pattern, str]] = [
         r')',
         re.IGNORECASE,
     ), 'zfee'),
-
-    # ── Speed synonyms (generic) ──────────────────────────────────────────────
     (re.compile(
         r'\b(?:quick|fast|instant|rapid|express|immediate)\b', re.IGNORECASE
     ), 'fastspd'),
-
-    # ── Flexible / custom (generic) ───────────────────────────────────────────
     (re.compile(
         r'\b(?:flexible|custom(?:iz\w*)?|select(?:able|ion)?|personali[sz]\w*)\b',
         re.IGNORECASE,
     ), 'flexcust'),
-
-    # ── Welcome / sign-up bonus ───────────────────────────────────────────────
     (re.compile(
         r'\b(?:welcome|sign[- ]?up|new[- ]?customer|new[- ]?user)[- ]?(?:bonus|reward|offer|gift)?\b',
         re.IGNORECASE,
     ), 'welcome'),
-
-    # ── Referral ──────────────────────────────────────────────────────────────
     (re.compile(
         r'\b(?:refer(?:ral)?[- ]?(?:bonus|reward|program)?|invite[- ]?friend\w*|friend[- ]?refer\w*)\b',
         re.IGNORECASE,
     ), 'referral'),
-
-    # ── Cashback ──────────────────────────────────────────────────────────────
     (re.compile(r'\b(?:cash[- ]?back|cash[- ]?rebate)\b', re.IGNORECASE), 'cashback'),
 ]
 
-# CHANGE 3: noise words are now applied as whole-word boundaries in
-# _normalize_title (before non-alnum stripping), so short words like 'with',
-# 'for', 'and' cannot accidentally corrupt compound tokens like 'withdrawals'.
 _NOISE_WORDS = (
     'rebateprogram', 'rewardprogram', 'program',
     'promotion', 'campaign', 'offer', 'bonus',
@@ -336,7 +288,6 @@ _NOISE_WORDS = (
     'with', 'from', 'for', 'and', 'the', 'your',
 )
 
-# Pre-compiled noise-word patterns (whole-word, case-insensitive)
 _NOISE_PATTERNS: list[re.Pattern] = [
     re.compile(r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])', re.IGNORECASE)
     for w in _NOISE_WORDS
@@ -365,8 +316,6 @@ def _normalize_title(title: str) -> str:
         t = pattern.sub(replacement, t)
     t = _RE_AMOUNT.sub('', t)
     t = _RE_PCT.sub('', t)
-    # CHANGE 3: remove noise words as whole-word tokens BEFORE stripping
-    # non-alnum characters, so 'with' cannot eat into 'withdrawals' etc.
     for pat in _NOISE_PATTERNS:
         t = pat.sub('', t)
     t = _RE_NONALNUM.sub('', t)
@@ -419,19 +368,6 @@ def _find_duplicate_id(
     title: str,
     highlight: str,
 ) -> Optional[int]:
-    """
-    Return the id of an existing promo that is the same as the incoming one.
-
-    Check order (highest → lowest confidence):
-      0. Promo code stem match  — MOXBILL25 matches MOXBILL26 (same campaign)
-      1. Exact normalised title
-      2. Substring containment  (both normalised strings ≥ _MIN_NORM_LEN chars,
-                                  shorter ≥ 35 % of longer — prevents tiny tokens
-                                  from matching unrelated long strings)
-      3. Jaccard ≥ _JACCARD_THRESHOLD  (both token sets ≥ _MIN_TOKENS)
-      4. Common-prefix ratio ≥ _LCP_THRESHOLD
-      5. Identical highlight snippet
-    """
     rows = conn.execute(
         "SELECT id, title, highlight FROM promotions WHERE bank_id = ?",
         (bank_id,)
@@ -440,11 +376,9 @@ def _find_duplicate_id(
     norm_new      = _normalize_title(title)
     hi_snippet    = (highlight or '').strip()[:150]
     new_code_stem = _extract_promo_code_stem(title)
-    # CHANGE 4: precompute tokens once outside the row loop
     toks_new      = _tokenize_for_jaccard(title)
 
     for row in rows:
-        # 0. Promo code stem match
         if new_code_stem:
             old_code_stem = _extract_promo_code_stem(row['title'])
             if old_code_stem and new_code_stem == old_code_stem:
@@ -454,14 +388,9 @@ def _find_duplicate_id(
         old_snip = (row['highlight'] or '').strip()[:150]
 
         if norm_new and norm_old:
-            # 1. Exact match
             if norm_new == norm_old:
                 return row['id']
 
-            # 2. Substring — guard: both strings must be long enough AND the
-            #    shorter must cover at least 35 % of the longer to prevent a
-            #    tiny compound token (e.g. 'zfee', 8 chars) from matching an
-            #    unrelated 40-char normalised string.
             len_new, len_old = len(norm_new), len(norm_old)
             min_len = min(len_new, len_old)
             max_len = max(len_new, len_old)
@@ -472,18 +401,15 @@ def _find_duplicate_id(
             ):
                 return row['id']
 
-            # 3. Jaccard — guard: both token sets need enough tokens to be
-            #    meaningful; a single shared token is never sufficient on its own.
             toks_old = _tokenize_for_jaccard(row['title'])
             if (
                 len(toks_new) >= _MIN_TOKENS
                 and len(toks_old) >= _MIN_TOKENS
-                and len(toks_new & toks_old) >= _MIN_TOKENS  # ← need ≥2 shared tokens
+                and len(toks_new & toks_old) >= _MIN_TOKENS
                 and _jaccard_similarity(title, row['title']) >= _JACCARD_THRESHOLD
             ):
                 return row['id']
 
-            # 4. Common prefix
             if (
                 len_new >= _MIN_NORM_LEN
                 and len_old >= _MIN_NORM_LEN
@@ -491,7 +417,6 @@ def _find_duplicate_id(
             ):
                 return row['id']
 
-        # 5. Identical highlight snippet
         if hi_snippet and old_snip and hi_snippet == old_snip:
             return row['id']
 
@@ -777,11 +702,6 @@ def generate_daily_report(current_run_id: int) -> Dict[str, Any]:
 # ── 7. Merge duplicates (bulk cleanup) ───────────────────────────────────────
 
 def merge_duplicate_promotions(dry_run: bool = True) -> int:
-    """
-    Bulk dedup pass over all active rows.
-    Uses the same module-level thresholds and guards as _find_duplicate_id
-    so dry-run results match what the live scraper would do.
-    """
     conn = _get_conn()
     merged = 0
     try:
@@ -803,7 +723,7 @@ def merge_duplicate_promotions(dry_run: bool = True) -> int:
                 norm_a      = _normalize_title(pa['title'])
                 hi_a        = (pa['highlight'] or '').strip()[:150]
                 code_stem_a = _extract_promo_code_stem(pa['title'])
-                toks_a      = _tokenize_for_jaccard(pa['title'])  # precompute
+                toks_a      = _tokenize_for_jaccard(pa['title'])
 
                 for pb in promos[i + 1:]:
                     if pb['id'] in discard_ids:
@@ -811,20 +731,16 @@ def merge_duplicate_promotions(dry_run: bool = True) -> int:
                     norm_b      = _normalize_title(pb['title'])
                     hi_b        = (pb['highlight'] or '').strip()[:150]
                     code_stem_b = _extract_promo_code_stem(pb['title'])
-                    toks_b      = _tokenize_for_jaccard(pb['title'])  # precompute
+                    toks_b      = _tokenize_for_jaccard(pb['title'])
 
                     is_dup, reason = False, ''
 
-                    # 0. Promo code stem
                     if code_stem_a and code_stem_b and code_stem_a == code_stem_b:
                         is_dup, reason = True, f'promo-code={code_stem_a}'
 
                     elif norm_a and norm_b:
-                        # 1. Exact
                         if norm_a == norm_b:
                             is_dup, reason = True, 'exact'
-
-                        # 2. Substring — same guards as _find_duplicate_id
                         else:
                             min_len = min(len(norm_a), len(norm_b))
                             max_len = max(len(norm_a), len(norm_b))
@@ -835,7 +751,6 @@ def merge_duplicate_promotions(dry_run: bool = True) -> int:
                             ):
                                 is_dup, reason = True, 'substring'
 
-                        # 3. Jaccard — require ≥ _MIN_TOKENS shared tokens
                         if not is_dup:
                             shared = toks_a & toks_b
                             if (
@@ -847,7 +762,6 @@ def merge_duplicate_promotions(dry_run: bool = True) -> int:
                                 if j >= _JACCARD_THRESHOLD:
                                     is_dup, reason = True, f'Jaccard={j:.2f}'
 
-                        # 4. Common prefix
                         if not is_dup:
                             if (
                                 len(norm_a) >= _MIN_NORM_LEN
@@ -857,7 +771,6 @@ def merge_duplicate_promotions(dry_run: bool = True) -> int:
                                 if lcp >= _LCP_THRESHOLD:
                                     is_dup, reason = True, f'LCP={lcp:.2f}'
 
-                    # 5. Identical highlight snippet
                     if not is_dup and hi_a and hi_b and hi_a == hi_b:
                         is_dup, reason = True, 'same-highlight'
 
