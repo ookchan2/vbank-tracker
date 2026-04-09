@@ -32,6 +32,7 @@ from database  import (
     generate_daily_report,
     export_to_json,
     get_active_promos_for_bank,
+    get_active_promotions,        # ← ADDED: needed for BAU-inclusive insights input
 )
 from emailer   import build_html_email, send_email
 
@@ -187,10 +188,14 @@ def main():
 
     # ── Step 7: Generate daily report ────────────────────────────
     print('\nStep 7 ── Generate daily report')
+    # generate_daily_report() returns NON-BAU only (is_bau=0 filter in DB):
+    #   report['new']    → newly detected this run,    BAU excluded
+    #   report['active'] → all other active promos,    BAU excluded
+    #   report['expired']→ recently expired promos,    BAU excluded
     report         = generate_daily_report(current_run_id)
-    new_promos     = report['new']
-    active_promos  = report['active']
-    expired_promos = report['expired']
+    new_promos     = report['new']       # non-BAU, new this run
+    active_promos  = report['active']    # non-BAU, seen before
+    expired_promos = report['expired']   # non-BAU, just expired
     summary        = report['summary']
 
     print(f'  🆕 New:     {summary["new_count"]}')
@@ -199,27 +204,46 @@ def main():
     for bid, count in summary['by_bank'].items():
         print(f'    {bid.upper()}: {count} active')
 
-    # ── BAU separation ────────────────────────────────────────────
-    # generate_daily_report excludes BAU (is_bau=0 filter in DB).
-    # The explicit filters below are a safety layer in case BAU slips through.
-    #
-    # ┌─ all_promos_full  ─── for strategic insights
-    # │    BAU features (e.g. "$0 crypto fee") are CRITICAL competitive signals.
-    # │    Use the full list so insights can see them.
-    # │
-    # └─ all_promos_email ─── for email display sections
-    #      Email shows ONLY non-BAU promotions.
-    #      Both "All Active" and "Newly Launched" sections exclude BAU.
-    # ← CHANGED: was a single all_promos = new_promos + active_promos
-    all_promos_full  = new_promos + active_promos
-    all_promos_email = [p for p in all_promos_full if not p.get('is_bau', False)]
-    new_promos_email = [p for p in new_promos      if not p.get('is_bau', False)]
+    # ── Email slices (non-BAU only) ───────────────────────────────
+    # Both new_promos and active_promos are already non-BAU from the DB query,
+    # but we apply an explicit filter as a safety layer in case any BAU row
+    # slips through (e.g. a row whose is_bau flag was set after the last run).
+    all_promos_email = [p for p in (new_promos + active_promos)
+                        if not p.get('is_bau', False)]
+    new_promos_email = [p for p in new_promos
+                        if not p.get('is_bau', False)]
 
     # ── Step 8: Strategic insights ────────────────────────────────
     print('\nStep 8 ── Generate AI strategic insights')
+    #
+    # ┌─────────────────────────────────────────────────────────────┐
+    # │  WHY we use get_active_promotions(include_bau=True) here:  │
+    # │                                                             │
+    # │  generate_daily_report() strips BAU before returning, so   │
+    # │  new_promos + active_promos contains NO BAU items.         │
+    # │                                                             │
+    # │  BAU features are CRITICAL competitive signals for the AI: │
+    # │    • ZA Bank "$0 crypto platform fee"  → Investment winner │
+    # │    • WeLab "$0 Fund Trading Fee Mode"  → Fund winner       │
+    # │    • Mox referral programme            → Referral winner   │
+    # │                                                             │
+    # │  Without BAU in the prompt, the AI cannot correctly        │
+    # │  populate best_for categories and writes "None" instead.   │
+    # │                                                             │
+    # │  Solution: fetch ALL active promos (BAU included) from DB  │
+    # │  specifically for the insights call.                       │
+    # └─────────────────────────────────────────────────────────────┘
+    all_active_with_bau = get_active_promotions(include_bau=True)
+
+    bau_count_insights = sum(1 for p in all_active_with_bau if p.get('is_bau', False))
+    print(f'  📊 Insights input: {len(all_active_with_bau)} promos '
+          f'({bau_count_insights} BAU + '
+          f'{len(all_active_with_bau) - bau_count_insights} time-limited)')
+
     promos_by_name: dict = {}
-    for p in all_promos_full:   # ← uses FULL list (BAU included if present)
-        bname = p.get('bName') or p.get('bank_name') or p.get('bank') or 'Unknown'
+    for p in all_active_with_bau:
+        # DB rows use 'bank_name'; AI-stamped dicts may use 'bName'
+        bname = p.get('bank_name') or p.get('bName') or p.get('bank') or 'Unknown'
         promos_by_name.setdefault(bname, []).append(p)
 
     strategic_insights = None
@@ -233,16 +257,21 @@ def main():
 
     # ── Step 9: Build & send email ────────────────────────────────
     print('\nStep 9 ── Build & send email')
-    # ← CHANGED: pass email-specific (non-BAU) lists to the emailer
+    #
+    # emailer.build_html_email() also has its own internal BAU filter
+    # (added in the latest emailer.py), so passing non-BAU lists here
+    # is belt-and-suspenders — the email will never show BAU items
+    # even if a stray BAU row somehow reaches this point.
     html = build_html_email(
-        promotions_data    = all_promos_email,
+        promotions_data    = all_promos_email,   # non-BAU: "All Active Promotions"
         scraped_data       = scraped_by_name,
         strategic_insights = strategic_insights,
-        new_promos         = new_promos_email,
+        new_promos         = new_promos_email,   # non-BAU: "Newly Launched" section
     )
     print('  ✅ HTML email built')
     print(f'  [INFO] Non-BAU new promos this run : {len(new_promos_email)}')
     print(f'  [INFO] Non-BAU active promos total : {len(all_promos_email)}')
+    print(f'  [INFO] BAU promos (insights only)  : {bau_count_insights}')
 
     output_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -279,7 +308,8 @@ def main():
         f'🆕 {len(new_promos_email)} new (non-BAU)  |  '
         f'✅ {len(all_promos_email)} active (non-BAU)  |  '
         f'❌ {summary["expired_count"]} expired  |  '
-        f'🤖 deduped:{total_deduped} db-matched:{total_db_matched}'
+        f'🤖 deduped:{total_deduped} db-matched:{total_db_matched}  |  '
+        f'⚙️  {bau_count_insights} BAU (insights only)'
     )
     print(f'{"═"*60}\n')
 
