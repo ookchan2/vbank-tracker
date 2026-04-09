@@ -104,7 +104,7 @@ ALLOWED CATEGORY TAGS (Chinese, pick 1-3 per promotion):
 REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
 
 Schema for each object:
-{
+{{
   "name":        "Full descriptive English name of the promotion",
   "types":       ["category1", "category2"],
   "is_bau":      false,
@@ -116,7 +116,7 @@ Schema for each object:
   "quota":       "Eligibility or quota info (e.g. First 1000 customers / New customers only / No cap)",
   "cost":        "Minimum spend or required cost, or Free",
   "tc_link":     "URL_PLACEHOLDER"
-}
+}}
 
 WEBSITE TEXT TO ANALYSE:
 ────────────────────────────────────────────────────────────────────────
@@ -835,32 +835,309 @@ def _build_bank_summary_lines(promos: list) -> list[str]:
     return lines
 
 
-def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
+# ── FIX A: Input diagnostic ───────────────────────────────────────────────────
+#
+# Runs FIRST inside generate_strategic_insights() before the LLM is ever called.
+# Prints a full breakdown of what each bank contributed to the input dict, and
+# runs a category-coverage check so you can immediately see WHICH categories
+# will output "None" and WHY (no data vs. data present but LLM missed it).
+
+# Categories the diagnostic checks for coverage, with keyword hints
+_DIAGNOSTIC_CATEGORIES: list[tuple[str, list[str]]] = [
+    ('Investment (Stock/Crypto Trading)', ['投資', 'crypto', 'stock', '$0', 'commission']),
+    ('Fund Investment',                   ['投資', 'fund', '基金', '$0認購費', 'subscription fee']),
+    ('Referral Bonus',                    ['推薦', 'referral', '多友多賞', 'invite']),
+    ('Travel',                            ['旅遊', 'trip', 'travel', 'asia miles']),
+    ('Spending/CashBack',                 ['消費', 'cashback', 'cash back', 'rebate']),
+    ('Welcome Bonus',                     ['迎新', 'welcome', 'new customer']),
+    ('Loan APR',                          ['貸款', 'loan', 'apr']),
+    ('FX/Multi-Currency',                 ['外匯', 'fx', 'multi-currency', 'global wallet']),
+]
+
+
+def _diagnose_input_data(promotions_by_bank: dict) -> dict[str, list[str]]:
+    """
+    FIX A — Input diagnostic.
+
+    Logs a detailed breakdown of what generate_strategic_insights() received
+    BEFORE the LLM is called.  Returns a dict of bank → list of type/keyword
+    tags found, for any downstream use.
+
+    Printed output shows:
+      • Per-bank: active count, BAU count, type tags found
+      • ⚠️  SPARSE warning if a bank has < _SPARSE_THRESHOLD promos
+      • Per-category: which banks cover it, or ❌ NO DATA (will → None)
+
+    This is the FIRST thing to check when a category shows "None":
+      – Is any bank passing data for that category at all?
+      – Is the relevant bank being filtered out before this function is called?
+    """
+    print()
+    print('=' * 70)
+    print('📊  INSIGHTS INPUT DIAGNOSTIC')
+    print('=' * 70)
+
+    bank_tag_map: dict[str, list[str]] = {}
+
+    for bank, promos in sorted(promotions_by_bank.items()):
+        bau_promos     = [p for p in promos if p.get('is_bau')]
+        non_bau_promos = [p for p in promos if not p.get('is_bau')]
+
+        # Collect all type tags + keywords from text fields for display
+        all_tags: set[str] = set()
+        for p in promos:
+            raw = p.get('types') or []
+            tags = raw if isinstance(raw, list) else [str(raw)]
+            all_tags.update(tags)
+            for field in ('name', 'title', 'highlight', 'description'):
+                val = (p.get(field) or '').lower()
+                if val:
+                    all_tags.add(val[:40])   # truncate long free-text
+
+        # Keep only short, meaningful tags for the summary line
+        tag_display = ', '.join(
+            t for t in sorted(all_tags)
+            if 1 < len(t) <= 12 and t not in ('', 'others', 'general')
+        ) or '⚠️  NONE'
+
+        sparse_flag = (
+            '  ⚠️  SPARSE — may cause None slots'
+            if len(promos) < _SPARSE_THRESHOLD
+            else '  ✅'
+        )
+        print(
+            f'  📊 {bank:<20}: {len(non_bau_promos):>2} active'
+            f' + {len(bau_promos):>2} BAU'
+            f' = {len(promos):>2} total'
+            f'  | tags: {tag_display[:55]}'
+            f'{sparse_flag}'
+        )
+        bank_tag_map[bank] = list(all_tags)
+
+    # ── Category coverage check ───────────────────────────────────────────
+    print()
+    print('  CATEGORY COVERAGE CHECK:')
+    for cat_name, kw_list in _DIAGNOSTIC_CATEGORIES:
+        covered_by: list[str] = []
+        for bank, promos in promotions_by_bank.items():
+            for p in promos:
+                # Build a combined searchable text from all fields + types
+                types_str = ' '.join(
+                    p.get('types') if isinstance(p.get('types'), list)
+                    else [str(p.get('types') or '')]
+                )
+                text = ' '.join([
+                    types_str,
+                    (p.get('name')        or ''),
+                    (p.get('title')       or ''),
+                    (p.get('highlight')   or ''),
+                    (p.get('description') or ''),
+                ]).lower()
+                if any(kw.lower() in text for kw in kw_list):
+                    covered_by.append(bank)
+                    break   # one match per bank is enough
+
+        if covered_by:
+            print(f'    ✅ {cat_name:<42} → {", ".join(covered_by)}')
+        else:
+            print(f'    ❌ {cat_name:<42} → NO DATA — will output None')
+
+    print('=' * 70)
+    print()
+    return bank_tag_map
+
+
+# ── FIX B: Sparse-data guard + DB supplement ─────────────────────────────────
+#
+# If a bank has fewer than _SPARSE_THRESHOLD promotions in the current scrape
+# batch, the insights generator will produce degraded / None analysis for it.
+# supplement_from_db() lets the caller pass a DB-fetch function as a safety net
+# so that sparse banks are automatically topped up from the database.
+
+# Minimum number of promotions a bank must have before the insights generator
+# can be expected to produce meaningful analysis for it.
+_SPARSE_THRESHOLD = 3
+
+
+def _check_sparse_banks(promotions_by_bank: dict) -> list[str]:
+    """
+    FIX B (part 1) — Returns a list of bank names that have fewer than
+    _SPARSE_THRESHOLD promotions.  Logs a warning for each sparse bank.
+
+    The caller should pass these banks' data through supplement_from_db()
+    before calling generate_strategic_insights().
+    """
+    sparse = [
+        bank for bank, promos in promotions_by_bank.items()
+        if len(promos) < _SPARSE_THRESHOLD
+    ]
+    if sparse:
+        print(
+            f'  ⚠️  SPARSE BANKS DETECTED: {sparse}\n'
+            f'     Each has < {_SPARSE_THRESHOLD} promotions in the current input.\n'
+            f'     Pass db_fetch_fn to generate_strategic_insights() to auto-supplement.'
+        )
+    return sparse
+
+
+def supplement_from_db(
+    promotions_by_bank:  dict,
+    db_fetch_fn,          # Callable[[str], list[dict]]
+    min_promos_per_bank: int = _SPARSE_THRESHOLD,
+) -> dict:
+    """
+    FIX B (part 2) — Sparse-data supplement.
+
+    If a bank has fewer than min_promos_per_bank promotions in the current
+    scrape batch, pull the rest from the DB so the insights generator always
+    gets a full picture.
+
+    Args:
+        promotions_by_bank:  Dict produced by the scraper (may be sparse).
+        db_fetch_fn:         Callable: db_fetch_fn(bank_name: str) → list[dict]
+                             Should return ALL active + BAU promotions for that
+                             bank from the database.
+        min_promos_per_bank: Supplement any bank below this count.
+
+    Returns:
+        Updated promotions_by_bank with DB rows merged in for sparse banks.
+
+    Typical usage inside the scheduler:
+
+        def fetch_from_db(bank_name: str) -> list[dict]:
+            from models import Promotion
+            from datetime import date
+            today = date.today()
+            rows = Promotion.query.filter(
+                Promotion.bank_name == bank_name,
+                Promotion.is_hidden == False,
+                db.or_(
+                    Promotion.is_bau == True,
+                    Promotion.end_date >= today,
+                    Promotion.end_date == None,
+                )
+            ).all()
+            return [r.to_dict() for r in rows]
+
+        enriched = supplement_from_db(promotions_by_bank, fetch_from_db)
+        insights = generate_strategic_insights(enriched)
+    """
+    supplemented_total = 0
+
+    for bank, promos in promotions_by_bank.items():
+        if len(promos) >= min_promos_per_bank:
+            continue
+
+        try:
+            db_promos = db_fetch_fn(bank)
+        except Exception as exc:
+            print(f'  ⚠️  supplement_from_db: DB fetch failed for "{bank}": {exc}')
+            continue
+
+        if not db_promos:
+            print(f'  ⚠️  supplement_from_db: no DB rows found for "{bank}"')
+            continue
+
+        # De-duplicate: only add DB rows whose normalised title isn't already
+        # present in the current batch
+        existing_titles = {
+            (p.get('name') or p.get('title') or '').strip().lower()
+            for p in promos
+        }
+        added = 0
+        for dp in db_promos:
+            dt = (dp.get('name') or dp.get('title') or '').strip().lower()
+            if dt and dt not in existing_titles:
+                promos.append(dp)
+                existing_titles.add(dt)
+                added += 1
+
+        promotions_by_bank[bank] = promos
+        supplemented_total += added
+
+        if added:
+            print(
+                f'  🔄 supplement_from_db: "{bank}" was sparse '
+                f'({len(promos) - added} promo(s)) → added {added} from DB '
+                f'→ now {len(promos)} total'
+            )
+        else:
+            print(
+                f'  🔄 supplement_from_db: "{bank}" still sparse after DB check '
+                f'(DB had no new titles to add)'
+            )
+
+    if supplemented_total:
+        print(f'  🔄 supplement_from_db: {supplemented_total} DB row(s) merged in total')
+
+    return promotions_by_bank
+
+
+# ── Strategic insights — main entry point ────────────────────────────────────
+
+def generate_strategic_insights(
+    promotions_by_bank: dict,
+    db_fetch_fn=None,    # Optional[Callable[[str], list[dict]]]  — see FIX B
+) -> dict | None:
     """
     Generate strategic insights from ALL promotions including BAU.
 
-    promotions_by_bank: dict of bank_name → list of ALL promos (BAU + non-BAU).
+    Args:
+        promotions_by_bank:
+            Dict of bank_name → list of ALL promos (BAU + time-limited).
+            *** MUST include BAU items. ***
+            If you filter to is_bau=False before calling this function,
+            ZA Bank's crypto / stock / fund strengths will disappear from
+            the analysis and the bank_analysis focus will degrade (e.g. to
+            "gamification" instead of "investment and crypto").
 
-    FIX 2:  Added SECTION 6 — Evidence Gate to the AI prompt.
-    FIX 3:  Calls _validate_best_for_evidence() after parsing.
-    FIX 4b: Calls _cross_check_best_for_from_strengths() after the evidence
-            gate to fill None slots from the LLM's own bank_analysis.strengths.
-    FIX 4c: Added SECTION 7 — Self-Consistency Check to the prompt, telling the
-            LLM to cross-reference its own strengths before finalising best_for.
+        db_fetch_fn:
+            Optional callable used by FIX B to supplement sparse banks.
+            Signature: db_fetch_fn(bank_name: str) → list[dict]
+            Pass None (default) to skip the DB supplement step entirely.
+
+    Processing pipeline:
+        FIX A  → _diagnose_input_data()             — log input before LLM
+        FIX B  → _check_sparse_banks()              — detect sparse banks
+                  supplement_from_db()              — fill from DB if needed
+        Prompt → build + call LLM
+        FIX 3  → _validate_best_for_evidence()      — evidence gate
+        FIX 4b → _cross_check_best_for_from_strengths() — fill None slots
+        Post   → attach counts, log summary
+
+    Returns:
+        Parsed dict with keys "best_for" and "bank_analysis", or None on error.
     """
     if not AI_AVAILABLE:
         print('⚠️  AI not available — skipping strategic insights')
         return None
 
+    # ── FIX A: Diagnose input BEFORE the LLM is ever called ──────────────
+    _diagnose_input_data(promotions_by_bank)
+
+    # ── FIX B: Detect and optionally supplement sparse banks ─────────────
+    sparse_banks = _check_sparse_banks(promotions_by_bank)
+    if sparse_banks:
+        if db_fetch_fn is not None:
+            promotions_by_bank = supplement_from_db(promotions_by_bank, db_fetch_fn)
+            # Re-run diagnostic so you can see the before/after difference
+            print('  📊 POST-SUPPLEMENT DIAGNOSTIC:')
+            _diagnose_input_data(promotions_by_bank)
+        else:
+            print(
+                '  ⚠️  Sparse banks found but no db_fetch_fn was provided.\n'
+                '     To auto-supplement, pass db_fetch_fn=your_db_query_fn\n'
+                '     to generate_strategic_insights().'
+            )
+
+    # ── Build per-bank summary lines for the prompt ───────────────────────
     bank_summaries = []
     for bank_name, promos in sorted(promotions_by_bank.items()):
         if not promos:
             continue
-
         non_bau_count = sum(1 for p in promos if not p.get('is_bau'))
         bau_count     = len(promos) - non_bau_count
         lines         = _build_bank_summary_lines(promos)
-
         bank_summaries.append(
             f'## {bank_name} ({non_bau_count} time-limited promos'
             f' + {bau_count} BAU permanent features)\n' + '\n'.join(lines)
@@ -872,6 +1149,7 @@ def generate_strategic_insights(promotions_by_bank: dict) -> dict | None:
 
     promotions_text = '\n\n'.join(bank_summaries)
 
+    # ── Build the prompt (Sections 1-7 all present) ───────────────────────
     prompt = f"""You are a Hong Kong virtual bank analyst. \
 Analyze these active promotions and return strategic insights as JSON.
 
@@ -1041,7 +1319,7 @@ TRAVEL category special rule:
   are NOT travel promotions — never use them as evidence for a winner.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 7 — SELF-CONSISTENCY CHECK  ← FIX 4c
+SECTION 7 — SELF-CONSISTENCY CHECK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 BEFORE writing your final JSON, perform this mandatory cross-check:
 
@@ -1063,7 +1341,7 @@ BEFORE writing your final JSON, perform this mandatory cross-check:
 
   ⚠️  EXAMPLE OF THE CONTRADICTION YOU MUST AVOID:
        bank_analysis.ZA Bank.strengths = ["$0 platform fee for crypto trading"]
-       best_for Investment = {{ "bank": "None", ... }}   ← WRONG
+       best_for Investment = {{"bank": "None", ...}}   ← WRONG
 
        Correct answer:
        best_for Investment = {{
@@ -1117,6 +1395,7 @@ FINAL REMINDER:
   • Every "detail" field MUST pass the SECTION 6 evidence gate.
   • Re-read the promotion list one more time before finalising your answer."""
 
+    # ── Call the LLM ──────────────────────────────────────────────────────
     raw = _call([{'role': 'user', 'content': prompt}])
     if not raw:
         print('❌ Strategic insights: empty response from AI')
@@ -1127,13 +1406,13 @@ FINAL REMINDER:
         print('❌ Strategic insights: JSON parse failed')
         return None
 
-    # ── FIX 3: Python evidence gate ───────────────────────────────────────────
+    # ── FIX 3: Python evidence gate ───────────────────────────────────────
     result['best_for'] = _validate_best_for_evidence(result.get('best_for', []))
 
-    # ── FIX 4b: Cross-check — fill None slots from bank_analysis.strengths ───
+    # ── FIX 4b: Cross-check — fill None slots from bank_analysis.strengths ─
     result = _cross_check_best_for_from_strengths(result, promotions_by_bank)
 
-    # ── post-process bank_analysis counts ─────────────────────────────────────
+    # ── Post-process: attach promo counts to bank_analysis ────────────────
     name_lookup = {k.lower(): k for k in promotions_by_bank}
     for bname in result.get('bank_analysis', {}):
         matched_key = name_lookup.get(bname.lower())
@@ -1148,7 +1427,7 @@ FINAL REMINDER:
             result['bank_analysis'][bname]['count']     = 0
             result['bank_analysis'][bname]['bau_count'] = 0
 
-    # ── diagnostic logging ────────────────────────────────────────────────────
+    # ── Diagnostic summary log ────────────────────────────────────────────
     bau_wins  = sum(1 for b in result.get('best_for', []) if b.get('is_bau'))
     none_wins = sum(
         1 for b in result.get('best_for', [])
@@ -1159,7 +1438,10 @@ FINAL REMINDER:
             b['category'] for b in result.get('best_for', [])
             if (b.get('bank') or '').lower() in ('none', '', 'n/a')
         ]
-        print(f'  ⚠️  {none_wins} best_for slot(s) still show None: {none_cats}')
+        print(
+            f'  ⚠️  {none_wins} best_for slot(s) still None after all fixes: {none_cats}\n'
+            f'     ↳ Check the diagnostic above — these categories had no input data.'
+        )
 
     print(
         f'✅ Strategic insights generated via {_bot_name} '
