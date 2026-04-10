@@ -450,11 +450,19 @@ def build_html_email(
                   'jul','aug','sep','oct','nov','dec'][_now.month % 12]
 
     expiring_count = 0
+    # FIX: track promos whose end_date has already passed but are still
+    # active=1 in the DB (not yet cleaned up by mark_stale_as_inactive).
+    # The website counts these as "Expired", so the email stat must exclude
+    # them from "Active Promos" to stay consistent.
+    past_end_count = 0
     for _p in non_bau_data:
         _ed = _p.get('end_date')
         if _ed:
             try:
-                if _today_d <= datetime.strptime(str(_ed)[:10], '%Y-%m-%d').date() <= _threshold:
+                _end_d = datetime.strptime(str(_ed)[:10], '%Y-%m-%d').date()
+                if _end_d < _today_d:
+                    past_end_count += 1
+                elif _today_d <= _end_d <= _threshold:
                     expiring_count += 1
             except (ValueError, TypeError):
                 pass
@@ -462,6 +470,10 @@ def build_html_email(
             _period = str(_p.get('period', '')).lower()
             if _this_m in _period or _next_m in _period:
                 expiring_count += 1
+
+    # FIX: active_count mirrors the website's "Active ✅" bucket:
+    # total non-BAU  minus  expiring  minus  already-past-end_date.
+    active_count = total_promos - expiring_count - past_end_count
 
     # ── Scrape status rows ────────────────────────────────────────
     # FIX: removed dead result.get("status") and result.get("count") lookups.
@@ -584,7 +596,7 @@ def build_html_email(
   <tr><td style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
       <td width="33%" style="text-align:center;padding:18px 12px;border-right:1px solid #f3f4f6;">
-        <div style="font-size:30px;font-weight:800;color:#6366f1;">{total_promos}</div>
+        <div style="font-size:30px;font-weight:800;color:#6366f1;">{active_count}</div>
         <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-top:4px;">Active Promos</div>
       </td>
       <td width="33%" style="text-align:center;padding:18px 12px;border-right:1px solid #f3f4f6;">
