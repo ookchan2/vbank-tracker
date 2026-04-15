@@ -45,11 +45,8 @@ BANK_DISPLAY_NAMES = {
     "livi bank":    "Livi",
 }
 
-CATEGORY_EMOJIS = {k: v["emoji"] for k, v in CATEGORY_META.items()}
-
 _BANK_NAME_GENERIC = {'bank', 'banking', 'digital', 'virtual', 'bank hk', ''}
-
-_SMTP_MAX_RETRIES = 3
+_SMTP_MAX_RETRIES  = 3
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -128,14 +125,9 @@ def _types_to_list(types_raw) -> list:
     return []
 
 
-# ── New-promotion card (email) ────────────────────────────────────────────────
+# ── Promotion card (shared by daily + weekly sections) ───────────────────────
 
 def _new_promo_card(promo: dict) -> str:
-    """
-    Rich card for a newly-launched promotion, shown in the daily email.
-    Displays: bank, category tags, title, period, summary,
-              quota/eligibility, cost/min-spend, official-source link.
-    """
     bank_name    = promo.get('bName') or promo.get('bank_name') or promo.get('bank') or 'Unknown'
     display_name = _bank_display_name(bank_name)
     color        = _bank_color(bank_name)
@@ -188,57 +180,97 @@ def _new_promo_card(promo: dict) -> str:
 <table width="100%" cellpadding="0" cellspacing="0"
        style="margin-bottom:18px;border-radius:14px;overflow:hidden;
               border:1px solid #e5e7eb;box-shadow:0 3px 10px rgba(0,0,0,0.08);">
-
-  <!-- Bank colour header -->
   <tr>
     <td bgcolor="{color}" style="background:{color};padding:13px 18px;">
       <table width="100%" cellpadding="0" cellspacing="0"><tr>
         <td style="vertical-align:middle;">
-          <span style="font-weight:900;font-size:17px;color:#ffffff;
-                       letter-spacing:-.2px;">{display_name}</span>
+          <span style="font-weight:900;font-size:17px;color:#ffffff;">{display_name}</span>
         </td>
         <td style="text-align:right;vertical-align:middle;">
           <span style="background:rgba(255,255,255,0.22);color:#ffffff;
-                       padding:3px 12px;border-radius:20px;
-                       font-size:11px;font-weight:600;">
+                       padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600;">
             📅 {period}
           </span>
         </td>
       </tr></table>
     </td>
   </tr>
-
-  <!-- Card body -->
   <tr>
     <td style="background:#ffffff;padding:16px 18px;">
-
-      <!-- Category tags -->
       <div style="margin-bottom:10px;">{cat_tags}</div>
-
-      <!-- Title -->
       <div style="font-weight:800;font-size:15px;color:#1f2937;
-                  line-height:1.4;margin-bottom:10px;">
-        {title}
-      </div>
-
-      <!-- Summary / highlight -->
+                  line-height:1.4;margin-bottom:10px;">{title}</div>
       <div style="font-size:13px;color:#4b5563;line-height:1.7;
                   background:#f9fafb;border-radius:8px;
                   padding:10px 14px;margin-bottom:12px;
-                  border-left:3px solid {color};">
-        {highlight}
-      </div>
-
-      <!-- Meta (quota / cost / source) -->
+                  border-left:3px solid {color};">{highlight}</div>
       <table width="100%" cellpadding="0" cellspacing="0"
              style="border-top:1px solid #f3f4f6;">
         {meta_rows}{source_btn}
       </table>
-
     </td>
   </tr>
-
 </table>"""
+
+
+def _new_section_html(
+    promos:       list[dict],
+    heading:      str,
+    sub_heading:  str,
+    icon:         str,
+    header_color: str,
+    header_dark:  str,
+    empty_msg:    str,
+    count_label:  str,
+) -> str:
+    """
+    Generic collapsible 'new promotions' section used for both
+    the daily and weekly email sections.
+    """
+    if not promos:
+        return f"""
+<tr><td style="height:16px;"></td></tr>
+<tr><td style="background:#f9fafb;border-radius:14px;padding:22px 20px;
+               border:1px dashed #e5e7eb;text-align:center;">
+  <div style="font-size:28px;margin-bottom:8px;">🔍</div>
+  <div style="font-size:13px;font-weight:700;color:#6b7280;">{empty_msg}</div>
+</td></tr>"""
+
+    cards = ''.join(_new_promo_card(p) for p in promos)
+    count = len(promos)
+    label = count_label.format(count=count, s='' if count == 1 else 's')
+
+    return f"""
+<tr><td style="height:20px;"></td></tr>
+<tr><td style="background:#ffffff;border-radius:16px;padding:24px;
+               box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;">
+    <tr>
+      <td bgcolor="{header_dark}"
+          style="background-color:{header_dark};
+                 background:{header_color};
+                 border-radius:12px;padding:16px 22px;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="vertical-align:middle;">
+            <span style="font-size:22px;vertical-align:middle;">{icon}</span>
+            <span style="font-weight:900;font-size:17px;color:#1f2937;
+                         vertical-align:middle;margin-left:10px;">{heading}</span>
+            <div style="font-size:11px;color:rgba(0,0,0,0.45);margin-top:3px;
+                        margin-left:34px;">{sub_heading}</div>
+          </td>
+          <td style="text-align:right;vertical-align:middle;white-space:nowrap;">
+            <span style="background:rgba(0,0,0,0.15);color:#1f2937;
+                         padding:4px 14px;border-radius:20px;
+                         font-size:12px;font-weight:700;">
+              {label}
+            </span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+  </table>
+  {cards}
+</td></tr>"""
 
 
 # ── Plain-text builder ────────────────────────────────────────────────────────
@@ -246,13 +278,11 @@ def _new_promo_card(promo: dict) -> str:
 def _build_plain_text(
     promotions_data: list,
     new_promos:      list,
+    new_promos_week: list,
     now:             str,
 ) -> str:
-    """
-    Minimal plain-text alternative required by RFC 2822 / spam filters.
-    """
     non_bau   = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
-    today     = datetime.now().date()
+    today_d   = datetime.now().date()
     threshold = (datetime.now() + timedelta(days=30)).date()
 
     exp_count  = 0
@@ -262,7 +292,7 @@ def _build_plain_text(
         if ed:
             try:
                 end_d = datetime.strptime(str(ed)[:10], '%Y-%m-%d').date()
-                if end_d < today:
+                if end_d < today_d:
                     past_count += 1
                 elif end_d <= threshold:
                     exp_count += 1
@@ -280,7 +310,6 @@ def _build_plain_text(
         '',
     ]
 
-    # Bank breakdown
     banks: dict = {}
     for p in non_bau:
         bn = p.get('bName') or p.get('bank_name') or 'Unknown'
@@ -292,20 +321,29 @@ def _build_plain_text(
     lines.append('')
 
     # New today
-    new_non_bau = [p for p in (new_promos or []) if not p.get('is_bau', False)]
-    if new_non_bau:
-        lines.append(f'NEWLY LAUNCHED TODAY ({len(new_non_bau)}):')
-        for p in new_non_bau:
-            bank   = p.get('bName') or p.get('bank_name') or '?'
-            title  = p.get('title') or p.get('name') or '?'
-            period = p.get('period') or 'Ongoing'
-            quota  = p.get('quota') or ''
-            cost   = p.get('cost') or ''
-            tc     = p.get('tc_link') or p.get('url') or ''
-            lines.append(f'  [{bank}] {title} | {period}')
-            if quota: lines.append(f'    Eligibility : {quota}')
-            if cost:  lines.append(f'    Min Spend   : {cost}')
-            if tc:    lines.append(f'    Source      : {tc}')
+    new_show = [p for p in (new_promos or []) if not p.get('is_bau', False)]
+    if new_show:
+        lines.append(f'NEWLY LAUNCHED TODAY ({len(new_show)}):')
+        for p in new_show:
+            bank  = p.get('bName') or p.get('bank_name') or '?'
+            title = p.get('title') or p.get('name') or '?'
+            tc    = p.get('tc_link') or p.get('url') or ''
+            lines.append(f'  [{bank}] {title}')
+            if p.get('period'): lines.append(f'    Period : {p["period"]}')
+            if p.get('quota'):  lines.append(f'    Eligibility : {p["quota"]}')
+            if tc:              lines.append(f'    Source      : {tc}')
+        lines.append('')
+
+    # New this week
+    week_show = [p for p in (new_promos_week or []) if not p.get('is_bau', False)]
+    if week_show:
+        lines.append(f'NEW THIS WEEK — PAST 6 DAYS ({len(week_show)}):')
+        for p in week_show:
+            bank  = p.get('bName') or p.get('bank_name') or '?'
+            title = p.get('title') or p.get('name') or '?'
+            tc    = p.get('tc_link') or p.get('url') or ''
+            lines.append(f'  [{bank}] {title}')
+            if tc: lines.append(f'    Source : {tc}')
         lines.append('')
 
     lines += [
@@ -324,20 +362,25 @@ def build_html_email(
     scraped_data:       dict,
     strategic_insights: dict = None,
     new_promos:         list = None,
+    new_promos_week:    list = None,   # ← NEW: promotions from the past 6 days
 ) -> str:
     """
-    Builds the daily HTML email containing:
-      1. Overall stats  — Total | Active Promos | Expiring Soon
-      2. Bank breakdown — per-bank active count (excl. BAU)
-      3. New today      — detailed cards for newly-launched promotions
+    Builds the daily HTML email.
+
+    Sections:
+      1. Overall stats
+      2. Bank breakdown
+      3. 🆕 Newly Launched Today   — start_date >= today, created_at == today
+      4. 📅 New This Week           — created_at in past 6 days, start_date within window
     """
-    new_promos = new_promos or []
-    now        = datetime.now().strftime('%d %b %Y, %H:%M HKT')
+    new_promos      = new_promos      or []
+    new_promos_week = new_promos_week or []
+    now             = datetime.now().strftime('%d %b %Y, %H:%M HKT')
 
-    non_bau_data    = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
-    new_promos_show = [p for p in new_promos              if not p.get('is_bau', False)]
+    non_bau_data        = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
+    new_promos_show     = [p for p in new_promos      if not p.get('is_bau', False)]
+    new_promos_wk_show  = [p for p in new_promos_week if not p.get('is_bau', False)]
 
-    # Bank → promos mapping
     banks: dict = {}
     for p in non_bau_data:
         bank = p.get('bName') or p.get('bank_name') or p.get('bank') or 'Unknown'
@@ -345,7 +388,6 @@ def build_html_email(
 
     total_promos = len(non_bau_data)
 
-    # ── Overall stats ─────────────────────────────────────────────
     _now       = datetime.now()
     _today_d   = _now.date()
     _threshold = (_now + timedelta(days=30)).date()
@@ -373,7 +415,6 @@ def build_html_email(
 
     active_count = total_promos - expiring_count - past_end_count
 
-    # ── Per-bank breakdown rows ───────────────────────────────────
     sorted_banks = sorted(
         banks.items(),
         key=lambda x: (0 if 'za' in x[0].lower() else 1, x[0]),
@@ -434,75 +475,29 @@ def build_html_email(
   </td>
 </tr>"""
 
-    # ── Newly launched section ────────────────────────────────────
-    #
-    # FIX: "Newly Launched Today" header text and count badge were
-    # color:#ffffff (white).  Gmail and Outlook strip CSS gradients,
-    # leaving the <td> background white — making white text invisible.
-    #
-    # Changes:
-    #   1. bgcolor HTML attribute added to the header <td> so every
-    #      email client gets a solid orange fallback even without CSS.
-    #   2. "Newly Launched Today" span: #ffffff → #1f2937 (near-black).
-    #   3. Count badge: transparent-white bg + #ffffff text →
-    #      semi-opaque dark bg + #92400e (dark amber) text — readable
-    #      on both the orange gradient and a plain white background.
-    if new_promos_show:
-        new_cards = ''.join(_new_promo_card(p) for p in new_promos_show)
-        new_count = len(new_promos_show)
-        new_section = f"""
-<tr><td style="height:20px;"></td></tr>
-<tr><td style="background:#ffffff;border-radius:16px;padding:24px;
-               box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+    # ── Section: Newly Launched Today ────────────────────────────
+    today_section = _new_section_html(
+        promos       = new_promos_show,
+        heading      = 'Newly Launched Today',
+        sub_heading  = '今日新推出優惠 · start date on or after today',
+        icon         = '🆕',
+        header_color = 'linear-gradient(135deg,#ff6b35 0%,#f7931e 100%)',
+        header_dark  = '#f97316',
+        empty_msg    = 'No new promotions today',
+        count_label  = '{count} new promotion{s}',
+    )
 
-  <!-- Section header pill -->
-  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;">
-    <tr>
-      <!--
-        bgcolor attr  = solid-colour fallback for Outlook / older clients
-        background-color inline = modern CSS client fallback
-        background gradient     = progressive-enhancement layer
-      -->
-      <td bgcolor="#f97316"
-          style="background-color:#f97316;
-                 background:linear-gradient(135deg,#ff6b35 0%,#f7931e 100%);
-                 border-radius:12px;padding:16px 22px;">
-        <table width="100%" cellpadding="0" cellspacing="0"><tr>
-          <td style="vertical-align:middle;">
-            <span style="font-size:24px;vertical-align:middle;">🆕</span>
-            <!-- ← CHANGED: was color:#ffffff — invisible when gradient strips -->
-            <span style="font-weight:900;font-size:18px;color:#1f2937;
-                         vertical-align:middle;margin-left:10px;letter-spacing:-.3px;">
-              Newly Launched Today
-            </span>
-          </td>
-          <td style="text-align:right;vertical-align:middle;">
-            <!-- ← CHANGED: was rgba(255,255,255,0.22) bg + #ffffff text -->
-            <span style="background:rgba(0,0,0,0.15);color:#92400e;
-                         padding:4px 14px;border-radius:20px;
-                         font-size:12px;font-weight:700;">
-              {new_count} new promotion{"s" if new_count != 1 else ""}
-            </span>
-          </td>
-        </tr></table>
-      </td>
-    </tr>
-  </table>
-
-  {new_cards}
-
-</td></tr>"""
-    else:
-        new_section = """
-<tr><td style="height:20px;"></td></tr>
-<tr><td style="background:#f9fafb;border-radius:14px;padding:26px 20px;
-               border:1px dashed #e5e7eb;text-align:center;">
-  <div style="font-size:30px;margin-bottom:10px;">🔍</div>
-  <div style="font-size:14px;font-weight:700;color:#6b7280;">No new promotions today</div>
-  <div style="font-size:12px;color:#9ca3af;margin-top:5px;">
-    All current promotions have been previously tracked
-  </div>
-</td></tr>"""
+    # ── Section: New This Week (past 6 days, not today) ──────────
+    week_section = _new_section_html(
+        promos       = new_promos_wk_show,
+        heading      = 'New This Week',
+        sub_heading  = '本週新推出優惠 · past 6 days (excluding today)',
+        icon         = '📅',
+        header_color = 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)',
+        header_dark  = '#6366f1',
+        empty_msg    = 'No new promotions in the past 6 days',
+        count_label  = '{count} new this week',
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -517,7 +512,7 @@ def build_html_email(
 <tr><td align="center" style="padding:28px 12px;">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;">
 
-  <!-- ═══ HEADER ═══════════════════════════════════════════════ -->
+  <!-- HEADER -->
   <tr><td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 55%,#0f3460 100%);
                  border-radius:18px;padding:34px 28px;text-align:center;">
     <div style="font-size:42px;margin-bottom:10px;">🏦</div>
@@ -536,51 +531,35 @@ def build_html_email(
   </td></tr>
   <tr><td style="height:20px;"></td></tr>
 
-  <!-- ═══ OVERALL STATS ════════════════════════════════════════ -->
+  <!-- OVERALL STATS -->
   <tr><td style="background:#ffffff;border-radius:14px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
-
       <td width="33%" style="text-align:center;padding:24px 10px;
                               border-right:1px solid #f3f4f6;">
         <div style="font-size:10px;font-weight:700;color:#9ca3af;
-                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">
-          Total
-        </div>
-        <div style="font-size:38px;font-weight:900;color:#6366f1;line-height:1;">
-          {total_promos}
-        </div>
+                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Total</div>
+        <div style="font-size:38px;font-weight:900;color:#6366f1;line-height:1;">{total_promos}</div>
         <div style="font-size:11px;color:#c4cad4;margin-top:5px;">non-BAU promotions</div>
       </td>
-
       <td width="33%" style="text-align:center;padding:24px 10px;
                               border-right:1px solid #f3f4f6;">
         <div style="font-size:10px;font-weight:700;color:#9ca3af;
-                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">
-          Active Promos
-        </div>
-        <div style="font-size:38px;font-weight:900;color:#10b981;line-height:1;">
-          {active_count}
-        </div>
+                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Active Promos</div>
+        <div style="font-size:38px;font-weight:900;color:#10b981;line-height:1;">{active_count}</div>
         <div style="font-size:11px;color:#c4cad4;margin-top:5px;">currently valid</div>
       </td>
-
       <td width="33%" style="text-align:center;padding:24px 10px;">
         <div style="font-size:10px;font-weight:700;color:#9ca3af;
-                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">
-          Expiring Soon
-        </div>
-        <div style="font-size:38px;font-weight:900;color:#f59e0b;line-height:1;">
-          {expiring_count}
-        </div>
+                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Expiring Soon</div>
+        <div style="font-size:38px;font-weight:900;color:#f59e0b;line-height:1;">{expiring_count}</div>
         <div style="font-size:11px;color:#c4cad4;margin-top:5px;">within 30 days</div>
       </td>
-
     </tr></table>
   </td></tr>
   <tr><td style="height:20px;"></td></tr>
 
-  <!-- ═══ BANK BREAKDOWN ═══════════════════════════════════════ -->
+  <!-- BANK BREAKDOWN -->
   <tr><td style="background:#ffffff;border-radius:14px;padding:22px 22px 16px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
     <div style="font-size:17px;font-weight:800;color:#1f2937;margin-bottom:4px;">
@@ -611,10 +590,13 @@ def build_html_email(
     </table>
   </td></tr>
 
-  <!-- ═══ NEWLY LAUNCHED ════════════════════════════════════════ -->
-  {new_section}
+  <!-- NEWLY LAUNCHED TODAY -->
+  {today_section}
 
-  <!-- ═══ FOOTER ═══════════════════════════════════════════════ -->
+  <!-- NEW THIS WEEK (past 6 days) -->
+  {week_section}
+
+  <!-- FOOTER -->
   <tr><td style="height:16px;"></td></tr>
   <tr><td style="text-align:center;padding:16px 12px;">
     <div style="font-size:12px;color:#9ca3af;line-height:1.8;">
@@ -640,6 +622,7 @@ def send_email(
     subject:         str  = None,
     recipient:       str  = None,
     new_promos:      list = None,
+    new_promos_week: list = None,
     promotions_data: list = None,
 ) -> bool:
     smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
@@ -679,6 +662,7 @@ def send_email(
     plain_text = _build_plain_text(
         promotions_data or [],
         new_promos      or [],
+        new_promos_week or [],
         now_str,
     )
 

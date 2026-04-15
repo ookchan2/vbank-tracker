@@ -26,7 +26,7 @@
     cursor: pointer;
     transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s;
   }
-  .new-today-card {
+  .new-promo-card {
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -34,7 +34,7 @@
     background: #fff;
     transition: box-shadow 0.2s;
   }
-  .new-today-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.13); }
+  .new-promo-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.13); }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -122,27 +122,31 @@
   </div>
 </div>
 
-<!-- ══ NEW TODAY SECTION ══════════════════════════════════════════ -->
-<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newTodaySection" style="display:none;">
-  <div class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
-
-    <!-- Header -->
-    <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4
-                flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <span class="text-2xl">🆕</span>
-        <div>
-          <div class="font-extrabold text-white text-lg tracking-tight">
-            New Promotions Today
-          </div>
-          <div class="text-orange-100 text-xs mt-0.5">
-            今日首次偵測到的優惠 · First detected today
+<!-- ══ NEW TODAY SECTION (collapsible) ══════════════════════════ -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-2" id="newTodaySection" style="display:none;">
+  <details open class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
+    <summary class="select-none">
+      <!-- Header (acts as the toggle) -->
+      <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4
+                  flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🆕</span>
+          <div>
+            <div class="font-extrabold text-white text-lg tracking-tight">
+              New Promotions Today
+            </div>
+            <div class="text-orange-100 text-xs mt-0.5">
+              今日首次偵測到的優惠 · start date on or after today
+            </div>
           </div>
         </div>
+        <div class="flex items-center gap-3">
+          <span id="newTodayCount"
+                class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+          <span class="accordion-chevron chevron text-white text-base">▼</span>
+        </div>
       </div>
-      <span id="newTodayCount"
-            class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
-    </div>
+    </summary>
 
     <!-- Cards grid -->
     <div class="bg-amber-50 p-4">
@@ -154,16 +158,48 @@
          class="hidden bg-amber-50 px-5 py-10 text-center text-gray-400 text-sm">
       🔍 No new promotions detected today.
     </div>
+  </details>
+</div>
 
-  </div>
+<!-- ══ NEW THIS WEEK SECTION (collapsible) ══════════════════════ -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newWeeklySection" style="display:none;">
+  <details class="rounded-2xl shadow-sm overflow-hidden border border-indigo-200">
+    <summary class="select-none">
+      <div class="bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-4
+                  flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">📅</span>
+          <div>
+            <div class="font-extrabold text-white text-lg tracking-tight">
+              New This Week
+            </div>
+            <div class="text-indigo-100 text-xs mt-0.5">
+              本週新推出優惠 · past 6 days (excluding today)
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="newWeeklyCount"
+                class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+          <span class="accordion-chevron chevron text-white text-base">▼</span>
+        </div>
+      </div>
+    </summary>
+
+    <!-- Cards grid -->
+    <div class="bg-indigo-50 p-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newWeeklyCards"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="newWeeklyEmpty"
+         class="hidden bg-indigo-50 px-5 py-10 text-center text-gray-400 text-sm">
+      🔍 No new promotions in the past 6 days.
+    </div>
+  </details>
 </div>
 
 <!-- ══ STRATEGIC INSIGHTS SECTION ════════════════════════════════ -->
-<!--
-  NOTE: This section requires data.json to include a "strategic_insights"
-  key containing the output of ai_helper.generate_strategic_insights().
-  Add it in main.py when writing data.json.
--->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4" id="strategicInsightsSection" style="display:none;">
   <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <summary class="px-5 py-4 flex items-center justify-between
@@ -179,7 +215,6 @@
       </div>
       <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
     </summary>
-
     <div class="px-5 pb-6 border-t border-gray-100">
       <div class="mt-4 overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
         <table class="w-full border-collapse text-sm" id="insightsTable">
@@ -220,7 +255,6 @@
       </div>
       <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
     </summary>
-
     <div class="px-5 pb-6 border-t border-gray-100">
       <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4" id="bankAnalysisGrid">
         <div class="col-span-full py-8 text-center text-gray-400">⏳ Loading analysis…</div>
@@ -261,18 +295,15 @@
 <!-- ── MAIN LAYOUT ─────────────────────────────────────────────── -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-10">
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-
     <div id="loadingState" class="p-16 text-center text-gray-400">
       <div class="text-4xl mb-3">⏳</div>
       <div class="text-lg font-medium">Loading promotions…</div>
     </div>
-
     <div id="errorState" class="p-16 text-center text-red-400 hidden">
       <div class="text-4xl mb-3">⚠️</div>
       <div class="text-lg font-medium">Failed to load data</div>
       <div class="text-sm mt-2" id="errorMsg"></div>
     </div>
-
     <div id="tableWrapper" class="hidden overflow-x-auto">
       <table class="w-full border-collapse text-sm" id="promoTable">
         <thead>
@@ -288,7 +319,6 @@
         <tbody id="promoTbody"></tbody>
       </table>
     </div>
-
     <div id="emptyState" class="p-16 text-center text-gray-400 hidden">
       <div class="text-4xl mb-3">🔍</div>
       <div class="text-lg font-medium">No promotions match your filters</div>
@@ -341,36 +371,34 @@ const CAT_FILTER_LIST = [
   { key: 'Others 其他',        label: '📋 Others',     bg: '#6b7280' },
 ];
 
-// ── Strategic Insights metadata ───────────────────────────────────
 const HOW_DEFINED = {
   "Investment (Stock/Crypto Trading)":
-    "The AI identifies the bank offering the most comprehensive trading fee waivers — prioritising $0 platform fees, free stock trades, or zero crypto commissions. BAU (permanent) zero-fee features are weighted equally to time-limited promos.",
+    "The AI identifies the bank offering the most comprehensive trading fee waivers — prioritising $0 platform fees, free stock trades, or zero crypto commissions.",
   "Fund Investment":
-    "The AI selects the bank covering the widest range of funds at $0 subscription fee, or permanently waiving switching fees with no expiry. Volume of eligible funds and permanence are key factors.",
+    "The AI selects the bank covering the widest range of funds at $0 subscription fee, or permanently waiving switching fees with no expiry.",
   "Spending/CashBack":
-    "The AI evaluates cashback rates and merchant network breadth. The winner delivers the highest consistent % cashback or the most versatile reward categories across daily spend.",
+    "The AI evaluates cashback rates and merchant network breadth. The winner delivers the highest consistent % cashback or the most versatile reward categories.",
   "Welcome Bonus":
-    "The AI compares the total guaranteed HKD cash reward for a new account holder upon completing standard onboarding — sign-up gift, deposit bonus, and first-transaction reward all count.",
+    "The AI compares the total guaranteed HKD cash reward for a new account holder upon completing standard onboarding.",
   "Travel":
-    "The AI identifies the bank with the strongest travel ecosystem — named partners (Trip.com, Asia Miles, Agoda, Booking.com), lounge access, or the highest dedicated travel cashback rate.",
+    "The AI identifies the bank with the strongest travel ecosystem — named partners, lounge access, or the highest dedicated travel cashback rate.",
   "Loan APR":
-    "The AI identifies the lowest explicitly stated APR (annualised percentage rate) on a personal loan currently offered. Lower APR = lower cost of borrowing.",
+    "The AI identifies the lowest explicitly stated APR on a personal loan currently offered.",
   "FX/Multi-Currency":
-    "The AI evaluates which bank offers the most competitive FX conversion rates, lowest transaction fees, or the most feature-rich multi-currency wallet with named rate promotions.",
+    "The AI evaluates which bank offers the most competitive FX rates, lowest fees, or the most feature-rich multi-currency wallet.",
   "Referral Bonus":
-    "The AI selects the bank offering the highest guaranteed HKD reward per successful referral, factoring in both the referrer and referee bonus and the ease of qualifying.",
+    "The AI selects the bank offering the highest guaranteed HKD reward per successful referral.",
 };
 
-// Keywords used to identify close runners-up from bank_analysis strengths
 const INSIGHT_CAT_KEYWORDS = {
   "Investment (Stock/Crypto Trading)": ["invest","stock","crypto","trading","brokerage","commission","$0","fee waiver","securities","ipo"],
   "Fund Investment":  ["fund","基金","subscription fee","zero fee","$0","認購費","unit trust","mutual fund"],
   "Spending/CashBack":["cashback","cash back","spending","card reward","rebate","消費","merchant"],
   "Welcome Bonus":    ["welcome","new customer","account opening","onboard","迎新","sign up","join"],
-  "Travel":           ["travel","trip","flight","hotel","asia miles","lounge","旅遊","agoda","airline","airfare"],
+  "Travel":           ["travel","trip","flight","hotel","asia miles","lounge","旅遊","agoda","airline"],
   "Loan APR":         ["loan","apr","interest rate","borrow","貸款","personal loan"],
-  "FX/Multi-Currency":["fx","forex","exchange","multi-currency","global wallet","remittance","外匯","swift","payment connect"],
-  "Referral Bonus":   ["referral","推薦","invite","refer a friend","多友多賞","referral code"],
+  "FX/Multi-Currency":["fx","forex","exchange","multi-currency","global wallet","remittance","外匯"],
+  "Referral Bonus":   ["referral","推薦","invite","refer a friend","referral code"],
 };
 
 const _BANK_COLOR_GENERIC = new Set(['bank','banking','digital','virtual']);
@@ -431,6 +459,43 @@ function statusBadge(p) {
                        text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
 }
 
+// ── HKT date helpers ──────────────────────────────────────────────
+function hktToday() {
+  const hktMs = Date.now() + 8 * 3600 * 1000;
+  return new Date(hktMs).toISOString().substring(0, 10);
+}
+
+function hktDaysAgo(n) {
+  const hktMs = Date.now() + 8 * 3600 * 1000 - n * 86400000;
+  return new Date(hktMs).toISOString().substring(0, 10);
+}
+
+// ── New-today logic ───────────────────────────────────────────────
+// A promotion qualifies for "new today" if:
+//   1. created_at date == today (HKT)
+//   2. start_date >= today OR no start_date (not a pre-existing promo detected late)
+function isNewToday(p, today) {
+  if (p.is_bau) return false;
+  const created = (p.created_at || '').substring(0, 10);
+  if (created !== today) return false;
+  const start = (p.start_date || '').substring(0, 10);
+  if (start && start < today) return false;  // started before today — not a new launch
+  return true;
+}
+
+// ── New-this-week logic ───────────────────────────────────────────
+// Past 6 days BEFORE today (so today's items stay in the daily section only).
+function isNewThisWeek(p, today) {
+  if (p.is_bau) return false;
+  const created   = (p.created_at || '').substring(0, 10);
+  const sixAgo    = hktDaysAgo(6);
+  const yesterday = hktDaysAgo(1);
+  if (created < sixAgo || created > yesterday) return false;  // not in window
+  const start = (p.start_date || '').substring(0, 10);
+  if (start && start < sixAgo) return false;  // started before the window
+  return true;
+}
+
 // ── State ─────────────────────────────────────────────────────────
 let allPromos        = [];
 let filtered         = [];
@@ -446,8 +511,6 @@ async function loadData() {
     const data = await res.json();
     allPromos  = data.promotions || [];
 
-    // strategic_insights is written by main.py into data.json
-    // (share main.py to wire this up if not yet done)
     strategicInsights = data.strategic_insights || null;
 
     allPromos = allPromos.map(p => ({
@@ -457,7 +520,6 @@ async function loadData() {
         .map(t => remapCat(t)),
     }));
 
-    // Stats: NON-BAU only
     const nonBau    = allPromos.filter(p => !p.is_bau);
     const activeN   = nonBau.filter(p => getStatus(p) === 'active').length;
     const expiringN = nonBau.filter(p => getStatus(p) === 'expiring').length;
@@ -474,7 +536,7 @@ async function loadData() {
       `Last updated: ${data.updated || data.last_updated || 'Unknown'} HKT`;
 
     buildBankTabs(banks);
-    buildNewTodaySection();
+    buildNewSections();
     buildStrategicInsights(strategicInsights);
     buildBankAnalysis(strategicInsights);
     buildComparisonTable();
@@ -503,94 +565,108 @@ function remapCat(t) {
   return MAP[t] || t;
 }
 
-// ══ NEW TODAY SECTION — detailed cards ════════════════════════════
-function buildNewTodaySection() {
-  const hktMs  = Date.now() + 8 * 3600 * 1000;
-  const today  = new Date(hktMs).toISOString().substring(0, 10);
+// ══ Build a card for any new-promo section ════════════════════════
+function buildPromoCard(p, accentColor) {
+  const color   = bankColor(p.bank_name);
+  const cats    = (p.types || ['Others 其他']).map(catTag).join('');
+  const badge   = statusBadge(p);
+  const tcLink  = p.tc_link || p.url || '';
+  const summary = p.description || p.highlight || '';
 
-  const newToday = allPromos.filter(p => {
-    if (p.is_bau) return false;
-    const created = (p.created_at || '').substring(0, 10);
-    return created === today;
-  });
+  const quotaHtml = p.quota
+    ? `<div class="mt-2">
+         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">👥 Quota / Eligibility</div>
+         <div class="text-sm text-gray-700">${p.quota}</div>
+       </div>`
+    : '';
 
-  const section  = document.getElementById('newTodaySection');
-  const cardsEl  = document.getElementById('newTodayCards');
-  const countEl  = document.getElementById('newTodayCount');
-  const emptyEl  = document.getElementById('newTodayEmpty');
+  const costHtml = p.cost
+    ? `<div class="mt-2">
+         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">💲 Cost / Min Spend</div>
+         <div class="text-sm text-gray-700">${p.cost}</div>
+       </div>`
+    : '';
 
-  section.style.display = 'block';
+  const sourceHtml = tcLink
+    ? `<div class="mt-3 pt-3 border-t border-gray-100">
+         <a href="${tcLink}" target="_blank" rel="noopener"
+            class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700
+                   text-white text-xs font-bold rounded-lg transition-colors">
+           🔗 View Official Source ↗
+         </a>
+       </div>`
+    : '';
+
+  return `
+    <div class="new-promo-card">
+      <div class="px-4 py-3 flex items-center justify-between"
+           style="background:${color};">
+        <div class="flex items-center gap-2">
+          <span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span>
+          <span class="font-extrabold text-white text-base">${p.bank_name}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          ${badge}
+          <span class="text-white/75 text-xs">📅 ${p.period || '—'}</span>
+        </div>
+      </div>
+      <div class="p-4">
+        <div class="mb-2">${cats}</div>
+        <div class="font-bold text-gray-800 text-sm leading-snug mb-2">${p.title}</div>
+        ${summary
+          ? `<div class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg
+                         px-3 py-2 mb-1 border-l-2" style="border-color:${color}">${summary}</div>`
+          : ''}
+        ${quotaHtml}${costHtml}${sourceHtml}
+      </div>
+    </div>`;
+}
+
+// ══ BUILD BOTH NEW-SECTIONS ═══════════════════════════════════════
+function buildNewSections() {
+  const today = hktToday();
+
+  // ── Daily ──────────────────────────────────────────────────────
+  const newToday = allPromos.filter(p => isNewToday(p, today));
+
+  const todaySec   = document.getElementById('newTodaySection');
+  const todayCards = document.getElementById('newTodayCards');
+  const todayCount = document.getElementById('newTodayCount');
+  const todayEmpty = document.getElementById('newTodayEmpty');
+
+  todaySec.style.display = 'block';
 
   if (!newToday.length) {
-    cardsEl.innerHTML = '';
-    emptyEl.classList.remove('hidden');
-    countEl.textContent = '0 new today';
-    return;
+    todayCards.innerHTML = '';
+    todayEmpty.classList.remove('hidden');
+    todayCount.textContent = '0 new today';
+  } else {
+    todayEmpty.classList.add('hidden');
+    todayCount.textContent = `${newToday.length} new today`;
+    todayCards.innerHTML   = newToday.map(p => buildPromoCard(p, '#f97316')).join('');
   }
 
-  emptyEl.classList.add('hidden');
-  countEl.textContent = `${newToday.length} new today`;
+  // ── Weekly (past 6 days, not today) ───────────────────────────
+  const newWeek = allPromos.filter(p => isNewThisWeek(p, today));
 
-  cardsEl.innerHTML = newToday.map(p => {
-    const color  = bankColor(p.bank_name);
-    const cats   = (p.types || ['Others 其他']).map(catTag).join('');
-    const badge  = statusBadge(p);
-    const tcLink = p.tc_link || p.url || '';
-    const quota  = p.quota || '';
-    const cost   = p.cost || '';
-    const summary = p.description || p.highlight || '';
+  const weekSec   = document.getElementById('newWeeklySection');
+  const weekCards = document.getElementById('newWeeklyCards');
+  const weekCount = document.getElementById('newWeeklyCount');
+  const weekEmpty = document.getElementById('newWeeklyEmpty');
 
-    const quotaHtml = quota
-      ? `<div class="mt-2">
-           <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">👥 Quota / Eligibility</div>
-           <div class="text-sm text-gray-700">${quota}</div>
-         </div>`
-      : '';
+  weekSec.style.display = 'block';
 
-    const costHtml = cost
-      ? `<div class="mt-2">
-           <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">💲 Cost / Min Spend</div>
-           <div class="text-sm text-gray-700">${cost}</div>
-         </div>`
-      : '';
-
-    const sourceHtml = tcLink
-      ? `<div class="mt-3 pt-3 border-t border-gray-100">
-           <a href="${tcLink}" target="_blank" rel="noopener"
-              class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700
-                     text-white text-xs font-bold rounded-lg transition-colors">
-             🔗 View Official Source ↗
-           </a>
-         </div>`
-      : '';
-
-    return `
-      <div class="new-today-card">
-        <!-- Bank colour header -->
-        <div class="px-4 py-3 flex items-center justify-between"
-             style="background:${color};">
-          <div class="flex items-center gap-2">
-            <span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span>
-            <span class="font-extrabold text-white text-base">${p.bank_name}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            ${badge}
-            <span class="text-white/75 text-xs">📅 ${p.period || '—'}</span>
-          </div>
-        </div>
-        <!-- Body -->
-        <div class="p-4">
-          <div class="mb-2">${cats}</div>
-          <div class="font-bold text-gray-800 text-sm leading-snug mb-2">${p.title}</div>
-          ${summary
-            ? `<div class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg px-3 py-2 mb-1 border-l-2" style="border-color:${color}">${summary}</div>`
-            : ''}
-          ${quotaHtml}${costHtml}${sourceHtml}
-        </div>
-      </div>`;
-  }).join('');
+  if (!newWeek.length) {
+    weekCards.innerHTML = '';
+    weekEmpty.classList.remove('hidden');
+    weekCount.textContent = '0 this week';
+  } else {
+    weekEmpty.classList.add('hidden');
+    weekCount.textContent = `${newWeek.length} this week`;
+    weekCards.innerHTML   = newWeek.map(p => buildPromoCard(p, '#6366f1')).join('');
+  }
 }
-// ══ END NEW TODAY SECTION ════════════════════════════════════════
+// ══ END NEW SECTIONS ════════════════════════════════════════════
 
 // ── Bank Tabs ─────────────────────────────────────────────────────
 function buildBankTabs(banks) {
@@ -705,7 +781,7 @@ function buildStrategicInsights(insights) {
     const detail = item.detail || '—';
     const isBau  = item.is_bau || false;
     const isNone = ['none','n/a',''].includes(bank.toLowerCase());
-    const howDef = HOW_DEFINED[cat] || 'AI evaluates based on the best overall value and current promotion terms.';
+    const howDef = HOW_DEFINED[cat] || 'AI evaluates based on best overall value and current terms.';
     const runners = _findRunnerUps(cat, bank, bankAnalysis);
     const color   = isNone ? '#6b7280' : bankColor(bank);
 
@@ -716,9 +792,7 @@ function buildStrategicInsights(insights) {
     const winnerBadge = isNone
       ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">No clear winner</span>`
       : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-white"
-                style="background:${color}">
-           ${bank}
-         </span>${bauPill}`;
+                style="background:${color}">${bank}</span>${bauPill}`;
 
     const runnersHtml = runners.length
       ? runners.map(r => {
@@ -739,7 +813,7 @@ function buildStrategicInsights(insights) {
   }).join('');
 
   document.getElementById('insightsTbody').innerHTML =
-    rows || `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">No insights data available.</td></tr>`;
+    rows || `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">No insights data.</td></tr>`;
 }
 
 // ══ BANK-BY-BANK ANALYSIS ═════════════════════════════════════════
@@ -775,7 +849,6 @@ function buildBankAnalysis(insights) {
     const pros      = data.vs_za_pros || '';
     const cons      = data.vs_za_cons || '';
 
-    // Strengths list
     const strengthsHtml = strengths.length
       ? `<div class="space-y-1.5 mt-2">
            ${strengths.map(s =>
@@ -787,32 +860,25 @@ function buildBankAnalysis(insights) {
          </div>`
       : '<div class="text-sm text-gray-400 italic mt-1">No strengths data.</div>';
 
-    // Expiring alert
     const expHtml = expAlert
       ? `<div class="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2
-                    text-xs text-amber-800 font-semibold">
-           ⚡ ${expAlert}
-         </div>`
+                    text-xs text-amber-800 font-semibold">⚡ ${expAlert}</div>`
       : '';
 
-    // VS ZA Bank
     let vsHtml = '';
     if (isZA) {
       vsHtml = `
         <div class="mt-4 bg-indigo-50 border border-indigo-100 rounded-xl p-3">
-          <div class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">
-            ⭐ Base Comparison Bank
-          </div>
+          <div class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">⭐ Base Comparison Bank</div>
           <div class="text-xs text-indigo-700 leading-relaxed">
             ZA Bank serves as the reference point for all competitor analysis.
             It currently has <strong>${count}</strong> active non-BAU promotion(s)
             and <strong>${bauCnt}</strong> permanent BAU feature(s).
-            All other banks are benchmarked against these figures.
           </div>
         </div>`;
     } else if (pros || cons) {
-      const diff     = count - zaCount;
-      const diffSign = diff > 0 ? `+${diff}` : `${diff}`;
+      const diff      = count - zaCount;
+      const diffSign  = diff > 0 ? `+${diff}` : `${diff}`;
       const diffColor = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-500' : 'text-gray-500';
       const diffLabel = diff > 0
         ? `${diffSign} more promotions than ZA Bank`
@@ -858,12 +924,10 @@ function buildBankAnalysis(insights) {
 
     return `
       <div class="rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-        <!-- Bank header -->
         <div class="px-5 py-4" style="background:${headerBg};">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <span class="bank-dot"
-                    style="background:${isZA ? 'rgba(255,255,255,0.5)' : color}"></span>
+              <span class="bank-dot" style="background:${isZA ? 'rgba(255,255,255,0.5)' : color}"></span>
               <span class="font-extrabold text-lg" style="color:${headerText}">${bName}</span>
               ${isZA
                 ? `<span class="text-xs px-2 py-0.5 rounded-full font-bold"
@@ -882,7 +946,6 @@ function buildBankAnalysis(insights) {
             </div>
           </div>
         </div>
-        <!-- Body -->
         <div class="p-5 bg-white">
           <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Focus</div>
           <div class="text-sm text-gray-700 mb-4">${focus || '—'}</div>
@@ -895,7 +958,7 @@ function buildBankAnalysis(insights) {
   }).join('');
 
   document.getElementById('bankAnalysisGrid').innerHTML =
-    cards || '<div class="col-span-full py-8 text-center text-gray-400">No analysis data available.</div>';
+    cards || '<div class="col-span-full py-8 text-center text-gray-400">No analysis data.</div>';
 }
 
 // ── Comparison Table ──────────────────────────────────────────────
@@ -1151,7 +1214,6 @@ function renderTable(promos) {
     const isExpired = getStatus(p) === 'expired';
     const detailId  = `detail-${i}`;
 
-    // Official Source link — hidden for expired promotions
     const sourceHtml = (!isExpired && tcLink)
       ? `<div class="md:col-span-3">
            <a href="${tcLink}" target="_blank" rel="noopener"
@@ -1221,10 +1283,7 @@ function toggleDetail(i) {
 
 // ── Excel Export ──────────────────────────────────────────────────
 function exportExcel() {
-  if (!filtered.length) {
-    if (typeof window.confirm === 'function') window.confirm('No promotions to export.');
-    return;
-  }
+  if (!filtered.length) return;
   const rows = filtered.map(p => ({
     'Bank':        p.bank_name,
     'Title':       p.title,
@@ -1232,18 +1291,20 @@ function exportExcel() {
     'BAU':         p.is_bau ? 'Yes' : 'No',
     'Status':      getStatus(p),
     'Period':      p.period || '',
+    'Start Date':  p.start_date || '',
     'End Date':    p.end_date || '',
     'Quota':       p.quota || '',
     'Cost':        p.cost || '',
     'Highlight':   p.highlight || '',
     'Description': p.description || '',
     'Source Link': p.tc_link || p.url || '',
+    'Created':     p.created_at || '',
     'Last Seen':   p.last_seen || '',
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [
-    {wch:15},{wch:50},{wch:30},{wch:6},{wch:10},{wch:25},{wch:12},
-    {wch:30},{wch:20},{wch:40},{wch:60},{wch:40},{wch:20},
+    {wch:15},{wch:50},{wch:30},{wch:6},{wch:10},{wch:25},{wch:12},{wch:12},
+    {wch:30},{wch:20},{wch:40},{wch:60},{wch:40},{wch:12},{wch:20},
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Promotions');
