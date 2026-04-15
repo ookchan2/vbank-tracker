@@ -191,7 +191,7 @@ def _new_promo_card(promo: dict) -> str:
 
   <!-- Bank colour header -->
   <tr>
-    <td style="background:{color};padding:13px 18px;">
+    <td bgcolor="{color}" style="background:{color};padding:13px 18px;">
       <table width="100%" cellpadding="0" cellspacing="0"><tr>
         <td style="vertical-align:middle;">
           <span style="font-weight:900;font-size:17px;color:#ffffff;
@@ -251,7 +251,7 @@ def _build_plain_text(
     """
     Minimal plain-text alternative required by RFC 2822 / spam filters.
     """
-    non_bau = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
+    non_bau   = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
     today     = datetime.now().date()
     threshold = (datetime.now() + timedelta(days=30)).date()
 
@@ -321,8 +321,8 @@ def _build_plain_text(
 
 def build_html_email(
     promotions_data:    list,
-    scraped_data:       dict,           # kept for signature compatibility; not used in email
-    strategic_insights: dict = None,   # kept for signature compatibility; not used in email
+    scraped_data:       dict,
+    strategic_insights: dict = None,
     new_promos:         list = None,
 ) -> str:
     """
@@ -374,7 +374,10 @@ def build_html_email(
     active_count = total_promos - expiring_count - past_end_count
 
     # ── Per-bank breakdown rows ───────────────────────────────────
-    sorted_banks = sorted(banks.items(), key=lambda x: (0 if 'za' in x[0].lower() else 1, x[0]))
+    sorted_banks = sorted(
+        banks.items(),
+        key=lambda x: (0 if 'za' in x[0].lower() else 1, x[0]),
+    )
 
     bank_rows = ''
     for bank_name, promos in sorted_banks:
@@ -432,6 +435,18 @@ def build_html_email(
 </tr>"""
 
     # ── Newly launched section ────────────────────────────────────
+    #
+    # FIX: "Newly Launched Today" header text and count badge were
+    # color:#ffffff (white).  Gmail and Outlook strip CSS gradients,
+    # leaving the <td> background white — making white text invisible.
+    #
+    # Changes:
+    #   1. bgcolor HTML attribute added to the header <td> so every
+    #      email client gets a solid orange fallback even without CSS.
+    #   2. "Newly Launched Today" span: #ffffff → #1f2937 (near-black).
+    #   3. Count badge: transparent-white bg + #ffffff text →
+    #      semi-opaque dark bg + #92400e (dark amber) text — readable
+    #      on both the orange gradient and a plain white background.
     if new_promos_show:
         new_cards = ''.join(_new_promo_card(p) for p in new_promos_show)
         new_count = len(new_promos_show)
@@ -443,18 +458,27 @@ def build_html_email(
   <!-- Section header pill -->
   <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;">
     <tr>
-      <td style="background:linear-gradient(135deg,#ff6b35 0%,#f7931e 100%);
+      <!--
+        bgcolor attr  = solid-colour fallback for Outlook / older clients
+        background-color inline = modern CSS client fallback
+        background gradient     = progressive-enhancement layer
+      -->
+      <td bgcolor="#f97316"
+          style="background-color:#f97316;
+                 background:linear-gradient(135deg,#ff6b35 0%,#f7931e 100%);
                  border-radius:12px;padding:16px 22px;">
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
           <td style="vertical-align:middle;">
             <span style="font-size:24px;vertical-align:middle;">🆕</span>
-            <span style="font-weight:900;font-size:18px;color:#ffffff;
+            <!-- ← CHANGED: was color:#ffffff — invisible when gradient strips -->
+            <span style="font-weight:900;font-size:18px;color:#1f2937;
                          vertical-align:middle;margin-left:10px;letter-spacing:-.3px;">
               Newly Launched Today
             </span>
           </td>
           <td style="text-align:right;vertical-align:middle;">
-            <span style="background:rgba(255,255,255,0.22);color:#ffffff;
+            <!-- ← CHANGED: was rgba(255,255,255,0.22) bg + #ffffff text -->
+            <span style="background:rgba(0,0,0,0.15);color:#92400e;
                          padding:4px 14px;border-radius:20px;
                          font-size:12px;font-weight:700;">
               {new_count} new promotion{"s" if new_count != 1 else ""}
@@ -566,7 +590,8 @@ def build_html_email(
       Excluding BAU permanent features
     </div>
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="border-collapse:collapse;border:1px solid #f3f4f6;border-radius:10px;overflow:hidden;">
+           style="border-collapse:collapse;border:1px solid #f3f4f6;
+                  border-radius:10px;overflow:hidden;">
       <thead>
         <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
           <th style="padding:10px 16px;text-align:left;font-size:10px;color:#6b7280;

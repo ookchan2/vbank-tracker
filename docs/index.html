@@ -1,418 +1,1258 @@
-# scripts/main.py
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HK Virtual Bank Promotions Tracker</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .cat-tag { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px;
+             color:#fff; font-weight:700; margin:2px 3px 2px 0; white-space:nowrap; }
+  .bank-dot { display:inline-block; width:10px; height:10px; border-radius:50%;
+              vertical-align:middle; margin-right:6px; }
+  details > summary { list-style:none; cursor:pointer; }
+  details > summary::-webkit-details-marker { display:none; }
+  .chevron { transition: transform 0.2s; display:inline-block; }
+  details[open] .accordion-chevron { transform: rotate(180deg); }
+  tr:hover td { background:#f8fafc; }
+  #compTable td:first-child,
+  #compTable th:first-child {
+    position: sticky; left: 0; z-index: 2; background: #fff;
+  }
+  #compTable thead th:first-child { background: #f9fafb; }
+  .cat-filter-btn {
+    cursor: pointer;
+    transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
+  .new-today-card {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    transition: box-shadow 0.2s;
+  }
+  .new-today-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.13); }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
 
-import json as _json
-import os
-import sys
-import time
-from datetime import datetime
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<div class="bg-gradient-to-r from-gray-900 to-gray-700 text-white px-4 py-6 shadow-lg">
+  <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-extrabold tracking-tight">🏦 HK Virtual Bank Promotions</h1>
+      <p class="text-gray-300 text-sm mt-1">
+        香港虛擬銀行優惠追蹤 · <span id="bankCount">–</span> Banks · Real-time Filter
+      </p>
+    </div>
+    <div class="flex gap-3 flex-wrap">
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black" id="statTotal">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Total</div>
+      </div>
+      <div class="bg-green-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black text-green-300" id="statActive">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Active ✅</div>
+      </div>
+      <div class="bg-orange-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black text-orange-300" id="statExpiring">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Expiring ⚡</div>
+      </div>
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black" id="statExpired">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Expired ✗</div>
+      </div>
+    </div>
+  </div>
+  <div class="max-w-screen-2xl mx-auto mt-2">
+    <p class="text-gray-400 text-xs" id="lastUpdated">Loading…</p>
+  </div>
+</div>
 
-from dotenv import load_dotenv
+<!-- ── BANK FILTER TABS ───────────────────────────────────────── -->
+<div class="max-w-screen-2xl mx-auto px-4 pt-4">
+  <div class="flex gap-2 flex-wrap" id="bankTabs">
+    <button onclick="setBankTab('')" id="tab-all"
+      class="bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-indigo-600 text-white">
+      All Banks
+    </button>
+  </div>
+</div>
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+<!-- ── CONTROLS ───────────────────────────────────────────────── -->
+<div class="max-w-screen-2xl mx-auto px-4 py-3">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+    <div class="flex flex-col md:flex-row gap-3 items-start md:items-center flex-wrap">
+      <div class="relative flex-1 min-w-48">
+        <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
+        <input id="searchInput" type="text"
+          placeholder="Search promotions… (e.g. cash reward, 0 fee, interest)"
+          class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm
+                 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          oninput="applyFilters()">
+      </div>
+      <select id="statusFilter" onchange="applyFilters()"
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm
+               focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+        <option value="active+expiring" selected>✅⚡ Valid + Expiring</option>
+        <option value="active">✅ Valid Only</option>
+        <option value="expiring">⚡ Expiring Soon</option>
+        <option value="all">All (Active + Expired)</option>
+        <option value="expired">✗ Expired Only</option>
+      </select>
+      <select id="sortFilter" onchange="applyFilters()"
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm
+               focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+        <option value="default">Sort: Default</option>
+        <option value="bank">Sort: Bank</option>
+        <option value="enddate">Sort: End Date</option>
+        <option value="newest">Sort: Newest</option>
+      </select>
+      <button onclick="exportExcel()"
+        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white
+               px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+        📥 Export Excel
+      </button>
+    </div>
+    <div class="mt-3 flex flex-wrap gap-2 items-center" id="catTagFilter"></div>
+    <div class="mt-2 text-sm text-gray-500" id="resultCount"></div>
+  </div>
+</div>
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+<!-- ══ NEW TODAY SECTION ══════════════════════════════════════════ -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newTodaySection" style="display:none;">
+  <div class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
 
-from scraper   import run_scraper, BANK_CONFIGS
-from ai_helper import (
-    init_ai,
-    analyze_promotions,
-    ai_dedup_titles,
-    ai_match_against_existing,
-    generate_strategic_insights,
-)
-from database  import (
-    init_db,
-    start_new_run,
-    save_promotions,
-    mark_stale_as_inactive,
-    mark_inactive_old,
-    generate_daily_report,
-    export_to_json,
-    get_active_promos_for_bank,
-    get_active_promotions,
-    get_promotions_by_bank_name,
-    get_db_stats,
-)
-from emailer   import build_html_email, send_email
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4
+                flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🆕</span>
+        <div>
+          <div class="font-extrabold text-white text-lg tracking-tight">
+            New Promotions Today
+          </div>
+          <div class="text-orange-100 text-xs mt-0.5">
+            今日首次偵測到的優惠 · First detected today
+          </div>
+        </div>
+      </div>
+      <span id="newTodayCount"
+            class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+    </div>
 
-DATA_JSON_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    '..', 'docs', 'data.json',
-)
+    <!-- Cards grid -->
+    <div class="bg-amber-50 p-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newTodayCards"></div>
+    </div>
 
-# ── CLI flags ─────────────────────────────────────────────────────────────────
-_NO_EMAIL    = '--no-email'    in sys.argv or '--dry-run' in sys.argv
-_SKIP_SCRAPE = '--skip-scrape' in sys.argv
+    <!-- Empty state -->
+    <div id="newTodayEmpty"
+         class="hidden bg-amber-50 px-5 py-10 text-center text-gray-400 text-sm">
+      🔍 No new promotions detected today.
+    </div>
 
+  </div>
+</div>
 
-# ── Env helpers ───────────────────────────────────────────────────────────────
+<!-- ══ STRATEGIC INSIGHTS SECTION ════════════════════════════════ -->
+<!--
+  NOTE: This section requires data.json to include a "strategic_insights"
+  key containing the output of ai_helper.generate_strategic_insights().
+  Add it in main.py when writing data.json.
+-->
+<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="strategicInsightsSection" style="display:none;">
+  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <summary class="px-5 py-4 flex items-center justify-between
+                    hover:bg-gray-50/80 select-none transition-colors">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">🧠</span>
+        <div>
+          <div class="font-bold text-gray-800">Strategic Insights · Best in Category</div>
+          <div class="text-xs text-gray-400 mt-0.5">
+            AI-generated · daily · based on active promotions across all 8 banks
+          </div>
+        </div>
+      </div>
+      <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
+    </summary>
 
-def _read_env() -> tuple[str, str, str]:
-    addr = os.environ.get('GMAIL_ADDRESS',      '').strip()
-    pwd  = os.environ.get('GMAIL_APP_PASSWORD', '').strip()
-    to   = (
-        os.environ.get('RECIPIENT_EMAIL') or
-        os.environ.get('EMAIL_RECIPIENT') or
-        os.environ.get('EMAIL_TO')        or ''
-    ).strip()
-    return addr, pwd, to
+    <div class="px-5 pb-6 border-t border-gray-100">
+      <div class="mt-4 overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
+        <table class="w-full border-collapse text-sm" id="insightsTable">
+          <thead>
+            <tr class="bg-gray-50 border-b-2 border-gray-200">
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Category</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">🏆 Winner</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Why</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">How AI Defines Best</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Close Runners-Up</th>
+            </tr>
+          </thead>
+          <tbody id="insightsTbody">
+            <tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">⏳ Loading insights…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3 text-xs text-gray-400 italic">
+        ⚙️ BAU label = permanent feature with no end date (still counted as a competitive advantage)
+      </p>
+    </div>
+  </details>
+</div>
 
+<!-- ══ BANK-BY-BANK ANALYSIS SECTION ════════════════════════════ -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="bankAnalysisSection" style="display:none;">
+  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <summary class="px-5 py-4 flex items-center justify-between
+                    hover:bg-gray-50/80 select-none transition-colors">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">📋</span>
+        <div>
+          <div class="font-bold text-gray-800">Bank-by-Bank Analysis</div>
+          <div class="text-xs text-gray-400 mt-0.5">
+            Focus · Key strengths · Detailed comparison vs ZA Bank
+          </div>
+        </div>
+      </div>
+      <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
+    </summary>
 
-def _print_env_check(addr: str, pwd: str, to: str) -> None:
-    print('  Env check:')
-    print(f'    GMAIL_ADDRESS     : {"✅ set" if addr else "❌ MISSING"}')
-    print(f'    GMAIL_APP_PASSWORD: {"✅ set (hidden)" if pwd else "❌ MISSING"}')
-    print(f'    RECIPIENT_EMAIL   : {"✅ " + to if to else "❌ MISSING"}')
-    if _NO_EMAIL:
-        print('    📴 --no-email flag — SMTP step will be skipped')
+    <div class="px-5 pb-6 border-t border-gray-100">
+      <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4" id="bankAnalysisGrid">
+        <div class="col-span-full py-8 text-center text-gray-400">⏳ Loading analysis…</div>
+      </div>
+    </div>
+  </details>
+</div>
 
+<!-- ── COMPARISON SECTION ────────────────────────────────────────── -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="comparisonSection" style="display:none">
+  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <summary class="px-5 py-4 flex items-center justify-between
+                    hover:bg-gray-50/80 select-none transition-colors">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">📊</span>
+        <div>
+          <div class="font-bold text-gray-800">銀行比較 Bank Comparison</div>
+          <div class="text-xs text-gray-400 mt-0.5">
+            以 ZA Bank 為基準 · ▲ more than ZA · ▼ less than ZA · 🟢 category leader
+          </div>
+        </div>
+      </div>
+      <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
+    </summary>
+    <div class="px-5 pb-6 border-t border-gray-100">
+      <div class="overflow-x-auto rounded-xl border border-gray-100 mt-5 mb-5 shadow-sm">
+        <table class="w-full border-collapse text-sm" id="compTable">
+          <tbody>
+            <tr><td class="px-6 py-8 text-center text-gray-400">⏳ Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid gap-4 md:grid-cols-2" id="prosConsWrap"></div>
+    </div>
+  </details>
+</div>
 
-def _save_html_fallback(html: str, path: str) -> None:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(html)
-    print(f'  📄 HTML saved → {path}')
+<!-- ── MAIN LAYOUT ─────────────────────────────────────────────── -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-10">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
+    <div id="loadingState" class="p-16 text-center text-gray-400">
+      <div class="text-4xl mb-3">⏳</div>
+      <div class="text-lg font-medium">Loading promotions…</div>
+    </div>
 
-# ── NEW: patch data.json with an arbitrary dict of extra keys ────────────────
+    <div id="errorState" class="p-16 text-center text-red-400 hidden">
+      <div class="text-4xl mb-3">⚠️</div>
+      <div class="text-lg font-medium">Failed to load data</div>
+      <div class="text-sm mt-2" id="errorMsg"></div>
+    </div>
 
-def _patch_data_json(path: str, extra: dict) -> None:
-    """
-    Read data.json, merge `extra` into the top-level dict, then write it back.
-    Called once after strategic insights are generated so the website can read
-    `data.strategic_insights` without a separate file.
+    <div id="tableWrapper" class="hidden overflow-x-auto">
+      <table class="w-full border-collapse text-sm" id="promoTable">
+        <thead>
+          <tr class="bg-gray-50 border-b border-gray-100">
+            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Bank</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Promotion</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Category</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide whitespace-nowrap">Period</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Status</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Details</th>
+          </tr>
+        </thead>
+        <tbody id="promoTbody"></tbody>
+      </table>
+    </div>
 
-    Failures are non-fatal — a warning is printed and the pipeline continues.
-    """
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            jdata = _json.load(f)
-        jdata.update(extra)
-        with open(path, 'w', encoding='utf-8') as f:
-            _json.dump(jdata, f, ensure_ascii=False, indent=2)
-        keys = ', '.join(extra.keys())
-        print(f'  ✅ data.json patched with key(s): {keys}')
-    except Exception as exc:
-        print(f'  ⚠️  data.json patch failed ({keys if "keys" in dir() else "?"}): {exc}')
+    <div id="emptyState" class="p-16 text-center text-gray-400 hidden">
+      <div class="text-4xl mb-3">🔍</div>
+      <div class="text-lg font-medium">No promotions match your filters</div>
+    </div>
+  </div>
+</div>
 
+<script>
+// ── Category config ───────────────────────────────────────────────
+const CAT_META = {
+  "迎新 Welcome":      { bg:"#10b981", emoji:"🎉" },
+  "消費 Spending":     { bg:"#f59e0b", emoji:"💳" },
+  "投資 Investment":   { bg:"#6366f1", emoji:"📈" },
+  "旅遊 Travel":       { bg:"#06b6d4", emoji:"✈️" },
+  "保險 Insurance":    { bg:"#ef4444", emoji:"🛡️" },
+  "貸款 Loan":         { bg:"#dc2626", emoji:"💰" },
+  "活期存款 Savings":  { bg:"#3b82f6", emoji:"🏦" },
+  "定期存款 TDeposit": { bg:"#0369a1", emoji:"🏛️" },
+  "外匯 FX":           { bg:"#8b5cf6", emoji:"🌐" },
+  "推薦 Referral":     { bg:"#ec4899", emoji:"👥" },
+  "新資金 New Funds":  { bg:"#0ea5e9", emoji:"💵" },
+  "Others 其他":       { bg:"#6b7280", emoji:"📋" },
+};
 
-# ── Main pipeline ─────────────────────────────────────────────────────────────
+const BANK_COLORS = {
+  "ZA Bank":      "#25CD9C",
+  "Mox Bank":     "#ec4899",
+  "WeLab Bank":   "#7c3aed",
+  "livi bank":    "#f97316",
+  "PAObank":      "#0ea5e9",
+  "Airstar Bank": "#06b6d4",
+  "Fusion Bank":  "#14b8a6",
+  "Ant Bank":     "#1677ff",
+};
 
-def main() -> int:
-    """
-    Returns 0 on success, 1 on a hard failure that prevented the data pipeline
-    from completing.  Soft failures (AI unavailable, email not sent) still
-    return 0 — the scrape + DB write succeeded.
-    """
-    t_start = time.monotonic()
-    today   = datetime.now().strftime('%Y-%m-%d')
+const CAT_FILTER_LIST = [
+  { key: '__ALL__',             label: 'All',           bg: '#4f46e5' },
+  { key: 'BAU',                 label: '⚙️ BAU',        bg: '#64748b' },
+  { key: '迎新 Welcome',       label: '🎉 迎新',       bg: '#10b981' },
+  { key: '消費 Spending',      label: '💳 消費',       bg: '#f59e0b' },
+  { key: '投資 Investment',    label: '📈 投資',       bg: '#6366f1' },
+  { key: '旅遊 Travel',        label: '✈️ 旅遊',      bg: '#06b6d4' },
+  { key: '保險 Insurance',     label: '🛡️ 保險',     bg: '#ef4444' },
+  { key: '貸款 Loan',          label: '💰 貸款',       bg: '#dc2626' },
+  { key: '活期存款 Savings',   label: '🏦 活期存款',   bg: '#3b82f6' },
+  { key: '定期存款 TDeposit',  label: '🏛️ 定期存款',  bg: '#0369a1' },
+  { key: '外匯 FX',            label: '🌐 外匯',       bg: '#8b5cf6' },
+  { key: '推薦 Referral',      label: '👥 推薦',       bg: '#ec4899' },
+  { key: '新資金 New Funds',   label: '💵 新資金',     bg: '#0ea5e9' },
+  { key: 'Others 其他',        label: '📋 Others',     bg: '#6b7280' },
+];
 
-    print(f'\n{"═"*60}')
-    print(f'  HK Virtual Bank Promotions Tracker  |  {today}')
-    if _NO_EMAIL:
-        print('  MODE: --no-email  (pipeline runs; SMTP skipped)')
-    if _SKIP_SCRAPE:
-        print('  MODE: --skip-scrape  (re-processing DB data only)')
-    print(f'{"═"*60}\n')
+// ── Strategic Insights metadata ───────────────────────────────────
+const HOW_DEFINED = {
+  "Investment (Stock/Crypto Trading)":
+    "The AI identifies the bank offering the most comprehensive trading fee waivers — prioritising $0 platform fees, free stock trades, or zero crypto commissions. BAU (permanent) zero-fee features are weighted equally to time-limited promos.",
+  "Fund Investment":
+    "The AI selects the bank covering the widest range of funds at $0 subscription fee, or permanently waiving switching fees with no expiry. Volume of eligible funds and permanence are key factors.",
+  "Spending/CashBack":
+    "The AI evaluates cashback rates and merchant network breadth. The winner delivers the highest consistent % cashback or the most versatile reward categories across daily spend.",
+  "Welcome Bonus":
+    "The AI compares the total guaranteed HKD cash reward for a new account holder upon completing standard onboarding — sign-up gift, deposit bonus, and first-transaction reward all count.",
+  "Travel":
+    "The AI identifies the bank with the strongest travel ecosystem — named partners (Trip.com, Asia Miles, Agoda, Booking.com), lounge access, or the highest dedicated travel cashback rate.",
+  "Loan APR":
+    "The AI identifies the lowest explicitly stated APR (annualised percentage rate) on a personal loan currently offered. Lower APR = lower cost of borrowing.",
+  "FX/Multi-Currency":
+    "The AI evaluates which bank offers the most competitive FX conversion rates, lowest transaction fees, or the most feature-rich multi-currency wallet with named rate promotions.",
+  "Referral Bonus":
+    "The AI selects the bank offering the highest guaranteed HKD reward per successful referral, factoring in both the referrer and referee bonus and the ease of qualifying.",
+};
 
-    addr, pwd, to = _read_env()
-    _print_env_check(addr, pwd, to)
+// Keywords used to identify close runners-up from bank_analysis strengths
+const INSIGHT_CAT_KEYWORDS = {
+  "Investment (Stock/Crypto Trading)": ["invest","stock","crypto","trading","brokerage","commission","$0","fee waiver","securities","ipo"],
+  "Fund Investment":  ["fund","基金","subscription fee","zero fee","$0","認購費","unit trust","mutual fund"],
+  "Spending/CashBack":["cashback","cash back","spending","card reward","rebate","消費","merchant"],
+  "Welcome Bonus":    ["welcome","new customer","account opening","onboard","迎新","sign up","join"],
+  "Travel":           ["travel","trip","flight","hotel","asia miles","lounge","旅遊","agoda","airline","airfare"],
+  "Loan APR":         ["loan","apr","interest rate","borrow","貸款","personal loan"],
+  "FX/Multi-Currency":["fx","forex","exchange","multi-currency","global wallet","remittance","外匯","swift","payment connect"],
+  "Referral Bonus":   ["referral","推薦","invite","refer a friend","多友多賞","referral code"],
+};
 
-    # ── Step 1: Database ──────────────────────────────────────────
-    print('\nStep 1 ── Init database')
-    try:
-        init_db()
-        current_run_id = start_new_run(banks=list(BANK_CONFIGS.keys()))
-    except Exception as exc:
-        print(f'  ❌ Database init failed — cannot continue: {exc}')
-        return 1
+const _BANK_COLOR_GENERIC = new Set(['bank','banking','digital','virtual']);
 
-    # ── Step 2: AI ────────────────────────────────────────────────
-    print('\nStep 2 ── Init AI')
-    ai_ok = init_ai()
+function bankColor(name) {
+  if (!name) return "#6b7280";
+  const n = name.toLowerCase().trim();
+  if (_BANK_COLOR_GENERIC.has(n)) return "#6b7280";
+  for (const [k, v] of Object.entries(BANK_COLORS)) {
+    const kl = k.toLowerCase();
+    if (n.includes(kl) || kl.includes(n)) return v;
+  }
+  return "#6b7280";
+}
 
-    # ── Step 3: Scrape all banks ──────────────────────────────────
-    print(f'\nStep 3 ── Scrape all {len(BANK_CONFIGS)} banks')
-    t3 = time.monotonic()
+function catMeta(cat) {
+  if (CAT_META[cat]) return CAT_META[cat];
+  for (const [k, v] of Object.entries(CAT_META)) {
+    if (cat && k.toLowerCase().includes(cat.toLowerCase())) return v;
+    if (cat && cat.toLowerCase().includes(k.split(' ')[0].toLowerCase())) return v;
+  }
+  return { bg:"#6b7280", emoji:"📋" };
+}
 
-    if _SKIP_SCRAPE:
-        print('  ⏭  --skip-scrape: using existing DB data only')
-        scraped: dict = {
-            bid: {
-                'bank_name':      cfg['name'],
-                'text':           '',
-                'success':        True,
-                'screenshot':     None,
-                'sections_count': 0,
-                'elapsed_s':      0.0,
-                'errors':         [],
-            }
-            for bid, cfg in BANK_CONFIGS.items()
-        }
-    else:
-        scraped = run_scraper()
+function catTag(cat) {
+  if (cat && cat.includes('長期')) return '';
+  const m = catMeta(cat);
+  return `<span class="cat-tag" style="background:${m.bg}">${m.emoji} ${cat}</span>`;
+}
 
-    print(f'  ⏱  Scrape completed in {time.monotonic() - t3:.1f}s')
+function bauTag(p) {
+  if (!p.is_bau) return '';
+  return `<span class="cat-tag" style="background:#64748b">⚙️ BAU</span>`;
+}
 
-    if not scraped:
-        print('  ❌ No data scraped — abort')
-        return 1
+// ── Status logic ──────────────────────────────────────────────────
+function getStatus(p) {
+  if (!p.active) return 'expired';
+  if (!p.end_date || p.period === 'Ongoing' ||
+      (p.period && p.period.toLowerCase().includes('ongoing'))) return 'active';
+  const diff = (new Date(p.end_date) - new Date()) / 86400000;
+  if (diff < 0)   return 'expired';
+  if (diff <= 30) return 'expiring';
+  return 'active';
+}
 
-    bank_ids_ok: list[str] = [bid for bid, r in scraped.items() if r.get('success')]
-    scraped_by_name: dict  = {
-        r.get('bank_name', bid): r
-        for bid, r in scraped.items()
+function statusBadge(p) {
+  const s = getStatus(p);
+  if (s === 'active')
+    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                         text-xs font-bold bg-green-100 text-green-700">✅ Valid</span>`;
+  if (s === 'expiring') {
+    const diff = Math.ceil((new Date(p.end_date) - new Date()) / 86400000);
+    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                         text-xs font-bold bg-orange-100 text-orange-600">⚡ ${diff}d left</span>`;
+  }
+  return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+                       text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
+}
+
+// ── State ─────────────────────────────────────────────────────────
+let allPromos        = [];
+let filtered         = [];
+let activeBankTab    = '';
+let selectedCats     = [];
+let strategicInsights = null;
+
+// ── Load ──────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const res  = await fetch('./data.json?_=' + Date.now());
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    allPromos  = data.promotions || [];
+
+    // strategic_insights is written by main.py into data.json
+    // (share main.py to wire this up if not yet done)
+    strategicInsights = data.strategic_insights || null;
+
+    allPromos = allPromos.map(p => ({
+      ...p,
+      types: (p.types || [])
+        .filter(t => !t.includes('長期'))
+        .map(t => remapCat(t)),
+    }));
+
+    // Stats: NON-BAU only
+    const nonBau    = allPromos.filter(p => !p.is_bau);
+    const activeN   = nonBau.filter(p => getStatus(p) === 'active').length;
+    const expiringN = nonBau.filter(p => getStatus(p) === 'expiring').length;
+    const expiredN  = nonBau.filter(p => getStatus(p) === 'expired').length;
+    const totalN    = nonBau.length;
+    const banks     = [...new Set(allPromos.map(p => p.bank_name))];
+
+    document.getElementById('statTotal').textContent    = totalN;
+    document.getElementById('statActive').textContent   = activeN;
+    document.getElementById('statExpiring').textContent = expiringN;
+    document.getElementById('statExpired').textContent  = expiredN;
+    document.getElementById('bankCount').textContent    = banks.length;
+    document.getElementById('lastUpdated').textContent  =
+      `Last updated: ${data.updated || data.last_updated || 'Unknown'} HKT`;
+
+    buildBankTabs(banks);
+    buildNewTodaySection();
+    buildStrategicInsights(strategicInsights);
+    buildBankAnalysis(strategicInsights);
+    buildComparisonTable();
+
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('tableWrapper').classList.remove('hidden');
+    applyFilters();
+
+  } catch (e) {
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('errorState').classList.remove('hidden');
+    document.getElementById('errorMsg').textContent = e.message;
+  }
+}
+
+function remapCat(t) {
+  const MAP = {
+    '迎新':'迎新 Welcome',       '消費':'消費 Spending',
+    '投資':'投資 Investment',     '旅遊':'旅遊 Travel',
+    '保險':'保險 Insurance',      '貸款':'貸款 Loan',
+    '存款':'活期存款 Savings',    '活期存款':'活期存款 Savings',
+    '定期存款':'定期存款 TDeposit',
+    '外匯':'外匯 FX',             '推薦':'推薦 Referral',
+    '新資金':'新資金 New Funds',  'Others':'Others 其他',
+  };
+  return MAP[t] || t;
+}
+
+// ══ NEW TODAY SECTION — detailed cards ════════════════════════════
+function buildNewTodaySection() {
+  const hktMs  = Date.now() + 8 * 3600 * 1000;
+  const today  = new Date(hktMs).toISOString().substring(0, 10);
+
+  const newToday = allPromos.filter(p => {
+    if (p.is_bau) return false;
+    const created = (p.created_at || '').substring(0, 10);
+    return created === today;
+  });
+
+  const section  = document.getElementById('newTodaySection');
+  const cardsEl  = document.getElementById('newTodayCards');
+  const countEl  = document.getElementById('newTodayCount');
+  const emptyEl  = document.getElementById('newTodayEmpty');
+
+  section.style.display = 'block';
+
+  if (!newToday.length) {
+    cardsEl.innerHTML = '';
+    emptyEl.classList.remove('hidden');
+    countEl.textContent = '0 new today';
+    return;
+  }
+
+  emptyEl.classList.add('hidden');
+  countEl.textContent = `${newToday.length} new today`;
+
+  cardsEl.innerHTML = newToday.map(p => {
+    const color  = bankColor(p.bank_name);
+    const cats   = (p.types || ['Others 其他']).map(catTag).join('');
+    const badge  = statusBadge(p);
+    const tcLink = p.tc_link || p.url || '';
+    const quota  = p.quota || '';
+    const cost   = p.cost || '';
+    const summary = p.description || p.highlight || '';
+
+    const quotaHtml = quota
+      ? `<div class="mt-2">
+           <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">👥 Quota / Eligibility</div>
+           <div class="text-sm text-gray-700">${quota}</div>
+         </div>`
+      : '';
+
+    const costHtml = cost
+      ? `<div class="mt-2">
+           <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">💲 Cost / Min Spend</div>
+           <div class="text-sm text-gray-700">${cost}</div>
+         </div>`
+      : '';
+
+    const sourceHtml = tcLink
+      ? `<div class="mt-3 pt-3 border-t border-gray-100">
+           <a href="${tcLink}" target="_blank" rel="noopener"
+              class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700
+                     text-white text-xs font-bold rounded-lg transition-colors">
+             🔗 View Official Source ↗
+           </a>
+         </div>`
+      : '';
+
+    return `
+      <div class="new-today-card">
+        <!-- Bank colour header -->
+        <div class="px-4 py-3 flex items-center justify-between"
+             style="background:${color};">
+          <div class="flex items-center gap-2">
+            <span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span>
+            <span class="font-extrabold text-white text-base">${p.bank_name}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            ${badge}
+            <span class="text-white/75 text-xs">📅 ${p.period || '—'}</span>
+          </div>
+        </div>
+        <!-- Body -->
+        <div class="p-4">
+          <div class="mb-2">${cats}</div>
+          <div class="font-bold text-gray-800 text-sm leading-snug mb-2">${p.title}</div>
+          ${summary
+            ? `<div class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg px-3 py-2 mb-1 border-l-2" style="border-color:${color}">${summary}</div>`
+            : ''}
+          ${quotaHtml}${costHtml}${sourceHtml}
+        </div>
+      </div>`;
+  }).join('');
+}
+// ══ END NEW TODAY SECTION ════════════════════════════════════════
+
+// ── Bank Tabs ─────────────────────────────────────────────────────
+function buildBankTabs(banks) {
+  const container = document.getElementById('bankTabs');
+  banks.sort().forEach(b => {
+    const c      = bankColor(b);
+    const safeId = 'tab-' + b.replace(/\s+/g, '-');
+    const btn    = document.createElement('button');
+    btn.id             = safeId;
+    btn.dataset.bank   = b;
+    btn.className      = 'bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold '
+                       + 'border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
+    btn.style.borderColor = c;
+    btn.innerHTML      = `<span style="color:${c}">●</span> ${b}`;
+    btn.onclick        = () => setBankTab(b);
+    container.appendChild(btn);
+  });
+}
+
+function setBankTab(bank) {
+  activeBankTab = bank;
+  document.querySelectorAll('.bank-tab-btn').forEach(btn => {
+    btn.classList.remove('bg-indigo-600','text-white');
+    btn.classList.add('text-gray-600','bg-white');
+  });
+  const safeId    = bank ? 'tab-' + bank.replace(/\s+/g, '-') : 'tab-all';
+  const activeBtn = document.getElementById(safeId);
+  if (activeBtn) {
+    activeBtn.classList.remove('text-gray-600','bg-white');
+    activeBtn.classList.add('bg-indigo-600','text-white');
+  }
+  applyFilters();
+}
+
+// ── Category multi-select buttons ─────────────────────────────────
+function buildCatButtons() {
+  const container = document.getElementById('catTagFilter');
+  container.innerHTML =
+    `<span class="text-xs text-gray-400 font-semibold self-center mr-1 whitespace-nowrap">
+       Category:
+     </span>` +
+    CAT_FILTER_LIST.map(c => `
+      <button
+        class="cat-filter-btn cat-tag"
+        data-cat="${c.key}"
+        style="background:${c.bg}; opacity:${c.key === '__ALL__' ? '1' : '0.65'};
+               ${c.key === '__ALL__' ? 'box-shadow:0 0 0 3px rgba(0,0,0,0.28);' : ''}"
+        onclick="toggleCat('${c.key}')">
+        ${c.label}
+      </button>`
+    ).join('');
+}
+
+function toggleCat(cat) {
+  if (cat === '__ALL__') { selectedCats = []; }
+  else {
+    const idx = selectedCats.indexOf(cat);
+    if (idx === -1) selectedCats.push(cat);
+    else            selectedCats.splice(idx, 1);
+  }
+  updateCatButtons();
+  applyFilters();
+}
+
+function updateCatButtons() {
+  document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+    const cat          = btn.dataset.cat;
+    const isAll        = cat === '__ALL__';
+    const noneSelected = selectedCats.length === 0;
+    if (isAll) {
+      btn.style.opacity   = noneSelected ? '1' : '0.45';
+      btn.style.boxShadow = noneSelected ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
+      btn.style.transform = 'scale(1)';
+    } else {
+      const isSelected = selectedCats.includes(cat);
+      btn.style.opacity   = isSelected ? '1' : (noneSelected ? '0.65' : '0.38');
+      btn.style.boxShadow = isSelected ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
+      btn.style.transform = isSelected ? 'scale(1.07)' : 'scale(1)';
+    }
+  });
+}
+
+// ══ STRATEGIC INSIGHTS ════════════════════════════════════════════
+
+function _findRunnerUps(category, winnerBank, bankAnalysis) {
+  const keywords = INSIGHT_CAT_KEYWORDS[category] || [category.toLowerCase()];
+  const runnerUps = [];
+  for (const [bName, data] of Object.entries(bankAnalysis || {})) {
+    if (bName === winnerBank) continue;
+    const text = [data.focus || '', ...(data.strengths || [])].join(' ').toLowerCase();
+    if (keywords.some(kw => text.includes(kw.toLowerCase()))) {
+      runnerUps.push(bName);
+    }
+  }
+  return runnerUps.slice(0, 2);
+}
+
+function buildStrategicInsights(insights) {
+  const section = document.getElementById('strategicInsightsSection');
+  if (!section) return;
+  if (!insights || !insights.best_for || !insights.best_for.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+
+  const bankAnalysis = insights.bank_analysis || {};
+
+  const rows = insights.best_for.map(item => {
+    const cat    = item.category || '';
+    const bank   = item.bank || 'None';
+    const detail = item.detail || '—';
+    const isBau  = item.is_bau || false;
+    const isNone = ['none','n/a',''].includes(bank.toLowerCase());
+    const howDef = HOW_DEFINED[cat] || 'AI evaluates based on the best overall value and current promotion terms.';
+    const runners = _findRunnerUps(cat, bank, bankAnalysis);
+    const color   = isNone ? '#6b7280' : bankColor(bank);
+
+    const bauPill = isBau
+      ? `<span class="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-semibold">⚙️ BAU</span>`
+      : '';
+
+    const winnerBadge = isNone
+      ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">No clear winner</span>`
+      : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-white"
+                style="background:${color}">
+           ${bank}
+         </span>${bauPill}`;
+
+    const runnersHtml = runners.length
+      ? runners.map(r => {
+          const rc = bankColor(r);
+          return `<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold text-white mr-1"
+                         style="background:${rc};opacity:0.75">${r}</span>`;
+        }).join('')
+      : `<span class="text-gray-400 text-xs italic">—</span>`;
+
+    return `
+      <tr class="border-b border-gray-100 hover:bg-indigo-50/20 align-top">
+        <td class="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap">${cat}</td>
+        <td class="px-4 py-3 whitespace-nowrap">${winnerBadge}</td>
+        <td class="px-4 py-3 text-sm text-gray-600 max-w-xs leading-relaxed">${detail}</td>
+        <td class="px-4 py-3 text-xs text-gray-500 max-w-xs leading-relaxed">${howDef}</td>
+        <td class="px-4 py-3">${runnersHtml}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('insightsTbody').innerHTML =
+    rows || `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">No insights data available.</td></tr>`;
+}
+
+// ══ BANK-BY-BANK ANALYSIS ═════════════════════════════════════════
+
+function buildBankAnalysis(insights) {
+  const section = document.getElementById('bankAnalysisSection');
+  if (!section) return;
+  if (!insights || !insights.bank_analysis) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+
+  const bankAnalysis = insights.bank_analysis;
+  const zaEntry      = Object.entries(bankAnalysis).find(([k]) => k.includes('ZA')) || [];
+  const zaData       = zaEntry[1] || {};
+  const zaCount      = zaData.count || 0;
+
+  const sorted = Object.entries(bankAnalysis).sort(([a], [b]) => {
+    if (a.includes('ZA')) return -1;
+    if (b.includes('ZA')) return 1;
+    return a.localeCompare(b);
+  });
+
+  const cards = sorted.map(([bName, data]) => {
+    const isZA      = bName.includes('ZA');
+    const color     = bankColor(bName);
+    const count     = data.count || 0;
+    const bauCnt    = data.bau_count || 0;
+    const focus     = data.focus || '';
+    const strengths = (data.strengths || []).slice(0, 4);
+    const expAlert  = data.expiring_alert || '';
+    const pros      = data.vs_za_pros || '';
+    const cons      = data.vs_za_cons || '';
+
+    // Strengths list
+    const strengthsHtml = strengths.length
+      ? `<div class="space-y-1.5 mt-2">
+           ${strengths.map(s =>
+             `<div class="flex items-start gap-2 text-sm">
+                <span class="text-indigo-400 shrink-0 mt-0.5 font-bold">✓</span>
+                <span class="text-gray-700">${s}</span>
+              </div>`
+           ).join('')}
+         </div>`
+      : '<div class="text-sm text-gray-400 italic mt-1">No strengths data.</div>';
+
+    // Expiring alert
+    const expHtml = expAlert
+      ? `<div class="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2
+                    text-xs text-amber-800 font-semibold">
+           ⚡ ${expAlert}
+         </div>`
+      : '';
+
+    // VS ZA Bank
+    let vsHtml = '';
+    if (isZA) {
+      vsHtml = `
+        <div class="mt-4 bg-indigo-50 border border-indigo-100 rounded-xl p-3">
+          <div class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">
+            ⭐ Base Comparison Bank
+          </div>
+          <div class="text-xs text-indigo-700 leading-relaxed">
+            ZA Bank serves as the reference point for all competitor analysis.
+            It currently has <strong>${count}</strong> active non-BAU promotion(s)
+            and <strong>${bauCnt}</strong> permanent BAU feature(s).
+            All other banks are benchmarked against these figures.
+          </div>
+        </div>`;
+    } else if (pros || cons) {
+      const diff     = count - zaCount;
+      const diffSign = diff > 0 ? `+${diff}` : `${diff}`;
+      const diffColor = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-500' : 'text-gray-500';
+      const diffLabel = diff > 0
+        ? `${diffSign} more promotions than ZA Bank`
+        : diff < 0
+          ? `${diffSign} fewer promotions than ZA Bank`
+          : 'Same number of promotions as ZA Bank';
+
+      vsHtml = `
+        <div class="mt-4 border border-gray-200 rounded-xl overflow-hidden">
+          <div class="bg-gray-50 px-3 py-2 text-xs font-bold text-gray-500
+                      uppercase tracking-wide border-b border-gray-200">
+            vs ZA Bank (${zaCount} active)
+          </div>
+          <div class="p-3 space-y-2.5">
+            <div class="text-xs text-gray-500 font-medium">
+              Overall: <span class="${diffColor} font-bold">${diffLabel}</span>
+              <span class="text-gray-400 ml-1">(${bName}: ${count} · ZA: ${zaCount})</span>
+            </div>
+            ${pros
+              ? `<div class="flex items-start gap-2">
+                   <span class="text-green-500 shrink-0 mt-0.5 font-bold text-sm">✅</span>
+                   <div class="text-sm leading-relaxed">
+                     <span class="font-semibold text-green-700">Advantage over ZA:</span>
+                     <span class="text-green-800"> ${pros}</span>
+                   </div>
+                 </div>`
+              : ''}
+            ${cons
+              ? `<div class="flex items-start gap-2">
+                   <span class="text-red-400 shrink-0 mt-0.5 font-bold text-sm">❌</span>
+                   <div class="text-sm leading-relaxed">
+                     <span class="font-semibold text-red-600">Gap vs ZA:</span>
+                     <span class="text-red-700"> ${cons}</span>
+                   </div>
+                 </div>`
+              : ''}
+          </div>
+        </div>`;
     }
 
-    # ── Step 4: AI extraction + dedup + save ─────────────────────
-    print('\nStep 4 ── AI extraction')
-    t4 = time.monotonic()
+    const headerBg   = isZA ? color : '#f9fafb';
+    const headerText = isZA ? '#fff' : '#1f2937';
 
-    total_extracted  = 0
-    total_new        = 0
-    total_updated    = 0
-    total_deduped    = 0
-    total_db_matched = 0
+    return `
+      <div class="rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+        <!-- Bank header -->
+        <div class="px-5 py-4" style="background:${headerBg};">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="bank-dot"
+                    style="background:${isZA ? 'rgba(255,255,255,0.5)' : color}"></span>
+              <span class="font-extrabold text-lg" style="color:${headerText}">${bName}</span>
+              ${isZA
+                ? `<span class="text-xs px-2 py-0.5 rounded-full font-bold"
+                          style="background:rgba(255,255,255,0.2);color:#fff;">⭐ Base</span>`
+                : ''}
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs px-3 py-1 rounded-full font-bold text-white"
+                    style="background:${isZA ? 'rgba(255,255,255,0.2)' : color}">
+                ${count} active
+              </span>
+              ${bauCnt > 0
+                ? `<span class="text-xs px-2 py-0.5 rounded-full font-semibold
+                               bg-slate-200 text-slate-600">${bauCnt} BAU</span>`
+                : ''}
+            </div>
+          </div>
+        </div>
+        <!-- Body -->
+        <div class="p-5 bg-white">
+          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Focus</div>
+          <div class="text-sm text-gray-700 mb-4">${focus || '—'}</div>
+          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Key Strengths</div>
+          ${strengthsHtml}
+          ${expHtml}
+          ${vsHtml}
+        </div>
+      </div>`;
+  }).join('');
 
-    for bank_id, result in scraped.items():
-        bank_name   = result.get('bank_name', bank_id)
-        default_url = BANK_CONFIGS.get(bank_id, {}).get('link', '')
-        chars       = len(result.get('text', ''))
-        mark        = '✅' if result.get('success') else '❌'
-        print(f'\n  [{bank_id.upper()}] {bank_name}  {mark}  ({chars:,} chars)')
+  document.getElementById('bankAnalysisGrid').innerHTML =
+    cards || '<div class="col-span-full py-8 text-center text-gray-400">No analysis data available.</div>';
+}
 
-        if not ai_ok:
-            print('    ⚠️  AI unavailable — skip')
-            continue
-        if not result.get('success') and not _SKIP_SCRAPE:
-            print(f'    ⚠️  Scrape failed — skip AI for {bank_name}')
-            continue
+// ── Comparison Table ──────────────────────────────────────────────
+function buildComparisonTable() {
+  document.getElementById('comparisonSection').style.display = 'block';
 
-        # 4a: Extract promotions ───────────────────────────────────
-        try:
-            promos = analyze_promotions(
-                bank_id     = bank_id,
-                bank_name   = bank_name,
-                text        = result.get('text', ''),
-                screenshot  = result.get('screenshot'),
-                default_url = default_url,
-            )
-        except Exception as exc:
-            print(f'    ❌ AI extraction error for {bank_name}: {exc}')
-            continue
+  const livePromos = allPromos.filter(p => {
+    const s = getStatus(p);
+    return (s === 'active' || s === 'expiring') && !p.is_bau;
+  });
+  if (!livePromos.length) return;
 
-        if not promos:
-            print(f'    ⚠️  0 promotions extracted for {bank_name}')
-            continue
+  const bankMap = {};
+  livePromos.forEach(p => {
+    if (!bankMap[p.bank_name]) bankMap[p.bank_name] = { name: p.bank_name, promos: [] };
+    bankMap[p.bank_name].promos.push(p);
+  });
 
-        # 4b: Within-batch dedup ───────────────────────────────────
-        try:
-            titles  = [p.get('name') or p.get('title', '') for p in promos]
-            dup_map = ai_dedup_titles(titles, bank_name)
-            if dup_map:
-                before         = len(promos)
-                promos         = [p for i, p in enumerate(promos) if i not in dup_map]
-                removed        = before - len(promos)
-                total_deduped += removed
-                print(
-                    f'    🤖 Within-batch dedup: {removed} removed '
-                    f'({before} → {len(promos)}) for {bank_name}'
-                )
-        except Exception as exc:
-            print(f'    ⚠️  Within-batch dedup error for {bank_name}: {exc}')
+  const banks = Object.values(bankMap).sort((a, b) => {
+    if (a.name.includes('ZA')) return -1;
+    if (b.name.includes('ZA')) return 1;
+    return b.promos.length - a.promos.length;
+  });
 
-        if not promos:
-            print(f'    ⚠️  0 promotions after within-batch dedup for {bank_name}')
-            continue
+  const zaBank = banks.find(b => b.name.includes('ZA'));
+  if (!zaBank) return;
 
-        # 4c: Match against existing DB records ───────────────────
-        try:
-            existing_db = get_active_promos_for_bank(bank_id)
-            if existing_db:
-                match_map = ai_match_against_existing(promos, existing_db, bank_name)
-                for idx, db_id in match_map.items():
-                    if 0 <= idx < len(promos):
-                        promos[idx]['_matched_id'] = db_id
-                total_db_matched += len(match_map)
-            else:
-                print(f'    ℹ️  No existing DB records for {bank_name} — all will be new')
-        except Exception as exc:
-            print(f'    ⚠️  DB-match error for {bank_name}: {exc} — formula pass only')
+  const typeCounts = {};
+  livePromos.forEach(p =>
+    (p.types || []).forEach(t => {
+      if (!t.includes('長期') && !t.includes('Others'))
+        typeCounts[t] = (typeCounts[t] || 0) + 1;
+    })
+  );
+  const topTypes = Object.entries(typeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(e => e[0])
+    .slice(0, 8);
 
-        # 4d: Save to DB ───────────────────────────────────────────
-        total_extracted += len(promos)
-        try:
-            db_result = save_promotions(
-                bank_id, bank_name, promos,
-                current_run_id=current_run_id,
-            )
-        except Exception as exc:
-            print(f'    ❌ save_promotions error for {bank_name}: {exc}')
-            continue
+  let thead = `<tr class="bg-gray-50 border-b-2 border-gray-200">
+    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500
+               uppercase tracking-wide w-44 whitespace-nowrap">指標 / Metric</th>`;
+  banks.forEach(b => {
+    const isZA  = b.name.includes('ZA');
+    const color = bankColor(b.name);
+    thead += `
+      <th class="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide
+                 ${isZA ? 'bg-blue-50' : ''}"
+          style="color:${color}; min-width:95px;">
+        <span class="bank-dot" style="background:${color}; margin-right:3px;"></span>${b.name}
+        ${isZA ? '<br><span class="text-blue-400 font-normal normal-case text-xs">⭐ 基準 Base</span>' : ''}
+      </th>`;
+  });
+  thead += '</tr>';
 
-        total_new     += db_result['new']
-        total_updated += db_result['updated']
-        print(
-            f"    ✅ {db_result['new']} new, {db_result['updated']} updated, "
-            f"{db_result['skipped']} skipped — {bank_name}"
-        )
+  function makeRow(label, getVal, isBold = false) {
+    const zaVal  = getVal(zaBank);
+    const maxVal = Math.max(...banks.map(b => getVal(b)));
+    let r = `<tr class="border-b border-gray-100 hover:bg-indigo-50/20 transition-colors">
+      <td class="px-4 py-2.5 text-sm text-gray-700 whitespace-nowrap
+                 ${isBold ? 'font-bold' : 'font-medium'}">${label}</td>`;
+    banks.forEach(b => {
+      const isZA  = b.name.includes('ZA');
+      const val   = getVal(b);
+      const isTop = !isZA && val === maxVal && maxVal > 0;
+      let indicator = '';
+      if (!isZA) {
+        if      (val > zaVal)          indicator = `<span class="ml-1 text-green-500 text-xs font-bold">▲</span>`;
+        else if (val < zaVal)          indicator = `<span class="ml-1 text-red-400 text-xs font-bold">▼</span>`;
+        else if (val > 0 || zaVal > 0) indicator = `<span class="ml-1 text-gray-300 text-xs">—</span>`;
+      }
+      const display = val > 0
+        ? `<span class="${isTop ? 'text-green-600 font-bold' : isZA ? 'text-blue-700 font-bold' : 'text-gray-700'}">${val}</span>`
+        : `<span class="text-gray-200">0</span>`;
+      r += `<td class="px-4 py-2.5 text-center ${isZA ? 'bg-blue-50/50' : ''}">
+        ${display}${indicator}</td>`;
+    });
+    return r + '</tr>';
+  }
 
-    print(f'  ⏱  AI extraction completed in {time.monotonic() - t4:.1f}s')
-    print(
-        f"\n📊 Extracted:{total_extracted}  New:{total_new}  Updated:{total_updated}  "
-        f"Deduped:{total_deduped}  DB-matched:{total_db_matched}"
-    )
+  function sectionRow(label) {
+    return `<tr class="bg-gray-50/80 border-b border-gray-100">
+      <td colspan="${banks.length + 1}"
+          class="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+        ${label}</td></tr>`;
+  }
 
-    # ── Step 5: Mark stale / old inactive ────────────────────────
-    print('\nStep 5 ── Mark stale / old promos inactive')
-    mark_stale_as_inactive(bank_ids_ok)
-    mark_inactive_old(days_threshold=90)
+  const rows = [];
+  rows.push(sectionRow('📋 總覽 Overview'));
+  rows.push(makeRow('✅ 有效優惠總數 Total Active', b => b.promos.length, true));
+  rows.push(makeRow('🔄 長期/無到期 Ongoing',
+    b => b.promos.filter(p => !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))).length));
+  rows.push(makeRow('⚡ 即將到期 Expiring ≤30d',
+    b => b.promos.filter(p => getStatus(p) === 'expiring').length));
+  rows.push(sectionRow('🏷️ 優惠類別 By Category'));
+  topTypes.forEach(type => {
+    const m     = catMeta(type);
+    const short = type.split(' ')[0];
+    rows.push(makeRow(
+      `<span style="color:${m.bg}" class="mr-1">${m.emoji}</span>${short}`,
+      b => b.promos.filter(p => (p.types || []).includes(type)).length
+    ));
+  });
 
-    # ── Step 6: Export data.json ──────────────────────────────────
-    print('\nStep 6 ── Export data.json for website')
-    export_to_json(DATA_JSON_PATH)
+  document.getElementById('compTable').innerHTML =
+    `<thead>${thead}</thead><tbody>${rows.join('')}</tbody>`;
 
-    _run_ts = datetime.now().strftime('%Y-%m-%d %H:%M')
-    try:
-        with open(DATA_JSON_PATH, 'r', encoding='utf-8') as _f:
-            _jdata = _json.load(_f)
-        _jdata['updated']      = _run_ts
-        _jdata['last_updated'] = _run_ts
-        with open(DATA_JSON_PATH, 'w', encoding='utf-8') as _f:
-            _json.dump(_jdata, _f, ensure_ascii=False, indent=2)
-        print(f'  ✅ data.json timestamp patched → {_run_ts}')
-    except Exception as exc:
-        print(f'  ⚠️  data.json timestamp patch failed: {exc}')
+  buildProsCons(zaBank, banks, topTypes);
+}
 
-    # ── Step 7: Daily report ──────────────────────────────────────
-    print('\nStep 7 ── Generate daily report')
-    report         = generate_daily_report(current_run_id)
-    new_promos     = report['new']
-    active_promos  = report['active']
-    expired_promos = report['expired']
-    summary        = report['summary']
+function buildProsCons(zaBank, allBanks, topTypes) {
+  const others = allBanks.filter(b => b.name !== zaBank.name);
+  if (!others.length) return;
 
-    print(f'  🆕 New:     {summary["new_count"]}')
-    print(f'  ✅ Active:  {len(active_promos)}')
-    print(f'  ❌ Expired: {summary["expired_count"]}')
-    for bid, count in summary['by_bank'].items():
-        print(f'    {bid.upper()}: {count} active')
+  const avg  = arr => arr.length ? arr.reduce((s, n) => s + n, 0) / arr.length : 0;
+  const pros = [], cons = [];
 
-    # ── Step 8: Strategic insights ────────────────────────────────
-    print('\nStep 8 ── Generate AI strategic insights')
-    all_active_with_bau = get_active_promotions(include_bau=True)
-    bau_count_insights  = sum(1 for p in all_active_with_bau if p.get('is_bau', False))
+  const avgCount = avg(others.map(b => b.promos.length));
+  if (zaBank.promos.length >= avgCount)
+    pros.push(`有效優惠總數 (${zaBank.promos.length}) 高於或持平其他銀行平均 (${avgCount.toFixed(1)})`);
+  else
+    cons.push(`有效優惠總數 (${zaBank.promos.length}) 低於其他銀行平均 (${avgCount.toFixed(1)})`);
 
-    print(
-        f'  📊 Insights input: {len(all_active_with_bau)} promos '
-        f'({bau_count_insights} BAU + '
-        f'{len(all_active_with_bau) - bau_count_insights} time-limited)'
-    )
+  const beatCount = others.filter(b => zaBank.promos.length > b.promos.length).length;
+  if (beatCount === others.length && others.length > 1)
+    pros.push(`優惠總數領先全部 ${others.length} 間競爭銀行`);
+  else if (beatCount > others.length / 2)
+    pros.push(`優惠總數超越 ${beatCount}/${others.length} 間競爭銀行`);
 
-    # Build bank-name → promos map from the same DB snapshot as data.json.
-    promos_by_name: dict = {}
-    for p in all_active_with_bau:
-        bname = p.get('bank_name') or p.get('bName') or p.get('bank') or 'Unknown'
-        promos_by_name.setdefault(bname, []).append(p)
+  const leadCats = [], weakCats = [];
+  topTypes.forEach(type => {
+    const zaC  = zaBank.promos.filter(p => (p.types || []).includes(type)).length;
+    const avgC = avg(others.map(b => b.promos.filter(p => (p.types || []).includes(type)).length));
+    const m    = catMeta(type);
+    const s    = `${m.emoji}${type.split(' ')[0]}`;
+    if (zaC > avgC + 0.5) leadCats.push(s);
+    if (zaC < avgC - 0.5) weakCats.push(`${s} (ZA: ${zaC} vs 平均: ${avgC.toFixed(1)})`);
+  });
+  if (leadCats.length) pros.push(`在 ${leadCats.join('、')} 類別優惠數量領先市場`);
+  if (weakCats.length) cons.push(`以下類別優惠相對較少：${weakCats.join('、')}`);
 
-    # Email lists: same DB snapshot, non-BAU only.
-    all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
-    new_promos_email = [p for p in new_promos          if not p.get('is_bau', False)]
+  const zaOngoing  = zaBank.promos.filter(p => !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))).length;
+  const avgOngoing = avg(others.map(b => b.promos.filter(p => !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))).length));
+  if (zaOngoing > avgOngoing + 0.5)
+    pros.push(`長期優惠比例高，${zaOngoing} 項長期有效 (其他平均 ${avgOngoing.toFixed(1)} 項)`);
+  else if (zaOngoing < avgOngoing - 0.5)
+    cons.push(`長期優惠相對較少 (${zaOngoing} 項，其他平均 ${avgOngoing.toFixed(1)} 項)`);
 
-    strategic_insights = None
-    if ai_ok and promos_by_name:
-        try:
-            strategic_insights = generate_strategic_insights(
-                promos_by_name,
-                db_fetch_fn=get_promotions_by_bank_name,
-            )
-        except Exception as exc:
-            print(f'  ⚠️  Insights error: {exc}')
+  const zaExpiring = zaBank.promos.filter(p => getStatus(p) === 'expiring').length;
+  if (zaExpiring > 5)
+    cons.push(`有 ${zaExpiring} 項優惠將在30天內到期，部分優惠持續性有待觀察`);
 
-    if strategic_insights:
-        # ── PATCH data.json: write strategic_insights so index.html can
-        # read data.strategic_insights directly from the same file the
-        # website already fetches.  Done here — after insights are finalised
-        # and after the timestamp patch in Step 6 — so no extra HTTP request
-        # is needed by the frontend.
-        _patch_data_json(DATA_JSON_PATH, {'strategic_insights': strategic_insights})
-    else:
-        # Write an explicit null so the frontend can distinguish "not yet
-        # generated" from a network error loading data.json.
-        _patch_data_json(DATA_JSON_PATH, {'strategic_insights': None})
-        print('  ⚠️  Insights unavailable — continuing without it')
+  document.getElementById('prosConsWrap').innerHTML = `
+    <div class="rounded-2xl border border-green-100
+                bg-gradient-to-br from-green-50 to-emerald-50 p-5">
+      <h3 class="font-bold text-green-700 mb-3 flex items-center gap-2">
+        <span>✅</span> ZA Bank 相對優勢 Strengths
+      </h3>
+      <ul class="space-y-2">
+        ${pros.length
+          ? pros.map(p => `<li class="flex items-start gap-2 text-sm text-green-800">
+              <span class="text-green-500 shrink-0 mt-0.5">●</span><span>${p}</span></li>`).join('')
+          : '<li class="text-sm text-gray-400 italic">暫無突出優勢</li>'}
+      </ul>
+    </div>
+    <div class="rounded-2xl border border-orange-100
+                bg-gradient-to-br from-orange-50 to-amber-50 p-5">
+      <h3 class="font-bold text-orange-700 mb-3 flex items-center gap-2">
+        <span>⚠️</span> ZA Bank 可改進空間 Areas to Improve
+      </h3>
+      <ul class="space-y-2">
+        ${cons.length
+          ? cons.map(c => `<li class="flex items-start gap-2 text-sm text-orange-800">
+              <span class="text-orange-400 shrink-0 mt-0.5">●</span><span>${c}</span></li>`).join('')
+          : '<li class="text-sm text-gray-400 italic">暫無明顯不足</li>'}
+      </ul>
+    </div>`;
+}
 
-    # ── Step 9: Build & send email ────────────────────────────────
-    print('\nStep 9 ── Build & send email')
-    html = build_html_email(
-        promotions_data    = all_promos_email,
-        scraped_data       = scraped_by_name,
-        strategic_insights = strategic_insights,   # kept for signature compat
-        new_promos         = new_promos_email,
-    )
-    print('  ✅ HTML email built')
-    print(f'  [INFO] Non-BAU new:    {len(new_promos_email)}')
-    print(f'  [INFO] Non-BAU active: {len(all_promos_email)}')
-    print(f'  [INFO] BAU (insights): {bau_count_insights}')
+// ── Filter ────────────────────────────────────────────────────────
+function applyFilters() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const sort   = document.getElementById('sortFilter').value;
 
-    output_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        '..', 'output', 'email_preview.html',
-    )
-    _save_html_fallback(html, output_path)
+  filtered = allPromos.filter(p => {
+    const s = getStatus(p);
 
-    smtp_ready = all([addr, pwd, to])
+    if (status === 'active'          && s !== 'active')                     return false;
+    if (status === 'expiring'        && s !== 'expiring')                    return false;
+    if (status === 'expired'         && s !== 'expired')                     return false;
+    if (status === 'active+expiring' && s !== 'active' && s !== 'expiring')  return false;
 
-    if _NO_EMAIL:
-        print('  📴 Email skipped (--no-email)')
-        print(f'  📄 HTML preview → {output_path}')
-    elif not smtp_ready:
-        missing = [
-            name for name, val in [
-                ('GMAIL_ADDRESS',      addr),
-                ('GMAIL_APP_PASSWORD', pwd),
-                ('RECIPIENT_EMAIL',    to),
-            ] if not val
-        ]
-        print(f'  ❌ Missing {" / ".join(missing)} — email skipped')
-        print(f'  📄 HTML preview → {output_path}')
-    else:
-        try:
-            # Pass promotions_data and new_promos so the plain-text MIME
-            # part in send_email() is fully populated (previously they were
-            # omitted, leaving the plain-text body empty).
-            success = send_email(
-                html_content    = html,
-                recipient       = to,
-                new_promos      = new_promos_email,
-                promotions_data = all_promos_email,
-            )
-            if success:
-                print(f'  ✅ Email sent → {to}')
-            else:
-                print('  ❌ send_email() returned False')
-                print(f'  📄 HTML preview → {output_path}')
-        except Exception as exc:
-            print(f'  ❌ Email failed: {exc}')
-            print(f'  📄 HTML preview → {output_path}')
+    if (activeBankTab && p.bank_name !== activeBankTab) return false;
 
-    # ── Done ──────────────────────────────────────────────────────
-    elapsed  = time.monotonic() - t_start
-    db_stats = get_db_stats()
+    if (selectedCats.length > 0) {
+      const hasBau    = selectedCats.includes('BAU');
+      const otherCats = selectedCats.filter(c => c !== 'BAU');
+      if (p.is_bau) {
+        if (!hasBau) return false;
+      } else {
+        if (otherCats.length === 0) return false;
+        if (!otherCats.some(c => (p.types || []).includes(c))) return false;
+      }
+    } else {
+      if (p.is_bau) return false;
+    }
 
-    print(f'\n{"═"*60}')
-    print(
-        f'  Done in {elapsed:.1f}s  |  '
-        f'🆕 {len(new_promos_email)} new  |  '
-        f'✅ {len(all_promos_email)} active  |  '
-        f'❌ {summary["expired_count"]} expired  |  '
-        f'🤖 deduped:{total_deduped} matched:{total_db_matched}  |  '
-        f'⚙️  {bau_count_insights} BAU  |  '
-        f'📦 DB:{db_stats.get("total_promotions", "?")} total'
-    )
-    print(f'{"═"*60}\n')
-    return 0
+    if (search) {
+      const hay = [
+        p.bank_name, p.title, p.highlight, p.description,
+        p.period, ...(p.types || []),
+      ].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
 
+  if (sort === 'bank')    filtered.sort((a, b) => a.bank_name.localeCompare(b.bank_name));
+  if (sort === 'enddate') filtered.sort((a, b) => (a.end_date||'9999') < (b.end_date||'9999') ? -1 : 1);
+  if (sort === 'newest')  filtered.sort((a, b) => (b.created_at||'') > (a.created_at||'') ? 1 : -1);
 
-if __name__ == '__main__':
-    sys.exit(main())
+  renderTable(filtered);
+
+  const nonBauTotal = allPromos.filter(p => !p.is_bau).length;
+  const bauTotal    = allPromos.filter(p => p.is_bau).length;
+  document.getElementById('resultCount').textContent =
+    `Showing ${filtered.length} of ${nonBauTotal} promotions`
+    + (bauTotal > 0 ? ` (+${bauTotal} BAU via ⚙️ filter)` : '');
+}
+
+// ── Render Table ──────────────────────────────────────────────────
+function renderTable(promos) {
+  const tbody = document.getElementById('promoTbody');
+  const empty = document.getElementById('emptyState');
+  const wrap  = document.getElementById('tableWrapper');
+
+  if (!promos.length) {
+    tbody.innerHTML = '';
+    wrap.classList.add('hidden');
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  wrap.classList.remove('hidden');
+
+  tbody.innerHTML = promos.map((p, i) => {
+    const color     = bankColor(p.bank_name);
+    const bau       = bauTag(p);
+    const cats      = (p.types || ['Others 其他']).map(catTag).join('') + bau;
+    const badge     = statusBadge(p);
+    const tcLink    = p.tc_link || p.url || '';
+    const isExpired = getStatus(p) === 'expired';
+    const detailId  = `detail-${i}`;
+
+    // Official Source link — hidden for expired promotions
+    const sourceHtml = (!isExpired && tcLink)
+      ? `<div class="md:col-span-3">
+           <a href="${tcLink}" target="_blank" rel="noopener"
+              class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800
+                     text-xs font-semibold underline">
+             🔗 View Official Source ↗
+           </a>
+         </div>`
+      : '';
+
+    const detailHtml = `
+      <tr id="${detailId}" class="hidden bg-indigo-50/40">
+        <td colspan="6" class="px-6 py-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <div class="font-bold text-gray-400 uppercase text-xs mb-1">📅 Period</div>
+              <div class="text-gray-700">${p.period || '—'}</div>
+            </div>
+            <div>
+              <div class="font-bold text-gray-400 uppercase text-xs mb-1">👥 Quota / Eligibility</div>
+              <div class="text-gray-700">${p.quota || '—'}</div>
+            </div>
+            <div>
+              <div class="font-bold text-gray-400 uppercase text-xs mb-1">💲 Cost / Min Spend</div>
+              <div class="text-gray-700">${p.cost || '—'}</div>
+            </div>
+            <div class="md:col-span-3">
+              <div class="font-bold text-gray-400 uppercase text-xs mb-1">📝 Summary</div>
+              <div class="text-gray-700 leading-relaxed">${p.description || p.highlight || '—'}</div>
+            </div>
+            ${sourceHtml}
+          </div>
+        </td>
+      </tr>`;
+
+    const mainRow = `
+      <tr class="border-b border-gray-50 cursor-pointer hover:bg-gray-50"
+          onclick="toggleDetail(${i})">
+        <td class="px-4 py-3 whitespace-nowrap">
+          <span class="bank-dot" style="background:${color}"></span>
+          <span class="font-semibold text-gray-700">${p.bank_name}</span>
+        </td>
+        <td class="px-4 py-3 max-w-xs">
+          <div class="font-semibold text-gray-800 leading-snug">${p.title}</div>
+          <div class="text-gray-400 text-xs mt-0.5">${p.highlight || ''}</div>
+        </td>
+        <td class="px-4 py-3">${cats}</td>
+        <td class="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">${p.period || '—'}</td>
+        <td class="px-4 py-3">${badge}</td>
+        <td class="px-4 py-3 text-gray-400 text-xs">
+          <span class="chevron" id="chevron-${i}">▼</span>
+        </td>
+      </tr>
+      ${detailHtml}`;
+
+    return mainRow;
+  }).join('');
+}
+
+function toggleDetail(i) {
+  const row  = document.getElementById(`detail-${i}`);
+  const chev = document.getElementById(`chevron-${i}`);
+  const open = !row.classList.contains('hidden');
+  row.classList.toggle('hidden', open);
+  chev.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+// ── Excel Export ──────────────────────────────────────────────────
+function exportExcel() {
+  if (!filtered.length) {
+    if (typeof window.confirm === 'function') window.confirm('No promotions to export.');
+    return;
+  }
+  const rows = filtered.map(p => ({
+    'Bank':        p.bank_name,
+    'Title':       p.title,
+    'Categories':  (p.types || []).join(', '),
+    'BAU':         p.is_bau ? 'Yes' : 'No',
+    'Status':      getStatus(p),
+    'Period':      p.period || '',
+    'End Date':    p.end_date || '',
+    'Quota':       p.quota || '',
+    'Cost':        p.cost || '',
+    'Highlight':   p.highlight || '',
+    'Description': p.description || '',
+    'Source Link': p.tc_link || p.url || '',
+    'Last Seen':   p.last_seen || '',
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    {wch:15},{wch:50},{wch:30},{wch:6},{wch:10},{wch:25},{wch:12},
+    {wch:30},{wch:20},{wch:40},{wch:60},{wch:40},{wch:20},
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Promotions');
+  XLSX.writeFile(wb, `HK_VBank_Promotions_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────
+buildCatButtons();
+loadData();
+</script>
+</body>
+</html>
