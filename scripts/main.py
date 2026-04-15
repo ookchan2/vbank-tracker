@@ -30,8 +30,8 @@ from database  import (
     export_to_json,
     get_active_promos_for_bank,
     get_active_promotions,
-    get_promotions_by_bank_name,  # new — enables sparse supplementing
-    get_db_stats,                  # new — used in final summary line
+    get_promotions_by_bank_name,
+    get_db_stats,
 )
 from emailer   import build_html_email, send_email
 
@@ -41,17 +41,11 @@ DATA_JSON_PATH = os.path.join(
 )
 
 # ── CLI flags ─────────────────────────────────────────────────────────────────
-# Pass --no-email to skip SMTP (useful in CI when testing the pipeline).
-# Pass --skip-scrape to skip Playwright and re-process whatever is in the DB.
 _NO_EMAIL    = '--no-email'    in sys.argv or '--dry-run' in sys.argv
 _SKIP_SCRAPE = '--skip-scrape' in sys.argv
 
 
 # ── Env helpers ───────────────────────────────────────────────────────────────
-#
-# SECURITY FIX: the original file printed credentials at *module import time*
-# (outside any function) so they appeared in every log including test runs and
-# CI artefacts.  Moved into a dedicated function called once inside main().
 
 def _read_env() -> tuple[str, str, str]:
     addr = os.environ.get('GMAIL_ADDRESS',      '').strip()
@@ -67,7 +61,6 @@ def _read_env() -> tuple[str, str, str]:
 def _print_env_check(addr: str, pwd: str, to: str) -> None:
     print('  Env check:')
     print(f'    GMAIL_ADDRESS     : {"✅ set" if addr else "❌ MISSING"}')
-    # Never print the password value — only confirm it is present.
     print(f'    GMAIL_APP_PASSWORD: {"✅ set (hidden)" if pwd else "❌ MISSING"}')
     print(f'    RECIPIENT_EMAIL   : {"✅ " + to if to else "❌ MISSING"}')
     if _NO_EMAIL:
@@ -79,6 +72,28 @@ def _save_html_fallback(html: str, path: str) -> None:
     with open(path, 'w', encoding='utf-8') as f:
         f.write(html)
     print(f'  📄 HTML saved → {path}')
+
+
+# ── NEW: patch data.json with an arbitrary dict of extra keys ────────────────
+
+def _patch_data_json(path: str, extra: dict) -> None:
+    """
+    Read data.json, merge `extra` into the top-level dict, then write it back.
+    Called once after strategic insights are generated so the website can read
+    `data.strategic_insights` without a separate file.
+
+    Failures are non-fatal — a warning is printed and the pipeline continues.
+    """
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            jdata = _json.load(f)
+        jdata.update(extra)
+        with open(path, 'w', encoding='utf-8') as f:
+            _json.dump(jdata, f, ensure_ascii=False, indent=2)
+        keys = ', '.join(extra.keys())
+        print(f'  ✅ data.json patched with key(s): {keys}')
+    except Exception as exc:
+        print(f'  ⚠️  data.json patch failed ({keys if "keys" in dir() else "?"}): {exc}')
 
 
 # ── Main pipeline ─────────────────────────────────────────────────────────────
@@ -124,13 +139,13 @@ def main() -> int:
         print('  ⏭  --skip-scrape: using existing DB data only')
         scraped: dict = {
             bid: {
-                'bank_name': cfg['name'],
-                'text': '',
-                'success': True,
-                'screenshot': None,
+                'bank_name':      cfg['name'],
+                'text':           '',
+                'success':        True,
+                'screenshot':     None,
                 'sections_count': 0,
-                'elapsed_s': 0.0,
-                'errors': [],
+                'elapsed_s':      0.0,
+                'errors':         [],
             }
             for bid, cfg in BANK_CONFIGS.items()
         }
@@ -309,16 +324,22 @@ def main() -> int:
         try:
             strategic_insights = generate_strategic_insights(
                 promos_by_name,
-                # FIX: was None in the original, so sparse banks were never
-                # supplemented from the DB even though the code to do so exists.
-                # Now we pass the DB query function so any bank with < 3 promos
-                # in the current run gets its missing rows filled from the DB.
                 db_fetch_fn=get_promotions_by_bank_name,
             )
         except Exception as exc:
             print(f'  ⚠️  Insights error: {exc}')
 
-    if not strategic_insights:
+    if strategic_insights:
+        # ── PATCH data.json: write strategic_insights so index.html can
+        # read data.strategic_insights directly from the same file the
+        # website already fetches.  Done here — after insights are finalised
+        # and after the timestamp patch in Step 6 — so no extra HTTP request
+        # is needed by the frontend.
+        _patch_data_json(DATA_JSON_PATH, {'strategic_insights': strategic_insights})
+    else:
+        # Write an explicit null so the frontend can distinguish "not yet
+        # generated" from a network error loading data.json.
+        _patch_data_json(DATA_JSON_PATH, {'strategic_insights': None})
         print('  ⚠️  Insights unavailable — continuing without it')
 
     # ── Step 9: Build & send email ────────────────────────────────
@@ -326,7 +347,7 @@ def main() -> int:
     html = build_html_email(
         promotions_data    = all_promos_email,
         scraped_data       = scraped_by_name,
-        strategic_insights = strategic_insights,
+        strategic_insights = strategic_insights,   # kept for signature compat
         new_promos         = new_promos_email,
     )
     print('  ✅ HTML email built')
@@ -357,7 +378,15 @@ def main() -> int:
         print(f'  📄 HTML preview → {output_path}')
     else:
         try:
-            success = send_email(html_content=html, recipient=to)
+            # Pass promotions_data and new_promos so the plain-text MIME
+            # part in send_email() is fully populated (previously they were
+            # omitted, leaving the plain-text body empty).
+            success = send_email(
+                html_content    = html,
+                recipient       = to,
+                new_promos      = new_promos_email,
+                promotions_data = all_promos_email,
+            )
             if success:
                 print(f'  ✅ Email sent → {to}')
             else:
