@@ -31,6 +31,7 @@ from database  import (
     get_active_promos_for_bank,
     get_active_promotions,
     get_promotions_by_bank_name,
+    get_new_promotions_last_n_days,
     get_db_stats,
 )
 from emailer   import build_html_email, send_email
@@ -74,7 +75,7 @@ def _save_html_fallback(html: str, path: str) -> None:
     print(f'  📄 HTML saved → {path}')
 
 
-# ── NEW: patch data.json with an arbitrary dict of extra keys ────────────────
+# ── Patch data.json with an arbitrary dict of extra keys ─────────────────────
 
 def _patch_data_json(path: str, extra: dict) -> None:
     """
@@ -84,16 +85,16 @@ def _patch_data_json(path: str, extra: dict) -> None:
 
     Failures are non-fatal — a warning is printed and the pipeline continues.
     """
+    keys = ', '.join(extra.keys())
     try:
         with open(path, 'r', encoding='utf-8') as f:
             jdata = _json.load(f)
         jdata.update(extra)
         with open(path, 'w', encoding='utf-8') as f:
             _json.dump(jdata, f, ensure_ascii=False, indent=2)
-        keys = ', '.join(extra.keys())
         print(f'  ✅ data.json patched with key(s): {keys}')
     except Exception as exc:
-        print(f'  ⚠️  data.json patch failed ({keys if "keys" in dir() else "?"}): {exc}')
+        print(f'  ⚠️  data.json patch failed ({keys}): {exc}')
 
 
 # ── Main pipeline ─────────────────────────────────────────────────────────────
@@ -173,6 +174,7 @@ def main() -> int:
     total_updated    = 0
     total_deduped    = 0
     total_db_matched = 0
+    banks_ai_saved: list[str] = []   # tracks banks where save_promotions succeeded
 
     for bank_id, result in scraped.items():
         bank_name   = result.get('bank_name', bank_id)
@@ -250,6 +252,10 @@ def main() -> int:
             print(f'    ❌ save_promotions error for {bank_name}: {exc}')
             continue
 
+        # Only record this bank as successfully saved so Step 5 only
+        # marks stale rows for banks where last_seen was actually refreshed.
+        banks_ai_saved.append(bank_id)
+
         total_new     += db_result['new']
         total_updated += db_result['updated']
         print(
@@ -265,8 +271,29 @@ def main() -> int:
 
     # ── Step 5: Mark stale / old inactive ────────────────────────
     print('\nStep 5 ── Mark stale / old promos inactive')
-    mark_stale_as_inactive(bank_ids_ok)
-    mark_inactive_old(days_threshold=90)
+
+    if not ai_ok:
+        # AI was unavailable — save_promotions() was never called for any
+        # bank, so last_seen was never updated.  Running mark_stale_as_inactive
+        # now would flip every row to active=0, wiping the entire dataset.
+        # Skip both staleness passes to preserve the existing DB state.
+        print(
+            '  ⚠️  AI unavailable — skipping mark_stale_as_inactive and '
+            'mark_inactive_old to preserve existing data'
+        )
+    elif not banks_ai_saved:
+        # AI was available but every bank either failed extraction or
+        # save_promotions raised — same risk: last_seen was never refreshed.
+        print(
+            '  ⚠️  No banks were successfully saved this run — '
+            'skipping mark_stale_as_inactive to avoid false-expiry'
+        )
+    else:
+        # Only mark stale for banks where save_promotions actually succeeded
+        # (last_seen was refreshed today).  This prevents a partial-failure
+        # run from expiring rows for banks whose save errored out.
+        mark_stale_as_inactive(banks_ai_saved)
+        mark_inactive_old(days_threshold=90)
 
     # ── Step 6: Export data.json ──────────────────────────────────
     print('\nStep 6 ── Export data.json for website')
@@ -298,7 +325,7 @@ def main() -> int:
     for bid, count in summary['by_bank'].items():
         print(f'    {bid.upper()}: {count} active')
 
-    # ── Step 8: Strategic insights ────────────────────────────────
+    # ── Step 8: Strategic insights + weekly new promos ────────────
     print('\nStep 8 ── Generate AI strategic insights')
     all_active_with_bau = get_active_promotions(include_bau=True)
     bau_count_insights  = sum(1 for p in all_active_with_bau if p.get('is_bau', False))
@@ -319,6 +346,22 @@ def main() -> int:
     all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
     new_promos_email = [p for p in new_promos          if not p.get('is_bau', False)]
 
+    # Promotions first seen in the past 6 days, excluding today's new batch.
+    # These populate a "new this week" section in the email so readers don't
+    # miss promotions that were new on previous days this week.
+    new_promos_week_raw   = get_new_promotions_last_n_days(
+        days           = 6,
+        include_bau    = False,
+        exclude_run_id = current_run_id,
+    )
+    new_promos_week_email = [
+        p for p in new_promos_week_raw if not p.get('is_bau', False)
+    ]
+    print(f'  [INFO] Non-BAU new (today):        {len(new_promos_email)}')
+    print(f'  [INFO] Non-BAU new (past 6 days):  {len(new_promos_week_email)}')
+    print(f'  [INFO] Non-BAU active (all):       {len(all_promos_email)}')
+    print(f'  [INFO] BAU (insights input):       {bau_count_insights}')
+
     strategic_insights = None
     if ai_ok and promos_by_name:
         try:
@@ -330,15 +373,12 @@ def main() -> int:
             print(f'  ⚠️  Insights error: {exc}')
 
     if strategic_insights:
-        # ── PATCH data.json: write strategic_insights so index.html can
-        # read data.strategic_insights directly from the same file the
-        # website already fetches.  Done here — after insights are finalised
-        # and after the timestamp patch in Step 6 — so no extra HTTP request
-        # is needed by the frontend.
+        # Patch data.json so the website can read data.strategic_insights
+        # directly from the same file it already fetches — no extra request.
         _patch_data_json(DATA_JSON_PATH, {'strategic_insights': strategic_insights})
     else:
-        # Write an explicit null so the frontend can distinguish "not yet
-        # generated" from a network error loading data.json.
+        # Write an explicit null so the frontend can distinguish
+        # "not yet generated" from a network error loading data.json.
         _patch_data_json(DATA_JSON_PATH, {'strategic_insights': None})
         print('  ⚠️  Insights unavailable — continuing without it')
 
@@ -347,13 +387,11 @@ def main() -> int:
     html = build_html_email(
         promotions_data    = all_promos_email,
         scraped_data       = scraped_by_name,
-        strategic_insights = strategic_insights,   # kept for signature compat
+        strategic_insights = strategic_insights,
         new_promos         = new_promos_email,
+        new_promos_week    = new_promos_week_email,
     )
     print('  ✅ HTML email built')
-    print(f'  [INFO] Non-BAU new:    {len(new_promos_email)}')
-    print(f'  [INFO] Non-BAU active: {len(all_promos_email)}')
-    print(f'  [INFO] BAU (insights): {bau_count_insights}')
 
     output_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -378,9 +416,6 @@ def main() -> int:
         print(f'  📄 HTML preview → {output_path}')
     else:
         try:
-            # Pass promotions_data and new_promos so the plain-text MIME
-            # part in send_email() is fully populated (previously they were
-            # omitted, leaving the plain-text body empty).
             success = send_email(
                 html_content    = html,
                 recipient       = to,
@@ -403,7 +438,8 @@ def main() -> int:
     print(f'\n{"═"*60}')
     print(
         f'  Done in {elapsed:.1f}s  |  '
-        f'🆕 {len(new_promos_email)} new  |  '
+        f'🆕 {len(new_promos_email)} new today  |  '
+        f'📅 {len(new_promos_week_email)} new this week  |  '
         f'✅ {len(all_promos_email)} active  |  '
         f'❌ {summary["expired_count"]} expired  |  '
         f'🤖 deduped:{total_deduped} matched:{total_db_matched}  |  '

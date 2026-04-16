@@ -398,11 +398,6 @@ _JACCARD_STOPWORDS = frozenset({
 })
 
 
-# FIX: LRU cache on both heavy normalization functions.
-# _find_duplicate_id iterates every DB row for every incoming promo, calling
-# these functions O(n²) times.  For a bank with 30 DB rows and 20 new promos
-# that is 1,200 calls — the cache reduces this to at most 50 unique calls.
-
 @lru_cache(maxsize=4096)
 def _normalize_title(title: str) -> str:
     if not title:
@@ -708,6 +703,44 @@ def get_new_promotions_for_run(
             ''', (current_run_id,)).fetchall())
         except Exception as exc:
             print(f'  ❌ get_new_promotions_for_run error: {exc}')
+            return []
+
+
+def get_new_promotions_last_n_days(
+    days: int = 6,
+    include_bau: bool = False,
+    exclude_run_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Return active promotions first seen within the past `days` days,
+    excluding today's date (so it complements get_new_promotions_for_run
+    which covers today).
+
+    Pass exclude_run_id=current_run_id to also exclude any rows whose
+    first_run_id matches the current run — a belt-and-suspenders guard
+    in case created_at and the run boundary straddle midnight.
+    """
+    since = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    today = datetime.now().strftime('%Y-%m-%d')
+
+    with _db_connection() as conn:
+        try:
+            bau_clause = '' if include_bau else 'AND is_bau = 0'
+            run_clause = (
+                f'AND (first_run_id IS NULL OR first_run_id != {int(exclude_run_id)})'
+                if exclude_run_id is not None else ''
+            )
+            return _to_dicts(conn.execute(f'''
+                SELECT * FROM promotions
+                WHERE active          = 1
+                  AND DATE(created_at) >= ?
+                  AND DATE(created_at) <  ?
+                  {bau_clause}
+                  {run_clause}
+                ORDER BY created_at DESC, bank_id ASC
+            ''', (since, today)).fetchall())
+        except Exception as exc:
+            print(f'  ❌ get_new_promotions_last_n_days error: {exc}')
             return []
 
 
