@@ -82,9 +82,9 @@ STATIC_BAU_PROMOTIONS: list[dict] = [
     {
         'bank_name': 'Ant Bank',
         'title':     '100% Insurance Premium Rebate',
-        'highlight': 'Enjoy 100% rebate on the first month\'s premium for eligible insurance products.',
+        'highlight': "Enjoy 100% rebate on the first month's premium for eligible insurance products.",
         'description': (
-            'Eligible Ant Bank customers receive a 100% rebate on the first month\'s '
+            "Eligible Ant Bank customers receive a 100% rebate on the first month's "
             'insurance premium when purchasing designated insurance products through the '
             'Ant Bank app. This is a permanent BAU benefit available to qualifying customers.'
         ),
@@ -156,7 +156,7 @@ def _are_duplicate(p1: dict, p2: dict) -> bool:
     Rules (evaluated in priority order):
       1. Different bank → never duplicates.
       2. Same normalized source URL → duplicate.
-      3. Title similarity ≥ threshold (same bank) → duplicate.
+      3. Title similarity >= threshold (same bank) → duplicate.
     """
     b1 = (p1.get('bank_name') or p1.get('bank') or '').lower().strip()
     b2 = (p2.get('bank_name') or p2.get('bank') or '').lower().strip()
@@ -227,7 +227,7 @@ def deduplicate_promotions(promotions: list[dict]) -> list[dict]:
             pass1.append(merged)
             print(
                 f'    🔗 URL-dedup: merged {len(group)} entries '
-                f'→ 1  [{url[:55]}]'
+                f'-> 1  [{url[:55]}]'
             )
     pass1.extend(no_url_list)
 
@@ -241,11 +241,9 @@ def deduplicate_promotions(promotions: list[dict]) -> list[dict]:
                 # Keep the more complete entry
                 if _score_completeness(p) > _score_completeness(existing):
                     final[i] = p
-                print(
-                    f'    ♻  Title-dedup removed: '
-                    f'"{(p.get("title") or "")[:60]}" '
-                    f'[{p.get("bank_name", "?")}]'
-                )
+                title_preview = (p.get('title') or '')[:60]
+                bank_name     = p.get('bank_name', '?')
+                print(f'    ♻  Title-dedup removed: "{title_preview}" [{bank_name}]')
                 break
         if not found_dup:
             final.append(p)
@@ -273,10 +271,9 @@ def is_new_today(promo: dict, today: str) -> bool:
 
 def is_new_this_week(promo: dict, today: str) -> bool:
     """
-    A promotion qualifies for the 'this week' section (days 2–7 before today)
+    A promotion qualifies for the 'this week' section (days 2-7 before today)
     when ALL conditions hold:
-      1. first detected between 6 days ago and yesterday (not today — that's the
-         daily section's job)
+      1. first detected between 6 days ago and yesterday (not today)
       2. start_date is within that same 6-day window — OR start_date unknown
     """
     created = (promo.get('created_at') or '')[:10]
@@ -288,7 +285,6 @@ def is_new_this_week(promo: dict, today: str) -> bool:
     except ValueError:
         return False
 
-    # Must be in the 6 days BEFORE today (not today itself)
     six_days_ago = (today_dt - timedelta(days=6)).strftime('%Y-%m-%d')
     yesterday    = (today_dt - timedelta(days=1)).strftime('%Y-%m-%d')
     if not (six_days_ago <= created <= yesterday):
@@ -296,7 +292,7 @@ def is_new_this_week(promo: dict, today: str) -> bool:
 
     start = (promo.get('start_date') or '')[:10]
     if start and start < six_days_ago:
-        return False       # Started more than a week ago — not newly launched this week
+        return False
     return True
 
 # ── Expired re-validation ─────────────────────────────────────────────────────
@@ -330,10 +326,13 @@ def revalidate_expired(
         end = (p.get('end_date') or '')[:10]
         if end and end >= today:
             # Valid end date — not actually expired
-            p_fixed = {**p, 'active': True}
+            p_fixed       = dict(p)
+            p_fixed['active'] = True
+            title_preview = (p.get('title') or '')[:60]
+            bank_label    = p.get('bank_name', '?')
             print(
                 f'    🔄 Re-activated (valid end_date {end}): '
-                f'"{p.get("title", "")[:60"]}" [{p.get("bank_name")}]'
+                f'"{title_preview}" [{bank_label}]'
             )
             corrected.append(p_fixed)
             continue
@@ -343,9 +342,11 @@ def revalidate_expired(
             url = _normalize_url(p.get('tc_link') or p.get('url') or '')
             if url and url in active_set:
                 # Already represented by an active entry → true duplicate, drop it
+                title_preview = (p.get('title') or '')[:60]
+                bank_label    = p.get('bank_name', '?')
                 print(
                     f'    🗑  Expired+duplicate removed: '
-                    f'"{p.get("title", "")[:60"]}" [{p.get("bank_name")}]'
+                    f'"{title_preview}" [{bank_label}]'
                 )
                 continue
             # Otherwise keep it but don't re-activate without scrape confirmation
@@ -367,12 +368,12 @@ def reconcile_with_existing(
     Merge newly extracted promotions with the existing database for one bank.
 
     Logic:
-    • If new promotion matches an existing one → update last_seen, refresh fields.
-    • If new promotion is genuinely new       → set created_at = today.
-    • Existing promotions not seen this run:
-        - end_date >= today → keep active (valid by date)
-        - no end_date       → keep (ongoing)
-        - end_date < today  → mark expired
+    - If new promotion matches an existing one -> update last_seen, refresh fields.
+    - If new promotion is genuinely new        -> set created_at = today.
+    - Existing promotions not seen this run:
+        end_date >= today  -> keep active (valid by date)
+        no end_date        -> keep (ongoing)
+        end_date < today   -> mark expired
 
     Returns (reconciled_list, log_messages).
     """
@@ -389,8 +390,10 @@ def reconcile_with_existing(
 
         if match_idx is not None:
             matched_idxs.add(match_idx)
-            ex_p   = existing_promos[match_idx]
-            updated = {**ex_p, 'last_seen': today, 'active': True}
+            ex_p    = existing_promos[match_idx]
+            updated = dict(ex_p)
+            updated['last_seen'] = today
+            updated['active']    = True
             # Refresh mutable fields if changed
             for fld in ('description', 'highlight', 'period', 'end_date', 'start_date',
                         'quota', 'cost', 'types'):
@@ -413,14 +416,16 @@ def reconcile_with_existing(
             continue
         end = (ex_p.get('end_date') or '')[:10]
         if end and end < today:
-            # Past end date → expire
-            reconciled.append({**ex_p, 'active': False})
+            expired_p = dict(ex_p)
+            expired_p['active'] = False
+            reconciled.append(expired_p)
             logs.append(
                 f'EXPIRED: [{ex_p.get("bank_name")}] {ex_p.get("title", "?")}'
             )
         else:
-            # Ongoing or future end date → keep active
-            reconciled.append({**ex_p, 'last_seen': today})
+            kept_p = dict(ex_p)
+            kept_p['last_seen'] = today
+            reconciled.append(kept_p)
 
     return reconciled, logs
 
@@ -442,101 +447,95 @@ def _build_extraction_prompt(
       R3 — Strict dedup vs database    (prevents re-adding existing entries)
       R4 — Start-date gate for "new"   (prevents old promos appearing as new)
     """
-    db_lines = '  (none — this is a fresh bank)' if not existing_for_bank else '\n'.join(
-        f'  • [URL: {p.get("tc_link") or p.get("url") or "no-url"}]'
-        f'  "{p.get("title") or "?"}"'
-        for p in existing_for_bank[:30]
+    if not existing_for_bank:
+        db_lines = '  (none — this is a fresh bank)'
+    else:
+        db_lines = '\n'.join(
+            '  * [URL: {}]  "{}"'.format(
+                p.get('tc_link') or p.get('url') or 'no-url',
+                p.get('title') or '?'
+            )
+            for p in existing_for_bank[:30]
+        )
+
+    valid_types_str = ', '.join(VALID_TYPES)
+
+    return (
+        f'You are extracting structured bank promotion data for {bank_name}.\n\n'
+        f'TODAY: {today}\n\n'
+        f'PROMOTIONS ALREADY IN THE DATABASE FOR {bank_name}\n'
+        f'(You MUST NOT re-add any of these — check carefully before adding anything):\n'
+        f'{db_lines}\n\n'
+        f'SCRAPED WEBSITE TEXT (multiple pages, each prefixed with === SOURCE: [URL] ===):\n'
+        f'{scraped_text[:32000]}\n\n'
+        '══════════════════════════════════════════════════\n'
+        'EXTRACTION RULES — READ ALL BEFORE WRITING OUTPUT\n'
+        '══════════════════════════════════════════════════\n\n'
+        'RULE 1 — EXACT TITLE (most common error — please follow strictly):\n'
+        '* Copy the promotion title VERBATIM from the source page text.\n'
+        '* Do NOT rename, simplify, embellish, or invent a title.\n'
+        '* WRONG: "WeLab Bank Referral Reward for Tesla Loan"\n'
+        '    (AI invented this; the page is about a general R-Friend loan referral)\n'
+        '* RIGHT:  "WeLab Bank Personal Loan \'R-Friend Referral\' Campaign"\n'
+        '    (copied from the page title)\n'
+        '* WRONG: "Foreign Exchange Time Deposit Interest Rate Boost"\n'
+        '    (AI invented this by merging two Fusion Bank concepts)\n'
+        '* RIGHT:  Use the actual campaign name exactly as written on the page.\n\n'
+        'RULE 2 — ONE PROMOTION PER SOURCE URL:\n'
+        '* If one campaign page describes multiple benefits (e.g. time deposit rate PLUS\n'
+        '  fund cash reward), create EXACTLY ONE promotion covering ALL benefits.\n'
+        '* Do NOT split a single campaign page into multiple promotion entries.\n'
+        '* WRONG: Two separate entries both pointing to the same URL.\n'
+        '* RIGHT:  One entry with description covering all benefits on that page.\n\n'
+        'RULE 3 — STRICT DEDUPLICATION (second most common error):\n'
+        '* Before adding ANY promotion, check the "ALREADY IN DATABASE" list above.\n'
+        '* If the SAME URL already appears in that list -> SKIP, do not add again.\n'
+        '* If a VERY SIMILAR TITLE for the same bank already appears -> SKIP.\n'
+        '* When uncertain: SKIP rather than risk adding a duplicate.\n\n'
+        f'RULE 4 — START DATE GATE:\n'
+        f'* If a promotion start_date can be determined and it is BEFORE {today},\n'
+        f'  set "is_new_today": false — it is not a new launch even if scraped today.\n'
+        f'* Only set "is_new_today": true when start_date >= {today} OR unknown.\n\n'
+        f'RULE 5 — ACTIVE / EXPIRED:\n'
+        f'* end_date < {today}   -> "active": false\n'
+        f'* end_date >= {today}  -> "active": true\n'
+        '* No end_date / Ongoing -> "active": true\n'
+        '* If the source page has substantial content and no expiry notice -> "active": true\n\n'
+        'RULE 6 — SOURCE LINK:\n'
+        '* Use the most specific URL for each promotion (campaign detail page > home page).\n'
+        '* Source URLs appear as === SOURCE: [URL] === markers in the text above.\n\n'
+        '══════════════════════════════════════════════════\n'
+        'OUTPUT FORMAT — return ONLY a valid JSON array:\n'
+        '══════════════════════════════════════════════════\n'
+        '[\n'
+        '  {\n'
+        '    "title":       "exact title copied from the source page",\n'
+        f'    "bank_name":   "{bank_name}",\n'
+        '    "types":       ["迎新 Welcome"],\n'
+        '    "highlight":   "one-sentence benefit summary",\n'
+        '    "description": "full description covering ALL benefits on this page",\n'
+        '    "period":      "DD MMM YYYY to DD MMM YYYY  OR  Ongoing",\n'
+        '    "start_date":  "YYYY-MM-DD  OR  null",\n'
+        '    "end_date":    "YYYY-MM-DD  OR  null",\n'
+        '    "quota":       "eligibility / who qualifies",\n'
+        '    "cost":        "minimum spend or deposit  OR  null",\n'
+        '    "tc_link":     "https://most-specific-source-url",\n'
+        '    "is_bau":      false,\n'
+        '    "active":      true,\n'
+        '    "is_new_today": false\n'
+        '  }\n'
+        ']\n\n'
+        f'Valid type values: {valid_types_str}\n\n'
+        'Return [] if no promotions found.  Return ONLY the JSON array — no prose.'
     )
-
-    return f"""You are extracting structured bank promotion data for {bank_name}.
-
-TODAY: {today}
-
-PROMOTIONS ALREADY IN THE DATABASE FOR {bank_name}
-(You MUST NOT re-add any of these — check carefully before adding anything):
-{db_lines}
-
-SCRAPED WEBSITE TEXT (multiple pages, each prefixed with === SOURCE: [URL] ===):
-{scraped_text[:32000]}
-
-══════════════════════════════════════════════════
-EXTRACTION RULES — READ ALL BEFORE WRITING OUTPUT
-══════════════════════════════════════════════════
-
-RULE 1 — EXACT TITLE (most common error — please follow strictly):
-• Copy the promotion title VERBATIM from the source page text.
-• Do NOT rename, simplify, embellish, or invent a title.
-• ✗ WRONG: "WeLab Bank Referral Reward for Tesla Loan"
-    (AI invented this; the page is about a general R-Friend loan referral)
-• ✓ RIGHT:  "WeLab Bank Personal Loan 'R-Friend Referral' Campaign"
-    (copied from the page title)
-• ✗ WRONG: "Foreign Exchange Time Deposit Interest Rate Boost"
-    (AI invented this by merging two Fusion Bank concepts)
-• ✓ RIGHT:  Use the actual campaign name exactly as written on the page.
-
-RULE 2 — ONE PROMOTION PER SOURCE URL:
-• If one campaign page describes multiple benefits (e.g. time deposit rate PLUS
-  fund cash reward), create EXACTLY ONE promotion covering ALL benefits.
-• Do NOT split a single campaign page into multiple promotion entries.
-• ✗ WRONG: Two separate entries both pointing to the same URL, one for the time
-  deposit benefit and one for the fund reward.
-• ✓ RIGHT:  One entry with description: "New customers enjoy 4% p.a. time deposit
-  AND HKD 4,000 fund reward. Combined value ~HKD 5,000 with promo code WL5000."
-
-RULE 3 — STRICT DEDUPLICATION (second most common error):
-• Before adding ANY promotion, check the "ALREADY IN DATABASE" list above.
-• If the SAME URL already appears in that list → SKIP, do not add again.
-• If a VERY SIMILAR TITLE for the same bank already appears → SKIP.
-• When uncertain: SKIP rather than risk adding a duplicate.
-
-RULE 4 — START DATE GATE:
-• If a promotion's start_date can be determined and it is BEFORE {today},
-  set "is_new_today": false — it is not a new launch even if we scraped it today.
-• Only set "is_new_today": true when start_date >= {today} OR start_date is unknown.
-
-RULE 5 — ACTIVE / EXPIRED:
-• end_date < {today}   → "active": false
-• end_date >= {today}  → "active": true
-• No end_date / Ongoing → "active": true
-• If the source page has substantial content and no expiry notice → "active": true
-
-RULE 6 — SOURCE LINK:
-• Use the most specific URL for each promotion (campaign detail page > home page).
-• Source URLs appear as === SOURCE: [URL] === markers in the text above.
-
-══════════════════════════════════════════════════
-OUTPUT FORMAT — return ONLY a valid JSON array:
-══════════════════════════════════════════════════
-[
-  {{
-    "title":       "exact title copied from the source page",
-    "bank_name":   "{bank_name}",
-    "types":       ["迎新 Welcome"],
-    "highlight":   "one-sentence benefit summary",
-    "description": "full description covering ALL benefits on this page",
-    "period":      "DD MMM YYYY – DD MMM YYYY  OR  Ongoing",
-    "start_date":  "YYYY-MM-DD  OR  null",
-    "end_date":    "YYYY-MM-DD  OR  null",
-    "quota":       "eligibility / who qualifies",
-    "cost":        "minimum spend or deposit  OR  null",
-    "tc_link":     "https://most-specific-source-url",
-    "is_bau":      false,
-    "active":      true,
-    "is_new_today": false
-  }}
-]
-
-Valid type values: {", ".join(VALID_TYPES)}
-
-Return [] if no promotions found.  Return ONLY the JSON array — no prose."""
 
 
 # ── AI call ───────────────────────────────────────────────────────────────────
 
 def _call_ai(
     prompt: str,
-    model:  str  = 'gpt-4o',
-    seed:   int  = 42,
+    model:  str = 'gpt-4o',
+    seed:   int = 42,
 ) -> str:
     """
     Call the OpenAI chat completion API and return raw response text.
@@ -667,7 +666,10 @@ def extract_promotions(
     for bau in STATIC_BAU_PROMOTIONS:
         key = (bau['bank_name'], bau['title'].lower())
         if key not in existing_keys:
-            bau_to_add.append({**bau, 'created_at': today, 'last_seen': today})
+            entry = dict(bau)
+            entry['created_at'] = today
+            entry['last_seen']  = today
+            bau_to_add.append(entry)
             all_logs.append(f'STATIC BAU: [{bau["bank_name"]}] {bau["title"]}')
 
     # ── Group existing by bank ────────────────────────────────────
@@ -688,7 +690,7 @@ def extract_promotions(
             all_reconciled.extend(existing_by_bank.get(bank_name, []))
             continue
 
-        print(f'\n  🤖 AI extraction: {bank_name}…')
+        print(f'\n  🤖 AI extraction: {bank_name}...')
         processed_banks.add(bank_name)
 
         existing_for_bank = existing_by_bank.get(bank_name, [])
@@ -701,8 +703,8 @@ def extract_promotions(
         )
 
         try:
-            raw       = _call_ai(prompt)
-            raw_list  = _parse_ai_json(raw, bank_name)
+            raw      = _call_ai(prompt)
+            raw_list = _parse_ai_json(raw, bank_name)
         except Exception as exc:
             all_logs.append(f'AI_ERROR: {bank_name} — {exc}')
             print(f'    ❌ AI error for {bank_name}: {exc}')
@@ -723,9 +725,12 @@ def extract_promotions(
         reconciled, logs = reconcile_with_existing(validated, existing_for_bank, today)
         all_logs.extend(logs)
         all_reconciled.extend(reconciled)
-        print(f'    ✓  {bank_name}: {len(validated)} extracted → {len(reconciled)} reconciled')
+        print(
+            f'    ✓  {bank_name}: {len(validated)} extracted '
+            f'-> {len(reconciled)} reconciled'
+        )
 
-    # Carry forward banks that weren't scraped this run
+    # Carry forward banks that were not scraped this run
     for bank_name, promos in existing_by_bank.items():
         if bank_name not in processed_banks:
             all_reconciled.extend(promos)
@@ -777,15 +782,20 @@ def generate_strategic_insights(
     ], ensure_ascii=False, indent=2)
 
     bau_json = json.dumps([
-        {'bank': p.get('bank_name'), 'title': p.get('title'), 'types': p.get('types')}
+        {
+            'bank':  p.get('bank_name'),
+            'title': p.get('title'),
+            'types': p.get('types'),
+        }
         for p in bau_active[:25]
     ], ensure_ascii=False)
 
-    # Count active promos per bank for bank_analysis
     from collections import Counter
-    active_counts  = Counter(p.get('bank_name') for p in non_bau_active)
-    bau_counts     = Counter(p.get('bank_name') for p in bau_active)
-    threshold_date = (datetime.strptime(today, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
+    active_counts   = Counter(p.get('bank_name') for p in non_bau_active)
+    bau_counts      = Counter(p.get('bank_name') for p in bau_active)
+    threshold_date  = (
+        datetime.strptime(today, '%Y-%m-%d') + timedelta(days=30)
+    ).strftime('%Y-%m-%d')
     expiring_counts = Counter(
         p.get('bank_name')
         for p in non_bau_active
@@ -798,61 +808,52 @@ def generate_strategic_insights(
         'expiring': dict(expiring_counts),
     })
 
-    prompt = f"""Analyse these Hong Kong virtual bank promotions and return strategic insights.
-
-TODAY: {today}
-
-ACTIVE (non-BAU) PROMOTIONS:
-{promo_json}
-
-BAU PERMANENT FEATURES:
-{bau_json}
-
-COUNTS (use these exact numbers):
-{counts_json}
-
-Return a JSON object with EXACTLY this structure:
-{{
-  "best_for": [
-    {{
-      "category": "Investment (Stock/Crypto Trading)",
-      "bank": "Bank Name or None",
-      "detail": "Specific reason with actual numbers/offer names",
-      "is_bau": false
-    }}
-  ],
-  "bank_analysis": {{
-    "ZA Bank": {{
-      "focus": "One sentence on current promotional theme",
-      "strengths": ["strength 1 with specifics", "strength 2", "strength 3"],
-      "count": 5,
-      "bau_count": 2,
-      "expiring_alert": "3 promotions expiring within 30 days",
-      "vs_za_pros": null,
-      "vs_za_cons": null
-    }},
-    "Mox Bank": {{
-      "focus": "...",
-      "strengths": ["..."],
-      "count": 4,
-      "bau_count": 1,
-      "expiring_alert": "",
-      "vs_za_pros": "Stronger travel and device promos",
-      "vs_za_cons": "Fewer investment promotions"
-    }}
-  }}
-}}
-
-Cover ALL 8 categories in best_for:
-  Investment (Stock/Crypto Trading), Fund Investment, Spending/CashBack,
-  Welcome Bonus, Travel, Loan APR, FX/Multi-Currency, Referral Bonus
-
-Include ALL 8 banks in bank_analysis:
-  ZA Bank, Mox Bank, WeLab Bank, livi bank, PAObank, Airstar Bank,
-  Fusion Bank, Ant Bank
-
-Use the exact counts from the COUNTS object above.
-Return ONLY JSON."""
+    prompt = (
+        'Analyse these Hong Kong virtual bank promotions and return strategic insights.\n\n'
+        f'TODAY: {today}\n\n'
+        f'ACTIVE (non-BAU) PROMOTIONS:\n{promo_json}\n\n'
+        f'BAU PERMANENT FEATURES:\n{bau_json}\n\n'
+        f'COUNTS (use these exact numbers):\n{counts_json}\n\n'
+        'Return a JSON object with EXACTLY this structure:\n'
+        '{\n'
+        '  "best_for": [\n'
+        '    {\n'
+        '      "category": "Investment (Stock/Crypto Trading)",\n'
+        '      "bank": "Bank Name or None",\n'
+        '      "detail": "Specific reason with actual numbers/offer names",\n'
+        '      "is_bau": false\n'
+        '    }\n'
+        '  ],\n'
+        '  "bank_analysis": {\n'
+        '    "ZA Bank": {\n'
+        '      "focus": "One sentence on current promotional theme",\n'
+        '      "strengths": ["strength 1 with specifics", "strength 2", "strength 3"],\n'
+        '      "count": 5,\n'
+        '      "bau_count": 2,\n'
+        '      "expiring_alert": "3 promotions expiring within 30 days",\n'
+        '      "vs_za_pros": null,\n'
+        '      "vs_za_cons": null\n'
+        '    },\n'
+        '    "Mox Bank": {\n'
+        '      "focus": "...",\n'
+        '      "strengths": ["..."],\n'
+        '      "count": 4,\n'
+        '      "bau_count": 1,\n'
+        '      "expiring_alert": "",\n'
+        '      "vs_za_pros": "Stronger travel and device promos",\n'
+        '      "vs_za_cons": "Fewer investment promotions"\n'
+        '    }\n'
+        '  }\n'
+        '}\n\n'
+        'Cover ALL 8 categories in best_for:\n'
+        '  Investment (Stock/Crypto Trading), Fund Investment, Spending/CashBack,\n'
+        '  Welcome Bonus, Travel, Loan APR, FX/Multi-Currency, Referral Bonus\n\n'
+        'Include ALL 8 banks in bank_analysis:\n'
+        '  ZA Bank, Mox Bank, WeLab Bank, livi bank, PAObank, Airstar Bank,\n'
+        '  Fusion Bank, Ant Bank\n\n'
+        'Use the exact counts from the COUNTS object above.\n'
+        'Return ONLY JSON.'
+    )
 
     try:
         raw  = _call_ai(prompt, model='gpt-4o')
