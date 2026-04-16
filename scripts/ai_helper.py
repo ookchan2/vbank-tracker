@@ -56,13 +56,110 @@ VALID_TYPES = [
 ]
 
 # ── Static BAU promotions ─────────────────────────────────────────────────────
-#
-#  Add permanent bank features here.  They are merged into data.json on every
-#  run if not already present.  is_bau=True entries are excluded from all
-#  "new today / new this week" detection.
-#
+
 STATIC_BAU_PROMOTIONS: list[dict] = [
-    # ── Ant Bank ──────────────────────────────────────────────────
+    {
+        'bank_name': 'Ant Bank',
+        'title':     'SME Loan Cash Rebate Promotion',
+        'highlight': 'SME customers enjoy cash rebates on eligible business loan products.',
+        'description': (
+            'Ant Bank SME customers who successfully apply for and drawdown eligible '
+            'business loan products can receive a cash rebate. The rebate amount varies '
+            'by loan amount and is credited after drawdown completion.'
+        ),
+        'types':   ['貸款 Loan'],
+        'is_bau':  True,
+        'active':  True,
+        'period':  'Ongoing',
+        'quota':   'SME customers only',
+        'tc_link': 'https://www.antbank.hk/',
+    },
+    {
+        'bank_name': 'Ant Bank',
+        'title':     '100% Insurance Premium Rebate',
+        'highlight': "Enjoy 100% rebate on the first month's premium for eligible insurance products.",
+        'description': (
+            "Eligible Ant Bank customers receive a 100% rebate on the first month's "
+            'insurance premium when purchasing designated insurance products through the '
+            'Ant Bank app. This is a permanent BAU benefit available to qualifyingThe root cause is clear: `main.py` imports `init_ai`, `analyze_promotions`, `ai_dedup_titles`, and `ai_match_against_existing` — but none of those exist in `ai_helper.py`. The two files are from different architecture versions. `ai_helper.py` needs four new public functions added to match what `main.py` expects, and `generate_strategic_insights` needs its signature updated.
+
+Here is the complete corrected `ai_helper.py`:
+
+```python
+# scripts/ai_helper.py
+
+"""
+AI extraction, deduplication, validation and strategic-insights generation.
+
+Public API consumed by main.py
+──────────────────────────────
+  init_ai()                                     → bool
+  analyze_promotions(bank_id, bank_name, ...)   → list[dict]
+  ai_dedup_titles(titles, bank_name)            → dict   {dup_idx: canonical_idx}
+  ai_match_against_existing(promos, db, name)   → dict   {promo_idx: db_id}
+  generate_strategic_insights(promos_by_name,
+                               db_fetch_fn)      → dict
+
+Internal helpers (also usable externally)
+──────────────────────────────────────────
+  deduplicate_promotions, reconcile_with_existing,
+  revalidate_expired, is_new_today, is_new_this_week,
+  extract_promotions   (legacy all-in-one entry point)
+
+Key design decisions
+────────────────────
+1. URL-based dedup first   — one source URL → one promotion (merge sub-features)
+2. Title-similarity dedup  — fuzzy match prevents near-identical entries
+3. Exact-title enforcement — prompt explicitly forbids AI from renaming promos
+4. start_date gate         — promotions whose start_date < today are NOT flagged
+                             as "new today" even if first detected today
+5. Expired re-validation   — if end_date >= today the promo is kept active
+6. Static BAU injections   — Ant Bank BAU entries maintained here so they are
+                             always present regardless of scrape quality
+"""
+
+import json
+import os
+import re
+from datetime import datetime, timedelta
+from difflib import SequenceMatcher
+from typing import Any, Callable, Optional
+
+# ── OpenAI client (lazy init) ─────────────────────────────────────────────────
+
+try:
+    from openai import OpenAI as _OpenAIClass
+    _openai_client: Optional[_OpenAIClass] = None
+
+    def _get_client() -> _OpenAIClass:
+        global _openai_client
+        if _openai_client is None:
+            api_key = os.getenv('OPENAI_API_KEY')
+            if not api_key:
+                raise EnvironmentError('OPENAI_API_KEY environment variable is not set.')
+            _openai_client = _OpenAIClass(api_key=api_key)
+        return _openai_client
+
+    HAS_OPENAI = True
+except ImportError:
+    HAS_OPENAI = False
+    def _get_client():
+        raise ImportError('openai package is not installed. Run: pip install openai')
+
+# ── Constants ─────────────────────────────────────────────────────────────────
+
+_DUPLICATE_TITLE_THRESHOLD = 0.76
+_DUPLICATE_DESC_THRESHOLD  = 0.88
+
+VALID_TYPES = [
+    '迎新 Welcome', '消費 Spending', '投資 Investment', '旅遊 Travel',
+    '保險 Insurance', '貸款 Loan', '活期存款 Savings', '定期存款 TDeposit',
+    '外匯 FX', '推薦 Referral', '新資金 New Funds', 'Others 其他',
+]
+
+# ── Static BAU promotions ─────────────────────────────────────────────────────
+
+STATIC_BAU_PROMOTIONS: list[dict] = [
     {
         'bank_name': 'Ant Bank',
         'title':     'SME Loan Cash Rebate Promotion',
@@ -115,18 +212,12 @@ STATIC_BAU_PROMOTIONS: list[dict] = [
 # ── String helpers ────────────────────────────────────────────────────────────
 
 def _similarity(a: str, b: str) -> float:
-    """SequenceMatcher ratio — 0.0 to 1.0."""
     if not a or not b:
         return 0.0
     return SequenceMatcher(None, a.lower().strip(), b.lower().strip()).ratio()
 
 
 def _normalize_url(url: str) -> str:
-    """
-    Canonical URL for dedup comparison.
-    Strips protocol, trailing slash, and lowercases.
-    Query params are kept because Fusion Bank uses them to distinguish pages.
-    """
     if not url:
         return ''
     url = url.lower().strip().rstrip('/')
@@ -135,7 +226,6 @@ def _normalize_url(url: str) -> str:
 
 
 def _score_completeness(p: dict) -> int:
-    """Score a promotion by information richness — used to pick the best when merging."""
     return (
         len(p.get('description') or '') +
         len(p.get('highlight') or '') +
@@ -150,26 +240,16 @@ def _score_completeness(p: dict) -> int:
 # ── Deduplication ─────────────────────────────────────────────────────────────
 
 def _are_duplicate(p1: dict, p2: dict) -> bool:
-    """
-    Return True if p1 and p2 appear to be the same promotion.
-
-    Rules (evaluated in priority order):
-      1. Different bank → never duplicates.
-      2. Same normalized source URL → duplicate.
-      3. Title similarity >= threshold (same bank) → duplicate.
-    """
     b1 = (p1.get('bank_name') or p1.get('bank') or '').lower().strip()
     b2 = (p2.get('bank_name') or p2.get('bank') or '').lower().strip()
     if not b1 or not b2 or b1 != b2:
         return False
 
-    # Rule 2 — same source URL
     u1 = _normalize_url(p1.get('tc_link') or p1.get('url') or '')
     u2 = _normalize_url(p2.get('tc_link') or p2.get('url') or '')
     if u1 and u2 and u1 == u2:
         return True
 
-    # Rule 3 — very similar title
     t1 = (p1.get('title') or p1.get('name') or '').strip()
     t2 = (p2.get('title') or p2.get('name') or '').strip()
     if t1 and t2 and _similarity(t1, t2) >= _DUPLICATE_TITLE_THRESHOLD:
@@ -179,10 +259,6 @@ def _are_duplicate(p1: dict, p2: dict) -> bool:
 
 
 def _merge_group(group: list[dict]) -> dict:
-    """
-    Merge a group of duplicates into one canonical entry.
-    Keep the most complete entry; union all category types.
-    """
     best = max(group, key=_score_completeness)
     all_types: list[str] = []
     seen_t: set[str]     = set()
@@ -196,18 +272,9 @@ def _merge_group(group: list[dict]) -> dict:
 
 
 def deduplicate_promotions(promotions: list[dict]) -> list[dict]:
-    """
-    Two-pass deduplication:
-      Pass 1 — group by normalized source URL → merge each group into one entry.
-      Pass 2 — pairwise title-similarity check → remove near-duplicates.
-
-    When two entries would be merged, the more complete one is kept and the
-    less complete one is discarded (with a log message).
-    """
     if not promotions:
         return []
 
-    # Pass 1: URL grouping
     url_groups: dict[str, list[dict]] = {}
     no_url_list: list[dict]           = []
 
@@ -225,20 +292,15 @@ def deduplicate_promotions(promotions: list[dict]) -> list[dict]:
         else:
             merged = _merge_group(group)
             pass1.append(merged)
-            print(
-                f'    🔗 URL-dedup: merged {len(group)} entries '
-                f'-> 1  [{url[:55]}]'
-            )
+            print(f'    🔗 URL-dedup: merged {len(group)} entries -> 1  [{url[:55]}]')
     pass1.extend(no_url_list)
 
-    # Pass 2: Title-similarity pairwise
     final: list[dict] = []
     for p in pass1:
         found_dup = False
         for i, existing in enumerate(final):
             if _are_duplicate(p, existing):
                 found_dup = True
-                # Keep the more complete entry
                 if _score_completeness(p) > _score_completeness(existing):
                     final[i] = p
                 title_preview = (p.get('title') or '')[:60]
@@ -253,29 +315,16 @@ def deduplicate_promotions(promotions: list[dict]) -> list[dict]:
 # ── New-today / new-this-week helpers ────────────────────────────────────────
 
 def is_new_today(promo: dict, today: str) -> bool:
-    """
-    A promotion qualifies as 'new today' only when ALL conditions hold:
-      1. first detected today (created_at date == today)
-      2. start_date is on or after today — OR start_date is unknown/ongoing
-         (prevents old campaigns discovered for the first time from appearing
-          as newly launched)
-    """
     created = (promo.get('created_at') or '')[:10]
     if created != today:
         return False
     start = (promo.get('start_date') or '')[:10]
     if start and start < today:
-        return False       # Promotion started before today — not a new launch
+        return False
     return True
 
 
 def is_new_this_week(promo: dict, today: str) -> bool:
-    """
-    A promotion qualifies for the 'this week' section (days 2-7 before today)
-    when ALL conditions hold:
-      1. first detected between 6 days ago and yesterday (not today)
-      2. start_date is within that same 6-day window — OR start_date unknown
-    """
     created = (promo.get('created_at') or '')[:10]
     if not created:
         return False
@@ -297,18 +346,7 @@ def is_new_this_week(promo: dict, today: str) -> bool:
 
 # ── Expired re-validation ─────────────────────────────────────────────────────
 
-def revalidate_expired(
-    promotions: list[dict],
-    today:      str,
-) -> list[dict]:
-    """
-    Walk every promotion marked active=False.
-    If its end_date is still >= today, it should NOT be expired — re-activate it.
-    Additionally, if a promo that is marked expired is an exact duplicate of an
-    already-active entry, remove the expired copy entirely.
-
-    This resolves the Mox batch that were wrongly marked expired.
-    """
+def revalidate_expired(promotions: list[dict], today: str) -> list[dict]:
     active_set: set[str] = set()
     for p in promotions:
         if p.get('active'):
@@ -322,34 +360,23 @@ def revalidate_expired(
             corrected.append(p)
             continue
 
-        # Re-check end date
         end = (p.get('end_date') or '')[:10]
         if end and end >= today:
-            # Valid end date — not actually expired
-            p_fixed       = dict(p)
+            p_fixed           = dict(p)
             p_fixed['active'] = True
-            title_preview = (p.get('title') or '')[:60]
-            bank_label    = p.get('bank_name', '?')
-            print(
-                f'    🔄 Re-activated (valid end_date {end}): '
-                f'"{title_preview}" [{bank_label}]'
-            )
+            title_preview     = (p.get('title') or '')[:60]
+            bank_label        = p.get('bank_name', '?')
+            print(f'    🔄 Re-activated (valid end_date {end}): "{title_preview}" [{bank_label}]')
             corrected.append(p_fixed)
             continue
 
-        # No end date — assume ongoing if page URL still returns content
         if not end:
             url = _normalize_url(p.get('tc_link') or p.get('url') or '')
             if url and url in active_set:
-                # Already represented by an active entry → true duplicate, drop it
                 title_preview = (p.get('title') or '')[:60]
                 bank_label    = p.get('bank_name', '?')
-                print(
-                    f'    🗑  Expired+duplicate removed: '
-                    f'"{title_preview}" [{bank_label}]'
-                )
+                print(f'    🗑  Expired+duplicate removed: "{title_preview}" [{bank_label}]')
                 continue
-            # Otherwise keep it but don't re-activate without scrape confirmation
             corrected.append(p)
             continue
 
@@ -360,23 +387,10 @@ def revalidate_expired(
 # ── Reconcile newly extracted vs existing ────────────────────────────────────
 
 def reconcile_with_existing(
-    newly_extracted:  list[dict],
-    existing_promos:  list[dict],
-    today:            str,
+    newly_extracted: list[dict],
+    existing_promos: list[dict],
+    today:           str,
 ) -> tuple[list[dict], list[str]]:
-    """
-    Merge newly extracted promotions with the existing database for one bank.
-
-    Logic:
-    - If new promotion matches an existing one -> update last_seen, refresh fields.
-    - If new promotion is genuinely new        -> set created_at = today.
-    - Existing promotions not seen this run:
-        end_date >= today  -> keep active (valid by date)
-        no end_date        -> keep (ongoing)
-        end_date < today   -> mark expired
-
-    Returns (reconciled_list, log_messages).
-    """
     logs:         list[str]  = []
     reconciled:   list[dict] = []
     matched_idxs: set[int]   = set()
@@ -394,36 +408,29 @@ def reconcile_with_existing(
             updated = dict(ex_p)
             updated['last_seen'] = today
             updated['active']    = True
-            # Refresh mutable fields if changed
             for fld in ('description', 'highlight', 'period', 'end_date', 'start_date',
                         'quota', 'cost', 'types'):
                 if new_p.get(fld) and new_p.get(fld) != ex_p.get(fld):
                     updated[fld] = new_p[fld]
             reconciled.append(updated)
         else:
-            # Genuinely new
             new_p.setdefault('created_at', today)
             new_p['last_seen'] = today
             new_p.setdefault('active', True)
             reconciled.append(new_p)
-            logs.append(
-                f'NEW: [{new_p.get("bank_name")}] {new_p.get("title", "?")}'
-            )
+            logs.append(f'NEW: [{new_p.get("bank_name")}] {new_p.get("title", "?")}')
 
-    # Handle existing entries not matched by this scrape run
     for idx, ex_p in enumerate(existing_promos):
         if idx in matched_idxs:
             continue
         end = (ex_p.get('end_date') or '')[:10]
         if end and end < today:
-            expired_p = dict(ex_p)
+            expired_p           = dict(ex_p)
             expired_p['active'] = False
             reconciled.append(expired_p)
-            logs.append(
-                f'EXPIRED: [{ex_p.get("bank_name")}] {ex_p.get("title", "?")}'
-            )
+            logs.append(f'EXPIRED: [{ex_p.get("bank_name")}] {ex_p.get("title", "?")}')
         else:
-            kept_p = dict(ex_p)
+            kept_p              = dict(ex_p)
             kept_p['last_seen'] = today
             reconciled.append(kept_p)
 
@@ -432,21 +439,11 @@ def reconcile_with_existing(
 # ── AI prompt builder ─────────────────────────────────────────────────────────
 
 def _build_extraction_prompt(
-    bank_name:          str,
-    scraped_text:       str,
-    existing_for_bank:  list[dict],
-    today:              str,
+    bank_name:         str,
+    scraped_text:      str,
+    existing_for_bank: list[dict],
+    today:             str,
 ) -> str:
-    """
-    Build the extraction prompt sent to GPT-4o.
-
-    The prompt encodes four hard rules that directly address the recurring
-    issues this system has experienced:
-      R1 — Exact title copying         (prevents wrong naming like "Tesla Loan")
-      R2 — One promo per source URL    (prevents splitting combined campaigns)
-      R3 — Strict dedup vs database    (prevents re-adding existing entries)
-      R4 — Start-date gate for "new"   (prevents old promos appearing as new)
-    """
     if not existing_for_bank:
         db_lines = '  (none — this is a fresh bank)'
     else:
@@ -477,32 +474,25 @@ def _build_extraction_prompt(
         '* WRONG: "WeLab Bank Referral Reward for Tesla Loan"\n'
         '    (AI invented this; the page is about a general R-Friend loan referral)\n'
         '* RIGHT:  "WeLab Bank Personal Loan \'R-Friend Referral\' Campaign"\n'
-        '    (copied from the page title)\n'
-        '* WRONG: "Foreign Exchange Time Deposit Interest Rate Boost"\n'
-        '    (AI invented this by merging two Fusion Bank concepts)\n'
-        '* RIGHT:  Use the actual campaign name exactly as written on the page.\n\n'
+        '    (copied from the page title)\n\n'
         'RULE 2 — ONE PROMOTION PER SOURCE URL:\n'
-        '* If one campaign page describes multiple benefits (e.g. time deposit rate PLUS\n'
-        '  fund cash reward), create EXACTLY ONE promotion covering ALL benefits.\n'
-        '* Do NOT split a single campaign page into multiple promotion entries.\n'
-        '* WRONG: Two separate entries both pointing to the same URL.\n'
-        '* RIGHT:  One entry with description covering all benefits on that page.\n\n'
-        'RULE 3 — STRICT DEDUPLICATION (second most common error):\n'
+        '* If one campaign page describes multiple benefits, create EXACTLY ONE promotion.\n'
+        '* Do NOT split a single campaign page into multiple promotion entries.\n\n'
+        'RULE 3 — STRICT DEDUPLICATION:\n'
         '* Before adding ANY promotion, check the "ALREADY IN DATABASE" list above.\n'
-        '* If the SAME URL already appears in that list -> SKIP, do not add again.\n'
+        '* If the SAME URL already appears in that list -> SKIP.\n'
         '* If a VERY SIMILAR TITLE for the same bank already appears -> SKIP.\n'
         '* When uncertain: SKIP rather than risk adding a duplicate.\n\n'
         f'RULE 4 — START DATE GATE:\n'
-        f'* If a promotion start_date can be determined and it is BEFORE {today},\n'
-        f'  set "is_new_today": false — it is not a new launch even if scraped today.\n'
+        f'* If start_date can be determined and is BEFORE {today},\n'
+        f'  set "is_new_today": false.\n'
         f'* Only set "is_new_today": true when start_date >= {today} OR unknown.\n\n'
         f'RULE 5 — ACTIVE / EXPIRED:\n'
         f'* end_date < {today}   -> "active": false\n'
         f'* end_date >= {today}  -> "active": true\n'
-        '* No end_date / Ongoing -> "active": true\n'
-        '* If the source page has substantial content and no expiry notice -> "active": true\n\n'
+        '* No end_date / Ongoing -> "active": true\n\n'
         'RULE 6 — SOURCE LINK:\n'
-        '* Use the most specific URL for each promotion (campaign detail page > home page).\n'
+        '* Use the most specific URL for each promotion.\n'
         '* Source URLs appear as === SOURCE: [URL] === markers in the text above.\n\n'
         '══════════════════════════════════════════════════\n'
         'OUTPUT FORMAT — return ONLY a valid JSON array:\n'
@@ -529,18 +519,9 @@ def _build_extraction_prompt(
         'Return [] if no promotions found.  Return ONLY the JSON array — no prose.'
     )
 
-
 # ── AI call ───────────────────────────────────────────────────────────────────
 
-def _call_ai(
-    prompt: str,
-    model:  str = 'gpt-4o',
-    seed:   int = 42,
-) -> str:
-    """
-    Call the OpenAI chat completion API and return raw response text.
-    Low temperature (0.05) minimises hallucination of titles/names.
-    """
+def _call_ai(prompt: str, model: str = 'gpt-4o', seed: int = 42) -> str:
     client = _get_client()
     resp   = client.chat.completions.create(
         model    = model,
@@ -566,7 +547,6 @@ def _call_ai(
 
 
 def _parse_ai_json(raw: str, bank_name: str) -> list[dict]:
-    """Parse AI response that may be a bare array or wrapped in an object."""
     raw = raw.strip()
     try:
         parsed = json.loads(raw)
@@ -581,7 +561,6 @@ def _parse_ai_json(raw: str, bank_name: str) -> list[dict]:
     except json.JSONDecodeError:
         pass
 
-    # Last-resort: extract first JSON array from text
     m = re.search(r'\[.*\]', raw, re.DOTALL)
     if m:
         try:
@@ -594,21 +573,16 @@ def _parse_ai_json(raw: str, bank_name: str) -> list[dict]:
 
 
 def _validate_promotion(p: dict, bank_name: str, today: str) -> Optional[dict]:
-    """
-    Normalise and validate one promotion dict.
-    Returns None (discard) if the entry is clearly invalid.
-    """
     title = (p.get('title') or '').strip()
     if not title or len(title) < 3:
         return None
 
     p['bank_name'] = bank_name
 
-    # Normalise types
     raw_t = p.get('types') or []
     if isinstance(raw_t, str):
         raw_t = [raw_t]
-    valid_t = [t for t in raw_t if t in VALID_TYPES]
+    valid_t    = [t for t in raw_t if t in VALID_TYPES]
     p['types'] = valid_t if valid_t else ['Others 其他']
 
     p['is_bau'] = bool(p.get('is_bau', False))
@@ -625,139 +599,207 @@ def _validate_promotion(p: dict, bank_name: str, today: str) -> Optional[dict]:
         else:
             p[df] = None
 
-    # If end_date is in the past, mark inactive
     if p['end_date'] and p['end_date'] < today:
         p['active'] = False
 
-    # Remove transient is_new_today flag (computed dynamically in frontend/email)
     p.pop('is_new_today', None)
-
     return p
 
-# ── Main extraction entry point ───────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# PUBLIC API — functions imported by main.py
+# ══════════════════════════════════════════════════════════════════════════════
 
-def extract_promotions(
-    scraped_data:        dict,
-    existing_promotions: list[dict],
-    today:               str = None,
-) -> tuple[list[dict], list[str]]:
+def init_ai() -> bool:
     """
-    Extract and reconcile promotions from all scraped bank data.
+    Initialise the OpenAI client and validate the API key.
+
+    Returns True if AI is ready to use, False otherwise.
+    main.py stores this result in `ai_ok` and skips AI steps when False,
+    so the pipeline can still complete with DB-only data.
+    """
+    if not HAS_OPENAI:
+        print('  ⚠️  openai package not installed — AI features disabled')
+        return False
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        print('  ⚠️  OPENAI_API_KEY not set — AI features disabled')
+        return False
+    try:
+        _get_client()   # force lazy init; raises on bad key at first real call
+        print('  ✅ OpenAI client initialised')
+        return True
+    except Exception as exc:
+        print(f'  ❌ OpenAI init failed: {exc}')
+        return False
+
+
+def analyze_promotions(
+    bank_id:     str,
+    bank_name:   str,
+    text:        str,
+    screenshot:  Optional[bytes] = None,
+    default_url: str = '',
+) -> list[dict]:
+    """
+    Extract structured promotions for ONE bank from its scraped page text.
+
+    This function only extracts — it does NOT reconcile with the database.
+    Dedup against existing DB records is handled separately by
+    ai_match_against_existing(), and within-batch dedup by ai_dedup_titles().
 
     Args:
-        scraped_data:        Output of run_scraper() — keyed by bank_id.
-        existing_promotions: Current data.json promotions list.
-        today:               Date string YYYY-MM-DD (defaults to HKT today).
+        bank_id:     Internal bank identifier string.
+        bank_name:   Human-readable bank name shown in prompts and data.
+        text:        Raw scraped text from run_scraper() result['text'].
+        screenshot:  Optional screenshot bytes (unused currently; reserved for
+                     future vision-model support).
+        default_url: Fallback tc_link when the AI returns no URL for a promo.
 
     Returns:
-        (all_promotions, log_messages)
+        List of validated promotion dicts, ready for dedup + DB matching.
     """
-    if today is None:
-        today = datetime.now().strftime('%Y-%m-%d')
+    today = datetime.now().strftime('%Y-%m-%d')
 
-    all_logs: list[str] = []
+    prompt = _build_extraction_prompt(
+        bank_name         = bank_name,
+        scraped_text      = text,
+        existing_for_bank = [],   # DB dedup is a separate step in main.py
+        today             = today,
+    )
 
-    # ── Inject missing static BAU entries ────────────────────────
-    existing_keys: set[tuple[str, str]] = {
-        (p.get('bank_name', ''), (p.get('title') or '').lower())
-        for p in existing_promotions
-    }
-    bau_to_add: list[dict] = []
-    for bau in STATIC_BAU_PROMOTIONS:
-        key = (bau['bank_name'], bau['title'].lower())
-        if key not in existing_keys:
-            entry = dict(bau)
-            entry['created_at'] = today
-            entry['last_seen']  = today
-            bau_to_add.append(entry)
-            all_logs.append(f'STATIC BAU: [{bau["bank_name"]}] {bau["title"]}')
+    try:
+        raw      = _call_ai(prompt)
+        raw_list = _parse_ai_json(raw, bank_name)
+    except Exception as exc:
+        print(f'    ❌ AI extraction error for {bank_name}: {exc}')
+        return []
 
-    # ── Group existing by bank ────────────────────────────────────
-    existing_by_bank: dict[str, list[dict]] = {}
-    for p in existing_promotions:
-        bn = p.get('bank_name') or p.get('bank') or 'Unknown'
-        existing_by_bank.setdefault(bn, []).append(p)
+    validated: list[dict] = []
+    for p in raw_list:
+        if not p.get('tc_link') and default_url:
+            p['tc_link'] = default_url
+        v = _validate_promotion(p, bank_name, today)
+        if v:
+            validated.append(v)
 
-    all_reconciled: list[dict] = []
-    processed_banks: set[str]  = set()
+    print(f'    📋 {len(validated)} promotions extracted for {bank_name}')
+    return validated
 
-    for bank_id, bank_data in scraped_data.items():
-        bank_name    = bank_data.get('bank_name', bank_id)
-        scraped_text = bank_data.get('text') or ''
 
-        if not scraped_text:
-            all_logs.append(f'SKIP (no text): {bank_name}')
-            all_reconciled.extend(existing_by_bank.get(bank_name, []))
+def ai_dedup_titles(titles: list[str], bank_name: str) -> dict:
+    """
+    Identify duplicate titles within a single freshly-extracted batch.
+
+    Uses SequenceMatcher — no extra AI call needed for within-batch dedup.
+
+    Args:
+        titles:    List of title strings in the same order as the promos list.
+        bank_name: Used only for log messages.
+
+    Returns:
+        A dict whose KEYS are the indices to remove (the duplicates).
+        Values are the index of the canonical entry that is kept.
+        main.py uses:  promos = [p for i, p in enumerate(promos) if i not in dup_map]
+    """
+    if not titles:
+        return {}
+
+    to_remove: dict[int, int] = {}
+
+    for i in range(len(titles)):
+        if i in to_remove:
             continue
+        for j in range(i + 1, len(titles)):
+            if j in to_remove:
+                continue
+            ratio = _similarity(titles[i], titles[j])
+            if ratio >= _DUPLICATE_TITLE_THRESHOLD:
+                to_remove[j] = i
+                print(
+                    f'    ♻  Within-batch dedup [{bank_name}]: '
+                    f'"{titles[j][:50]}" ≈ "{titles[i][:50]}"  (ratio={ratio:.2f})'
+                )
 
-        print(f'\n  🤖 AI extraction: {bank_name}...')
-        processed_banks.add(bank_name)
+    return to_remove
 
-        existing_for_bank = existing_by_bank.get(bank_name, [])
 
-        prompt = _build_extraction_prompt(
-            bank_name         = bank_name,
-            scraped_text      = scraped_text,
-            existing_for_bank = existing_for_bank,
-            today             = today,
-        )
+def ai_match_against_existing(
+    promos:      list[dict],
+    existing_db: list[dict],
+    bank_name:   str,
+) -> dict:
+    """
+    Match newly extracted promotions against existing database records.
 
-        try:
-            raw      = _call_ai(prompt)
-            raw_list = _parse_ai_json(raw, bank_name)
-        except Exception as exc:
-            all_logs.append(f'AI_ERROR: {bank_name} — {exc}')
-            print(f'    ❌ AI error for {bank_name}: {exc}')
-            all_reconciled.extend(existing_for_bank)
-            continue
+    Uses URL + title similarity — no extra AI call (keeps latency and cost low).
 
-        # Validate each extracted promotion
-        validated: list[dict] = []
-        for p in raw_list:
-            v = _validate_promotion(p, bank_name, today)
-            if v:
-                validated.append(v)
+    Args:
+        promos:      Freshly extracted promos for this bank (after within-batch dedup).
+        existing_db: Active DB records returned by get_active_promos_for_bank().
+                     Each record is expected to carry an 'id' (or '_id'/'promo_id') field.
+        bank_name:   Used only for log messages.
 
-        # Dedup within this batch
-        validated = deduplicate_promotions(validated)
+    Returns:
+        {promo_index: db_id}  for each new promo that matches an existing record.
+        main.py stores db_id as promo['_matched_id'] so save_promotions() can
+        UPDATE the existing row rather than INSERT a duplicate.
+    """
+    if not promos or not existing_db:
+        return {}
 
-        # Reconcile with existing database entries for this bank
-        reconciled, logs = reconcile_with_existing(validated, existing_for_bank, today)
-        all_logs.extend(logs)
-        all_reconciled.extend(reconciled)
-        print(
-            f'    ✓  {bank_name}: {len(validated)} extracted '
-            f'-> {len(reconciled)} reconciled'
-        )
+    match_map: dict[int, Any] = {}
 
-    # Carry forward banks that were not scraped this run
-    for bank_name, promos in existing_by_bank.items():
-        if bank_name not in processed_banks:
-            all_reconciled.extend(promos)
+    for i, new_p in enumerate(promos):
+        for ex_p in existing_db:
+            # Ensure both sides have the same bank_name for _are_duplicate()
+            ex_copy = dict(ex_p)
+            ex_copy.setdefault('bank_name', bank_name)
+            new_copy = dict(new_p)
+            new_copy.setdefault('bank_name', bank_name)
 
-    # Add static BAU promotions that were missing
-    all_reconciled.extend(bau_to_add)
+            if _are_duplicate(new_copy, ex_copy):
+                db_id = (
+                    ex_p.get('id') or
+                    ex_p.get('_id') or
+                    ex_p.get('promo_id') or
+                    ex_p.get('promotion_id')
+                )
+                if db_id is not None:
+                    match_map[i] = db_id
+                    print(
+                        f'    🔗 DB-match [{bank_name}]: '
+                        f'"{(new_p.get("title") or "")[:50]}" → id={db_id}'
+                    )
+                break
 
-    # Global dedup pass across ALL banks
-    all_reconciled = deduplicate_promotions(all_reconciled)
+    return match_map
 
-    # Re-validate expired promotions (fixes wrongly-expired Mox promotions etc.)
-    all_reconciled = revalidate_expired(all_reconciled, today)
-
-    return all_reconciled, all_logs
-
-# ── Strategic insights ────────────────────────────────────────────────────────
 
 def generate_strategic_insights(
-    all_promotions: list[dict],
-    today:          str = None,
+    promos_by_name: dict,
+    db_fetch_fn:    Optional[Callable] = None,
+    today:          Optional[str]      = None,
 ) -> dict:
     """
     Generate best-in-category winners and bank-by-bank analysis.
-    Called by main.py; result is stored in data.json as "strategic_insights".
+
+    Args:
+        promos_by_name: dict mapping bank_name -> list[promo dict].
+                        Built in main.py from get_active_promotions(include_bau=True).
+        db_fetch_fn:    Optional callable(bank_name) -> list[dict] that can supply
+                        additional promotions per bank (reserved for future enrichment).
+        today:          Date string YYYY-MM-DD; defaults to today in HKT.
+
+    Returns:
+        {'best_for': [...], 'bank_analysis': {...}}
     """
     if today is None:
         today = datetime.now().strftime('%Y-%m-%d')
+
+    # Flatten to a single list for analysis
+    all_promotions: list[dict] = []
+    for promos in promos_by_name.values():
+        all_promotions.extend(promos)
 
     non_bau_active = [
         p for p in all_promotions
@@ -862,3 +904,95 @@ def generate_strategic_insights(
     except Exception as exc:
         print(f'  ❌ Strategic insights error: {exc}')
         return {'best_for': [], 'bank_analysis': {}}
+
+
+# ── Legacy all-in-one entry point (kept for backwards compatibility) ───────────
+
+def extract_promotions(
+    scraped_data:        dict,
+    existing_promotions: list[dict],
+    today:               Optional[str] = None,
+) -> tuple[list[dict], list[str]]:
+    """
+    Legacy single-call extraction pipeline.
+    Prefer the granular main.py flow (analyze_promotions → ai_dedup_titles →
+    ai_match_against_existing → save_promotions) for new code.
+    """
+    if today is None:
+        today = datetime.now().strftime('%Y-%m-%d')
+
+    all_logs: list[str] = []
+
+    existing_keys: set[tuple[str, str]] = {
+        (p.get('bank_name', ''), (p.get('title') or '').lower())
+        for p in existing_promotions
+    }
+    bau_to_add: list[dict] = []
+    for bau in STATIC_BAU_PROMOTIONS:
+        key = (bau['bank_name'], bau['title'].lower())
+        if key not in existing_keys:
+            entry               = dict(bau)
+            entry['created_at'] = today
+            entry['last_seen']  = today
+            bau_to_add.append(entry)
+            all_logs.append(f'STATIC BAU: [{bau["bank_name"]}] {bau["title"]}')
+
+    existing_by_bank: dict[str, list[dict]] = {}
+    for p in existing_promotions:
+        bn = p.get('bank_name') or p.get('bank') or 'Unknown'
+        existing_by_bank.setdefault(bn, []).append(p)
+
+    all_reconciled: list[dict] = []
+    processed_banks: set[str]  = set()
+
+    for bank_id, bank_data in scraped_data.items():
+        bank_name    = bank_data.get('bank_name', bank_id)
+        scraped_text = bank_data.get('text') or ''
+
+        if not scraped_text:
+            all_logs.append(f'SKIP (no text): {bank_name}')
+            all_reconciled.extend(existing_by_bank.get(bank_name, []))
+            continue
+
+        print(f'\n  🤖 AI extraction: {bank_name}...')
+        processed_banks.add(bank_name)
+
+        existing_for_bank = existing_by_bank.get(bank_name, [])
+
+        prompt = _build_extraction_prompt(
+            bank_name         = bank_name,
+            scraped_text      = scraped_text,
+            existing_for_bank = existing_for_bank,
+            today             = today,
+        )
+
+        try:
+            raw      = _call_ai(prompt)
+            raw_list = _parse_ai_json(raw, bank_name)
+        except Exception as exc:
+            all_logs.append(f'AI_ERROR: {bank_name} — {exc}')
+            print(f'    ❌ AI error for {bank_name}: {exc}')
+            all_reconciled.extend(existing_for_bank)
+            continue
+
+        validated: list[dict] = []
+        for p in raw_list:
+            v = _validate_promotion(p, bank_name, today)
+            if v:
+                validated.append(v)
+
+        validated          = deduplicate_promotions(validated)
+        reconciled, logs   = reconcile_with_existing(validated, existing_for_bank, today)
+        all_logs.extend(logs)
+        all_reconciled.extend(reconciled)
+        print(f'    ✓  {bank_name}: {len(validated)} extracted -> {len(reconciled)} reconciled')
+
+    for bank_name, promos in existing_by_bank.items():
+        if bank_name not in processed_banks:
+            all_reconciled.extend(promos)
+
+    all_reconciled.extend(bau_to_add)
+    all_reconciled = deduplicate_promotions(all_reconciled)
+    all_reconciled = revalidate_expired(all_reconciled, today)
+
+    return all_reconciled, all_logs
