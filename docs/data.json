@@ -1,5 +1,5 @@
 {
-  "updated": "2026-04-15 07:22",
+  "updated": "2026-04-16 07:32",
   "promotions": [
     {
       "id": 74,
@@ -21,7 +21,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -45,7 +45,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -69,7 +69,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -93,7 +93,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -116,7 +116,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -139,7 +139,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -162,7 +162,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -186,7 +186,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -209,7 +209,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -232,7 +232,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -255,7 +255,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -278,7 +278,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -301,7 +301,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -324,7 +324,7 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -508,7 +508,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -531,7 +531,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -555,7 +555,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -578,7 +578,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -601,7 +601,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -624,7 +624,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -647,7 +647,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -670,7 +670,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -693,7 +693,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -716,7 +716,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -739,7 +739,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -762,7 +762,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -785,7 +785,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -808,7 +808,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -831,7 +831,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -854,7 +854,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -877,7 +877,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -1272,7 +1272,7 @@
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1295,7 +1295,7 @@
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1318,7 +1318,7 @@
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1341,7 +1341,7 @@
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1364,7 +1364,7 @@
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1388,7 +1388,7 @@
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1411,7 +1411,7 @@
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1434,7 +1434,7 @@
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1457,7 +1457,7 @@
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -1551,7 +1551,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1574,7 +1574,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1597,7 +1597,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1620,7 +1620,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1644,7 +1644,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -1668,7 +1668,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -1691,7 +1691,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -1714,7 +1714,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -1737,7 +1737,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -1760,7 +1760,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -1783,7 +1783,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -1806,7 +1806,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -1829,7 +1829,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -1852,7 +1852,7 @@
       "url": "",
       "tc_link": "https://www.livibank.com/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -1990,7 +1990,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2013,7 +2013,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2036,7 +2036,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2060,7 +2060,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2084,7 +2084,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2107,7 +2107,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2130,7 +2130,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2154,7 +2154,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2178,7 +2178,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2201,7 +2201,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2224,7 +2224,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2248,7 +2248,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2271,7 +2271,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2295,7 +2295,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2318,7 +2318,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2342,7 +2342,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2365,7 +2365,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2388,7 +2388,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2412,7 +2412,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2435,7 +2435,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2458,7 +2458,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2481,7 +2481,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2504,7 +2504,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2527,7 +2527,7 @@
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -2551,7 +2551,7 @@
       "url": "",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -2575,7 +2575,7 @@
       "url": "",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-11",
       "last_seen": "2026-04-15"
     },
@@ -2598,7 +2598,7 @@
       "url": "",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-11",
       "last_seen": "2026-04-15"
     },
@@ -2621,7 +2621,7 @@
       "url": "",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -2644,7 +2644,7 @@
       "url": "",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -2668,7 +2668,7 @@
       "url": "",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-14",
       "last_seen": "2026-04-15"
     },
@@ -2692,7 +2692,7 @@
       "url": "",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -2715,7 +2715,7 @@
       "url": "",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -3042,7 +3042,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3065,7 +3065,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3088,7 +3088,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3111,7 +3111,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3134,7 +3134,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/tc/money-market-fund.html",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3157,7 +3157,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/tc/investment.html",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3180,7 +3180,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3203,7 +3203,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/tc/stock.html",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3226,7 +3226,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/tc/investment.html",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3249,7 +3249,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/tc/investment.html",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -3272,7 +3272,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/tc/money-market-fund.html",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -3295,7 +3295,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/tc/money-market-fund.html",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -3318,7 +3318,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/tc/investment.html",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -3387,7 +3387,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3411,7 +3411,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/dcp-easter-lucky-draw-2026/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3435,7 +3435,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/dcp-easter-lucky-draw-2026/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3459,7 +3459,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/2-in-1-welcome-rewards-apr26/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3482,7 +3482,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/fund/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3505,7 +3505,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/fund/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3528,7 +3528,7 @@
       "url": "",
       "tc_link": "https://bit.ly/4qfts42",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3551,7 +3551,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/loan_mgm/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3575,7 +3575,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/tesla-mega-combo/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3599,7 +3599,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/2-in-1-welcome-rewards-apr26/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -3623,7 +3623,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/2-in-1-welcome-rewards-apr26/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -3648,7 +3648,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/2-in-1-welcome-rewards-apr26/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -3672,7 +3672,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -3696,7 +3696,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/loan_mgm/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -3720,7 +3720,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/zh/feature/2-in-1-welcome-rewards-apr26/",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -3933,7 +3933,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3957,7 +3957,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -3981,7 +3981,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -4005,7 +4005,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -4029,7 +4029,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -4052,7 +4052,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -4076,7 +4076,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -4099,7 +4099,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -4122,7 +4122,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -4145,7 +4145,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -4168,7 +4168,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-15"
     },
@@ -4191,7 +4191,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -4215,7 +4215,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -4238,7 +4238,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-15"
     },
@@ -4261,7 +4261,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -4284,7 +4284,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -4308,7 +4308,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -4332,7 +4332,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-15"
     },
@@ -4356,7 +4356,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-14",
       "last_seen": "2026-04-15"
     },
@@ -4379,7 +4379,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -4403,7 +4403,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -4426,7 +4426,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -4449,7 +4449,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-15"
     },
@@ -4994,163 +4994,6 @@
       "last_seen": "2026-04-09"
     }
   ],
-  "last_updated": "2026-04-15 07:22",
-  "strategic_insights": {
-    "best_for": [
-      {
-        "category": "Investment (Stock/Crypto Trading)",
-        "bank": "ZA Bank",
-        "detail": "0 commission and 0 custody fees on all HK stock trades",
-        "is_bau": true
-      },
-      {
-        "category": "Spending/CashBack",
-        "bank": "Mox Bank",
-        "detail": "Up to 2% Unlimited CashBack on all spending",
-        "is_bau": true
-      },
-      {
-        "category": "Welcome Bonus",
-        "bank": "ZA Bank",
-        "detail": "HKD 2,026 in rewards and 2.5% stock rebate for new customers",
-        "is_bau": false
-      },
-      {
-        "category": "Travel",
-        "bank": "Mox Bank",
-        "detail": "MOXTRAVEL offer with up to 28,500 Asia Miles through spending and saving",
-        "is_bau": false
-      },
-      {
-        "category": "Loan APR",
-        "bank": "Mox Bank",
-        "detail": "1.18% APR tax season instant loan",
-        "is_bau": false
-      },
-      {
-        "category": "FX/Multi-Currency",
-        "bank": "WeLab Bank",
-        "detail": "WeLab Global Wallet offers best FX rates in town with up to 3% cashback on overseas spending",
-        "is_bau": false
-      },
-      {
-        "category": "Fund Investment",
-        "bank": "ZA Bank",
-        "detail": "0% subscription fees on ALL funds with no cap until July 31, 2026",
-        "is_bau": false
-      },
-      {
-        "category": "Referral Bonus",
-        "bank": "ZA Bank",
-        "detail": "Up to HKD 90,000 cash rewards for referring friends",
-        "is_bau": false
-      }
-    ],
-    "bank_analysis": {
-      "ZA Bank": {
-        "focus": "stock trading, fund investment, high welcome bonus",
-        "strengths": [
-          "Zero-fee stock trading (BAU)",
-          "0% fund subscription fee until July 2026",
-          "Highest referral bonus (up to HKD 90,000)"
-        ],
-        "expiring_alert": "20% p.a. HKD Time Deposit for New Customers expires May 27, 2026",
-        "vs_za_pros": null,
-        "vs_za_cons": null,
-        "count": 12,
-        "bau_count": 11
-      },
-      "Mox Bank": {
-        "focus": "cashback, travel rewards, payroll perks",
-        "strengths": [
-          "Up to 2% unlimited cashback (BAU)",
-          "Multiple travel partnerships including Asia Miles",
-          "Low 1.18% APR tax loan"
-        ],
-        "expiring_alert": "Many promotions ending April 30, 2026 including tax payment offers and installment deals",
-        "vs_za_pros": "Better cashback program; more travel partnerships; lower loan APR",
-        "vs_za_cons": "Higher trading fees than ZA Bank; smaller referral bonus",
-        "count": 25,
-        "bau_count": 7
-      },
-      "WeLab Bank": {
-        "focus": "global wallet, FX rates, time deposits",
-        "strengths": [
-          "Best FX rates with up to 3% cashback on overseas spending",
-          "4% p.a. time deposit for new customers",
-          "0% foreign currency transaction fee"
-        ],
-        "expiring_alert": "GoSave 2.0 4% p.a. Time Deposit offer expires April 30, 2026",
-        "vs_za_pros": "Better FX rates and overseas spending rewards",
-        "vs_za_cons": "Lower stock trading benefits; smaller referral program",
-        "count": 11,
-        "bau_count": 4
-      },
-      "Ant Bank": {
-        "focus": "multi-currency savings, SME loans, insurance",
-        "strengths": [
-          "Fixed deposit early withdrawal with zero penalty (BAU)",
-          "Up to HKD 100,000 SME loan cash rebate",
-          "2.0% p.a. high-yield savings"
-        ],
-        "expiring_alert": "SME Loan Cash Rebate Promotion is a limited-time offer",
-        "vs_za_pros": "Better business banking offerings; higher SME loan rebates",
-        "vs_za_cons": "Lower stock trading benefits; weaker referral program",
-        "count": 5,
-        "bau_count": 12
-      },
-      "Airstar Bank": {
-        "focus": "remittance, security transfers, personal loans",
-        "strengths": [
-          "24/7 securities transfers in multiple currencies (BAU)",
-          "Personal loan with quick 5-minute disbursement (BAU)",
-          "Zero handling fee for first mainland China remittance"
-        ],
-        "expiring_alert": "0 Handling Fee for First Remittance to Chinese Mainland is time-limited",
-        "vs_za_pros": "Faster securities transfers; better mainland China connectivity",
-        "vs_za_cons": "Weaker investment platform; no significant cashback program",
-        "count": 3,
-        "bau_count": 11
-      },
-      "Fusion Bank": {
-        "focus": "quick account opening, small deposits, time deposits",
-        "strengths": [
-          "Enhanced interest rates for forex time deposits",
-          "Multi-currency local transfers (BAU)",
-          "Global remittance services (BAU)"
-        ],
-        "expiring_alert": "Flash Monday High-Interest HKD Time Deposit is a limited-time weekly offer",
-        "vs_za_pros": "Better forex time deposit rates",
-        "vs_za_cons": "Less comprehensive investment platform; fewer promotions overall",
-        "count": 3,
-        "bau_count": 6
-      },
-      "PAObank": {
-        "focus": "investment account opening, fund fees, stock trading",
-        "strengths": [
-          "Zero fee money market fund subscription and redemption (BAU)",
-          "3-minute investment account opening (BAU)",
-          "Low minimum investment amounts (USD 20)"
-        ],
-        "expiring_alert": "No significant expiring promotions found",
-        "vs_za_pros": "Faster investment account opening",
-        "vs_za_cons": "Fewer active promotions; smaller customer incentives",
-        "count": 0,
-        "bau_count": 13
-      },
-      "livi bank": {
-        "focus": "partnerships, insurance products, SME financing",
-        "strengths": [
-          "BOC card partnerships",
-          "Comprehensive insurance offerings",
-          "SME business financing"
-        ],
-        "expiring_alert": "No specific expiry dates mentioned for promotions",
-        "vs_za_pros": "Better business banking services; more insurance options",
-        "vs_za_cons": "Weaker cashback and investment offerings; less competitive welcome bonus",
-        "count": 11,
-        "bau_count": 3
-      }
-    }
-  }
+  "last_updated": "2026-04-16 07:32",
+  "strategic_insights": null
 }
