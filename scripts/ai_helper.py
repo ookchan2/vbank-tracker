@@ -1,126 +1,9 @@
 # scripts/ai_helper.py
 
-"""
-AI extraction, deduplication, validation and strategic-insights generation.
-
-Key design decisions
-────────────────────
-1. URL-based dedup first   — one source URL → one promotion (merge sub-features)
-2. Title-similarity dedup  — fuzzy match prevents near-identical entries
-3. Exact-title enforcement — prompt explicitly forbids AI from renaming promos
-4. start_date gate          — promotions whose start_date < today are NOT flagged
-                              as "new today" even if first detected today
-5. Expired re-validation    — if end_date >= today the promo is kept active;
-                              if found in active list it is a duplicate → remove
-6. Static BAU injections    — Ant Bank BAU entries are maintained here so they
-                              are always present regardless of scrape quality
-"""
-
 import json
 import os
 import re
-from datetime import datetime, timedelta
-from difflib import SequenceMatcher
-from typing import Optional
-
-# ── OpenAI client (lazy init) ─────────────────────────────────────────────────
-
-try:
-    from openai import OpenAI as _OpenAIClass
-    _openai_client: Optional[_OpenAIClass] = None
-
-    def _get_client() -> _OpenAIClass:
-        global _openai_client
-        if _openai_client is None:
-            api_key = os.getenv('OPENAI_API_KEY')
-            if not api_key:
-                raise EnvironmentError('OPENAI_API_KEY environment variable is not set.')
-            _openai_client = _OpenAIClass(api_key=api_key)
-        return _openai_client
-
-    HAS_OPENAI = True
-except ImportError:
-    HAS_OPENAI = False
-    def _get_client():
-        raise ImportError('openai package is not installed. Run: pip install openai')
-
-# ── Constants ─────────────────────────────────────────────────────────────────
-
-_DUPLICATE_TITLE_THRESHOLD = 0.76   # SequenceMatcher ratio — above this = duplicate
-_DUPLICATE_DESC_THRESHOLD  = 0.88
-
-VALID_TYPES = [
-    '迎新 Welcome', '消費 Spending', '投資 Investment', '旅遊 Travel',
-    '保險 Insurance', '貸款 Loan', '活期存款 Savings', '定期存款 TDeposit',
-    '外匯 FX', '推薦 Referral', '新資金 New Funds', 'Others 其他',
-]
-
-# ── Static BAU promotions ─────────────────────────────────────────────────────
-
-STATIC_BAU_PROMOTIONS: list[dict] = [
-    {
-        'bank_name': 'Ant Bank',
-        'title':     'SME Loan Cash Rebate Promotion',
-        'highlight': 'SME customers enjoy cash rebates on eligible business loan products.',
-        'description': (
-            'Ant Bank SME customers who successfully apply for and drawdown eligible '
-            'business loan products can receive a cash rebate. The rebate amount varies '
-            'by loan amount and is credited after drawdown completion.'
-        ),
-        'types':   ['貸款 Loan'],
-        'is_bau':  True,
-        'active':  True,
-        'period':  'Ongoing',
-        'quota':   'SME customers only',
-        'tc_link': 'https://www.antbank.hk/',
-    },
-    {
-        'bank_name': 'Ant Bank',
-        'title':     '100% Insurance Premium Rebate',
-        'highlight': "Enjoy 100% rebate on the first month's premium for eligible insurance products.",
-        'description': (
-            "Eligible Ant Bank customers receive a 100% rebate on the first month's "
-            'insurance premium when purchasing designated insurance products through the '
-            'Ant Bank app. This is a permanent BAU benefit available to qualifyingThe root cause is clear: `main.py` imports `init_ai`, `analyze_promotions`, `ai_dedup_titles`, and `ai_match_against_existing` — but none of those exist in `ai_helper.py`. The two files are from different architecture versions. `ai_helper.py` needs four new public functions added to match what `main.py` expects, and `generate_strategic_insights` needs its signature updated.
-
-Here is the complete corrected `ai_helper.py`:
-
-```python
-# scripts/ai_helper.py
-
-"""
-AI extraction, deduplication, validation and strategic-insights generation.
-
-Public API consumed by main.py
-──────────────────────────────
-  init_ai()                                     → bool
-  analyze_promotions(bank_id, bank_name, ...)   → list[dict]
-  ai_dedup_titles(titles, bank_name)            → dict   {dup_idx: canonical_idx}
-  ai_match_against_existing(promos, db, name)   → dict   {promo_idx: db_id}
-  generate_strategic_insights(promos_by_name,
-                               db_fetch_fn)      → dict
-
-Internal helpers (also usable externally)
-──────────────────────────────────────────
-  deduplicate_promotions, reconcile_with_existing,
-  revalidate_expired, is_new_today, is_new_this_week,
-  extract_promotions   (legacy all-in-one entry point)
-
-Key design decisions
-────────────────────
-1. URL-based dedup first   — one source URL → one promotion (merge sub-features)
-2. Title-similarity dedup  — fuzzy match prevents near-identical entries
-3. Exact-title enforcement — prompt explicitly forbids AI from renaming promos
-4. start_date gate         — promotions whose start_date < today are NOT flagged
-                             as "new today" even if first detected today
-5. Expired re-validation   — if end_date >= today the promo is kept active
-6. Static BAU injections   — Ant Bank BAU entries maintained here so they are
-                             always present regardless of scrape quality
-"""
-
-import json
-import os
-import re
+from collections import Counter
 from datetime import datetime, timedelta
 from difflib import SequenceMatcher
 from typing import Any, Callable, Optional
@@ -161,9 +44,9 @@ VALID_TYPES = [
 
 STATIC_BAU_PROMOTIONS: list[dict] = [
     {
-        'bank_name': 'Ant Bank',
-        'title':     'SME Loan Cash Rebate Promotion',
-        'highlight': 'SME customers enjoy cash rebates on eligible business loan products.',
+        'bank_name':   'Ant Bank',
+        'title':       'SME Loan Cash Rebate Promotion',
+        'highlight':   'SME customers enjoy cash rebates on eligible business loan products.',
         'description': (
             'Ant Bank SME customers who successfully apply for and drawdown eligible '
             'business loan products can receive a cash rebate. The rebate amount varies '
@@ -177,9 +60,9 @@ STATIC_BAU_PROMOTIONS: list[dict] = [
         'tc_link': 'https://www.antbank.hk/',
     },
     {
-        'bank_name': 'Ant Bank',
-        'title':     '100% Insurance Premium Rebate',
-        'highlight': "Enjoy 100% rebate on the first month's premium for eligible insurance products.",
+        'bank_name':   'Ant Bank',
+        'title':       '100% Insurance Premium Rebate',
+        'highlight':   "Enjoy 100% rebate on the first month's premium for eligible insurance products.",
         'description': (
             "Eligible Ant Bank customers receive a 100% rebate on the first month's "
             'insurance premium when purchasing designated insurance products through the '
@@ -193,9 +76,9 @@ STATIC_BAU_PROMOTIONS: list[dict] = [
         'tc_link': 'https://www.antbank.hk/',
     },
     {
-        'bank_name': 'Ant Bank',
-        'title':     'Insurance Products with up to 3.6% Annualized Rate',
-        'highlight': 'Ant Bank insurance savings products offer up to 3.6% p.a. annualized return.',
+        'bank_name':   'Ant Bank',
+        'title':       'Insurance Products with up to 3.6% Annualized Rate',
+        'highlight':   'Ant Bank insurance savings products offer up to 3.6% p.a. annualized return.',
         'description': (
             'Ant Bank offers insurance-linked savings products combining life insurance '
             'coverage with competitive annualized returns of up to 3.6%. These products '
@@ -228,16 +111,16 @@ def _normalize_url(url: str) -> str:
 def _score_completeness(p: dict) -> int:
     return (
         len(p.get('description') or '') +
-        len(p.get('highlight') or '') +
-        len(p.get('title') or '') * 2 +
-        len(p.get('quota') or '') +
-        len(p.get('cost') or '') +
+        len(p.get('highlight')   or '') +
+        len(p.get('title')       or '') * 2 +
+        len(p.get('quota')       or '') +
+        len(p.get('cost')        or '') +
         (20 if p.get('end_date')   else 0) +
         (20 if p.get('start_date') else 0) +
         (10 if p.get('tc_link')    else 0)
     )
 
-# ── Deduplication ─────────────────────────────────────────────────────────────
+# ── Deduplication helpers ─────────────────────────────────────────────────────
 
 def _are_duplicate(p1: dict, p2: dict) -> bool:
     b1 = (p1.get('bank_name') or p1.get('bank') or '').lower().strip()
@@ -259,9 +142,9 @@ def _are_duplicate(p1: dict, p2: dict) -> bool:
 
 
 def _merge_group(group: list[dict]) -> dict:
-    best = max(group, key=_score_completeness)
+    best      = max(group, key=_score_completeness)
     all_types: list[str] = []
-    seen_t: set[str]     = set()
+    seen_t:    set[str]  = set()
     for p in group:
         for t in (p.get('types') or []):
             if t not in seen_t:
@@ -303,16 +186,14 @@ def deduplicate_promotions(promotions: list[dict]) -> list[dict]:
                 found_dup = True
                 if _score_completeness(p) > _score_completeness(existing):
                     final[i] = p
-                title_preview = (p.get('title') or '')[:60]
-                bank_name     = p.get('bank_name', '?')
-                print(f'    ♻  Title-dedup removed: "{title_preview}" [{bank_name}]')
+                print(f'    ♻  Title-dedup removed: "{(p.get("title") or "")[:60]}" [{p.get("bank_name", "?")}]')
                 break
         if not found_dup:
             final.append(p)
 
     return final
 
-# ── New-today / new-this-week helpers ────────────────────────────────────────
+# ── Date helpers ──────────────────────────────────────────────────────────────
 
 def is_new_today(promo: dict, today: str) -> bool:
     created = (promo.get('created_at') or '')[:10]
@@ -329,8 +210,7 @@ def is_new_this_week(promo: dict, today: str) -> bool:
     if not created:
         return False
     try:
-        today_dt   = datetime.strptime(today, '%Y-%m-%d')
-        created_dt = datetime.strptime(created, '%Y-%m-%d')
+        today_dt = datetime.strptime(today, '%Y-%m-%d')
     except ValueError:
         return False
 
@@ -344,7 +224,6 @@ def is_new_this_week(promo: dict, today: str) -> bool:
         return False
     return True
 
-# ── Expired re-validation ─────────────────────────────────────────────────────
 
 def revalidate_expired(promotions: list[dict], today: str) -> list[dict]:
     active_set: set[str] = set()
@@ -361,21 +240,24 @@ def revalidate_expired(promotions: list[dict], today: str) -> list[dict]:
             continue
 
         end = (p.get('end_date') or '')[:10]
+
         if end and end >= today:
             p_fixed           = dict(p)
             p_fixed['active'] = True
-            title_preview     = (p.get('title') or '')[:60]
-            bank_label        = p.get('bank_name', '?')
-            print(f'    🔄 Re-activated (valid end_date {end}): "{title_preview}" [{bank_label}]')
+            print(
+                f'    🔄 Re-activated (valid end_date {end}): '
+                f'"{(p.get("title") or "")[:60]}" [{p.get("bank_name", "?")}]'
+            )
             corrected.append(p_fixed)
             continue
 
         if not end:
             url = _normalize_url(p.get('tc_link') or p.get('url') or '')
             if url and url in active_set:
-                title_preview = (p.get('title') or '')[:60]
-                bank_label    = p.get('bank_name', '?')
-                print(f'    🗑  Expired+duplicate removed: "{title_preview}" [{bank_label}]')
+                print(
+                    f'    🗑  Expired+duplicate removed: '
+                    f'"{(p.get("title") or "")[:60]}" [{p.get("bank_name", "?")}]'
+                )
                 continue
             corrected.append(p)
             continue
@@ -384,14 +266,14 @@ def revalidate_expired(promotions: list[dict], today: str) -> list[dict]:
 
     return corrected
 
-# ── Reconcile newly extracted vs existing ────────────────────────────────────
+# ── Reconcile ─────────────────────────────────────────────────────────────────
 
 def reconcile_with_existing(
     newly_extracted: list[dict],
     existing_promos: list[dict],
     today:           str,
 ) -> tuple[list[dict], list[str]]:
-    logs:         list[str]  = []
+    logs:         list[str] = []
     reconciled:   list[dict] = []
     matched_idxs: set[int]   = set()
 
@@ -408,8 +290,8 @@ def reconcile_with_existing(
             updated = dict(ex_p)
             updated['last_seen'] = today
             updated['active']    = True
-            for fld in ('description', 'highlight', 'period', 'end_date', 'start_date',
-                        'quota', 'cost', 'types'):
+            for fld in ('description', 'highlight', 'period', 'end_date',
+                        'start_date', 'quota', 'cost', 'types'):
                 if new_p.get(fld) and new_p.get(fld) != ex_p.get(fld):
                     updated[fld] = new_p[fld]
             reconciled.append(updated)
@@ -436,7 +318,7 @@ def reconcile_with_existing(
 
     return reconciled, logs
 
-# ── AI prompt builder ─────────────────────────────────────────────────────────
+# ── Prompt builder ────────────────────────────────────────────────────────────
 
 def _build_extraction_prompt(
     bank_name:         str,
@@ -450,7 +332,7 @@ def _build_extraction_prompt(
         db_lines = '\n'.join(
             '  * [URL: {}]  "{}"'.format(
                 p.get('tc_link') or p.get('url') or 'no-url',
-                p.get('title') or '?'
+                p.get('title') or '?',
             )
             for p in existing_for_bank[:30]
         )
@@ -461,20 +343,16 @@ def _build_extraction_prompt(
         f'You are extracting structured bank promotion data for {bank_name}.\n\n'
         f'TODAY: {today}\n\n'
         f'PROMOTIONS ALREADY IN THE DATABASE FOR {bank_name}\n'
-        f'(You MUST NOT re-add any of these — check carefully before adding anything):\n'
+        '(You MUST NOT re-add any of these — check carefully before adding anything):\n'
         f'{db_lines}\n\n'
-        f'SCRAPED WEBSITE TEXT (multiple pages, each prefixed with === SOURCE: [URL] ===):\n'
+        'SCRAPED WEBSITE TEXT (multiple pages, each prefixed with === SOURCE: [URL] ===):\n'
         f'{scraped_text[:32000]}\n\n'
         '══════════════════════════════════════════════════\n'
         'EXTRACTION RULES — READ ALL BEFORE WRITING OUTPUT\n'
         '══════════════════════════════════════════════════\n\n'
-        'RULE 1 — EXACT TITLE (most common error — please follow strictly):\n'
+        'RULE 1 — EXACT TITLE:\n'
         '* Copy the promotion title VERBATIM from the source page text.\n'
-        '* Do NOT rename, simplify, embellish, or invent a title.\n'
-        '* WRONG: "WeLab Bank Referral Reward for Tesla Loan"\n'
-        '    (AI invented this; the page is about a general R-Friend loan referral)\n'
-        '* RIGHT:  "WeLab Bank Personal Loan \'R-Friend Referral\' Campaign"\n'
-        '    (copied from the page title)\n\n'
+        '* Do NOT rename, simplify, embellish, or invent a title.\n\n'
         'RULE 2 — ONE PROMOTION PER SOURCE URL:\n'
         '* If one campaign page describes multiple benefits, create EXACTLY ONE promotion.\n'
         '* Do NOT split a single campaign page into multiple promotion entries.\n\n'
@@ -487,7 +365,7 @@ def _build_extraction_prompt(
         f'* If start_date can be determined and is BEFORE {today},\n'
         f'  set "is_new_today": false.\n'
         f'* Only set "is_new_today": true when start_date >= {today} OR unknown.\n\n'
-        f'RULE 5 — ACTIVE / EXPIRED:\n'
+        'RULE 5 — ACTIVE / EXPIRED:\n'
         f'* end_date < {today}   -> "active": false\n'
         f'* end_date >= {today}  -> "active": true\n'
         '* No end_date / Ongoing -> "active": true\n\n'
@@ -499,19 +377,19 @@ def _build_extraction_prompt(
         '══════════════════════════════════════════════════\n'
         '[\n'
         '  {\n'
-        '    "title":       "exact title copied from the source page",\n'
-        f'    "bank_name":   "{bank_name}",\n'
-        '    "types":       ["迎新 Welcome"],\n'
-        '    "highlight":   "one-sentence benefit summary",\n'
-        '    "description": "full description covering ALL benefits on this page",\n'
-        '    "period":      "DD MMM YYYY to DD MMM YYYY  OR  Ongoing",\n'
-        '    "start_date":  "YYYY-MM-DD  OR  null",\n'
-        '    "end_date":    "YYYY-MM-DD  OR  null",\n'
-        '    "quota":       "eligibility / who qualifies",\n'
-        '    "cost":        "minimum spend or deposit  OR  null",\n'
-        '    "tc_link":     "https://most-specific-source-url",\n'
-        '    "is_bau":      false,\n'
-        '    "active":      true,\n'
+        '    "title":        "exact title copied from the source page",\n'
+        f'    "bank_name":    "{bank_name}",\n'
+        '    "types":        ["迎新 Welcome"],\n'
+        '    "highlight":    "one-sentence benefit summary",\n'
+        '    "description":  "full description covering ALL benefits on this page",\n'
+        '    "period":       "DD MMM YYYY to DD MMM YYYY  OR  Ongoing",\n'
+        '    "start_date":   "YYYY-MM-DD  OR  null",\n'
+        '    "end_date":     "YYYY-MM-DD  OR  null",\n'
+        '    "quota":        "eligibility / who qualifies",\n'
+        '    "cost":         "minimum spend or deposit  OR  null",\n'
+        '    "tc_link":      "https://most-specific-source-url",\n'
+        '    "is_bau":       false,\n'
+        '    "active":       true,\n'
         '    "is_new_today": false\n'
         '  }\n'
         ']\n\n'
@@ -519,7 +397,7 @@ def _build_extraction_prompt(
         'Return [] if no promotions found.  Return ONLY the JSON array — no prose.'
     )
 
-# ── AI call ───────────────────────────────────────────────────────────────────
+# ── Core AI call ──────────────────────────────────────────────────────────────
 
 def _call_ai(prompt: str, model: str = 'gpt-4o', seed: int = 42) -> str:
     client = _get_client()
@@ -606,16 +484,14 @@ def _validate_promotion(p: dict, bank_name: str, today: str) -> Optional[dict]:
     return p
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PUBLIC API — functions imported by main.py
+# PUBLIC API — all four functions imported by main.py
 # ══════════════════════════════════════════════════════════════════════════════
 
 def init_ai() -> bool:
     """
-    Initialise the OpenAI client and validate the API key.
-
-    Returns True if AI is ready to use, False otherwise.
-    main.py stores this result in `ai_ok` and skips AI steps when False,
-    so the pipeline can still complete with DB-only data.
+    Initialise the OpenAI client and confirm the API key is present.
+    Returns True when AI is ready, False otherwise.
+    main.py stores this in `ai_ok` and skips AI steps gracefully when False.
     """
     if not HAS_OPENAI:
         print('  ⚠️  openai package not installed — AI features disabled')
@@ -625,7 +501,7 @@ def init_ai() -> bool:
         print('  ⚠️  OPENAI_API_KEY not set — AI features disabled')
         return False
     try:
-        _get_client()   # force lazy init; raises on bad key at first real call
+        _get_client()
         print('  ✅ OpenAI client initialised')
         return True
     except Exception as exc:
@@ -642,28 +518,14 @@ def analyze_promotions(
 ) -> list[dict]:
     """
     Extract structured promotions for ONE bank from its scraped page text.
-
-    This function only extracts — it does NOT reconcile with the database.
-    Dedup against existing DB records is handled separately by
-    ai_match_against_existing(), and within-batch dedup by ai_dedup_titles().
-
-    Args:
-        bank_id:     Internal bank identifier string.
-        bank_name:   Human-readable bank name shown in prompts and data.
-        text:        Raw scraped text from run_scraper() result['text'].
-        screenshot:  Optional screenshot bytes (unused currently; reserved for
-                     future vision-model support).
-        default_url: Fallback tc_link when the AI returns no URL for a promo.
-
-    Returns:
-        List of validated promotion dicts, ready for dedup + DB matching.
+    Returns a validated list ready for ai_dedup_titles + ai_match_against_existing.
     """
     today = datetime.now().strftime('%Y-%m-%d')
 
     prompt = _build_extraction_prompt(
         bank_name         = bank_name,
         scraped_text      = text,
-        existing_for_bank = [],   # DB dedup is a separate step in main.py
+        existing_for_bank = [],
         today             = today,
     )
 
@@ -689,17 +551,8 @@ def analyze_promotions(
 def ai_dedup_titles(titles: list[str], bank_name: str) -> dict:
     """
     Identify duplicate titles within a single freshly-extracted batch.
-
-    Uses SequenceMatcher — no extra AI call needed for within-batch dedup.
-
-    Args:
-        titles:    List of title strings in the same order as the promos list.
-        bank_name: Used only for log messages.
-
-    Returns:
-        A dict whose KEYS are the indices to remove (the duplicates).
-        Values are the index of the canonical entry that is kept.
-        main.py uses:  promos = [p for i, p in enumerate(promos) if i not in dup_map]
+    Returns {duplicate_index: canonical_index}.
+    main.py uses:  promos = [p for i, p in enumerate(promos) if i not in dup_map]
     """
     if not titles:
         return {}
@@ -729,20 +582,10 @@ def ai_match_against_existing(
     bank_name:   str,
 ) -> dict:
     """
-    Match newly extracted promotions against existing database records.
-
-    Uses URL + title similarity — no extra AI call (keeps latency and cost low).
-
-    Args:
-        promos:      Freshly extracted promos for this bank (after within-batch dedup).
-        existing_db: Active DB records returned by get_active_promos_for_bank().
-                     Each record is expected to carry an 'id' (or '_id'/'promo_id') field.
-        bank_name:   Used only for log messages.
-
-    Returns:
-        {promo_index: db_id}  for each new promo that matches an existing record.
-        main.py stores db_id as promo['_matched_id'] so save_promotions() can
-        UPDATE the existing row rather than INSERT a duplicate.
+    Match newly extracted promos against existing DB rows using URL + title similarity.
+    Returns {promo_index: db_id}.
+    main.py stores db_id as promo['_matched_id'] so save_promotions() can UPDATE
+    rather than INSERT.
     """
     if not promos or not existing_db:
         return {}
@@ -751,11 +594,10 @@ def ai_match_against_existing(
 
     for i, new_p in enumerate(promos):
         for ex_p in existing_db:
-            # Ensure both sides have the same bank_name for _are_duplicate()
-            ex_copy = dict(ex_p)
-            ex_copy.setdefault('bank_name', bank_name)
-            new_copy = dict(new_p)
-            new_copy.setdefault('bank_name', bank_name)
+            ex_copy           = dict(ex_p)
+            ex_copy['bank_name'] = ex_copy.get('bank_name') or bank_name
+            new_copy             = dict(new_p)
+            new_copy['bank_name'] = new_copy.get('bank_name') or bank_name
 
             if _are_duplicate(new_copy, ex_copy):
                 db_id = (
@@ -786,17 +628,13 @@ def generate_strategic_insights(
     Args:
         promos_by_name: dict mapping bank_name -> list[promo dict].
                         Built in main.py from get_active_promotions(include_bau=True).
-        db_fetch_fn:    Optional callable(bank_name) -> list[dict] that can supply
-                        additional promotions per bank (reserved for future enrichment).
-        today:          Date string YYYY-MM-DD; defaults to today in HKT.
-
-    Returns:
-        {'best_for': [...], 'bank_analysis': {...}}
+        db_fetch_fn:    Optional callable(bank_name) -> list[dict] reserved for
+                        future enrichment; not used in current logic.
+        today:          YYYY-MM-DD string; defaults to today.
     """
     if today is None:
         today = datetime.now().strftime('%Y-%m-%d')
 
-    # Flatten to a single list for analysis
     all_promotions: list[dict] = []
     for promos in promos_by_name.values():
         all_promotions.extend(promos)
@@ -806,7 +644,10 @@ def generate_strategic_insights(
         if p.get('active') and not p.get('is_bau')
         and (not p.get('end_date') or p['end_date'] >= today)
     ]
-    bau_active = [p for p in all_promotions if p.get('is_bau') and p.get('active')]
+    bau_active = [
+        p for p in all_promotions
+        if p.get('is_bau') and p.get('active')
+    ]
 
     if not non_bau_active and not bau_active:
         return {'best_for': [], 'bank_analysis': {}}
@@ -832,7 +673,6 @@ def generate_strategic_insights(
         for p in bau_active[:25]
     ], ensure_ascii=False)
 
-    from collections import Counter
     active_counts   = Counter(p.get('bank_name') for p in non_bau_active)
     bau_counts      = Counter(p.get('bank_name') for p in bau_active)
     threshold_date  = (
@@ -906,7 +746,7 @@ def generate_strategic_insights(
         return {'best_for': [], 'bank_analysis': {}}
 
 
-# ── Legacy all-in-one entry point (kept for backwards compatibility) ───────────
+# ── Legacy all-in-one entry point ─────────────────────────────────────────────
 
 def extract_promotions(
     scraped_data:        dict,
@@ -914,9 +754,8 @@ def extract_promotions(
     today:               Optional[str] = None,
 ) -> tuple[list[dict], list[str]]:
     """
-    Legacy single-call extraction pipeline.
-    Prefer the granular main.py flow (analyze_promotions → ai_dedup_titles →
-    ai_match_against_existing → save_promotions) for new code.
+    Legacy single-call pipeline kept for backwards compatibility.
+    Prefer the granular main.py flow for new code.
     """
     if today is None:
         today = datetime.now().strftime('%Y-%m-%d')
@@ -942,8 +781,8 @@ def extract_promotions(
         bn = p.get('bank_name') or p.get('bank') or 'Unknown'
         existing_by_bank.setdefault(bn, []).append(p)
 
-    all_reconciled: list[dict] = []
-    processed_banks: set[str]  = set()
+    all_reconciled:  list[dict] = []
+    processed_banks: set[str]   = set()
 
     for bank_id, bank_data in scraped_data.items():
         bank_name    = bank_data.get('bank_name', bank_id)
@@ -981,8 +820,8 @@ def extract_promotions(
             if v:
                 validated.append(v)
 
-        validated          = deduplicate_promotions(validated)
-        reconciled, logs   = reconcile_with_existing(validated, existing_for_bank, today)
+        validated        = deduplicate_promotions(validated)
+        reconciled, logs = reconcile_with_existing(validated, existing_for_bank, today)
         all_logs.extend(logs)
         all_reconciled.extend(reconciled)
         print(f'    ✓  {bank_name}: {len(validated)} extracted -> {len(reconciled)} reconciled')
