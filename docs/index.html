@@ -18,30 +18,22 @@
   details[open] .accordion-chevron { transform: rotate(180deg); }
   tr:hover td { background:#f8fafc; }
   #compTable td:first-child,
-  #compTable th:first-child {
-    position: sticky; left: 0; z-index: 2; background: #fff;
-  }
-  #compTable thead th:first-child { background: #f9fafb; }
-  .cat-filter-btn {
-    cursor: pointer;
-    transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s;
-  }
+  #compTable th:first-child { position:sticky; left:0; z-index:2; background:#fff; }
+  #compTable thead th:first-child { background:#f9fafb; }
+  .cat-filter-btn { cursor:pointer; transition:opacity 0.15s, box-shadow 0.15s, transform 0.15s; }
   .new-promo-card {
-    border-radius: 14px; overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border: 1px solid #e5e7eb; background: #fff;
-    transition: box-shadow 0.2s;
+    border-radius:14px; overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    border:1px solid #e5e7eb; background:#fff;
+    transition:box-shadow 0.2s;
   }
-  .new-promo-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.13); }
-
-  /* Insight table columns get sensible widths */
+  .new-promo-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.13); }
   #insightsTable td:nth-child(1) { min-width:160px; white-space:nowrap; }
   #insightsTable td:nth-child(2) { min-width:130px; white-space:nowrap; }
   #insightsTable td:nth-child(3) { min-width:200px; }
   #insightsTable td:nth-child(4) { min-width:200px; }
   #insightsTable td:nth-child(5) { min-width:150px; }
   #insightsTable td:nth-child(6) { min-width:200px; }
-
   .toggle-table-btn {
     display:inline-flex; align-items:center; gap:6px;
     padding:4px 14px; border-radius:20px; font-size:11px; font-weight:700;
@@ -50,13 +42,13 @@
     transition:background 0.15s;
   }
   .toggle-table-btn:hover { background:rgba(255,255,255,0.30); }
-  .toggle-table-btn[data-hidden="true"]::before { content:"👁 Show Table"; }
+  .toggle-table-btn[data-hidden="true"]::before  { content:"👁 Show Table"; }
   .toggle-table-btn[data-hidden="false"]::before { content:"🙈 Hide Table"; }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<!-- ── HEADER ──────────────────────────────────────────────────── -->
 <div class="bg-gradient-to-r from-gray-900 to-gray-700 text-white px-4 py-6 shadow-lg">
   <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
@@ -139,7 +131,7 @@
   </div>
 </div>
 
-<!-- ══ NEW TODAY SECTION ════════════════════════════════════════ -->
+<!-- ══ NEW TODAY ════════════════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-2" id="newTodaySection" style="display:none;">
   <details open class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
     <summary class="select-none">
@@ -167,7 +159,7 @@
   </details>
 </div>
 
-<!-- ══ NEW THIS WEEK SECTION ════════════════════════════════════ -->
+<!-- ══ NEW THIS WEEK ═════════════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newWeeklySection" style="display:none;">
   <details class="rounded-2xl shadow-sm overflow-hidden border border-indigo-200">
     <summary class="select-none">
@@ -334,7 +326,7 @@
 </div>
 
 <script>
-// ── Category config ───────────────────────────────────────────────
+// ── Category config ────────────────────────────────────────────────
 const CAT_META = {
   "迎新 Welcome":      { bg:"#10b981", emoji:"🎉" },
   "消費 Spending":     { bg:"#f59e0b", emoji:"💳" },
@@ -362,23 +354,23 @@ const BANK_COLORS = {
 };
 
 const CAT_FILTER_LIST = [
-  { key: '__ALL__',             label: 'All',           bg: '#4f46e5' },
-  { key: 'BAU',                 label: '⚙️ BAU',        bg: '#64748b' },
-  { key: '迎新 Welcome',       label: '🎉 迎新',       bg: '#10b981' },
-  { key: '消費 Spending',      label: '💳 消費',       bg: '#f59e0b' },
-  { key: '投資 Investment',    label: '📈 投資',       bg: '#6366f1' },
-  { key: '旅遊 Travel',        label: '✈️ 旅遊',      bg: '#06b6d4' },
-  { key: '保險 Insurance',     label: '🛡️ 保險',     bg: '#ef4444' },
-  { key: '貸款 Loan',          label: '💰 貸款',       bg: '#dc2626' },
-  { key: '活期存款 Savings',   label: '🏦 活期存款',   bg: '#3b82f6' },
-  { key: '定期存款 TDeposit',  label: '🏛️ 定期存款',  bg: '#0369a1' },
-  { key: '外匯 FX',            label: '🌐 外匯',       bg: '#8b5cf6' },
-  { key: '推薦 Referral',      label: '👥 推薦',       bg: '#ec4899' },
-  { key: '新資金 New Funds',   label: '💵 新資金',     bg: '#0ea5e9' },
-  { key: 'Others 其他',        label: '📋 Others',     bg: '#6b7280' },
+  { key:'__ALL__',            label:'All',           bg:'#4f46e5' },
+  { key:'BAU',                label:'⚙️ BAU',        bg:'#64748b' },
+  { key:'迎新 Welcome',       label:'🎉 迎新',       bg:'#10b981' },
+  { key:'消費 Spending',      label:'💳 消費',       bg:'#f59e0b' },
+  { key:'投資 Investment',    label:'📈 投資',       bg:'#6366f1' },
+  { key:'旅遊 Travel',        label:'✈️ 旅遊',      bg:'#06b6d4' },
+  { key:'保險 Insurance',     label:'🛡️ 保險',     bg:'#ef4444' },
+  { key:'貸款 Loan',          label:'💰 貸款',       bg:'#dc2626' },
+  { key:'活期存款 Savings',   label:'🏦 活期存款',   bg:'#3b82f6' },
+  { key:'定期存款 TDeposit',  label:'🏛️ 定期存款',  bg:'#0369a1' },
+  { key:'外匯 FX',            label:'🌐 外匯',       bg:'#8b5cf6' },
+  { key:'推薦 Referral',      label:'👥 推薦',       bg:'#ec4899' },
+  { key:'新資金 New Funds',   label:'💵 新資金',     bg:'#0ea5e9' },
+  { key:'Others 其他',        label:'📋 Others',     bg:'#6b7280' },
 ];
 
-// Fallback standard descriptions (used when AI omits the field)
+// Fallback standard descriptions
 const HOW_DEFINED = {
   "Investment (Stock/Crypto Trading)":
     "Most comprehensive trading fee waivers — $0 platform fees, free stock trades, or zero crypto commissions.",
@@ -420,10 +412,11 @@ function catMeta(cat) {
   return { bg:"#6b7280", emoji:"📋" };
 }
 
+// ── FIX 1: catTag — restored ${m.bg} and ${m.emoji} ──────────────
 function catTag(cat) {
   if (cat && cat.includes('長期')) return '';
   const m = catMeta(cat);
-  return `<span class="cat-tag" style="background:\({m.bg}">\){m.emoji} ${cat}</span>`;
+  return `<span class="cat-tag" style="background:${m.bg}">${m.emoji} ${cat}</span>`;
 }
 
 function bauTag(p) {
@@ -463,7 +456,6 @@ function hktToday() {
 function hktDaysAgo(n) {
   return new Date(Date.now() + 8*3600000 - n*86400000).toISOString().substring(0,10);
 }
-
 function isNewToday(p, today) {
   if (p.is_bau) return false;
   const created = (p.created_at||'').substring(0,10);
@@ -472,7 +464,6 @@ function isNewToday(p, today) {
   if (start && start < today) return false;
   return true;
 }
-
 function isNewThisWeek(p, today) {
   if (p.is_bau) return false;
   const created   = (p.created_at||'').substring(0,10);
@@ -498,7 +489,6 @@ async function loadData() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    // Show cached-data notice if AI was unavailable
     if (data.ai_unavailable) {
       const notice = document.createElement('div');
       notice.className = 'max-w-screen-2xl mx-auto px-4 pt-3';
@@ -524,15 +514,12 @@ async function loadData() {
 
     strategicInsights = data.strategic_insights || null;
 
-    // ── Fix 80 vs 79: count only active non-BAU ──────────────────
     const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false);
     const activeN      = activeNonBau.filter(p => getStatus(p) === 'active').length;
     const expiringN    = activeNonBau.filter(p => getStatus(p) === 'expiring').length;
-    // Expired = promotions that exist but are inactive or past end_date
     const expiredN     = allPromos.filter(p => !p.is_bau && getStatus(p) === 'expired').length;
-    const totalN       = activeNonBau.length;  // active only
-
-    const banks = [...new Set(allPromos.map(p => p.bank_name))];
+    const totalN       = activeNonBau.length;
+    const banks        = [...new Set(allPromos.map(p => p.bank_name))];
 
     document.getElementById('statTotal').textContent    = totalN;
     document.getElementById('statActive').textContent   = activeN;
@@ -572,7 +559,7 @@ function remapCat(t) {
   return MAP[t] || t;
 }
 
-// ── Promo card (used by New Today / New This Week) ────────────────
+// ── FIX 2: buildPromoCard — restored ${quotaHtml}${costHtml} ─────
 function buildPromoCard(p) {
   const color   = bankColor(p.bank_name);
   const cats    = (p.types || ['Others 其他']).map(catTag).join('');
@@ -620,7 +607,7 @@ function buildPromoCard(p) {
           ? `<div class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg
                          px-3 py-2 mb-1 border-l-2" style="border-color:${color}">${summary}</div>`
           : ''}
-        \({quotaHtml}\){costHtml}${sourceHtml}
+        ${quotaHtml}${costHtml}${sourceHtml}
       </div>
     </div>`;
 }
@@ -629,7 +616,6 @@ function buildPromoCard(p) {
 function buildNewSections() {
   const today = hktToday();
 
-  // Today
   const newToday   = allPromos.filter(p => isNewToday(p, today));
   const todaySec   = document.getElementById('newTodaySection');
   const todayCards = document.getElementById('newTodayCards');
@@ -643,10 +629,9 @@ function buildNewSections() {
   } else {
     todayEmpty.classList.add('hidden');
     todayCount.textContent = `${newToday.length} new today`;
-    todayCards.innerHTML   = newToday.map(p => buildPromoCard(p)).join('');
+    todayCards.innerHTML   = newToday.map(buildPromoCard).join('');
   }
 
-  // This week
   const newWeek   = allPromos.filter(p => isNewThisWeek(p, today));
   const weekSec   = document.getElementById('newWeeklySection');
   const weekCards = document.getElementById('newWeeklyCards');
@@ -660,11 +645,11 @@ function buildNewSections() {
   } else {
     weekEmpty.classList.add('hidden');
     weekCount.textContent = `${newWeek.length} this week`;
-    weekCards.innerHTML   = newWeek.map(p => buildPromoCard(p)).join('');
+    weekCards.innerHTML   = newWeek.map(buildPromoCard).join('');
   }
 }
 
-// ── Bank Tabs ─────────────────────────────────────────────────────
+// ── FIX 3: buildBankTabs — restored ${c} and ${b} ────────────────
 function buildBankTabs(banks) {
   const container = document.getElementById('bankTabs');
   banks.sort().forEach(b => {
@@ -676,7 +661,7 @@ function buildBankTabs(banks) {
     btn.className      = 'bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold '
                        + 'border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
     btn.style.borderColor = c;
-    btn.innerHTML      = `<span style="color:\({c}">●</span> \){b}`;
+    btn.innerHTML      = `<span style="color:${c}">●</span> ${b}`;
     btn.onclick        = () => setBankTab(b);
     container.appendChild(btn);
   });
@@ -697,7 +682,7 @@ function setBankTab(bank) {
   applyFilters();
 }
 
-// ── Category filter buttons ───────────────────────────────────────
+// ── FIX 4: buildCatButtons — restored ${c.bg} and ternary vars ───
 function buildCatButtons() {
   const container = document.getElementById('catTagFilter');
   container.innerHTML =
@@ -706,7 +691,7 @@ function buildCatButtons() {
      </span>` +
     CAT_FILTER_LIST.map(c => `
       <button class="cat-filter-btn cat-tag" data-cat="${c.key}"
-        style="background:\({c.bg}; opacity:\){c.key==='__ALL__'?'1':'0.65'};
+        style="background:${c.bg}; opacity:${c.key==='__ALL__'?'1':'0.65'};
                ${c.key==='__ALL__'?'box-shadow:0 0 0 3px rgba(0,0,0,0.28);':''}"
         onclick="toggleCat('${c.key}')">
         ${c.label}
@@ -741,26 +726,25 @@ function updateCatButtons() {
   });
 }
 
-// ── Toggle table visibility ───────────────────────────────────────
+// ── Toggle visibility ─────────────────────────────────────────────
 function toggleInsightsTable(e) {
-  e.stopPropagation(); // don't trigger <details> toggle
-  const wrap = document.getElementById('insightsTableWrap');
-  const btn  = document.getElementById('toggleInsightsBtn');
+  e.stopPropagation();
+  const wrap   = document.getElementById('insightsTableWrap');
+  const btn    = document.getElementById('toggleInsightsBtn');
   const hidden = wrap.style.display === 'none';
   wrap.style.display = hidden ? '' : 'none';
   btn.dataset.hidden = hidden ? 'false' : 'true';
 }
-
 function toggleAnalysisGrid(e) {
   e.stopPropagation();
-  const grid = document.getElementById('bankAnalysisGrid');
-  const btn  = document.getElementById('toggleAnalysisBtn');
+  const grid   = document.getElementById('bankAnalysisGrid');
+  const btn    = document.getElementById('toggleAnalysisBtn');
   const hidden = grid.style.display === 'none';
   grid.style.display = hidden ? '' : 'none';
   btn.dataset.hidden = hidden ? 'false' : 'true';
 }
 
-// ══ STRATEGIC INSIGHTS (6-column table) ══════════════════════════
+// ── FIX 5: buildStrategicInsights — restored all ${...} vars ─────
 function buildStrategicInsights(insights) {
   const section = document.getElementById('strategicInsightsSection');
   if (!section) return;
@@ -771,35 +755,34 @@ function buildStrategicInsights(insights) {
   section.style.display = 'block';
 
   const rows = insights.best_for.map(item => {
-    const cat        = item.category      || '';
-    const bank       = item.bank          || 'None';
-    const detail     = item.detail        || '—';
-    // Column 4: use AI-generated standard, fall back to HOW_DEFINED
-    const standard   = (item.standard && item.standard.trim())
-                       ? item.standard
-                       : (HOW_DEFINED[cat] || '—');
-    // Column 5: similar banks (excluding the winner)
-    const similar    = (item.similar_banks || []).filter(b => b !== bank);
-    // Column 6: why they lose
-    const whyLose    = item.why_others_lose || '—';
-    const isBau      = item.is_bau || false;
-    const isNone     = ['none','n/a',''].includes(bank.toLowerCase());
-    const color      = isNone ? '#6b7280' : bankColor(bank);
+    const cat      = item.category      || '';
+    const bank     = item.bank          || 'None';
+    const detail   = item.detail        || '—';
+    const standard = (item.standard && item.standard.trim())
+                     ? item.standard
+                     : (HOW_DEFINED[cat] || '—');
+    const similar  = (item.similar_banks || []).filter(b => b !== bank);
+    const whyLose  = item.why_others_lose || '—';
+    const isBau    = item.is_bau || false;
+    const isNone   = ['none','n/a',''].includes(bank.toLowerCase());
+    const color    = isNone ? '#6b7280' : bankColor(bank);
 
     const bauPill = isBau
       ? `<span class="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-semibold">⚙️ BAU</span>`
       : '';
 
+    // FIXED: ${color} and ${bank}
     const winnerBadge = isNone
       ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">No clear winner</span>`
       : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-white"
-               style="background:\({color}">\){bank}</span>${bauPill}`;
+               style="background:${color}">${bank}</span>${bauPill}`;
 
+    // FIXED: ${bc} and ${b}
     const similarHtml = similar.length
       ? similar.map(b => {
           const bc = bankColor(b);
           return `<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold text-white mr-1 mb-1"
-                         style="background:\({bc};opacity:0.8">\){b}</span>`;
+                         style="background:${bc};opacity:0.8">${b}</span>`;
         }).join('')
       : `<span class="text-gray-400 text-xs italic">—</span>`;
 
@@ -822,7 +805,7 @@ function buildStrategicInsights(insights) {
     rows || `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No insights data.</td></tr>`;
 }
 
-// ══ BANK-BY-BANK ANALYSIS ═════════════════════════════════════════
+// ── FIX 6: buildBankAnalysis — restored all ${...} vars ──────────
 function buildBankAnalysis(insights) {
   const section = document.getElementById('bankAnalysisSection');
   if (!section) return;
@@ -833,9 +816,9 @@ function buildBankAnalysis(insights) {
   section.style.display = 'block';
 
   const bankAnalysis = insights.bank_analysis;
-  const zaEntry      = Object.entries(bankAnalysis).find(([k]) => k.includes('ZA')) || [];
-  const zaData       = zaEntry[1] || {};
-  const zaCount      = zaData.count || 0;
+  const zaEntry = Object.entries(bankAnalysis).find(([k]) => k.includes('ZA')) || [];
+  const zaData  = zaEntry[1] || {};
+  const zaCount = zaData.count || 0;
 
   const sorted = Object.entries(bankAnalysis).sort(([a],[b]) => {
     if (a.includes('ZA')) return -1;
@@ -846,14 +829,13 @@ function buildBankAnalysis(insights) {
   const cards = sorted.map(([bName, data]) => {
     const isZA      = bName.includes('ZA');
     const color     = bankColor(bName);
-    const count     = data.count    || 0;
-    const bauCnt    = data.bau_count || 0;
-    const focus     = data.focus     || '';
-    // Show up to 6 strengths
-    const strengths = (data.strengths || []).slice(0, 6);
+    const count     = data.count         || 0;
+    const bauCnt    = data.bau_count     || 0;
+    const focus     = data.focus         || '';
+    const strengths = (data.strengths    || []).slice(0, 6);
     const expAlert  = data.expiring_alert || '';
-    const pros      = data.vs_za_pros || '';
-    const cons      = data.vs_za_cons || '';
+    const pros      = data.vs_za_pros    || '';
+    const cons      = data.vs_za_cons    || '';
 
     const strengthsHtml = strengths.length
       ? `<div class="space-y-1.5 mt-2">
@@ -870,9 +852,9 @@ function buildBankAnalysis(insights) {
                     text-xs text-amber-800 font-semibold">⚡ ${expAlert}</div>`
       : '';
 
-    // ── vs ZA section ─────────────────────────────────────────────
     let vsHtml = '';
     if (isZA) {
+      // FIXED: ${count} and ${bauCnt}
       vsHtml = `
         <div class="mt-4 bg-indigo-50 border border-indigo-100 rounded-xl p-3">
           <div class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">⭐ Base Comparison Bank</div>
@@ -885,6 +867,7 @@ function buildBankAnalysis(insights) {
     } else {
       const diff      = count - zaCount;
       const diffSign  = diff > 0 ? `+${diff}` : `${diff}`;
+      // FIXED: ${diffColor} and ${diffLabel}
       const diffColor = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-500' : 'text-gray-500';
       const diffLabel = diff > 0
         ? `${diffSign} more than ZA Bank`
@@ -910,18 +893,17 @@ function buildBankAnalysis(insights) {
            </div>`
         : '';
 
+      // FIXED: ${diffColor}, ${diffLabel}, ${bName}, ${count}, ${zaCount}
       vsHtml = `
         <div class="mt-4 border border-gray-200 rounded-xl overflow-hidden">
           <div class="bg-gray-50 px-3 py-2 border-b border-gray-200
                       flex items-center justify-between">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">
-              vs ZA Bank
-            </span>
-            <span class="text-xs font-bold \({diffColor}">\){diffLabel}</span>
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">vs ZA Bank</span>
+            <span class="text-xs font-bold ${diffColor}">${diffLabel}</span>
           </div>
           <div class="p-3 space-y-2">
             <div class="text-xs text-gray-400">
-              \({bName}: <strong class="text-gray-700">\){count}</strong> active ·
+              ${bName}: <strong class="text-gray-700">${count}</strong> active ·
               ZA Bank: <strong class="text-gray-700">${zaCount}</strong> active
             </div>
             ${betterHtml}
@@ -931,6 +913,7 @@ function buildBankAnalysis(insights) {
     }
 
     const headerBg   = isZA ? color : '#f9fafb';
+    // FIXED: ${headerText} and ${bName}
     const headerText = isZA ? '#fff' : '#1f2937';
 
     return `
@@ -939,7 +922,7 @@ function buildBankAnalysis(insights) {
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <span class="bank-dot" style="background:${isZA?'rgba(255,255,255,0.5)':color}"></span>
-              <span class="font-extrabold text-lg" style="color:\({headerText}">\){bName}</span>
+              <span class="font-extrabold text-lg" style="color:${headerText}">${bName}</span>
               ${isZA
                 ? `<span class="text-xs px-2 py-0.5 rounded-full font-bold"
                           style="background:rgba(255,255,255,0.2);color:#fff;">⭐ Base</span>`
@@ -960,7 +943,6 @@ function buildBankAnalysis(insights) {
         <div class="p-5 bg-white">
           <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">🎯 Bank Focus</div>
           <div class="text-sm text-gray-700 mb-4 leading-relaxed">${focus || '—'}</div>
-
           <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">💪 Key Strengths</div>
           ${strengthsHtml}
           ${expHtml}
@@ -973,7 +955,7 @@ function buildBankAnalysis(insights) {
     cards || '<div class="col-span-full py-8 text-center text-gray-400">No analysis data.</div>';
 }
 
-// ── Comparison Table ──────────────────────────────────────────────
+// ── FIX 7: buildComparisonTable — restored all ${...} in thead/makeRow
 function buildComparisonTable() {
   document.getElementById('comparisonSection').style.display = 'block';
 
@@ -1008,6 +990,7 @@ function buildComparisonTable() {
   const topTypes = Object.entries(typeCounts)
     .sort((a,b) => b[1]-a[1]).map(e => e[0]).slice(0,8);
 
+  // FIXED: ${isZA?...}, ${color}, ${b.name}
   let thead = `<tr class="bg-gray-50 border-b-2 border-gray-200">
     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500
                uppercase tracking-wide w-44 whitespace-nowrap">指標 / Metric</th>`;
@@ -1016,33 +999,34 @@ function buildComparisonTable() {
     const color = bankColor(b.name);
     thead += `
       <th class="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide
-                 \({isZA?'bg-blue-50':''}" style="color:\){color}; min-width:95px;">
-        <span class="bank-dot" style="background:\({color}; margin-right:3px;"></span>\){b.name}
+                 ${isZA?'bg-blue-50':''}" style="color:${color}; min-width:95px;">
+        <span class="bank-dot" style="background:${color}; margin-right:3px;"></span>${b.name}
         ${isZA ? '<br><span class="text-blue-400 font-normal normal-case text-xs">⭐ Base</span>' : ''}
       </th>`;
   });
   thead += '</tr>';
 
+  // FIXED: ${isBold?...}, ${label}, ${isTop?...}, ${val}, ${isZA?...}, ${disp}
   function makeRow(label, getVal, isBold=false) {
     const zaVal  = getVal(zaBank);
     const maxVal = Math.max(...banks.map(b => getVal(b)));
     let r = `<tr class="border-b border-gray-100 hover:bg-indigo-50/20">
       <td class="px-4 py-2.5 text-sm text-gray-700 whitespace-nowrap
-                 \({isBold?'font-bold':'font-medium'}">\){label}</td>`;
+                 ${isBold?'font-bold':'font-medium'}">${label}</td>`;
     banks.forEach(b => {
       const isZA  = b.name.includes('ZA');
       const val   = getVal(b);
       const isTop = !isZA && val===maxVal && maxVal>0;
       let ind = '';
       if (!isZA) {
-        if      (val>zaVal)          ind = `<span class="ml-1 text-green-500 text-xs font-bold">▲</span>`;
-        else if (val<zaVal)          ind = `<span class="ml-1 text-red-400 text-xs font-bold">▼</span>`;
-        else if (val>0||zaVal>0)     ind = `<span class="ml-1 text-gray-300 text-xs">—</span>`;
+        if      (val>zaVal)      ind = `<span class="ml-1 text-green-500 text-xs font-bold">▲</span>`;
+        else if (val<zaVal)      ind = `<span class="ml-1 text-red-400 text-xs font-bold">▼</span>`;
+        else if (val>0||zaVal>0) ind = `<span class="ml-1 text-gray-300 text-xs">—</span>`;
       }
       const disp = val>0
-        ? `<span class="\({isTop?'text-green-600 font-bold':isZA?'text-blue-700 font-bold':'text-gray-700'}">\){val}</span>`
+        ? `<span class="${isTop?'text-green-600 font-bold':isZA?'text-blue-700 font-bold':'text-gray-700'}">${val}</span>`
         : `<span class="text-gray-200">0</span>`;
-      r += `<td class="px-4 py-2.5 text-center \({isZA?'bg-blue-50/50':''}">\){disp}${ind}</td>`;
+      r += `<td class="px-4 py-2.5 text-center ${isZA?'bg-blue-50/50':''}">${disp}${ind}</td>`;
     });
     return r + '</tr>';
   }
@@ -1061,20 +1045,22 @@ function buildComparisonTable() {
   rows.push(makeRow('⚡ 即將到期 Expiring ≤30d',
     b => b.promos.filter(p => getStatus(p)==='expiring').length));
   rows.push(sectionRow('🏷️ 優惠類別 By Category'));
+  // FIXED: ${m.bg}, ${m.emoji}, ${short}
   topTypes.forEach(type => {
     const m = catMeta(type), short = type.split(' ')[0];
     rows.push(makeRow(
-      `<span style="color:\({m.bg}" class="mr-1">\){m.emoji}</span>${short}`,
+      `<span style="color:${m.bg}" class="mr-1">${m.emoji}</span>${short}`,
       b => b.promos.filter(p => (p.types||[]).includes(type)).length
     ));
   });
 
   document.getElementById('compTable').innerHTML =
-    `<thead>\({thead}</thead><tbody>\){rows.join('')}</tbody>`;
+    `<thead>${thead}</thead><tbody>${rows.join('')}</tbody>`;
 
   buildProsCons(zaBank, banks, topTypes);
 }
 
+// ── FIX 8: buildProsCons — restored all ${...} interpolations ────
 function buildProsCons(zaBank, allBanks, topTypes) {
   const others = allBanks.filter(b => b.name!==zaBank.name);
   if (!others.length) return;
@@ -1083,23 +1069,24 @@ function buildProsCons(zaBank, allBanks, topTypes) {
 
   const avgCount = avg(others.map(b=>b.promos.length));
   if (zaBank.promos.length >= avgCount)
-    pros.push(`有效優惠總數 (\({zaBank.promos.length}) 高於或持平其他銀行平均 (\){avgCount.toFixed(1)})`);
+    pros.push(`有效優惠總數 (${zaBank.promos.length}) 高於或持平其他銀行平均 (${avgCount.toFixed(1)})`);
   else
-    cons.push(`有效優惠總數 (\({zaBank.promos.length}) 低於其他銀行平均 (\){avgCount.toFixed(1)})`);
+    cons.push(`有效優惠總數 (${zaBank.promos.length}) 低於其他銀行平均 (${avgCount.toFixed(1)})`);
 
   const beatCount = others.filter(b=>zaBank.promos.length>b.promos.length).length;
   if (beatCount===others.length&&others.length>1)
     pros.push(`優惠總數領先全部 ${others.length} 間競爭銀行`);
   else if (beatCount>others.length/2)
-    pros.push(`優惠總數超越 \({beatCount}/\){others.length} 間競爭銀行`);
+    pros.push(`優惠總數超越 ${beatCount}/${others.length} 間競爭銀行`);
 
   const leadCats=[], weakCats=[];
   topTypes.forEach(type => {
     const zaC  = zaBank.promos.filter(p=>(p.types||[]).includes(type)).length;
     const avgC = avg(others.map(b=>b.promos.filter(p=>(p.types||[]).includes(type)).length));
-    const m=catMeta(type), s=`\({m.emoji}\){type.split(' ')[0]}`;
+    const m    = catMeta(type);
+    const s    = `${m.emoji}${type.split(' ')[0]}`;
     if (zaC>avgC+0.5) leadCats.push(s);
-    if (zaC<avgC-0.5) weakCats.push(`\({s} (ZA: \){zaC} vs avg: ${avgC.toFixed(1)})`);
+    if (zaC<avgC-0.5) weakCats.push(`${s} (ZA: ${zaC} vs avg: ${avgC.toFixed(1)})`);
   });
   if (leadCats.length) pros.push(`在 ${leadCats.join('、')} 類別優惠數量領先市場`);
   if (weakCats.length) cons.push(`以下類別優惠相對較少：${weakCats.join('、')}`);
@@ -1107,9 +1094,9 @@ function buildProsCons(zaBank, allBanks, topTypes) {
   const zaOngoing  = zaBank.promos.filter(p=>!p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length;
   const avgOngoing = avg(others.map(b=>b.promos.filter(p=>!p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length));
   if (zaOngoing>avgOngoing+0.5)
-    pros.push(`長期優惠比例高：\({zaOngoing} 項長期有效 (其他平均 \){avgOngoing.toFixed(1)} 項)`);
+    pros.push(`長期優惠比例高：${zaOngoing} 項長期有效 (其他平均 ${avgOngoing.toFixed(1)} 項)`);
   else if (zaOngoing<avgOngoing-0.5)
-    cons.push(`長期優惠相對較少：\({zaOngoing} 項 (其他平均 \){avgOngoing.toFixed(1)} 項)`);
+    cons.push(`長期優惠相對較少：${zaOngoing} 項 (其他平均 ${avgOngoing.toFixed(1)} 項)`);
 
   const zaExpiring = zaBank.promos.filter(p=>getStatus(p)==='expiring').length;
   if (zaExpiring>5)
@@ -1148,11 +1135,11 @@ function applyFilters() {
 
   filtered = allPromos.filter(p => {
     const s = getStatus(p);
-    if (status==='active'          && s!=='active')                    return false;
-    if (status==='expiring'        && s!=='expiring')                   return false;
-    if (status==='expired'         && s!=='expired')                    return false;
-    if (status==='active+expiring' && s!=='active' && s!=='expiring')   return false;
-    if (activeBankTab && p.bank_name!==activeBankTab)                   return false;
+    if (status==='active'          && s!=='active')                  return false;
+    if (status==='expiring'        && s!=='expiring')                return false;
+    if (status==='expired'         && s!=='expired')                 return false;
+    if (status==='active+expiring' && s!=='active' && s!=='expiring') return false;
+    if (activeBankTab && p.bank_name!==activeBankTab)                return false;
 
     if (selectedCats.length>0) {
       const hasBau    = selectedCats.includes('BAU');
@@ -1181,11 +1168,11 @@ function applyFilters() {
 
   renderTable(filtered);
 
-  // Count stats — active non-BAU only (consistent with header)
+  // FIX 9: restored ${filtered.length} and ${activeNonBau.length}
   const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false);
   const bauTotal     = allPromos.filter(p => p.is_bau).length;
   document.getElementById('resultCount').textContent =
-    `Showing \({filtered.length} of \){activeNonBau.length} active promotions`
+    `Showing ${filtered.length} of ${activeNonBau.length} active promotions`
     + (bauTotal>0 ? ` (+${bauTotal} BAU via ⚙️ filter)` : '');
 }
 
