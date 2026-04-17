@@ -31,13 +31,30 @@ except ImportError:
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-_DUPLICATE_TITLE_THRESHOLD = 0.76
+_DUPLICATE_TITLE_THRESHOLD = 0.72   # lowered to catch case/punctuation variants
 _DUPLICATE_DESC_THRESHOLD  = 0.88
+_MERGE_TITLE_THRESHOLD     = 0.80   # stricter: only merge when titles nearly identical
 
 VALID_TYPES = [
     '迎新 Welcome', '消費 Spending', '投資 Investment', '旅遊 Travel',
     '保險 Insurance', '貸款 Loan', '活期存款 Savings', '定期存款 TDeposit',
     '外匯 FX', '推薦 Referral', '新資金 New Funds', 'Others 其他',
+]
+
+INSIGHT_CATEGORIES = [
+    'Investment (Stock/Crypto Trading)',
+    'Fund Investment',
+    'Spending/CashBack',
+    'Welcome Bonus',
+    'Travel',
+    'Loan APR',
+    'FX/Multi-Currency',
+    'Referral Bonus',
+]
+
+EIGHT_BANKS = [
+    'ZA Bank', 'Mox Bank', 'WeLab Bank', 'livi bank',
+    'PAObank', 'Airstar Bank', 'Fusion Bank', 'Ant Bank',
 ]
 
 # ── Static BAU promotions ─────────────────────────────────────────────────────
@@ -92,12 +109,80 @@ STATIC_BAU_PROMOTIONS: list[dict] = [
     },
 ]
 
+# ── Generic listing-URL detection ─────────────────────────────────────────────
+
+# URL path endings that indicate a promotions hub/listing page, NOT a specific campaign page
+_GENERIC_URL_ENDINGS: frozenset[str] = frozenset({
+    'promotion', 'promotions', 'offer', 'offers',
+    'campaign', 'campaigns', 'deal', 'deals',
+    'promo', 'promos', 'event', 'events',
+    'special', 'specials', 'reward', 'rewards',
+    'benefit', 'benefits', 'news', 'latest',
+    'whats-new', 'whatsnew', 'products', 'product',
+    'services', 'service', 'feature', 'features',
+    # language-only single-segment paths
+    'en', 'zh', 'tc', 'sc', 'hk', 'cn', 'zh-hk', 'zh-tw',
+})
+
+
+def _is_generic_listing_url(url: str) -> bool:
+    """
+    Returns True when the URL is a promotions listing/hub page rather than a
+    deep-link to one specific campaign.
+
+    Banks like Mox Bank sometimes return the same generic URL for every
+    promotion because their site uses a single promotions directory page.
+    We must NOT merge those entries — they are genuinely different promotions.
+    """
+    if not url:
+        return True
+
+    clean = url.lower().rstrip('/')
+
+    # Strip protocol + domain to get the path
+    path = re.sub(r'^[a-z]+://[^/]+', '', clean).strip('/')
+
+    # Root URL (empty path after stripping)
+    if not path:
+        return True
+
+    # Last path segment (strip query string / fragment)
+    last_seg = path.rsplit('/', 1)[-1]
+    last_seg = re.split(r'[?#]', last_seg)[0]
+
+    if last_seg in _GENERIC_URL_ENDINGS:
+        return True
+
+    # Path has only 1–2 meaningful segments after stripping language prefixes
+    meaningful = [
+        seg for seg in path.split('/')
+        if seg and seg not in ('en', 'zh', 'tc', 'sc', 'hk', 'cn', 'zh-hk', 'zh-tw')
+    ]
+    if len(meaningful) == 1 and meaningful[0] in _GENERIC_URL_ENDINGS:
+        return True
+
+    return False
+
 # ── String helpers ────────────────────────────────────────────────────────────
 
 def _similarity(a: str, b: str) -> float:
     if not a or not b:
         return 0.0
     return SequenceMatcher(None, a.lower().strip(), b.lower().strip()).ratio()
+
+
+def _normalize_for_exact(s: str) -> str:
+    """
+    Aggressive normalisation for the first dedup pass.
+    Catches case variants ("One-Stop" vs "One-stop") and punctuation variants.
+    """
+    if not s:
+        return ''
+    s = s.lower().strip()
+    s = re.sub(r'[\s\-–—_/\\]+', ' ', s)   # unify separators
+    s = re.sub(r'[^\w\s]', '', s)            # remove remaining punctuation
+    s = re.sub(r'\s+', ' ', s).strip()
+    return s
 
 
 def _normalize_url(url: str) -> str:
@@ -128,13 +213,20 @@ def _are_duplicate(p1: dict, p2: dict) -> bool:
     if not b1 or not b2 or b1 != b2:
         return False
 
+    # 1. URL match — strongest signal, but only for specific (non-listing) URLs
     u1 = _normalize_url(p1.get('tc_link') or p1.get('url') or '')
     u2 = _normalize_url(p2.get('tc_link') or p2.get('url') or '')
-    if u1 and u2 and u1 == u2:
+    if u1 and u2 and u1 == u2 and not _is_generic_listing_url(u1):
         return True
 
     t1 = (p1.get('title') or p1.get('name') or '').strip()
     t2 = (p2.get('title') or p2.get('name') or '').strip()
+
+    # 2. Exact match after aggressive normalisation
+    if t1 and t2 and _normalize_for_exact(t1) == _normalize_for_exact(t2):
+        return True
+
+    # 3. High similarity ratio
     if t1 and t2 and _similarity(t1, t2) >= _DUPLICATE_TITLE_THRESHOLD:
         return True
 
@@ -154,30 +246,133 @@ def _merge_group(group: list[dict]) -> dict:
     return best
 
 
+def _merge_same_url_promos(promotions: list[dict]) -> list[dict]:
+    """
+    Consolidate entries that the AI incorrectly split from a single campaign page.
+
+    Decision tree for each group of promotions sharing (bank, url):
+    ┌─ count == 1  → pass through unchanged
+    ├─ count >= 3  → listing/hub page; keep ALL separate (e.g. Mox Bank)
+    ├─ count == 2  AND  url is a generic listing page  → keep both separate
+    ├─ count == 2  AND  titles are very similar (≥0.80) → merge into one
+    └─ count == 2  AND  titles clearly differ           → keep both separate
+
+    The key insight: banks like Mox Bank use a single promotions URL for every
+    campaign.  Blindly merging by URL would collapse their entire catalogue.
+    We use URL-pattern detection AND the within-bank count as dual guards.
+    """
+    if not promotions:
+        return []
+
+    # Group by (bank_normalised, url_normalised)
+    groups: dict[tuple[str, str], list[int]] = {}
+    no_url_idxs: list[int] = []
+
+    for i, p in enumerate(promotions):
+        bank = (p.get('bank_name') or p.get('bank') or '').lower().strip()
+        url  = _normalize_url(p.get('tc_link') or p.get('url') or '')
+        if url and bank:
+            groups.setdefault((bank, url), []).append(i)
+        else:
+            no_url_idxs.append(i)
+
+    result:      list[dict] = []
+    merge_count: int        = 0
+
+    for (bank, url), idxs in groups.items():
+        count = len(idxs)
+
+        # ── Case 1: single entry ──────────────────────────────────
+        if count == 1:
+            result.append(promotions[idxs[0]])
+            continue
+
+        # ── Case 2: three or more share the same URL ──────────────
+        # Almost certainly a listing/hub page (e.g. Mox Bank's /promotions).
+        if count >= 3:
+            for i in idxs:
+                result.append(promotions[i])
+            print(
+                f'    ⚠️  URL-merge skipped: {count} promos share '
+                f'listing URL [{url[:55]}] — all kept separate'
+            )
+            continue
+
+        # ── Case 3: exactly 2 share the same URL ─────────────────
+        p1 = promotions[idxs[0]]
+        p2 = promotions[idxs[1]]
+        t1 = (p1.get('title') or '').strip()
+        t2 = (p2.get('title') or '').strip()
+
+        # Guard A: URL is a known listing-page pattern
+        if _is_generic_listing_url(url):
+            result.append(p1)
+            result.append(p2)
+            # Logged only when titles are suspiciously close (worth auditing)
+            if t1 and t2 and _similarity(t1, t2) >= 0.65:
+                print(
+                    f'    ⚠️  URL-merge skipped (listing URL, similar titles): '
+                    f'[{url[:50]}]\n'
+                    f'       "{t1[:55]}"\n'
+                    f'       "{t2[:55]}"'
+                )
+            continue
+
+        # Guard B: titles are nearly identical → AI split one campaign into two
+        if t1 and t2 and _similarity(t1, t2) >= _MERGE_TITLE_THRESHOLD:
+            group = [p1, p2]
+            best  = max(group, key=_score_completeness)
+
+            # Combine descriptions
+            desc_parts: list[str] = []
+            for p in group:
+                d = (p.get('description') or p.get('highlight') or '').strip()
+                if d and d not in desc_parts:
+                    desc_parts.append(d)
+
+            # Merge types
+            all_types: list[str] = []
+            seen_t:    set[str]  = set()
+            for p in group:
+                for t in (p.get('types') or []):
+                    if t not in seen_t:
+                        seen_t.add(t)
+                        all_types.append(t)
+
+            best['title']       = max([t1, t2], key=len)
+            best['description'] = ' | '.join(desc_parts) if len(desc_parts) > 1 else (desc_parts[0] if desc_parts else '')
+            best['types']       = all_types or ['Others 其他']
+
+            result.append(best)
+            merge_count += 1
+            print(
+                f'    🔀 URL-merged 2 near-identical → 1 '
+                f'[{url[:50]}] "{best["title"][:45]}"'
+            )
+            continue
+
+        # Guard C: titles differ → genuinely distinct promotions sharing a URL
+        # (e.g. two campaigns on the same deep page)
+        result.append(p1)
+        result.append(p2)
+
+    for i in no_url_idxs:
+        result.append(promotions[i])
+
+    if merge_count:
+        print(f'    📦 _merge_same_url_promos: {merge_count} pair(s) consolidated')
+
+    return result
+
+
 def deduplicate_promotions(promotions: list[dict]) -> list[dict]:
     if not promotions:
         return []
 
-    url_groups: dict[str, list[dict]] = {}
-    no_url_list: list[dict]           = []
+    # Step 1: smart same-URL merge
+    pass1 = _merge_same_url_promos(promotions)
 
-    for p in promotions:
-        url = _normalize_url(p.get('tc_link') or p.get('url') or '')
-        if url:
-            url_groups.setdefault(url, []).append(p)
-        else:
-            no_url_list.append(p)
-
-    pass1: list[dict] = []
-    for url, group in url_groups.items():
-        if len(group) == 1:
-            pass1.append(group[0])
-        else:
-            merged = _merge_group(group)
-            pass1.append(merged)
-            print(f'    🔗 URL-dedup: merged {len(group)} entries -> 1  [{url[:55]}]')
-    pass1.extend(no_url_list)
-
+    # Step 2: title similarity dedup
     final: list[dict] = []
     for p in pass1:
         found_dup = False
@@ -186,7 +381,10 @@ def deduplicate_promotions(promotions: list[dict]) -> list[dict]:
                 found_dup = True
                 if _score_completeness(p) > _score_completeness(existing):
                     final[i] = p
-                print(f'    ♻  Title-dedup removed: "{(p.get("title") or "")[:60]}" [{p.get("bank_name", "?")}]')
+                print(
+                    f'    ♻  Title-dedup removed: '
+                    f'"{(p.get("title") or "")[:60]}" [{p.get("bank_name", "?")}]'
+                )
                 break
         if not found_dup:
             final.append(p)
@@ -353,25 +551,31 @@ def _build_extraction_prompt(
         'RULE 1 — EXACT TITLE:\n'
         '* Copy the promotion title VERBATIM from the source page text.\n'
         '* Do NOT rename, simplify, embellish, or invent a title.\n\n'
-        'RULE 2 — ONE PROMOTION PER SOURCE URL:\n'
-        '* If one campaign page describes multiple benefits, create EXACTLY ONE promotion.\n'
-        '* Do NOT split a single campaign page into multiple promotion entries.\n\n'
-        'RULE 3 — STRICT DEDUPLICATION:\n'
+        'RULE 2 — ONE PROMOTION PER CAMPAIGN PAGE (CRITICAL):\n'
+        '* If one campaign page describes multiple benefits or steps,\n'
+        '  create EXACTLY ONE promotion entry for that page.\n'
+        '* Consolidate ALL benefits from that page into the single "description" field.\n'
+        '* Do NOT split a single campaign page into multiple entries.\n'
+        '* If the same URL already appears twice in your output, remove the duplicate.\n'
+        '* ONE URL → ONE JSON object. No exceptions.\n\n'
+        'RULE 3 — STRICT DEDUPLICATION (case-insensitive):\n'
         '* Before adding ANY promotion, check the "ALREADY IN DATABASE" list above.\n'
-        '* If the SAME URL already appears in that list -> SKIP.\n'
-        '* If a VERY SIMILAR TITLE for the same bank already appears -> SKIP.\n'
-        '* When uncertain: SKIP rather than risk adding a duplicate.\n\n'
+        '* SAME URL already in the list → SKIP.\n'
+        '* VERY SIMILAR TITLE for the same bank (ignoring capitalisation, e.g.\n'
+        '  "One-Stop" vs "One-stop") → SKIP.\n'
+        '* When uncertain: SKIP rather than risk a duplicate.\n\n'
         f'RULE 4 — START DATE GATE:\n'
-        f'* If start_date can be determined and is BEFORE {today},\n'
-        f'  set "is_new_today": false.\n'
-        f'* Only set "is_new_today": true when start_date >= {today} OR unknown.\n\n'
+        f'* start_date determined and BEFORE {today} → "is_new_today": false.\n'
+        f'* start_date >= {today} OR unknown → "is_new_today": true.\n\n'
         'RULE 5 — ACTIVE / EXPIRED:\n'
-        f'* end_date < {today}   -> "active": false\n'
-        f'* end_date >= {today}  -> "active": true\n'
-        '* No end_date / Ongoing -> "active": true\n\n'
+        f'* end_date < {today}   → "active": false\n'
+        f'* end_date >= {today}  → "active": true\n'
+        '* No end_date / Ongoing → "active": true\n\n'
         'RULE 6 — SOURCE LINK:\n'
         '* Use the most specific URL for each promotion.\n'
-        '* Source URLs appear as === SOURCE: [URL] === markers in the text above.\n\n'
+        '* Source URLs appear as === SOURCE: [URL] === markers in the text above.\n'
+        '* If the only available URL is a generic listing page (e.g. /promotions),\n'
+        '  still assign it — do NOT invent a more specific URL.\n\n'
         '══════════════════════════════════════════════════\n'
         'OUTPUT FORMAT — return ONLY a valid JSON array:\n'
         '══════════════════════════════════════════════════\n'
@@ -410,8 +614,11 @@ def _call_ai(prompt: str, model: str = 'gpt-4o', seed: int = 42) -> str:
                     'You are a meticulous data-extraction assistant. '
                     'You extract bank promotion data and return clean JSON only. '
                     'You NEVER invent or rename promotion titles — you copy them verbatim. '
+                    'You NEVER split one campaign page into multiple entries — '
+                    'one URL always maps to exactly one JSON object. '
                     'You NEVER create duplicate entries — you always check the existing '
-                    'database before adding anything. '
+                    'database list before adding anything. '
+                    'When in doubt about whether something is a duplicate, SKIP it. '
                     'You return valid JSON arrays with no additional prose.'
                 ),
             },
@@ -484,14 +691,13 @@ def _validate_promotion(p: dict, bank_name: str, today: str) -> Optional[dict]:
     return p
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PUBLIC API — all four functions imported by main.py
+# PUBLIC API
 # ══════════════════════════════════════════════════════════════════════════════
 
 def init_ai() -> bool:
     """
     Initialise the OpenAI client and confirm the API key is present.
     Returns True when AI is ready, False otherwise.
-    main.py stores this in `ai_ok` and skips AI steps gracefully when False.
     """
     if not HAS_OPENAI:
         print('  ⚠️  openai package not installed — AI features disabled')
@@ -544,21 +750,41 @@ def analyze_promotions(
         if v:
             validated.append(v)
 
+    # Smart URL-aware merge (handles generic listing URLs safely)
+    validated = _merge_same_url_promos(validated)
+
     print(f'    📋 {len(validated)} promotions extracted for {bank_name}')
     return validated
 
 
 def ai_dedup_titles(titles: list[str], bank_name: str) -> dict:
     """
-    Identify duplicate titles within a single freshly-extracted batch.
+    Two-pass dedup within a freshly-extracted batch.
+    Pass 1 — exact match after aggressive normalisation (catches case variants).
+    Pass 2 — similarity ratio >= threshold.
     Returns {duplicate_index: canonical_index}.
-    main.py uses:  promos = [p for i, p in enumerate(promos) if i not in dup_map]
     """
     if not titles:
         return {}
 
     to_remove: dict[int, int] = {}
+    norms = [_normalize_for_exact(t) for t in titles]
 
+    # Pass 1: exact normalised match
+    for i in range(len(titles)):
+        if i in to_remove:
+            continue
+        for j in range(i + 1, len(titles)):
+            if j in to_remove:
+                continue
+            if norms[i] and norms[j] and norms[i] == norms[j]:
+                to_remove[j] = i
+                print(
+                    f'    ♻  Exact-dedup [{bank_name}]: '
+                    f'"{titles[j][:55]}" ≡ "{titles[i][:55]}"'
+                )
+
+    # Pass 2: similarity ratio
     for i in range(len(titles)):
         if i in to_remove:
             continue
@@ -569,8 +795,9 @@ def ai_dedup_titles(titles: list[str], bank_name: str) -> dict:
             if ratio >= _DUPLICATE_TITLE_THRESHOLD:
                 to_remove[j] = i
                 print(
-                    f'    ♻  Within-batch dedup [{bank_name}]: '
-                    f'"{titles[j][:50]}" ≈ "{titles[i][:50]}"  (ratio={ratio:.2f})'
+                    f'    ♻  Fuzzy-dedup [{bank_name}]: '
+                    f'"{titles[j][:50]}" ≈ "{titles[i][:50]}"  '
+                    f'(ratio={ratio:.2f})'
                 )
 
     return to_remove
@@ -584,8 +811,6 @@ def ai_match_against_existing(
     """
     Match newly extracted promos against existing DB rows using URL + title similarity.
     Returns {promo_index: db_id}.
-    main.py stores db_id as promo['_matched_id'] so save_promotions() can UPDATE
-    rather than INSERT.
     """
     if not promos or not existing_db:
         return {}
@@ -594,7 +819,7 @@ def ai_match_against_existing(
 
     for i, new_p in enumerate(promos):
         for ex_p in existing_db:
-            ex_copy           = dict(ex_p)
+            ex_copy              = dict(ex_p)
             ex_copy['bank_name'] = ex_copy.get('bank_name') or bank_name
             new_copy             = dict(new_p)
             new_copy['bank_name'] = new_copy.get('bank_name') or bank_name
@@ -617,6 +842,10 @@ def ai_match_against_existing(
     return match_map
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# STRATEGIC INSIGHTS — expanded 6-column output
+# ══════════════════════════════════════════════════════════════════════════════
+
 def generate_strategic_insights(
     promos_by_name: dict,
     db_fetch_fn:    Optional[Callable] = None,
@@ -625,12 +854,12 @@ def generate_strategic_insights(
     """
     Generate best-in-category winners and bank-by-bank analysis.
 
-    Args:
-        promos_by_name: dict mapping bank_name -> list[promo dict].
-                        Built in main.py from get_active_promotions(include_bau=True).
-        db_fetch_fn:    Optional callable(bank_name) -> list[dict] reserved for
-                        future enrichment; not used in current logic.
-        today:          YYYY-MM-DD string; defaults to today.
+    best_for items include:
+        category, bank, detail, standard, similar_banks, why_others_lose, is_bau
+
+    bank_analysis items include:
+        focus, strengths (5-6 pts), count, bau_count, expiring_alert,
+        vs_za_pros, vs_za_cons
     """
     if today is None:
         today = datetime.now().strftime('%Y-%m-%d')
@@ -690,57 +919,89 @@ def generate_strategic_insights(
         'expiring': dict(expiring_counts),
     })
 
+    categories_str = '\n'.join(
+        f'  {i + 1}. {c}' for i, c in enumerate(INSIGHT_CATEGORIES)
+    )
+    banks_str = ', '.join(EIGHT_BANKS)
+
     prompt = (
         'Analyse these Hong Kong virtual bank promotions and return strategic insights.\n\n'
         f'TODAY: {today}\n\n'
         f'ACTIVE (non-BAU) PROMOTIONS:\n{promo_json}\n\n'
         f'BAU PERMANENT FEATURES:\n{bau_json}\n\n'
         f'COUNTS (use these exact numbers):\n{counts_json}\n\n'
-        'Return a JSON object with EXACTLY this structure:\n'
+        '══════════════════════════════════════════\n'
+        'RETURN a JSON object with EXACTLY this structure:\n'
+        '══════════════════════════════════════════\n'
         '{\n'
         '  "best_for": [\n'
         '    {\n'
-        '      "category": "Investment (Stock/Crypto Trading)",\n'
-        '      "bank": "Bank Name or None",\n'
-        '      "detail": "Specific reason with actual numbers/offer names",\n'
-        '      "is_bau": false\n'
+        '      "category":       "Investment (Stock/Crypto Trading)",\n'
+        '      "bank":           "Winning bank name  OR  None",\n'
+        '      "detail":         "Specific reason citing actual offer names and numbers",\n'
+        '      "standard":       "One sentence: the exact metric/criterion used to pick the winner",\n'
+        '      "similar_banks":  ["BankX", "BankY"],\n'
+        '      "why_others_lose":"Why similar_banks do not win — cite their specific offers and gaps",\n'
+        '      "is_bau":         false\n'
         '    }\n'
         '  ],\n'
         '  "bank_analysis": {\n'
         '    "ZA Bank": {\n'
-        '      "focus": "One sentence on current promotional theme",\n'
-        '      "strengths": ["strength 1 with specifics", "strength 2", "strength 3"],\n'
-        '      "count": 5,\n'
-        '      "bau_count": 2,\n'
-        '      "expiring_alert": "3 promotions expiring within 30 days",\n'
-        '      "vs_za_pros": null,\n'
-        '      "vs_za_cons": null\n'
+        '      "focus":          "One sentence on current promotional theme",\n'
+        '      "strengths":      ["s1 with specifics", "s2", "s3", "s4", "s5", "s6"],\n'
+        '      "count":          5,\n'
+        '      "bau_count":      2,\n'
+        '      "expiring_alert": "N promotions expiring within 30 days  OR  empty string",\n'
+        '      "vs_za_pros":     null,\n'
+        '      "vs_za_cons":     null\n'
         '    },\n'
         '    "Mox Bank": {\n'
-        '      "focus": "...",\n'
-        '      "strengths": ["..."],\n'
-        '      "count": 4,\n'
-        '      "bau_count": 1,\n'
+        '      "focus":          "...",\n'
+        '      "strengths":      ["s1", "s2", "s3", "s4", "s5"],\n'
+        '      "count":          4,\n'
+        '      "bau_count":      1,\n'
         '      "expiring_alert": "",\n'
-        '      "vs_za_pros": "Stronger travel and device promos",\n'
-        '      "vs_za_cons": "Fewer investment promotions"\n'
+        '      "vs_za_pros":     "Specific advantages over ZA Bank — name actual promotions or rates",\n'
+        '      "vs_za_cons":     "Specific areas where ZA Bank currently leads — be precise"\n'
         '    }\n'
         '  }\n'
         '}\n\n'
-        'Cover ALL 8 categories in best_for:\n'
-        '  Investment (Stock/Crypto Trading), Fund Investment, Spending/CashBack,\n'
-        '  Welcome Bonus, Travel, Loan APR, FX/Multi-Currency, Referral Bonus\n\n'
-        'Include ALL 8 banks in bank_analysis:\n'
-        '  ZA Bank, Mox Bank, WeLab Bank, livi bank, PAObank, Airstar Bank,\n'
-        '  Fusion Bank, Ant Bank\n\n'
-        'Use the exact counts from the COUNTS object above.\n'
-        'Return ONLY JSON.'
+        f'COVER ALL {len(INSIGHT_CATEGORIES)} categories in best_for:\n'
+        f'{categories_str}\n\n'
+        f'INCLUDE ALL 8 banks in bank_analysis: {banks_str}\n\n'
+        'RULES:\n'
+        '  • strengths must have 5–6 bullet points per bank with concrete specifics.\n'
+        '  • similar_banks must NOT include the winning bank itself.\n'
+        '  • why_others_lose must reference real offer names/rates from the data above.\n'
+        '  • standard must be one short sentence explaining the evaluation criterion.\n'
+        '  • vs_za_pros / vs_za_cons: name the actual promotions or rates — no vague language.\n'
+        '  • Use exact counts from the COUNTS object above.\n'
+        '  • Return ONLY JSON — no prose, no markdown fences.'
     )
 
     try:
-        raw  = _call_ai(prompt, model='gpt-4o')
+        raw = _call_ai(prompt, model='gpt-4o')
+        raw = raw.strip()
+        # Strip any accidental markdown fences
+        if raw.startswith('```'):
+            raw = re.sub(r'^```[a-z]*\n?', '', raw)
+            raw = re.sub(r'\n?```$', '', raw)
         data = json.loads(raw)
+
+        # Back-fill any fields the AI omitted
+        for item in data.get('best_for', []):
+            item.setdefault('standard',        'AI evaluates based on best overall value.')
+            item.setdefault('similar_banks',   [])
+            item.setdefault('why_others_lose', '')
+
+        for bname, bdata in data.get('bank_analysis', {}).items():
+            bdata.setdefault('strengths',      [])
+            bdata.setdefault('vs_za_pros',     None)
+            bdata.setdefault('vs_za_cons',     None)
+            bdata.setdefault('expiring_alert', '')
+
         return data
+
     except Exception as exc:
         print(f'  ❌ Strategic insights error: {exc}')
         return {'best_for': [], 'bank_analysis': {}}
@@ -753,10 +1014,7 @@ def extract_promotions(
     existing_promotions: list[dict],
     today:               Optional[str] = None,
 ) -> tuple[list[dict], list[str]]:
-    """
-    Legacy single-call pipeline kept for backwards compatibility.
-    Prefer the granular main.py flow for new code.
-    """
+    """Legacy single-call pipeline kept for backwards compatibility."""
     if today is None:
         today = datetime.now().strftime('%Y-%m-%d')
 
@@ -824,7 +1082,7 @@ def extract_promotions(
         reconciled, logs = reconcile_with_existing(validated, existing_for_bank, today)
         all_logs.extend(logs)
         all_reconciled.extend(reconciled)
-        print(f'    ✓  {bank_name}: {len(validated)} extracted -> {len(reconciled)} reconciled')
+        print(f'    ✓  {bank_name}: {len(validated)} extracted → {len(reconciled)} reconciled')
 
     for bank_name, promos in existing_by_bank.items():
         if bank_name not in processed_banks:

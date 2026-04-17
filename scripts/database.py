@@ -708,15 +708,8 @@ def reactivate_promotions_seen_on(date_str: str) -> int:
 def reactivate_most_recently_seen(window_days: int = 7) -> int:
     """
     Emergency recovery for the AI-unavailable + empty-DB scenario.
-
-    Finds the most recent last_seen date across ALL promotions in the DB, then
-    reactivates every inactive promotion whose last_seen falls within
-    `window_days` of that date.  This restores the website and email to the
-    last known good state so they never show zero while awaiting the next
-    AI-enabled run.
-
-    window_days=7 means: if the last successful run was on 2026-04-14, all
-    promotions last seen on 2026-04-07 or later will be reactivated.
+    Finds the most recent last_seen date and reactivates every inactive
+    promotion whose last_seen falls within window_days of that date.
     """
     with _db_connection() as conn:
         try:
@@ -1037,9 +1030,31 @@ def load_promotions(active_only: bool = True) -> List[Dict[str, Any]]:
             return []
 
 
-def export_to_json(output_path: str):
+def export_to_json(
+    output_path:        str,
+    strategic_insights: Optional[Dict] = None,
+    ai_unavailable:     bool           = False,
+) -> None:
+    """
+    Export all promotions (active + expired) to data.json so the website can
+    support the "Expired Only" filter.  The website JS counts correctly because
+    statTotal is computed from active-only rows after load.
+
+    Parameters
+    ----------
+    output_path:
+        Destination path for data.json (e.g. docs/data.json).
+    strategic_insights:
+        If provided, the dict is embedded under the "strategic_insights" key.
+        Pass the return value of generate_strategic_insights() from ai_helper.
+    ai_unavailable:
+        Set to True when the AI run was skipped/failed.  The website will show
+        a yellow "Cached Data" banner when this flag is present in the JSON.
+    """
+    # Include both active and inactive so the "Expired Only" UI filter works
     all_promos = load_promotions(active_only=False)
-    records    = []
+    records: List[Dict] = []
+
     for p in all_promos:
         raw_type   = p.get('promo_type') or p.get('category') or ''
         types_list = (
@@ -1071,14 +1086,28 @@ def export_to_json(output_path: str):
             'last_seen':   p.get('last_seen')   or '',
         })
 
+    # ── Build output payload ──────────────────────────────────────
+    output: Dict[str, Any] = {
+        'updated':    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'promotions': records,
+    }
+    if strategic_insights:
+        output['strategic_insights'] = strategic_insights
+    if ai_unavailable:
+        output['ai_unavailable'] = True
+
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(
-            {'updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'promotions': records},
-            f, ensure_ascii=False, indent=2,
-        )
+        json.dump(output, f, ensure_ascii=False, indent=2)
 
-    active_n  = sum(1 for r in records if     r['active'])
-    expired_n = sum(1 for r in records if not r['active'])
-    bau_n     = sum(1 for r in records if     r['is_bau'])
-    print(f'  📄 data.json → {active_n} active ({bau_n} BAU), {expired_n} expired → {output_path}')
+    # ── Log counts that match what the website header will display ─
+    active_non_bau = sum(1 for r in records if r['active'] and not r['is_bau'])
+    bau_n          = sum(1 for r in records if r['is_bau'])
+    expired_n      = sum(1 for r in records if not r['active'])
+    insights_tag   = ' +insights' if strategic_insights else ''
+    ai_tag         = ' [AI unavailable — cached]' if ai_unavailable else ''
+    print(
+        f'  📄 data.json → {active_non_bau} active non-BAU '
+        f'(+{bau_n} BAU), {expired_n} expired'
+        f'{insights_tag}{ai_tag} → {output_path}'
+    )
