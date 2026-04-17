@@ -44,6 +44,14 @@
   .toggle-table-btn:hover { background:rgba(255,255,255,0.30); }
   .toggle-table-btn[data-hidden="true"]::before  { content:"👁 Show Table"; }
   .toggle-table-btn[data-hidden="false"]::before { content:"🙈 Hide Table"; }
+  pre.schema-hint {
+    background:#1e293b; color:#94a3b8; font-size:11px; border-radius:10px;
+    padding:14px 16px; overflow-x:auto; line-height:1.7; margin-top:10px;
+  }
+  pre.schema-hint .key   { color:#7dd3fc; }
+  pre.schema-hint .str   { color:#86efac; }
+  pre.schema-hint .num   { color:#fbbf24; }
+  pre.schema-hint .bool  { color:#f87171; }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -188,8 +196,8 @@
 </div>
 
 <!-- ══ STRATEGIC INSIGHTS ════════════════════════════════════════ -->
-<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="strategicInsightsSection" style="display:none;">
-  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+<div class="max-w-screen-2xl mx-auto px-4 pb-4">
+  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" id="insightsDetails">
     <summary class="select-none">
       <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
         <div class="flex items-center gap-3">
@@ -234,8 +242,8 @@
 </div>
 
 <!-- ══ BANK-BY-BANK ANALYSIS ════════════════════════════════════ -->
-<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="bankAnalysisSection" style="display:none;">
-  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+<div class="max-w-screen-2xl mx-auto px-4 pb-4">
+  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" id="analysisDetails">
     <summary class="select-none">
       <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
         <div class="flex items-center gap-3">
@@ -370,7 +378,6 @@ const CAT_FILTER_LIST = [
   { key:'Others 其他',        label:'📋 Others',     bg:'#6b7280' },
 ];
 
-// Fallback standard descriptions
 const HOW_DEFINED = {
   "Investment (Stock/Crypto Trading)":
     "Most comprehensive trading fee waivers — $0 platform fees, free stock trades, or zero crypto commissions.",
@@ -412,7 +419,6 @@ function catMeta(cat) {
   return { bg:"#6b7280", emoji:"📋" };
 }
 
-// ── FIX 1: catTag — restored ${m.bg} and ${m.emoji} ──────────────
 function catTag(cat) {
   if (cat && cat.includes('長期')) return '';
   const m = catMeta(cat);
@@ -424,7 +430,6 @@ function bauTag(p) {
   return `<span class="cat-tag" style="background:#64748b">⚙️ BAU</span>`;
 }
 
-// ── Status logic ──────────────────────────────────────────────────
 function getStatus(p) {
   if (!p.active) return 'expired';
   if (!p.end_date || p.period === 'Ongoing' ||
@@ -449,7 +454,6 @@ function statusBadge(p) {
                        text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
 }
 
-// ── HKT date helpers ──────────────────────────────────────────────
 function hktToday() {
   return new Date(Date.now() + 8*3600000).toISOString().substring(0,10);
 }
@@ -475,14 +479,110 @@ function isNewThisWeek(p, today) {
   return true;
 }
 
-// ── State ─────────────────────────────────────────────────────────
 let allPromos         = [];
 let filtered          = [];
 let activeBankTab     = '';
 let selectedCats      = [];
 let strategicInsights = null;
 
-// ── Load ──────────────────────────────────────────────────────────
+// ── No-data placeholder: shows schema hint so you know exactly what to add ──
+function insightsNoDataHtml() {
+  return `
+    <tr>
+      <td colspan="6" class="px-5 py-5">
+        <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
+          <div class="flex items-start gap-3">
+            <span class="text-2xl shrink-0">⚠️</span>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-amber-800 text-sm mb-1">
+                No AI insights data found in <code class="bg-amber-100 px-1 rounded">data.json</code>
+              </div>
+              <div class="text-amber-700 text-xs mb-3">
+                Add a <code class="bg-amber-100 px-1 rounded">strategic_insights.best_for</code> array
+                to your <code class="bg-amber-100 px-1 rounded">data.json</code>. Each item must have
+                these fields:
+              </div>
+              <pre class="schema-hint">
+{
+  <span class="key">"strategic_insights"</span>: {
+    <span class="key">"best_for"</span>: [
+      {
+        <span class="key">"category"</span>:       <span class="str">"Welcome Bonus"</span>,
+        <span class="key">"bank"</span>:           <span class="str">"ZA Bank"</span>,
+        <span class="key">"detail"</span>:         <span class="str">"Up to HKD 500 cash reward for new users"</span>,
+        <span class="key">"standard"</span>:       <span class="str">"Highest total guaranteed HKD reward for standard onboarding"</span>,
+        <span class="key">"similar_banks"</span>:  [<span class="str">"Mox Bank"</span>, <span class="str">"WeLab Bank"</span>],
+        <span class="key">"why_others_lose"</span>: <span class="str">"Mox requires higher spend; WeLab caps at lower amount"</span>,
+        <span class="key">"is_bau"</span>:         <span class="bool">false</span>
+      }
+    ]
+  }
+}</pre>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+}
+
+function analysisNoDataHtml() {
+  return `
+    <div class="col-span-full">
+      <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl shrink-0">⚠️</span>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-amber-800 text-sm mb-1">
+              No bank analysis data found in <code class="bg-amber-100 px-1 rounded">data.json</code>
+            </div>
+            <div class="text-amber-700 text-xs mb-3">
+              Add a <code class="bg-amber-100 px-1 rounded">strategic_insights.bank_analysis</code>
+              object keyed by bank name. Each bank entry needs:
+            </div>
+            <pre class="schema-hint">
+{
+  <span class="key">"strategic_insights"</span>: {
+    <span class="key">"bank_analysis"</span>: {
+      <span class="key">"ZA Bank"</span>: {
+        <span class="key">"count"</span>:          <span class="num">12</span>,
+        <span class="key">"bau_count"</span>:      <span class="num">3</span>,
+        <span class="key">"focus"</span>:          <span class="str">"All-round digital banking with cashback and investment"</span>,
+        <span class="key">"strengths"</span>: [
+          <span class="str">"1% cashback with no monthly cap"</span>,
+          <span class="str">"Zero-fee stock trading via ZA Invest"</span>,
+          <span class="str">"Welcome bonus up to HKD 500"</span>,
+          <span class="str">"Multi-currency wallet for 11 currencies"</span>,
+          <span class="str">"24/7 AI customer support"</span>,
+          <span class="str">"3.1% p.a. savings with no lock-in"</span>
+        ],
+        <span class="key">"expiring_alert"</span>: <span class="str">"3 promotions expire within 30 days"</span>,
+        <span class="key">"vs_za_pros"</span>:     <span class="bool">null</span>,
+        <span class="key">"vs_za_cons"</span>:     <span class="bool">null</span>
+      },
+      <span class="key">"Mox Bank"</span>: {
+        <span class="key">"count"</span>:          <span class="num">8</span>,
+        <span class="key">"bau_count"</span>:      <span class="num">2</span>,
+        <span class="key">"focus"</span>:          <span class="str">"Travel rewards and unlimited cashback"</span>,
+        <span class="key">"strengths"</span>: [
+          <span class="str">"2% travel cashback on overseas spend"</span>,
+          <span class="str">"Zero FX conversion fees (BAU)"</span>,
+          <span class="str">"Unlimited cashback with no cap"</span>,
+          <span class="str">"HKD 200 referral bonus per invite"</span>,
+          <span class="str">"Round-up savings feature"</span>
+        ],
+        <span class="key">"expiring_alert"</span>: <span class="str">""</span>,
+        <span class="key">"vs_za_pros"</span>:     <span class="str">"Better travel cashback; no FX fees vs ZA's 0.3%"</span>,
+        <span class="key">"vs_za_cons"</span>:     <span class="str">"No crypto or stock trading; weaker welcome bonus"</span>
+      }
+    }
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
 async function loadData() {
   try {
     const res  = await fetch('./data.json?_=' + Date.now());
@@ -559,7 +659,6 @@ function remapCat(t) {
   return MAP[t] || t;
 }
 
-// ── FIX 2: buildPromoCard — restored ${quotaHtml}${costHtml} ─────
 function buildPromoCard(p) {
   const color   = bankColor(p.bank_name);
   const cats    = (p.types || ['Others 其他']).map(catTag).join('');
@@ -612,7 +711,6 @@ function buildPromoCard(p) {
     </div>`;
 }
 
-// ── New sections ──────────────────────────────────────────────────
 function buildNewSections() {
   const today = hktToday();
 
@@ -649,7 +747,6 @@ function buildNewSections() {
   }
 }
 
-// ── FIX 3: buildBankTabs — restored ${c} and ${b} ────────────────
 function buildBankTabs(banks) {
   const container = document.getElementById('bankTabs');
   banks.sort().forEach(b => {
@@ -682,7 +779,6 @@ function setBankTab(bank) {
   applyFilters();
 }
 
-// ── FIX 4: buildCatButtons — restored ${c.bg} and ternary vars ───
 function buildCatButtons() {
   const container = document.getElementById('catTagFilter');
   container.innerHTML =
@@ -726,7 +822,6 @@ function updateCatButtons() {
   });
 }
 
-// ── Toggle visibility ─────────────────────────────────────────────
 function toggleInsightsTable(e) {
   e.stopPropagation();
   const wrap   = document.getElementById('insightsTableWrap');
@@ -744,15 +839,14 @@ function toggleAnalysisGrid(e) {
   btn.dataset.hidden = hidden ? 'false' : 'true';
 }
 
-// ── FIX 5: buildStrategicInsights — restored all ${...} vars ─────
+// ── Strategic Insights — always renders; shows schema hint if no data ──
 function buildStrategicInsights(insights) {
-  const section = document.getElementById('strategicInsightsSection');
-  if (!section) return;
+  const tbody = document.getElementById('insightsTbody');
+
   if (!insights || !insights.best_for || !insights.best_for.length) {
-    section.style.display = 'none';
+    tbody.innerHTML = insightsNoDataHtml();
     return;
   }
-  section.style.display = 'block';
 
   const rows = insights.best_for.map(item => {
     const cat      = item.category      || '';
@@ -771,13 +865,11 @@ function buildStrategicInsights(insights) {
       ? `<span class="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-semibold">⚙️ BAU</span>`
       : '';
 
-    // FIXED: ${color} and ${bank}
     const winnerBadge = isNone
       ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">No clear winner</span>`
       : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-white"
                style="background:${color}">${bank}</span>${bauPill}`;
 
-    // FIXED: ${bc} and ${b}
     const similarHtml = similar.length
       ? similar.map(b => {
           const bc = bankColor(b);
@@ -801,19 +893,17 @@ function buildStrategicInsights(insights) {
       </tr>`;
   }).join('');
 
-  document.getElementById('insightsTbody').innerHTML =
-    rows || `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No insights data.</td></tr>`;
+  tbody.innerHTML = rows;
 }
 
-// ── FIX 6: buildBankAnalysis — restored all ${...} vars ──────────
+// ── Bank Analysis — always renders; shows schema hint if no data ──
 function buildBankAnalysis(insights) {
-  const section = document.getElementById('bankAnalysisSection');
-  if (!section) return;
+  const grid = document.getElementById('bankAnalysisGrid');
+
   if (!insights || !insights.bank_analysis) {
-    section.style.display = 'none';
+    grid.innerHTML = analysisNoDataHtml();
     return;
   }
-  section.style.display = 'block';
 
   const bankAnalysis = insights.bank_analysis;
   const zaEntry = Object.entries(bankAnalysis).find(([k]) => k.includes('ZA')) || [];
@@ -825,6 +915,11 @@ function buildBankAnalysis(insights) {
     if (b.includes('ZA')) return 1;
     return a.localeCompare(b);
   });
+
+  if (!sorted.length) {
+    grid.innerHTML = analysisNoDataHtml();
+    return;
+  }
 
   const cards = sorted.map(([bName, data]) => {
     const isZA      = bName.includes('ZA');
@@ -854,7 +949,6 @@ function buildBankAnalysis(insights) {
 
     let vsHtml = '';
     if (isZA) {
-      // FIXED: ${count} and ${bauCnt}
       vsHtml = `
         <div class="mt-4 bg-indigo-50 border border-indigo-100 rounded-xl p-3">
           <div class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">⭐ Base Comparison Bank</div>
@@ -867,7 +961,6 @@ function buildBankAnalysis(insights) {
     } else {
       const diff      = count - zaCount;
       const diffSign  = diff > 0 ? `+${diff}` : `${diff}`;
-      // FIXED: ${diffColor} and ${diffLabel}
       const diffColor = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-500' : 'text-gray-500';
       const diffLabel = diff > 0
         ? `${diffSign} more than ZA Bank`
@@ -893,7 +986,6 @@ function buildBankAnalysis(insights) {
            </div>`
         : '';
 
-      // FIXED: ${diffColor}, ${diffLabel}, ${bName}, ${count}, ${zaCount}
       vsHtml = `
         <div class="mt-4 border border-gray-200 rounded-xl overflow-hidden">
           <div class="bg-gray-50 px-3 py-2 border-b border-gray-200
@@ -913,7 +1005,6 @@ function buildBankAnalysis(insights) {
     }
 
     const headerBg   = isZA ? color : '#f9fafb';
-    // FIXED: ${headerText} and ${bName}
     const headerText = isZA ? '#fff' : '#1f2937';
 
     return `
@@ -951,11 +1042,9 @@ function buildBankAnalysis(insights) {
       </div>`;
   }).join('');
 
-  document.getElementById('bankAnalysisGrid').innerHTML =
-    cards || '<div class="col-span-full py-8 text-center text-gray-400">No analysis data.</div>';
+  grid.innerHTML = cards;
 }
 
-// ── FIX 7: buildComparisonTable — restored all ${...} in thead/makeRow
 function buildComparisonTable() {
   document.getElementById('comparisonSection').style.display = 'block';
 
@@ -990,7 +1079,6 @@ function buildComparisonTable() {
   const topTypes = Object.entries(typeCounts)
     .sort((a,b) => b[1]-a[1]).map(e => e[0]).slice(0,8);
 
-  // FIXED: ${isZA?...}, ${color}, ${b.name}
   let thead = `<tr class="bg-gray-50 border-b-2 border-gray-200">
     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500
                uppercase tracking-wide w-44 whitespace-nowrap">指標 / Metric</th>`;
@@ -1006,7 +1094,6 @@ function buildComparisonTable() {
   });
   thead += '</tr>';
 
-  // FIXED: ${isBold?...}, ${label}, ${isTop?...}, ${val}, ${isZA?...}, ${disp}
   function makeRow(label, getVal, isBold=false) {
     const zaVal  = getVal(zaBank);
     const maxVal = Math.max(...banks.map(b => getVal(b)));
@@ -1045,7 +1132,6 @@ function buildComparisonTable() {
   rows.push(makeRow('⚡ 即將到期 Expiring ≤30d',
     b => b.promos.filter(p => getStatus(p)==='expiring').length));
   rows.push(sectionRow('🏷️ 優惠類別 By Category'));
-  // FIXED: ${m.bg}, ${m.emoji}, ${short}
   topTypes.forEach(type => {
     const m = catMeta(type), short = type.split(' ')[0];
     rows.push(makeRow(
@@ -1060,7 +1146,6 @@ function buildComparisonTable() {
   buildProsCons(zaBank, banks, topTypes);
 }
 
-// ── FIX 8: buildProsCons — restored all ${...} interpolations ────
 function buildProsCons(zaBank, allBanks, topTypes) {
   const others = allBanks.filter(b => b.name!==zaBank.name);
   if (!others.length) return;
@@ -1127,7 +1212,6 @@ function buildProsCons(zaBank, allBanks, topTypes) {
     </div>`;
 }
 
-// ── Filter & render ───────────────────────────────────────────────
 function applyFilters() {
   const search = document.getElementById('searchInput').value.toLowerCase();
   const status = document.getElementById('statusFilter').value;
@@ -1135,11 +1219,11 @@ function applyFilters() {
 
   filtered = allPromos.filter(p => {
     const s = getStatus(p);
-    if (status==='active'          && s!=='active')                  return false;
-    if (status==='expiring'        && s!=='expiring')                return false;
-    if (status==='expired'         && s!=='expired')                 return false;
-    if (status==='active+expiring' && s!=='active' && s!=='expiring') return false;
-    if (activeBankTab && p.bank_name!==activeBankTab)                return false;
+    if (status==='active'          && s!=='active')                   return false;
+    if (status==='expiring'        && s!=='expiring')                  return false;
+    if (status==='expired'         && s!=='expired')                   return false;
+    if (status==='active+expiring' && s!=='active' && s!=='expiring')  return false;
+    if (activeBankTab && p.bank_name!==activeBankTab)                  return false;
 
     if (selectedCats.length>0) {
       const hasBau    = selectedCats.includes('BAU');
@@ -1168,7 +1252,6 @@ function applyFilters() {
 
   renderTable(filtered);
 
-  // FIX 9: restored ${filtered.length} and ${activeNonBau.length}
   const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false);
   const bauTotal     = allPromos.filter(p => p.is_bau).length;
   document.getElementById('resultCount').textContent =
@@ -1263,7 +1346,6 @@ function toggleDetail(i) {
   chev.style.transform = open ? '' : 'rotate(180deg)';
 }
 
-// ── Excel Export ──────────────────────────────────────────────────
 function exportExcel() {
   if (!filtered.length) return;
   const rows = filtered.map(p => ({
@@ -1293,7 +1375,6 @@ function exportExcel() {
   XLSX.writeFile(wb, `HK_VBank_Promotions_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-// ── Boot ──────────────────────────────────────────────────────────
 buildCatButtons();
 loadData();
 </script>

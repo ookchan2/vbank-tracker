@@ -1,1095 +1,1137 @@
 # scripts/ai_helper.py
 
+import asyncio
+import concurrent.futures
 import json
 import os
 import re
-from collections import Counter
-from datetime import datetime, timedelta
-from difflib import SequenceMatcher
-from typing import Any, Callable, Optional
+import time
+from typing import Optional
 
-# ── OpenAI client (lazy init) ─────────────────────────────────────────────────
+_api_key     = None
+_bot_name    = "Claude-3-7-Sonnet"
+AI_AVAILABLE = False
 
-try:
-    from openai import OpenAI as _OpenAIClass
-    _openai_client: Optional[_OpenAIClass] = None
+# Respect POE_BOT_NAME env override so you can swap models without editing code.
+_ENV_BOT_NAME = os.environ.get('POE_BOT_NAME', '').strip()
 
-    def _get_client() -> _OpenAIClass:
-        global _openai_client
-        if _openai_client is None:
-            api_key = os.getenv('OPENAI_API_KEY')
-            if not api_key:
-                raise EnvironmentError('OPENAI_API_KEY environment variable is not set.')
-            _openai_client = _OpenAIClass(api_key=api_key)
-        return _openai_client
-
-    HAS_OPENAI = True
-except ImportError:
-    HAS_OPENAI = False
-    def _get_client():
-        raise ImportError('openai package is not installed. Run: pip install openai')
-
-# ── Constants ─────────────────────────────────────────────────────────────────
-
-_DUPLICATE_TITLE_THRESHOLD = 0.72   # lowered to catch case/punctuation variants
-_DUPLICATE_DESC_THRESHOLD  = 0.88
-_MERGE_TITLE_THRESHOLD     = 0.80   # stricter: only merge when titles nearly identical
-
-VALID_TYPES = [
-    '迎新 Welcome', '消費 Spending', '投資 Investment', '旅遊 Travel',
-    '保險 Insurance', '貸款 Loan', '活期存款 Savings', '定期存款 TDeposit',
-    '外匯 FX', '推薦 Referral', '新資金 New Funds', 'Others 其他',
-]
-
-INSIGHT_CATEGORIES = [
-    'Investment (Stock/Crypto Trading)',
-    'Fund Investment',
-    'Spending/CashBack',
-    'Welcome Bonus',
-    'Travel',
-    'Loan APR',
-    'FX/Multi-Currency',
-    'Referral Bonus',
-]
-
-EIGHT_BANKS = [
-    'ZA Bank', 'Mox Bank', 'WeLab Bank', 'livi bank',
-    'PAObank', 'Airstar Bank', 'Fusion Bank', 'Ant Bank',
-]
-
-# ── Static BAU promotions ─────────────────────────────────────────────────────
-
-STATIC_BAU_PROMOTIONS: list[dict] = [
-    {
-        'bank_name':   'Ant Bank',
-        'title':       'SME Loan Cash Rebate Promotion',
-        'highlight':   'SME customers enjoy cash rebates on eligible business loan products.',
-        'description': (
-            'Ant Bank SME customers who successfully apply for and drawdown eligible '
-            'business loan products can receive a cash rebate. The rebate amount varies '
-            'by loan amount and is credited after drawdown completion.'
-        ),
-        'types':   ['貸款 Loan'],
-        'is_bau':  True,
-        'active':  True,
-        'period':  'Ongoing',
-        'quota':   'SME customers only',
-        'tc_link': 'https://www.antbank.hk/',
-    },
-    {
-        'bank_name':   'Ant Bank',
-        'title':       '100% Insurance Premium Rebate',
-        'highlight':   "Enjoy 100% rebate on the first month's premium for eligible insurance products.",
-        'description': (
-            "Eligible Ant Bank customers receive a 100% rebate on the first month's "
-            'insurance premium when purchasing designated insurance products through the '
-            'Ant Bank app. This is a permanent BAU benefit available to qualifying customers.'
-        ),
-        'types':   ['保險 Insurance'],
-        'is_bau':  True,
-        'active':  True,
-        'period':  'Ongoing',
-        'quota':   'New insurance policy applicants via Ant Bank app',
-        'tc_link': 'https://www.antbank.hk/',
-    },
-    {
-        'bank_name':   'Ant Bank',
-        'title':       'Insurance Products with up to 3.6% Annualized Rate',
-        'highlight':   'Ant Bank insurance savings products offer up to 3.6% p.a. annualized return.',
-        'description': (
-            'Ant Bank offers insurance-linked savings products combining life insurance '
-            'coverage with competitive annualized returns of up to 3.6%. These products '
-            'are suited for customers seeking both protection and long-term wealth accumulation.'
-        ),
-        'types':   ['保險 Insurance'],
-        'is_bau':  True,
-        'active':  True,
-        'period':  'Ongoing',
-        'tc_link': 'https://www.antbank.hk/',
-    },
-]
-
-# ── Generic listing-URL detection ─────────────────────────────────────────────
-
-# URL path endings that indicate a promotions hub/listing page, NOT a specific campaign page
-_GENERIC_URL_ENDINGS: frozenset[str] = frozenset({
-    'promotion', 'promotions', 'offer', 'offers',
-    'campaign', 'campaigns', 'deal', 'deals',
-    'promo', 'promos', 'event', 'events',
-    'special', 'specials', 'reward', 'rewards',
-    'benefit', 'benefits', 'news', 'latest',
-    'whats-new', 'whatsnew', 'products', 'product',
-    'services', 'service', 'feature', 'features',
-    # language-only single-segment paths
-    'en', 'zh', 'tc', 'sc', 'hk', 'cn', 'zh-hk', 'zh-tw',
-})
-
-
-def _is_generic_listing_url(url: str) -> bool:
-    """
-    Returns True when the URL is a promotions listing/hub page rather than a
-    deep-link to one specific campaign.
-
-    Banks like Mox Bank sometimes return the same generic URL for every
-    promotion because their site uses a single promotions directory page.
-    We must NOT merge those entries — they are genuinely different promotions.
-    """
-    if not url:
-        return True
-
-    clean = url.lower().rstrip('/')
-
-    # Strip protocol + domain to get the path
-    path = re.sub(r'^[a-z]+://[^/]+', '', clean).strip('/')
-
-    # Root URL (empty path after stripping)
-    if not path:
-        return True
-
-    # Last path segment (strip query string / fragment)
-    last_seg = path.rsplit('/', 1)[-1]
-    last_seg = re.split(r'[?#]', last_seg)[0]
-
-    if last_seg in _GENERIC_URL_ENDINGS:
-        return True
-
-    # Path has only 1–2 meaningful segments after stripping language prefixes
-    meaningful = [
-        seg for seg in path.split('/')
-        if seg and seg not in ('en', 'zh', 'tc', 'sc', 'hk', 'cn', 'zh-hk', 'zh-tw')
+MODELS_TO_TRY = (
+    [_ENV_BOT_NAME] if _ENV_BOT_NAME else [
+        "Claude-3-7-Sonnet",
+        "Claude-3-5-Sonnet",
+        "GPT-4o",
+        "Perplexity-Pro-Search",
     ]
-    if len(meaningful) == 1 and meaningful[0] in _GENERIC_URL_ENDINGS:
-        return True
+)
 
-    return False
+ALLOWED_CATEGORIES = [
+    "迎新", "消費", "投資", "旅遊", "保險",
+    "貸款", "存款", "外匯", "推薦", "新資金", "Others"
+]
 
-# ── String helpers ────────────────────────────────────────────────────────────
+# ── BAU overrides ─────────────────────────────────────────────────────────────
 
-def _similarity(a: str, b: str) -> float:
-    if not a or not b:
-        return 0.0
-    return SequenceMatcher(None, a.lower().strip(), b.lower().strip()).ratio()
+BAU_OVERRIDES: dict[str, list[str]] = {
+    "za": ["new crypto customer fee waiver"],
+}
+
+BAU_GLOBAL_OVERRIDES: list[str] = [
+    "account opening in 3 minutes",
+    "account opening in 5 minutes",
+    "quick account opening",
+    "mobile account opening",
+    "open account in minutes",
+    "open an account in minutes",
+    "sign up in the time it takes",
+    "open account in the time",
+    "24/7 mobile banking",
+    "24/7 digital banking",
+    "24×7 banking",
+]
+
+# ── Extraction prompt ─────────────────────────────────────────────────────────
+
+_PROMPT_TMPL = """\
+You are a specialist at extracting bank promotion data from website text.
+
+Bank: BANK_NAME_PLACEHOLDER
+Source URL: URL_PLACEHOLDER
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  CRITICAL RULES — read carefully before extracting                  ║
+║                                                                      ║
+║  1. Extract EVERY SINGLE promotion you can find.                    ║
+║     If you see 25 promotions → return exactly 25 objects.           ║
+║                                                                      ║
+║  2. Do NOT merge multiple promotions into one entry.                ║
+║                                                                      ║
+║  3. name and highlight must be in English.                          ║
+║                                                                      ║
+║  4. For start_date / end_date: look for any date mentioned near     ║
+║     the promotion. Always use YYYY-MM-DD format.                    ║
+║     Use null only if truly absent.                                  ║
+║                                                                      ║
+║  5. is_bau: set true ONLY for permanent product features with       ║
+║     NO end date and NO special eligibility condition, e.g.:         ║
+║       ✅ BAU: "Free Instant FPS Transfers" (always available)       ║
+║       ✅ BAU: "Multi-Currency Savings Account" (product feature)    ║
+║       ✅ BAU: "New Crypto Customer Fee Waiver" (ZA Bank, permanent) ║
+║       ✅ BAU: "$0 Fund Subscription Fee Mode" (WeLab, no end date)  ║
+║       ✅ BAU: "Account Opening in 3 Minutes" (any bank, UX claim)  ║
+║       ✅ BAU: "Quick Account Opening" (any bank, UX claim)         ║
+║       ✅ BAU: "Mobile Account Opening in 5 Minutes" (UX claim)     ║
+║       ✅ BAU: "24/7 Digital Banking Services" (always-on feature)  ║
+║       ❌ NOT BAU: "New Customer Bonus" (new customers only)         ║
+║       ❌ NOT BAU: "Limited-Time Fee Waiver" (has end date)          ║
+║       ❌ NOT BAU: Any promotion with a promo code                   ║
+║                                                                      ║
+║  6. CATEGORY TAGGING RULES:                                         ║
+║     • Any referral / invite-a-friend / 推薦 program → tag 推薦     ║
+║     • Any fund / 基金 / unit trust subscription fee promo → 投資   ║
+║     • Any stock / crypto / securities trading fee promo → 投資     ║
+║     • Any travel / flight / hotel / 旅遊 promo → tag 旅遊          ║
+║                                                                      ║
+║  7. ⚠️  FOOTNOTES ARE REAL PROMOTIONS — ALWAYS EXTRACT THEM        ║
+║     Lines starting with  *  †  #  ¹  ²  are often the most         ║
+║     important promotion terms, NOT just legal disclaimers.          ║
+║     REQUIRED: scan EVERY footnote line and ask yourself:            ║
+║       "Does this mention a fee waiver, discount, reward, or         ║
+║        eligibility period?" → If YES, extract it as a promotion.   ║
+║                                                                      ║
+║     REAL EXAMPLE you must not miss:                                 ║
+║       "*From now until 31 Jul 2026 ... retail banking users who    ║
+║        have activated investment fund trading services with ZA Bank ║
+║        can enjoy 0% fund subscription fee offer and redemption fee  ║
+║        waivers for all funds."                                      ║
+║       → Extract as: name="ZA Bank 0% Fund Subscription Fee Offer   ║
+║         until 31 Jul 2026", types=["投資"], is_bau=false,          ║
+║         end_date="2026-07-31"                                       ║
+║                                                                      ║
+║  8. ⛔ DO NOT EXTRACT THESE — they are NOT promotions:             ║
+║     • Navigation / menu items                                       ║
+║     • Section headings without a concrete benefit amount            ║
+║     • Pure risk disclaimers / legal boilerplate                     ║
+║     • Generic product feature names with no specific reward         ║
+║     • Footer links (Terms, Privacy Policy, Contact Us, etc.)       ║
+║                                                                      ║
+║     ❌ BAD extraction (nav item): "Travel with ZA Card"            ║
+║     ✅ GOOD extraction (real deal): "Trip.com 8% off + 2% CashBack"║
+╚══════════════════════════════════════════════════════════════════════╝
+
+ALLOWED CATEGORY TAGS (Chinese, pick 1-3 per promotion):
+  迎新 / 消費 / 投資 / 旅遊 / 保險 / 貸款 / 存款 / 外匯 / 推薦 / 新資金 / Others
+
+REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
+
+Schema for each object:
+{{
+  "name":        "Full descriptive English name of the promotion",
+  "types":       ["category1", "category2"],
+  "is_bau":      false,
+  "start_date":  "YYYY-MM-DD or null",
+  "end_date":    "YYYY-MM-DD or null",
+  "period":      "Human-readable period, e.g. '1 Jan 2025 to 31 Mar 2025' or 'Ongoing'",
+  "highlight":   "One-line key benefit starting with an emoji",
+  "description": "2-3 sentences describing this specific promotion in detail.",
+  "quota":       "Eligibility or quota info (e.g. First 1000 customers / New customers only / No cap)",
+  "cost":        "Minimum spend or required cost, or Free",
+  "tc_link":     "URL_PLACEHOLDER"
+}}
+
+WEBSITE TEXT TO ANALYSE:
+────────────────────────────────────────────────────────────────────────
+TEXT_PLACEHOLDER
+────────────────────────────────────────────────────────────────────────
+Remember: return ONLY the JSON array starting with [ and ending with ]."""
 
 
-def _normalize_for_exact(s: str) -> str:
-    """
-    Aggressive normalisation for the first dedup pass.
-    Catches case variants ("One-Stop" vs "One-stop") and punctuation variants.
-    """
-    if not s:
-        return ''
-    s = s.lower().strip()
-    s = re.sub(r'[\s\-–—_/\\]+', ' ', s)   # unify separators
-    s = re.sub(r'[^\w\s]', '', s)            # remove remaining punctuation
-    s = re.sub(r'\s+', ' ', s).strip()
-    return s
-
-
-def _normalize_url(url: str) -> str:
-    if not url:
-        return ''
-    url = url.lower().strip().rstrip('/')
-    url = re.sub(r'^https?://', '', url)
-    return url
-
-
-def _score_completeness(p: dict) -> int:
+def _build_prompt(bank_name: str, url: str, text: str) -> str:
     return (
-        len(p.get('description') or '') +
-        len(p.get('highlight')   or '') +
-        len(p.get('title')       or '') * 2 +
-        len(p.get('quota')       or '') +
-        len(p.get('cost')        or '') +
-        (20 if p.get('end_date')   else 0) +
-        (20 if p.get('start_date') else 0) +
-        (10 if p.get('tc_link')    else 0)
+        _PROMPT_TMPL
+        .replace('BANK_NAME_PLACEHOLDER', bank_name)
+        .replace('URL_PLACEHOLDER',       url)
+        .replace('TEXT_PLACEHOLDER',      text)
     )
 
-# ── Deduplication helpers ─────────────────────────────────────────────────────
 
-def _are_duplicate(p1: dict, p2: dict) -> bool:
-    b1 = (p1.get('bank_name') or p1.get('bank') or '').lower().strip()
-    b2 = (p2.get('bank_name') or p2.get('bank') or '').lower().strip()
-    if not b1 or not b2 or b1 != b2:
-        return False
+# ── Poe async core ────────────────────────────────────────────────────────────
 
-    # 1. URL match — strongest signal, but only for specific (non-listing) URLs
-    u1 = _normalize_url(p1.get('tc_link') or p1.get('url') or '')
-    u2 = _normalize_url(p2.get('tc_link') or p2.get('url') or '')
-    if u1 and u2 and u1 == u2 and not _is_generic_listing_url(u1):
-        return True
-
-    t1 = (p1.get('title') or p1.get('name') or '').strip()
-    t2 = (p2.get('title') or p2.get('name') or '').strip()
-
-    # 2. Exact match after aggressive normalisation
-    if t1 and t2 and _normalize_for_exact(t1) == _normalize_for_exact(t2):
-        return True
-
-    # 3. High similarity ratio
-    if t1 and t2 and _similarity(t1, t2) >= _DUPLICATE_TITLE_THRESHOLD:
-        return True
-
-    return False
+_executor = concurrent.futures.ThreadPoolExecutor(
+    max_workers=2,
+    thread_name_prefix='poe_ai',
+)
 
 
-def _merge_group(group: list[dict]) -> dict:
-    best      = max(group, key=_score_completeness)
-    all_types: list[str] = []
-    seen_t:    set[str]  = set()
-    for p in group:
-        for t in (p.get('types') or []):
-            if t not in seen_t:
-                seen_t.add(t)
-                all_types.append(t)
-    best['types'] = all_types or ['Others 其他']
-    return best
-
-
-def _merge_same_url_promos(promotions: list[dict]) -> list[dict]:
-    """
-    Consolidate entries that the AI incorrectly split from a single campaign page.
-
-    Decision tree for each group of promotions sharing (bank, url):
-    ┌─ count == 1  → pass through unchanged
-    ├─ count >= 3  → listing/hub page; keep ALL separate (e.g. Mox Bank)
-    ├─ count == 2  AND  url is a generic listing page  → keep both separate
-    ├─ count == 2  AND  titles are very similar (≥0.80) → merge into one
-    └─ count == 2  AND  titles clearly differ           → keep both separate
-
-    The key insight: banks like Mox Bank use a single promotions URL for every
-    campaign.  Blindly merging by URL would collapse their entire catalogue.
-    We use URL-pattern detection AND the within-bank count as dual guards.
-    """
-    if not promotions:
-        return []
-
-    # Group by (bank_normalised, url_normalised)
-    groups: dict[tuple[str, str], list[int]] = {}
-    no_url_idxs: list[int] = []
-
-    for i, p in enumerate(promotions):
-        bank = (p.get('bank_name') or p.get('bank') or '').lower().strip()
-        url  = _normalize_url(p.get('tc_link') or p.get('url') or '')
-        if url and bank:
-            groups.setdefault((bank, url), []).append(i)
-        else:
-            no_url_idxs.append(i)
-
-    result:      list[dict] = []
-    merge_count: int        = 0
-
-    for (bank, url), idxs in groups.items():
-        count = len(idxs)
-
-        # ── Case 1: single entry ──────────────────────────────────
-        if count == 1:
-            result.append(promotions[idxs[0]])
-            continue
-
-        # ── Case 2: three or more share the same URL ──────────────
-        # Almost certainly a listing/hub page (e.g. Mox Bank's /promotions).
-        if count >= 3:
-            for i in idxs:
-                result.append(promotions[i])
-            print(
-                f'    ⚠️  URL-merge skipped: {count} promos share '
-                f'listing URL [{url[:55]}] — all kept separate'
-            )
-            continue
-
-        # ── Case 3: exactly 2 share the same URL ─────────────────
-        p1 = promotions[idxs[0]]
-        p2 = promotions[idxs[1]]
-        t1 = (p1.get('title') or '').strip()
-        t2 = (p2.get('title') or '').strip()
-
-        # Guard A: URL is a known listing-page pattern
-        if _is_generic_listing_url(url):
-            result.append(p1)
-            result.append(p2)
-            # Logged only when titles are suspiciously close (worth auditing)
-            if t1 and t2 and _similarity(t1, t2) >= 0.65:
-                print(
-                    f'    ⚠️  URL-merge skipped (listing URL, similar titles): '
-                    f'[{url[:50]}]\n'
-                    f'       "{t1[:55]}"\n'
-                    f'       "{t2[:55]}"'
-                )
-            continue
-
-        # Guard B: titles are nearly identical → AI split one campaign into two
-        if t1 and t2 and _similarity(t1, t2) >= _MERGE_TITLE_THRESHOLD:
-            group = [p1, p2]
-            best  = max(group, key=_score_completeness)
-
-            # Combine descriptions
-            desc_parts: list[str] = []
-            for p in group:
-                d = (p.get('description') or p.get('highlight') or '').strip()
-                if d and d not in desc_parts:
-                    desc_parts.append(d)
-
-            # Merge types
-            all_types: list[str] = []
-            seen_t:    set[str]  = set()
-            for p in group:
-                for t in (p.get('types') or []):
-                    if t not in seen_t:
-                        seen_t.add(t)
-                        all_types.append(t)
-
-            best['title']       = max([t1, t2], key=len)
-            best['description'] = ' | '.join(desc_parts) if len(desc_parts) > 1 else (desc_parts[0] if desc_parts else '')
-            best['types']       = all_types or ['Others 其他']
-
-            result.append(best)
-            merge_count += 1
-            print(
-                f'    🔀 URL-merged 2 near-identical → 1 '
-                f'[{url[:50]}] "{best["title"][:45]}"'
-            )
-            continue
-
-        # Guard C: titles differ → genuinely distinct promotions sharing a URL
-        # (e.g. two campaigns on the same deep page)
-        result.append(p1)
-        result.append(p2)
-
-    for i in no_url_idxs:
-        result.append(promotions[i])
-
-    if merge_count:
-        print(f'    📦 _merge_same_url_promos: {merge_count} pair(s) consolidated')
-
-    return result
-
-
-def deduplicate_promotions(promotions: list[dict]) -> list[dict]:
-    if not promotions:
-        return []
-
-    # Step 1: smart same-URL merge
-    pass1 = _merge_same_url_promos(promotions)
-
-    # Step 2: title similarity dedup
-    final: list[dict] = []
-    for p in pass1:
-        found_dup = False
-        for i, existing in enumerate(final):
-            if _are_duplicate(p, existing):
-                found_dup = True
-                if _score_completeness(p) > _score_completeness(existing):
-                    final[i] = p
-                print(
-                    f'    ♻  Title-dedup removed: '
-                    f'"{(p.get("title") or "")[:60]}" [{p.get("bank_name", "?")}]'
-                )
-                break
-        if not found_dup:
-            final.append(p)
-
-    return final
-
-# ── Date helpers ──────────────────────────────────────────────────────────────
-
-def is_new_today(promo: dict, today: str) -> bool:
-    created = (promo.get('created_at') or '')[:10]
-    if created != today:
-        return False
-    start = (promo.get('start_date') or '')[:10]
-    if start and start < today:
-        return False
-    return True
-
-
-def is_new_this_week(promo: dict, today: str) -> bool:
-    created = (promo.get('created_at') or '')[:10]
-    if not created:
-        return False
+async def _async_call(messages: list, bot_name: str) -> str:
     try:
-        today_dt = datetime.strptime(today, '%Y-%m-%d')
-    except ValueError:
-        return False
+        import fastapi_poe as fp
+        poe_messages = [
+            fp.ProtocolMessage(role=m['role'], content=m['content'])
+            for m in messages
+        ]
+        response_text = ''
+        async for partial in fp.get_bot_response(
+            messages=poe_messages,
+            bot_name=bot_name,
+            api_key=_api_key,
+        ):
+            response_text += partial.text
+        return response_text.strip()
+    except Exception as exc:
+        print(f'  ⚠️  Poe async call error ({bot_name}): {exc}')
+        return ''
 
-    six_days_ago = (today_dt - timedelta(days=6)).strftime('%Y-%m-%d')
-    yesterday    = (today_dt - timedelta(days=1)).strftime('%Y-%m-%d')
-    if not (six_days_ago <= created <= yesterday):
-        return False
 
-    start = (promo.get('start_date') or '')[:10]
-    if start and start < six_days_ago:
-        return False
-    return True
+def _run_async(coro) -> str:
+    try:
+        asyncio.get_running_loop()
+        future = _executor.submit(asyncio.run, coro)
+        return future.result(timeout=180)
+    except RuntimeError:
+        return asyncio.run(coro)
+    except Exception as exc:
+        print(f'  ⚠️  _run_async error: {exc}')
+        return ''
 
 
-def revalidate_expired(promotions: list[dict], today: str) -> list[dict]:
-    active_set: set[str] = set()
-    for p in promotions:
-        if p.get('active'):
-            url = _normalize_url(p.get('tc_link') or p.get('url') or '')
-            if url:
-                active_set.add(url)
+def _call(messages: list, label: str = '') -> str:
+    """Call the active Poe AI model and return the raw text response."""
+    if not AI_AVAILABLE or _api_key is None:
+        return ''
+    t = time.monotonic()
+    try:
+        result  = _run_async(_async_call(messages, _bot_name))
+        elapsed = time.monotonic() - t
+        tag     = f' [{label}]' if label else ''
+        print(f'  [DEBUG] AI ({_bot_name}){tag} → {len(result)} chars in {elapsed:.1f}s')
+        if len(result) < 50:
+            print(f'  [DEBUG] Full response: {repr(result)}')
+        return result
+    except Exception as exc:
+        print(f'  ⚠️  Call error: {exc}')
+        return ''
 
-    corrected: list[dict] = []
-    for p in promotions:
-        if p.get('active'):
-            corrected.append(p)
-            continue
 
-        end = (p.get('end_date') or '')[:10]
+# ── Init ──────────────────────────────────────────────────────────────────────
 
-        if end and end >= today:
-            p_fixed           = dict(p)
-            p_fixed['active'] = True
-            print(
-                f'    🔄 Re-activated (valid end_date {end}): '
-                f'"{(p.get("title") or "")[:60]}" [{p.get("bank_name", "?")}]'
-            )
-            corrected.append(p_fixed)
-            continue
-
-        if not end:
-            url = _normalize_url(p.get('tc_link') or p.get('url') or '')
-            if url and url in active_set:
-                print(
-                    f'    🗑  Expired+duplicate removed: '
-                    f'"{(p.get("title") or "")[:60]}" [{p.get("bank_name", "?")}]'
+def init_ai() -> bool:
+    global _api_key, _bot_name, AI_AVAILABLE
+    try:
+        import fastapi_poe  # noqa
+        key = os.environ.get('POE_API_KEY', '').strip()
+        if not key:
+            print('⚠️  POE_API_KEY not set — AI disabled')
+            return False
+        _api_key = key
+        for model in MODELS_TO_TRY:
+            print(f'  🔍 Testing model: {model} ...')
+            try:
+                test = _run_async(
+                    _async_call([{'role': 'user', 'content': 'Reply OK only.'}], model)
                 )
-                continue
-            corrected.append(p)
-            continue
-
-        corrected.append(p)
-
-    return corrected
-
-# ── Reconcile ─────────────────────────────────────────────────────────────────
-
-def reconcile_with_existing(
-    newly_extracted: list[dict],
-    existing_promos: list[dict],
-    today:           str,
-) -> tuple[list[dict], list[str]]:
-    logs:         list[str] = []
-    reconciled:   list[dict] = []
-    matched_idxs: set[int]   = set()
-
-    for new_p in newly_extracted:
-        match_idx: Optional[int] = None
-        for idx, ex_p in enumerate(existing_promos):
-            if _are_duplicate(new_p, ex_p):
-                match_idx = idx
-                break
-
-        if match_idx is not None:
-            matched_idxs.add(match_idx)
-            ex_p    = existing_promos[match_idx]
-            updated = dict(ex_p)
-            updated['last_seen'] = today
-            updated['active']    = True
-            for fld in ('description', 'highlight', 'period', 'end_date',
-                        'start_date', 'quota', 'cost', 'types'):
-                if new_p.get(fld) and new_p.get(fld) != ex_p.get(fld):
-                    updated[fld] = new_p[fld]
-            reconciled.append(updated)
-        else:
-            new_p.setdefault('created_at', today)
-            new_p['last_seen'] = today
-            new_p.setdefault('active', True)
-            reconciled.append(new_p)
-            logs.append(f'NEW: [{new_p.get("bank_name")}] {new_p.get("title", "?")}')
-
-    for idx, ex_p in enumerate(existing_promos):
-        if idx in matched_idxs:
-            continue
-        end = (ex_p.get('end_date') or '')[:10]
-        if end and end < today:
-            expired_p           = dict(ex_p)
-            expired_p['active'] = False
-            reconciled.append(expired_p)
-            logs.append(f'EXPIRED: [{ex_p.get("bank_name")}] {ex_p.get("title", "?")}')
-        else:
-            kept_p              = dict(ex_p)
-            kept_p['last_seen'] = today
-            reconciled.append(kept_p)
-
-    return reconciled, logs
-
-# ── Prompt builder ────────────────────────────────────────────────────────────
-
-def _build_extraction_prompt(
-    bank_name:         str,
-    scraped_text:      str,
-    existing_for_bank: list[dict],
-    today:             str,
-) -> str:
-    if not existing_for_bank:
-        db_lines = '  (none — this is a fresh bank)'
-    else:
-        db_lines = '\n'.join(
-            '  * [URL: {}]  "{}"'.format(
-                p.get('tc_link') or p.get('url') or 'no-url',
-                p.get('title') or '?',
-            )
-            for p in existing_for_bank[:30]
-        )
-
-    valid_types_str = ', '.join(VALID_TYPES)
-
-    return (
-        f'You are extracting structured bank promotion data for {bank_name}.\n\n'
-        f'TODAY: {today}\n\n'
-        f'PROMOTIONS ALREADY IN THE DATABASE FOR {bank_name}\n'
-        '(You MUST NOT re-add any of these — check carefully before adding anything):\n'
-        f'{db_lines}\n\n'
-        'SCRAPED WEBSITE TEXT (multiple pages, each prefixed with === SOURCE: [URL] ===):\n'
-        f'{scraped_text[:32000]}\n\n'
-        '══════════════════════════════════════════════════\n'
-        'EXTRACTION RULES — READ ALL BEFORE WRITING OUTPUT\n'
-        '══════════════════════════════════════════════════\n\n'
-        'RULE 1 — EXACT TITLE:\n'
-        '* Copy the promotion title VERBATIM from the source page text.\n'
-        '* Do NOT rename, simplify, embellish, or invent a title.\n\n'
-        'RULE 2 — ONE PROMOTION PER CAMPAIGN PAGE (CRITICAL):\n'
-        '* If one campaign page describes multiple benefits or steps,\n'
-        '  create EXACTLY ONE promotion entry for that page.\n'
-        '* Consolidate ALL benefits from that page into the single "description" field.\n'
-        '* Do NOT split a single campaign page into multiple entries.\n'
-        '* If the same URL already appears twice in your output, remove the duplicate.\n'
-        '* ONE URL → ONE JSON object. No exceptions.\n\n'
-        'RULE 3 — STRICT DEDUPLICATION (case-insensitive):\n'
-        '* Before adding ANY promotion, check the "ALREADY IN DATABASE" list above.\n'
-        '* SAME URL already in the list → SKIP.\n'
-        '* VERY SIMILAR TITLE for the same bank (ignoring capitalisation, e.g.\n'
-        '  "One-Stop" vs "One-stop") → SKIP.\n'
-        '* When uncertain: SKIP rather than risk a duplicate.\n\n'
-        f'RULE 4 — START DATE GATE:\n'
-        f'* start_date determined and BEFORE {today} → "is_new_today": false.\n'
-        f'* start_date >= {today} OR unknown → "is_new_today": true.\n\n'
-        'RULE 5 — ACTIVE / EXPIRED:\n'
-        f'* end_date < {today}   → "active": false\n'
-        f'* end_date >= {today}  → "active": true\n'
-        '* No end_date / Ongoing → "active": true\n\n'
-        'RULE 6 — SOURCE LINK:\n'
-        '* Use the most specific URL for each promotion.\n'
-        '* Source URLs appear as === SOURCE: [URL] === markers in the text above.\n'
-        '* If the only available URL is a generic listing page (e.g. /promotions),\n'
-        '  still assign it — do NOT invent a more specific URL.\n\n'
-        '══════════════════════════════════════════════════\n'
-        'OUTPUT FORMAT — return ONLY a valid JSON array:\n'
-        '══════════════════════════════════════════════════\n'
-        '[\n'
-        '  {\n'
-        '    "title":        "exact title copied from the source page",\n'
-        f'    "bank_name":    "{bank_name}",\n'
-        '    "types":        ["迎新 Welcome"],\n'
-        '    "highlight":    "one-sentence benefit summary",\n'
-        '    "description":  "full description covering ALL benefits on this page",\n'
-        '    "period":       "DD MMM YYYY to DD MMM YYYY  OR  Ongoing",\n'
-        '    "start_date":   "YYYY-MM-DD  OR  null",\n'
-        '    "end_date":     "YYYY-MM-DD  OR  null",\n'
-        '    "quota":        "eligibility / who qualifies",\n'
-        '    "cost":         "minimum spend or deposit  OR  null",\n'
-        '    "tc_link":      "https://most-specific-source-url",\n'
-        '    "is_bau":       false,\n'
-        '    "active":       true,\n'
-        '    "is_new_today": false\n'
-        '  }\n'
-        ']\n\n'
-        f'Valid type values: {valid_types_str}\n\n'
-        'Return [] if no promotions found.  Return ONLY the JSON array — no prose.'
-    )
-
-# ── Core AI call ──────────────────────────────────────────────────────────────
-
-def _call_ai(prompt: str, model: str = 'gpt-4o', seed: int = 42) -> str:
-    client = _get_client()
-    resp   = client.chat.completions.create(
-        model    = model,
-        messages = [
-            {
-                'role':    'system',
-                'content': (
-                    'You are a meticulous data-extraction assistant. '
-                    'You extract bank promotion data and return clean JSON only. '
-                    'You NEVER invent or rename promotion titles — you copy them verbatim. '
-                    'You NEVER split one campaign page into multiple entries — '
-                    'one URL always maps to exactly one JSON object. '
-                    'You NEVER create duplicate entries — you always check the existing '
-                    'database list before adding anything. '
-                    'When in doubt about whether something is a duplicate, SKIP it. '
-                    'You return valid JSON arrays with no additional prose.'
-                ),
-            },
-            {'role': 'user', 'content': prompt},
-        ],
-        temperature = 0.05,
-        max_tokens  = 4096,
-        seed        = seed,
-    )
-    return resp.choices[0].message.content or '[]'
+            except Exception as exc:
+                print(f'  ❌ {model} error: {exc}')
+                test = ''
+            if test:
+                _bot_name    = model
+                AI_AVAILABLE = True
+                print(f'✅ Poe ready: {_bot_name}')
+                return True
+            print(f'  ❌ {model} failed, trying next...')
+        print('❌ All models failed — AI disabled')
+        AI_AVAILABLE = False
+        return False
+    except ImportError:
+        print('❌ fastapi-poe not installed')
+        AI_AVAILABLE = False
+        return False
+    except Exception as exc:
+        print(f'❌ AI init failed: {exc}')
+        AI_AVAILABLE = False
+        return False
 
 
-def _parse_ai_json(raw: str, bank_name: str) -> list[dict]:
+# ── Parsing helpers ───────────────────────────────────────────────────────────
+
+def _parse_array(raw: str) -> list:
+    if not raw:
+        return []
+    raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+    raw = re.sub(r'\s*```$',          '', raw, flags=re.MULTILINE)
     raw = raw.strip()
     try:
-        parsed = json.loads(raw)
-        if isinstance(parsed, list):
-            return parsed
-        if isinstance(parsed, dict):
-            for key in ('promotions', 'data', 'results', 'items', 'output'):
-                if isinstance(parsed.get(key), list):
-                    return parsed[key]
-            if 'title' in parsed:
-                return [parsed]
+        data = json.loads(raw)
+        return data if isinstance(data, list) else [data]
     except json.JSONDecodeError:
         pass
-
-    m = re.search(r'\[.*\]', raw, re.DOTALL)
+    m = re.search(r'(\[.*\])', raw, re.DOTALL)
     if m:
         try:
-            return json.loads(m.group())
-        except json.JSONDecodeError:
+            data = json.loads(m.group(1))
+            return data if isinstance(data, list) else [data]
+        except Exception:
             pass
-
-    print(f'    ⚠  Could not parse AI response for {bank_name}')
+    for suffix in ('}]', ']'):
+        try:
+            data = json.loads(raw + suffix)
+            return data if isinstance(data, list) else [data]
+        except Exception:
+            pass
+    print(f'  ⚠️  JSON parse failed. First 200 chars: {raw[:200]}')
     return []
 
 
-def _validate_promotion(p: dict, bank_name: str, today: str) -> Optional[dict]:
-    title = (p.get('title') or '').strip()
-    if not title or len(title) < 3:
+def _parse_object(raw: str) -> Optional[dict]:
+    if not raw:
+        return None
+    raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+    raw = re.sub(r'\s*```$',          '', raw, flags=re.MULTILINE)
+    raw = raw.strip()
+    m = re.search(r'(\{.*\})', raw, re.DOTALL)
+    if m:
+        raw = m.group(1)
+    try:
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else None
+    except json.JSONDecodeError as exc:
+        print(f'  ⚠️  JSON object parse failed: {exc}. First 200 chars: {raw[:200]}')
         return None
 
-    p['bank_name'] = bank_name
 
-    raw_t = p.get('types') or []
-    if isinstance(raw_t, str):
-        raw_t = [raw_t]
-    valid_t    = [t for t in raw_t if t in VALID_TYPES]
-    p['types'] = valid_t if valid_t else ['Others 其他']
+def _trim_text(text: str, max_chars: int = 25_000) -> str:
+    """
+    Symmetric head+tail trim.
+    25,000 chars leaves comfortable headroom within every supported model's
+    context window once the fixed prompt overhead (~5,000 chars) is added.
+    """
+    if len(text) <= max_chars:
+        return text
+    keep = max_chars // 2
+    return (
+        text[:keep]
+        + f'\n\n…[{len(text) - max_chars:,} chars trimmed]…\n\n'
+        + text[-keep:]
+    )
 
-    p['is_bau'] = bool(p.get('is_bau', False))
-    p['active'] = bool(p.get('active', True))
 
-    for df in ('start_date', 'end_date'):
-        val = p.get(df)
-        if val:
-            try:
-                datetime.strptime(str(val)[:10], '%Y-%m-%d')
-                p[df] = str(val)[:10]
-            except ValueError:
-                p[df] = None
+def _stamp(promos: list, bank_id: str, bank_name: str, default_url: str) -> list:
+    for p in promos:
+        p['bank']    = bank_id
+        p['bName']   = bank_name
+        p.setdefault('link',        default_url)
+        p.setdefault('tc_link',     default_url)
+        p.setdefault('types',       ['Others'])
+        p.setdefault('is_bau',      False)
+        p.setdefault('start_date',  None)
+        p.setdefault('end_date',    None)
+        p.setdefault('period',      'Ongoing')
+        p.setdefault('highlight',   '')
+        p.setdefault('description', '')
+        p.setdefault('quota',       'Check official website')
+        p.setdefault('cost',        'Check official website')
+        if not p.get('title') and p.get('name'):
+            p['title'] = p['name']
+    return promos
+
+
+def _apply_bau_overrides(promos: list, bank_id: str) -> list:
+    bank_specific = [o.lower() for o in BAU_OVERRIDES.get(bank_id.lower(), [])]
+    global_list   = [o.lower() for o in BAU_GLOBAL_OVERRIDES]
+    all_overrides = bank_specific + global_list
+    if not all_overrides:
+        return promos
+    for p in promos:
+        title = (p.get('name') or p.get('title') or '').lower()
+        if any(override in title for override in all_overrides):
+            if not p.get('is_bau'):
+                p['is_bau'] = True
+                print(f'    🔒 BAU override: {p.get("name") or p.get("title")}')
+    return promos
+
+
+# ── Evidence gate ─────────────────────────────────────────────────────────────
+
+_VAGUE_DETAIL_PATTERNS: list[str] = [
+    r'special\s+\w+[-\s]related\s+promotions?',
+    r'year[- ]round\s+\w+\s+offers?\s+with\s+special',
+    r'^\s*various\b',
+    r'competitive\s+features',
+    r'\bservices?\s+available\s*$',
+    r'no\s+\w+\s+promotions?\s+available',
+]
+
+_CONCRETE_EVIDENCE_RE = re.compile(
+    r'HKD\s*[\d,]+'
+    r'|\$\s*0\b'
+    r'|\d+\.?\d*\s*%'
+    r'|\d{1,2}\s+[A-Za-z]+\s+20\d\d'
+    r'|20\d\d-\d\d-\d\d'
+    r'|trip\.com'
+    r'|asia\s*miles'
+    r'|\bapr\b'
+    r'|subscription\s*fee'
+    r'|platform\s*fee'
+    r'|trading\s*fee'
+    r'|fee\s*waiver'
+    r'|zero[\s-]fee'
+    r'|free\s+stock'
+    r'|payment\s+connect'
+    r'|global\s+wallet'
+    r'|commission'
+    r'|cashback|cash\s*back'
+    r'|\bflight\b'
+    r'|\bhotel\b'
+    r'|\blounge\b'
+    r'|travel\s*insur'
+    r'|\bagoda\b'
+    r'|旅遊',
+    re.IGNORECASE,
+)
+
+_CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    'Investment (Stock/Crypto Trading)': [
+        'crypto', 'bitcoin', 'virtual asset', 'digital asset',
+        'stock', 'securities', 'brokerage', 'ipo',
+        'trading fee', 'platform fee', '$0', 'commission',
+        'powerdraw', 'free stock',
+    ],
+    'Fund Investment': [
+        'fund', '基金', 'mutual fund', 'unit trust',
+        'subscription fee', '$0認購費', '認購費', '轉換費',
+        'fund fee', 'zero-fee fund', '0% fund', '$0 fund',
+        'fund subscription', 'fund trading fee',
+    ],
+    'Referral Bonus': [
+        'referral', '推薦', 'invite', '多友多賞',
+        'refer a friend', 'referral code', '推薦碼',
+        'referral reward', 'invite a friend', 'invite bonus',
+    ],
+    'FX/Multi-Currency': [
+        'fx', 'forex', 'exchange rate', 'multi-currency',
+        'global wallet', 'payment connect', 'remittance',
+        'international transfer', 'swift', 'foreign currency',
+        'welab global', 'fps transfer',
+    ],
+    'Travel': [
+        'trip.com', 'asia miles', 'flight', 'hotel',
+        'travel insurance', 'lounge', 'agoda',
+        'booking.com', 'travel cashback', 'travel reward',
+        '旅遊', 'travel', 'airline', 'airport', 'airfare',
+    ],
+    'Spending/CashBack': [
+        'cashback', 'cash back', 'spending reward',
+        'merchant', 'card reward', 'rebate', 'card spending',
+    ],
+    'Welcome Bonus': [
+        'welcome', 'new customer', 'account opening',
+        'sign up', 'onboarding', 'welcome gift',
+        'hkd8,888', 'hkd888', 'join bonus',
+    ],
+    'Loan APR': [
+        'loan', 'apr', 'instant loan', 'personal loan',
+        'interest rate', '1.18%', 'tax loan', 'tax season',
+    ],
+}
+
+
+def _validate_best_for_evidence(best_for: list) -> list:
+    validated    = []
+    reject_count = 0
+    for entry in best_for:
+        detail = (entry.get('detail')   or '').strip()
+        bank   = (entry.get('bank')     or '').strip()
+        cat    = (entry.get('category') or '').strip()
+
+        if bank.lower() in ('none', '', 'n/a'):
+            validated.append(entry)
+            continue
+
+        is_vague     = any(
+            re.search(pat, detail, re.IGNORECASE)
+            for pat in _VAGUE_DETAIL_PATTERNS
+        )
+        has_evidence = bool(_CONCRETE_EVIDENCE_RE.search(detail))
+
+        if is_vague:
+            print(
+                f'  ⚠️  Vague-pattern flag [{cat}] "{bank}" — '
+                f'evidence present={has_evidence}: "{detail[:70]}"'
+            )
+
+        if not has_evidence:
+            print(
+                f'  🚫 Evidence gate REJECTED [{cat}] winner "{bank}" '
+                f'(no concrete fact found) → detail: "{detail}"'
+            )
+            validated.append({
+                **entry,
+                'bank':   'None',
+                'detail': f'No verified {cat} promotion with concrete details found',
+                'is_bau': False,
+            })
+            reject_count += 1
         else:
-            p[df] = None
+            validated.append(entry)
 
-    if p['end_date'] and p['end_date'] < today:
-        p['active'] = False
+    if reject_count:
+        print(f'  🚫 Evidence gate total: {reject_count} vague winner(s) nullified')
+    return validated
 
-    p.pop('is_new_today', None)
-    return p
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PUBLIC API
-# ══════════════════════════════════════════════════════════════════════════════
+def _cross_check_best_for_from_strengths(
+    result: dict,
+    promotions_by_bank: dict,
+) -> dict:
+    best_for      = result.get('best_for', [])
+    bank_analysis = result.get('bank_analysis', {})
+    if not bank_analysis:
+        return result
 
-def init_ai() -> bool:
-    """
-    Initialise the OpenAI client and confirm the API key is present.
-    Returns True when AI is ready, False otherwise.
-    """
-    if not HAS_OPENAI:
-        print('  ⚠️  openai package not installed — AI features disabled')
-        return False
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
-        print('  ⚠️  OPENAI_API_KEY not set — AI features disabled')
-        return False
-    try:
-        _get_client()
-        print('  ✅ OpenAI client initialised')
-        return True
-    except Exception as exc:
-        print(f'  ❌ OpenAI init failed: {exc}')
-        return False
+    filled = 0
+    for i, entry in enumerate(best_for):
+        cat  = (entry.get('category') or '').strip()
+        bank = (entry.get('bank')     or '').strip()
+        if bank.lower() not in ('none', '', 'n/a'):
+            continue
 
+        keywords   = _CATEGORY_KEYWORDS.get(cat, [])
+        candidates: list[tuple[str, str]] = []
+        for bname, bdata in bank_analysis.items():
+            for s in (bdata.get('strengths') or []):
+                if any(kw.lower() in s.lower() for kw in keywords):
+                    candidates.append((bname, s))
+
+        if not candidates:
+            continue
+
+        best = next(
+            (c for c in candidates if _CONCRETE_EVIDENCE_RE.search(c[1])),
+            candidates[0],
+        )
+        best_bank, best_detail = best
+
+        bank_promos  = promotions_by_bank.get(best_bank, [])
+        is_bau_guess = any(
+            p.get('is_bau') and
+            any(kw.lower() in (p.get('name') or p.get('title') or '').lower()
+                for kw in keywords)
+            for p in bank_promos
+        )
+
+        print(
+            f'  🔁 Strength cross-check FILLED [{cat}] → {best_bank}: '
+            f'"{best_detail[:80]}"'
+        )
+        best_for[i] = {**entry, 'bank': best_bank, 'detail': best_detail, 'is_bau': is_bau_guess}
+        filled += 1
+
+    if filled:
+        print(f'  🔁 Cross-check: {filled} slot(s) filled from bank_analysis.strengths')
+
+    result['best_for'] = best_for
+    return result
+
+
+# ── Public API ────────────────────────────────────────────────────────────────
 
 def analyze_promotions(
     bank_id:     str,
     bank_name:   str,
-    text:        str,
+    text:        str = '',
     screenshot:  Optional[bytes] = None,
     default_url: str = '',
-) -> list[dict]:
-    """
-    Extract structured promotions for ONE bank from its scraped page text.
-    Returns a validated list ready for ai_dedup_titles + ai_match_against_existing.
-    """
-    today = datetime.now().strftime('%Y-%m-%d')
+) -> list:
 
-    prompt = _build_extraction_prompt(
-        bank_name         = bank_name,
-        scraped_text      = text,
-        existing_for_bank = [],
-        today             = today,
-    )
-
-    try:
-        raw      = _call_ai(prompt)
-        raw_list = _parse_ai_json(raw, bank_name)
-    except Exception as exc:
-        print(f'    ❌ AI extraction error for {bank_name}: {exc}')
+    if not AI_AVAILABLE:
         return []
 
-    validated: list[dict] = []
-    for p in raw_list:
-        if not p.get('tc_link') and default_url:
-            p['tc_link'] = default_url
-        v = _validate_promotion(p, bank_name, today)
-        if v:
-            validated.append(v)
+    clean   = _trim_text(text.strip() if text else '')
+    results = []
 
-    # Smart URL-aware merge (handles generic listing URLs safely)
-    validated = _merge_same_url_promos(validated)
+    if len(clean) >= 200:
+        prompt = _build_prompt(bank_name=bank_name, url=default_url, text=clean)
 
-    print(f'    📋 {len(validated)} promotions extracted for {bank_name}')
-    return validated
+        for attempt in range(2):
+            raw    = _call([{'role': 'user', 'content': prompt}], label=bank_id)
+            parsed = _parse_array(raw)
+            if parsed:
+                results   = parsed
+                bau_count = sum(1 for p in parsed if p.get('is_bau'))
+                print(
+                    f'  📝 Text → {len(results)} promotions for {bank_name} '
+                    f'({bau_count} BAU)'
+                )
+                break
+            if attempt == 0:
+                print(f'  🔄 Retry AI for {bank_name}...')
+        else:
+            print(f'  ❌ Both attempts failed for {bank_name}')
+    else:
+        print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')
+
+    results = _stamp(results, bank_id, bank_name, default_url)
+    results = _apply_bau_overrides(results, bank_id)
+    print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
+    return results
 
 
-def ai_dedup_titles(titles: list[str], bank_name: str) -> dict:
-    """
-    Two-pass dedup within a freshly-extracted batch.
-    Pass 1 — exact match after aggressive normalisation (catches case variants).
-    Pass 2 — similarity ratio >= threshold.
-    Returns {duplicate_index: canonical_index}.
-    """
-    if not titles:
+def ai_dedup_titles(titles: list[str], bank_name: str) -> dict[int, int]:
+    if not AI_AVAILABLE or len(titles) < 2:
         return {}
 
-    to_remove: dict[int, int] = {}
-    norms = [_normalize_for_exact(t) for t in titles]
+    numbered = "\n".join(f"{i}. {t}" for i, t in enumerate(titles))
 
-    # Pass 1: exact normalised match
-    for i in range(len(titles)):
-        if i in to_remove:
-            continue
-        for j in range(i + 1, len(titles)):
-            if j in to_remove:
-                continue
-            if norms[i] and norms[j] and norms[i] == norms[j]:
-                to_remove[j] = i
-                print(
-                    f'    ♻  Exact-dedup [{bank_name}]: '
-                    f'"{titles[j][:55]}" ≡ "{titles[i][:55]}"'
-                )
+    prompt = f"""You are a strict deduplication assistant for a Hong Kong virtual bank promotions database.
+Bank: {bank_name}
 
-    # Pass 2: similarity ratio
-    for i in range(len(titles)):
-        if i in to_remove:
-            continue
-        for j in range(i + 1, len(titles)):
-            if j in to_remove:
-                continue
-            ratio = _similarity(titles[i], titles[j])
-            if ratio >= _DUPLICATE_TITLE_THRESHOLD:
-                to_remove[j] = i
-                print(
-                    f'    ♻  Fuzzy-dedup [{bank_name}]: '
-                    f'"{titles[j][:50]}" ≈ "{titles[i][:50]}"  '
-                    f'(ratio={ratio:.2f})'
-                )
+Your task: Find titles that describe THE SAME underlying product or promotion.
+When genuinely uncertain → mark as DUPLICATE. It is always better to merge than to leave duplicates.
 
-    return to_remove
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SYNONYM RULES — these are ALWAYS the same promotion:
+
+Product synonyms:
+  "余額+"  =  "Deposit Plus"  =  "Balance+"
+  Any title with "余額+", "Deposit Plus", or "Balance+" → same product
+
+Fee synonyms:
+  "Zero Fee" = "0% Fee" = "Fee Waiver" = "No Fee" = "Commission-Free"
+
+Speed synonyms:
+  "Quick" = "Fast" = "Instant" = "Express" = "Immediate"
+
+Crypto synonyms:
+  "Crypto Trading Fee Waiver" = "0% Crypto Platform Fee" = "Zero Fee Cryptocurrency Trading"
+  = "Digital Asset Trading Fee Exemption"
+
+Fund subscription synonyms:
+  "Zero Subscription Fee on All Funds" = "Zero-Fee Fund Subscription & Switching"
+  = "Featured Funds with Zero Subscription Fees" = "Zero Fee Investment Funds"
+  = "$0 Fund Trading Fee Mode" = "$0基金買賣收費" = "Zero Fund Subscription Fee"
+  = "0% Fund Subscription Fee"
+
+Mox × csl:
+  "Best-in-Town Plan Offer" = "Best-in-Town Device Plans with Instalments" = anything + "Best-in-Town"
+
+Trip.com:
+  "Trip.com Annual Discount" = "Trip.com x Mox Credit Card Year-Round Promotion"
+  = "Trip.com Year-Round Exclusive Discount"
+
+Payroll:
+  "Payroll Switching Benefits" = "Payroll Switch Benefits" = "Payroll Deposit Benefit"
+
+SWIFT / Payment Connect:
+  "Zero Fee SWIFT Transfers" = "Zero-Fee Payment Connect" = "Payment Connect Zero Fee Transfers"
+
+WeLab Global Wallet FX:
+  "WeLab Global Wallet Exchange Rate Promotion" = "WeLab Global Wallet - Best Exchange Rates"
+  = "Global Remittance Service" = "WeLab Global Wallet Best FX Rates"
+
+Referral programs:
+  "Referral Bonus" = "Invite a Friend" = "多友多賞" = "推薦計劃" = "Friend Referral Program"
+  = "Refer a Friend" = any title with "推薦碼" or "referral code" + HKD amount
+
+Promo codes: if two titles share the same promo code (ignoring trailing year digits),
+  e.g. MOXBILL25 and MOXBILL26 → SAME campaign. MOXHKT25 in both titles → SAME.
+
+Account opening (all BAU — treat as same feature if they appear twice):
+  "Quick Account Opening" = "Account Opening in 3 Minutes" = "Mobile Account Opening in 5 Minutes"
+  = "Sign Up in Minutes" = "Open Account Instantly"
+
+24/7 banking:
+  "24/7 Mobile Banking Services" = "24/7 Digital Banking Services" = "24×7 Banking Services"
+
+Insurance with rate:
+  "3.6% Annualized Rate Promotion" = "Insurance Products with Annual Rate up to 3.6%"
+  = "Insurance Products with 3.6% Annual Rate" = "Insurance Products with Premium Rebate"
+
+GoSave:
+  "GoSave 2.0 High Interest Savings" = "GoSave 2.0 Enhanced Savings"
+
+liviSave:
+  "liviSave Preferential Interest Rate" = "liviSave Preferential Savings Rate"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Return ONLY valid compact JSON — no markdown, no code fences, no explanation:
+{{"groups":[{{"keep_index":0,"duplicate_indices":[1,2],"reason":"one sentence"}}]}}
+If there are NO duplicates, return exactly: {{"groups":[]}}
+
+Titles to evaluate (0-indexed):
+{numbered}"""
+
+    for attempt in range(2):
+        try:
+            raw = _call([{'role': 'user', 'content': prompt}], label=f'dedup/{bank_name}')
+            if not raw:
+                if attempt == 0:
+                    print(f'  🔄 Retry ai_dedup_titles for {bank_name}...')
+                    continue
+                return {}
+            raw  = re.sub(r'^```[a-z]*\n?', '', raw.strip())
+            raw  = re.sub(r'\n?```$',       '', raw.strip())
+            data = json.loads(raw)
+            dup_map = {
+                int(dup): int(g['keep_index'])
+                for g in data.get('groups', [])
+                for dup in g.get('duplicate_indices', [])
+            }
+            if dup_map:
+                print(f'  🤖 ai_dedup_titles [{bank_name}]: {len(dup_map)} duplicate(s)')
+            return dup_map
+        except Exception as exc:
+            if attempt == 0:
+                print(f'  ⚠️  ai_dedup_titles [{bank_name}] attempt 1 failed: {exc!r} — retrying')
+            else:
+                print(f'  ⚠️  ai_dedup_titles [{bank_name}]: {exc!r} — skipping')
+                return {}
+    return {}
 
 
 def ai_match_against_existing(
-    promos:      list[dict],
-    existing_db: list[dict],
-    bank_name:   str,
-) -> dict:
-    """
-    Match newly extracted promos against existing DB rows using URL + title similarity.
-    Returns {promo_index: db_id}.
-    """
-    if not promos or not existing_db:
+    new_promos:      list[dict],
+    existing_promos: list[dict],
+    bank_name:       str,
+) -> dict[int, int]:
+    if not AI_AVAILABLE or not new_promos or not existing_promos:
         return {}
 
-    match_map: dict[int, Any] = {}
+    new_lines = '\n'.join(
+        f'[NEW-{i}] {(p.get("name") or p.get("title") or "").strip()}'
+        for i, p in enumerate(new_promos)
+    )
+    ex_lines = '\n'.join(
+        f'[DB-{p["id"]}] {(p.get("title") or "").strip()}'
+        for p in existing_promos
+    )
 
-    for i, new_p in enumerate(promos):
-        for ex_p in existing_db:
-            ex_copy              = dict(ex_p)
-            ex_copy['bank_name'] = ex_copy.get('bank_name') or bank_name
-            new_copy             = dict(new_p)
-            new_copy['bank_name'] = new_copy.get('bank_name') or bank_name
+    prompt = f"""You are a strict deduplication assistant for a Hong Kong virtual bank promotions database.
+Bank: {bank_name}
 
-            if _are_duplicate(new_copy, ex_copy):
-                db_id = (
-                    ex_p.get('id') or
-                    ex_p.get('_id') or
-                    ex_p.get('promo_id') or
-                    ex_p.get('promotion_id')
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MATCHING RULES — mark as MATCH in all these cases:
+
+1. Product name synonyms:
+   "余額+" = "Deposit Plus" = "Balance+" → always the same product
+
+2. Fee synonyms:
+   "Zero Fee" = "0% Fee" = "Fee Waiver" = "No Fee" = "Commission-Free"
+
+3. Promo codes:
+   Same code stem (ignoring trailing 2-digit year) → MATCH
+
+4. Crypto fee promotions:
+   Any title about crypto + fee waiver/removal → MATCH each other
+
+5. Best-in-Town:
+   Any title containing "Best-in-Town" for the same bank → MATCH
+
+6. Trip.com:
+   "Trip.com Annual Discount" ↔ "Trip.com x Mox Credit Card Year-Round Promotion" → MATCH
+
+7. SWIFT / Payment Connect:
+   "SWIFT Transfers" ↔ "Payment Connect" → MATCH
+
+8. WeLab Global Wallet FX:
+   Any WeLab Global Wallet + FX/exchange/remittance title → MATCH
+
+9. Payroll switch:
+   Any payroll + switch/deposit/benefit → MATCH
+
+10. Fund zero-fee:
+    "$0 Fund Trading Fee" ↔ "Zero Fund Subscription Fee" ↔ "0% Fund Subscription Fee" → MATCH
+
+11. Referral programs:
+    "多友多賞" ↔ "Mox Referral Programme" ↔ "Refer a Friend HKD300" → MATCH
+
+12. Account opening BAU:
+    "Account Opening in 3 Minutes" ↔ "Quick Account Opening" → MATCH
+
+13. When uncertain → declare MATCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NEWLY SCRAPED (this run):
+{new_lines}
+
+ALREADY IN DATABASE:
+{ex_lines}
+
+For each [NEW-N] that matches a [DB-ID], output that pair.
+Respond ONLY with compact JSON. Key = new index (string). Value = DB id (string).
+Example: {{"0": "47", "3": "112"}}
+If no matches: {{}}
+No explanation. No markdown. No code fences."""
+
+    for attempt in range(2):
+        try:
+            raw = _call(
+                [{'role': 'user', 'content': prompt}],
+                label=f'match/{bank_name}',
+            )
+            if not raw:
+                if attempt == 0:
+                    print(f'  🔄 Retry ai_match_against_existing for {bank_name}...')
+                    continue
+                return {}
+            raw  = re.sub(r'^```[a-z]*\n?', '', raw.strip())
+            raw  = re.sub(r'\n?```$',       '', raw.strip())
+            data = json.loads(raw)
+            result_map: dict[int, int] = {
+                int(k): int(v)
+                for k, v in data.items()
+                if str(k).isdigit() and str(v).isdigit()
+            }
+            msg = (
+                f'{len(result_map)} match(es)'
+                if result_map else
+                '0 matches — all appear genuinely new'
+            )
+            print(f'  🤖 ai_match_against_existing [{bank_name}]: {msg}')
+            return result_map
+        except Exception as exc:
+            if attempt == 0:
+                print(f'  ⚠️  ai_match_against_existing [{bank_name}] attempt 1: {exc!r} — retrying')
+            else:
+                print(f'  ⚠️  ai_match_against_existing [{bank_name}]: {exc!r} — skipping')
+                return {}
+    return {}
+
+
+# ── Strategic insights helpers ────────────────────────────────────────────────
+
+def _build_bank_summary_lines(promos: list) -> list[str]:
+    lines = []
+    for p in promos:
+        title     = (p.get('name') or p.get('title') or 'N/A')[:80]
+        highlight = (p.get('highlight') or p.get('description') or '')[:120]
+        period    = (p.get('period') or 'Ongoing')[:60]
+        raw_types = p.get('types') or ['General']
+        ptype     = (', '.join(raw_types) if isinstance(raw_types, list) else str(raw_types))[:40]
+        bau_tag   = ' [BAU - Permanent Feature]' if p.get('is_bau') else ''
+        lines.append(f'  [{ptype}]{bau_tag} {title}: {highlight} | {period}')
+    return lines
+
+
+_DIAGNOSTIC_CATEGORIES: list[tuple[str, list[str]]] = [
+    ('Investment (Stock/Crypto Trading)', ['投資', 'crypto', 'stock', '$0', 'commission']),
+    ('Fund Investment',                   ['投資', 'fund', '基金', '$0認購費', 'subscription fee']),
+    ('Referral Bonus',                    ['推薦', 'referral', '多友多賞', 'invite']),
+    ('Travel',                            ['旅遊', 'trip', 'travel', 'asia miles', 'flight', 'hotel']),
+    ('Spending/CashBack',                 ['消費', 'cashback', 'cash back', 'rebate']),
+    ('Welcome Bonus',                     ['迎新', 'welcome', 'new customer']),
+    ('Loan APR',                          ['貸款', 'loan', 'apr']),
+    ('FX/Multi-Currency',                 ['外匯', 'fx', 'multi-currency', 'global wallet']),
+]
+
+_SPARSE_THRESHOLD = 3
+
+
+def _diagnose_input_data(promotions_by_bank: dict) -> dict[str, list[str]]:
+    print()
+    print('=' * 70)
+    print('📊  INSIGHTS INPUT DIAGNOSTIC')
+    print('=' * 70)
+
+    bank_tag_map: dict[str, list[str]] = {}
+
+    for bank, promos in sorted(promotions_by_bank.items()):
+        bau_promos     = [p for p in promos if p.get('is_bau')]
+        non_bau_promos = [p for p in promos if not p.get('is_bau')]
+
+        all_tags: set[str] = set()
+        for p in promos:
+            raw  = p.get('types') or []
+            tags = raw if isinstance(raw, list) else [str(raw)]
+            all_tags.update(tags)
+            for field in ('name', 'title', 'highlight', 'description'):
+                val = (p.get(field) or '').lower()
+                if val:
+                    all_tags.add(val[:40])
+
+        tag_display = ', '.join(
+            t for t in sorted(all_tags)
+            if 1 < len(t) <= 12 and t not in ('', 'others', 'general')
+        ) or '⚠️  NONE'
+
+        sparse_flag = (
+            '  ⚠️  SPARSE — may cause None slots'
+            if len(promos) < _SPARSE_THRESHOLD
+            else '  ✅'
+        )
+        print(
+            f'  📊 {bank:<20}: {len(non_bau_promos):>2} active'
+            f' + {len(bau_promos):>2} BAU'
+            f' = {len(promos):>2} total'
+            f'  | tags: {tag_display[:55]}'
+            f'{sparse_flag}'
+        )
+        bank_tag_map[bank] = list(all_tags)
+
+    print()
+    print('  CATEGORY COVERAGE CHECK:')
+    for cat_name, kw_list in _DIAGNOSTIC_CATEGORIES:
+        covered_by: list[str] = []
+        for bank, promos in promotions_by_bank.items():
+            for p in promos:
+                types_str = ' '.join(
+                    p.get('types') if isinstance(p.get('types'), list)
+                    else [str(p.get('types') or '')]
                 )
-                if db_id is not None:
-                    match_map[i] = db_id
-                    print(
-                        f'    🔗 DB-match [{bank_name}]: '
-                        f'"{(new_p.get("title") or "")[:50]}" → id={db_id}'
-                    )
-                break
+                text = ' '.join([
+                    types_str,
+                    p.get('name', ''),
+                    p.get('title', ''),
+                    p.get('highlight', ''),
+                    p.get('description', ''),
+                ]).lower()
+                if any(kw.lower() in text for kw in kw_list):
+                    covered_by.append(bank)
+                    break
 
-    return match_map
+        if covered_by:
+            print(f'    ✅ {cat_name:<42} → {", ".join(covered_by)}')
+        else:
+            print(f'    ❌ {cat_name:<42} → NO DATA — will output None')
+
+    print('=' * 70)
+    print()
+    return bank_tag_map
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# STRATEGIC INSIGHTS — expanded 6-column output
-# ══════════════════════════════════════════════════════════════════════════════
+def _check_sparse_banks(promotions_by_bank: dict) -> list[str]:
+    sparse = [
+        bank for bank, promos in promotions_by_bank.items()
+        if len(promos) < _SPARSE_THRESHOLD
+    ]
+    if sparse:
+        print(
+            f'  ⚠️  SPARSE BANKS: {sparse} (each has < {_SPARSE_THRESHOLD} promos)\n'
+            f'     Pass db_fetch_fn to generate_strategic_insights() to auto-supplement.'
+        )
+    return sparse
 
-def generate_strategic_insights(
-    promos_by_name: dict,
-    db_fetch_fn:    Optional[Callable] = None,
-    today:          Optional[str]      = None,
+
+def supplement_from_db(
+    promotions_by_bank:  dict,
+    db_fetch_fn,
+    min_promos_per_bank: int = _SPARSE_THRESHOLD,
 ) -> dict:
-    """
-    Generate best-in-category winners and bank-by-bank analysis.
-
-    best_for items include:
-        category, bank, detail, standard, similar_banks, why_others_lose, is_bau
-
-    bank_analysis items include:
-        focus, strengths (5-6 pts), count, bau_count, expiring_alert,
-        vs_za_pros, vs_za_cons
-    """
-    if today is None:
-        today = datetime.now().strftime('%Y-%m-%d')
-
-    all_promotions: list[dict] = []
-    for promos in promos_by_name.values():
-        all_promotions.extend(promos)
-
-    non_bau_active = [
-        p for p in all_promotions
-        if p.get('active') and not p.get('is_bau')
-        and (not p.get('end_date') or p['end_date'] >= today)
-    ]
-    bau_active = [
-        p for p in all_promotions
-        if p.get('is_bau') and p.get('active')
-    ]
-
-    if not non_bau_active and not bau_active:
-        return {'best_for': [], 'bank_analysis': {}}
-
-    promo_json = json.dumps([
-        {
-            'bank':      p.get('bank_name'),
-            'title':     p.get('title'),
-            'types':     p.get('types'),
-            'highlight': (p.get('highlight') or '')[:200],
-            'period':    p.get('period'),
-            'end_date':  p.get('end_date'),
-        }
-        for p in non_bau_active[:60]
-    ], ensure_ascii=False, indent=2)
-
-    bau_json = json.dumps([
-        {
-            'bank':  p.get('bank_name'),
-            'title': p.get('title'),
-            'types': p.get('types'),
-        }
-        for p in bau_active[:25]
-    ], ensure_ascii=False)
-
-    active_counts   = Counter(p.get('bank_name') for p in non_bau_active)
-    bau_counts      = Counter(p.get('bank_name') for p in bau_active)
-    threshold_date  = (
-        datetime.strptime(today, '%Y-%m-%d') + timedelta(days=30)
-    ).strftime('%Y-%m-%d')
-    expiring_counts = Counter(
-        p.get('bank_name')
-        for p in non_bau_active
-        if p.get('end_date') and today <= p['end_date'] <= threshold_date
-    )
-
-    counts_json = json.dumps({
-        'active':   dict(active_counts),
-        'bau':      dict(bau_counts),
-        'expiring': dict(expiring_counts),
-    })
-
-    categories_str = '\n'.join(
-        f'  {i + 1}. {c}' for i, c in enumerate(INSIGHT_CATEGORIES)
-    )
-    banks_str = ', '.join(EIGHT_BANKS)
-
-    prompt = (
-        'Analyse these Hong Kong virtual bank promotions and return strategic insights.\n\n'
-        f'TODAY: {today}\n\n'
-        f'ACTIVE (non-BAU) PROMOTIONS:\n{promo_json}\n\n'
-        f'BAU PERMANENT FEATURES:\n{bau_json}\n\n'
-        f'COUNTS (use these exact numbers):\n{counts_json}\n\n'
-        '══════════════════════════════════════════\n'
-        'RETURN a JSON object with EXACTLY this structure:\n'
-        '══════════════════════════════════════════\n'
-        '{\n'
-        '  "best_for": [\n'
-        '    {\n'
-        '      "category":       "Investment (Stock/Crypto Trading)",\n'
-        '      "bank":           "Winning bank name  OR  None",\n'
-        '      "detail":         "Specific reason citing actual offer names and numbers",\n'
-        '      "standard":       "One sentence: the exact metric/criterion used to pick the winner",\n'
-        '      "similar_banks":  ["BankX", "BankY"],\n'
-        '      "why_others_lose":"Why similar_banks do not win — cite their specific offers and gaps",\n'
-        '      "is_bau":         false\n'
-        '    }\n'
-        '  ],\n'
-        '  "bank_analysis": {\n'
-        '    "ZA Bank": {\n'
-        '      "focus":          "One sentence on current promotional theme",\n'
-        '      "strengths":      ["s1 with specifics", "s2", "s3", "s4", "s5", "s6"],\n'
-        '      "count":          5,\n'
-        '      "bau_count":      2,\n'
-        '      "expiring_alert": "N promotions expiring within 30 days  OR  empty string",\n'
-        '      "vs_za_pros":     null,\n'
-        '      "vs_za_cons":     null\n'
-        '    },\n'
-        '    "Mox Bank": {\n'
-        '      "focus":          "...",\n'
-        '      "strengths":      ["s1", "s2", "s3", "s4", "s5"],\n'
-        '      "count":          4,\n'
-        '      "bau_count":      1,\n'
-        '      "expiring_alert": "",\n'
-        '      "vs_za_pros":     "Specific advantages over ZA Bank — name actual promotions or rates",\n'
-        '      "vs_za_cons":     "Specific areas where ZA Bank currently leads — be precise"\n'
-        '    }\n'
-        '  }\n'
-        '}\n\n'
-        f'COVER ALL {len(INSIGHT_CATEGORIES)} categories in best_for:\n'
-        f'{categories_str}\n\n'
-        f'INCLUDE ALL 8 banks in bank_analysis: {banks_str}\n\n'
-        'RULES:\n'
-        '  • strengths must have 5–6 bullet points per bank with concrete specifics.\n'
-        '  • similar_banks must NOT include the winning bank itself.\n'
-        '  • why_others_lose must reference real offer names/rates from the data above.\n'
-        '  • standard must be one short sentence explaining the evaluation criterion.\n'
-        '  • vs_za_pros / vs_za_cons: name the actual promotions or rates — no vague language.\n'
-        '  • Use exact counts from the COUNTS object above.\n'
-        '  • Return ONLY JSON — no prose, no markdown fences.'
-    )
-
-    try:
-        raw = _call_ai(prompt, model='gpt-4o')
-        raw = raw.strip()
-        # Strip any accidental markdown fences
-        if raw.startswith('```'):
-            raw = re.sub(r'^```[a-z]*\n?', '', raw)
-            raw = re.sub(r'\n?```$', '', raw)
-        data = json.loads(raw)
-
-        # Back-fill any fields the AI omitted
-        for item in data.get('best_for', []):
-            item.setdefault('standard',        'AI evaluates based on best overall value.')
-            item.setdefault('similar_banks',   [])
-            item.setdefault('why_others_lose', '')
-
-        for bname, bdata in data.get('bank_analysis', {}).items():
-            bdata.setdefault('strengths',      [])
-            bdata.setdefault('vs_za_pros',     None)
-            bdata.setdefault('vs_za_cons',     None)
-            bdata.setdefault('expiring_alert', '')
-
-        return data
-
-    except Exception as exc:
-        print(f'  ❌ Strategic insights error: {exc}')
-        return {'best_for': [], 'bank_analysis': {}}
-
-
-# ── Legacy all-in-one entry point ─────────────────────────────────────────────
-
-def extract_promotions(
-    scraped_data:        dict,
-    existing_promotions: list[dict],
-    today:               Optional[str] = None,
-) -> tuple[list[dict], list[str]]:
-    """Legacy single-call pipeline kept for backwards compatibility."""
-    if today is None:
-        today = datetime.now().strftime('%Y-%m-%d')
-
-    all_logs: list[str] = []
-
-    existing_keys: set[tuple[str, str]] = {
-        (p.get('bank_name', ''), (p.get('title') or '').lower())
-        for p in existing_promotions
-    }
-    bau_to_add: list[dict] = []
-    for bau in STATIC_BAU_PROMOTIONS:
-        key = (bau['bank_name'], bau['title'].lower())
-        if key not in existing_keys:
-            entry               = dict(bau)
-            entry['created_at'] = today
-            entry['last_seen']  = today
-            bau_to_add.append(entry)
-            all_logs.append(f'STATIC BAU: [{bau["bank_name"]}] {bau["title"]}')
-
-    existing_by_bank: dict[str, list[dict]] = {}
-    for p in existing_promotions:
-        bn = p.get('bank_name') or p.get('bank') or 'Unknown'
-        existing_by_bank.setdefault(bn, []).append(p)
-
-    all_reconciled:  list[dict] = []
-    processed_banks: set[str]   = set()
-
-    for bank_id, bank_data in scraped_data.items():
-        bank_name    = bank_data.get('bank_name', bank_id)
-        scraped_text = bank_data.get('text') or ''
-
-        if not scraped_text:
-            all_logs.append(f'SKIP (no text): {bank_name}')
-            all_reconciled.extend(existing_by_bank.get(bank_name, []))
+    supplemented_total = 0
+    for bank, promos in promotions_by_bank.items():
+        if len(promos) >= min_promos_per_bank:
+            continue
+        try:
+            db_promos = db_fetch_fn(bank)
+        except Exception as exc:
+            print(f'  ⚠️  supplement_from_db: DB fetch failed for "{bank}": {exc}')
+            continue
+        if not db_promos:
+            print(f'  ⚠️  supplement_from_db: no DB rows for "{bank}"')
             continue
 
-        print(f'\n  🤖 AI extraction: {bank_name}...')
-        processed_banks.add(bank_name)
+        existing_titles = {
+            (p.get('name') or p.get('title') or '').strip().lower()
+            for p in promos
+        }
+        added = 0
+        for dp in db_promos:
+            dt = (dp.get('name') or dp.get('title') or '').strip().lower()
+            if dt and dt not in existing_titles:
+                promos.append(dp)
+                existing_titles.add(dt)
+                added += 1
 
-        existing_for_bank = existing_by_bank.get(bank_name, [])
-
-        prompt = _build_extraction_prompt(
-            bank_name         = bank_name,
-            scraped_text      = scraped_text,
-            existing_for_bank = existing_for_bank,
-            today             = today,
+        promotions_by_bank[bank] = promos
+        supplemented_total += added
+        print(
+            f'  🔄 supplement_from_db: "{bank}" '
+            f'{"added " + str(added) + " from DB → now " + str(len(promos)) + " total" if added else "no new titles found in DB"}'
         )
 
-        try:
-            raw      = _call_ai(prompt)
-            raw_list = _parse_ai_json(raw, bank_name)
-        except Exception as exc:
-            all_logs.append(f'AI_ERROR: {bank_name} — {exc}')
-            print(f'    ❌ AI error for {bank_name}: {exc}')
-            all_reconciled.extend(existing_for_bank)
+    if supplemented_total:
+        print(f'  🔄 supplement_from_db: {supplemented_total} DB row(s) merged total')
+    return promotions_by_bank
+
+
+# ── Strategic insights — main entry point ────────────────────────────────────
+
+def generate_strategic_insights(
+    promotions_by_bank: dict,
+    db_fetch_fn=None,
+) -> Optional[dict]:
+    if not AI_AVAILABLE:
+        print('⚠️  AI not available — skipping strategic insights')
+        return None
+
+    _diagnose_input_data(promotions_by_bank)
+
+    sparse_banks = _check_sparse_banks(promotions_by_bank)
+    if sparse_banks:
+        if db_fetch_fn is not None:
+            promotions_by_bank = supplement_from_db(promotions_by_bank, db_fetch_fn)
+            print('  📊 POST-SUPPLEMENT DIAGNOSTIC:')
+            _diagnose_input_data(promotions_by_bank)
+        else:
+            print(
+                '  ⚠️  Sparse banks found but no db_fetch_fn provided.\n'
+                '     Pass db_fetch_fn=get_promotions_by_bank_name to auto-supplement.'
+            )
+
+    bank_summaries = []
+    for bank_name, promos in sorted(promotions_by_bank.items()):
+        if not promos:
             continue
+        non_bau_count = sum(1 for p in promos if not p.get('is_bau'))
+        bau_count     = len(promos) - non_bau_count
+        lines         = _build_bank_summary_lines(promos)
+        bank_summaries.append(
+            f'## {bank_name} ({non_bau_count} time-limited promos'
+            f' + {bau_count} BAU permanent features)\n' + '\n'.join(lines)
+        )
 
-        validated: list[dict] = []
-        for p in raw_list:
-            v = _validate_promotion(p, bank_name, today)
-            if v:
-                validated.append(v)
+    if not bank_summaries:
+        print('⚠️  No promotions data — skipping strategic insights')
+        return None
 
-        validated        = deduplicate_promotions(validated)
-        reconciled, logs = reconcile_with_existing(validated, existing_for_bank, today)
-        all_logs.extend(logs)
-        all_reconciled.extend(reconciled)
-        print(f'    ✓  {bank_name}: {len(validated)} extracted → {len(reconciled)} reconciled')
+    promotions_text = '\n\n'.join(bank_summaries)
 
-    for bank_name, promos in existing_by_bank.items():
-        if bank_name not in processed_banks:
-            all_reconciled.extend(promos)
+    prompt = f"""You are a Hong Kong virtual bank analyst. \
+Analyze these active promotions and return strategic insights as JSON.
 
-    all_reconciled.extend(bau_to_add)
-    all_reconciled = deduplicate_promotions(all_reconciled)
-    all_reconciled = revalidate_expired(all_reconciled, today)
+{promotions_text}
 
-    return all_reconciled, all_logs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1 — BAU ITEMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Items tagged [BAU - Permanent Feature] are ALWAYS-AVAILABLE with no expiry.
+You MUST include BAU items when evaluating "best_for" category winners.
+A permanent zero-fee or zero-commission feature is often the strongest
+competitive advantage — do NOT skip it just because it has no end date.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2 — CHINESE TYPE TAG → ENGLISH CATEGORY MAPPING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [推薦]           → "Referral Bonus"
+  [投資] + fund    → "Fund Investment"
+  [投資] + stock   → "Investment (Stock/Crypto Trading)"
+  [投資] + crypto  → "Investment (Stock/Crypto Trading)"
+  [消費]           → "Spending/CashBack"
+  [迎新]           → "Welcome Bonus"
+  [旅遊]           → "Travel"   ← ANY [旅遊] line MUST be evaluated for Travel
+  [貸款]           → "Loan APR"
+  [外匯]           → "FX/Multi-Currency"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3 — STRICT CATEGORY DEFINITIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Investment (Stock/Crypto Trading) → trading fee waivers, brokerage commission, IPO rewards.
+• Fund Investment                   → fund subscription or switching fee promotions.
+• Spending/CashBack                 → card cashback or merchant spending rewards.
+• Welcome Bonus                     → new customer account opening cash/gift rewards.
+• Travel                            → travel insurance, flight/hotel, Asia Miles, Trip.com, lounge.
+• Loan APR                          → personal loan with lowest specific APR quoted.
+• FX/Multi-Currency                 → FX rate promotions, global wallet, remittance.
+• Referral Bonus                    → referral programs with a stated HKD reward amount.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4 — MANDATORY WINNER SELECTION RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output "None" ONLY when there is absolutely zero evidence of any promotion
+across ALL banks that relates to that category.
+
+CHECKLIST — before writing "None" for any category, verify:
+  Fund Investment  → ANY line with fund / 基金 / $0認購費 / zero subscription
+  Referral Bonus   → ANY line tagged [推薦] OR with referral / 推薦 / 多友多賞
+  Travel           → ANY line tagged [旅遊] OR with trip.com / travel / flight /
+                     hotel / asia miles / lounge / agoda
+                     ⚠️  If ANY [旅遊] line exists → Travel winner MUST NOT be None
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5 — EVIDENCE GATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The "detail" field MUST contain at least ONE concrete verifiable fact:
+  • Specific HKD/USD amount, percentage, $0/zero-fee, specific date,
+    named concrete product (Trip.com, Asia Miles, Agoda…),
+    or travel/commission/fee/cashback keyword.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6 — SELF-CONSISTENCY CHECK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Before writing final JSON: verify that every "None" in best_for is NOT
+contradicted by a matching strength in bank_analysis for the same category.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Return this EXACT JSON structure (no markdown, no code fences):
+{{
+  "best_for": [
+    {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific detail", "is_bau": false}},
+    {{"category": "Spending/CashBack",                "bank": "BankName", "detail": "specific % or HKD amount", "is_bau": false}},
+    {{"category": "Welcome Bonus",                    "bank": "BankName", "detail": "HKD amount", "is_bau": false}},
+    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit with named partner or %", "is_bau": false}},
+    {{"category": "Loan APR",                         "bank": "BankName", "detail": "X.XX% APR", "is_bau": false}},
+    {{"category": "FX/Multi-Currency",                "bank": "BankName", "detail": "specific detail with named product or %", "is_bau": false}},
+    {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail with 0% or $0", "is_bau": false}},
+    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount per referral", "is_bau": false}}
+  ],
+  "bank_analysis": {{
+    "ZA Bank": {{
+      "focus": "short keywords",
+      "strengths": ["s1", "s2", "s3"],
+      "expiring_alert": "",
+      "vs_za_pros": null,
+      "vs_za_cons": null
+    }},
+    "OtherBank": {{
+      "focus": "keywords",
+      "strengths": ["s1", "s2", "s3"],
+      "expiring_alert": "",
+      "vs_za_pros": "pros vs ZA Bank",
+      "vs_za_cons": "cons vs ZA Bank"
+    }}
+  }}
+}}"""
+
+    raw = _call([{'role': 'user', 'content': prompt}], label='insights')
+    if not raw:
+        print('❌ Strategic insights: empty response from AI')
+        return None
+
+    result = _parse_object(raw)
+    if result is None:
+        print('❌ Strategic insights: JSON parse failed')
+        return None
+
+    result['best_for'] = _validate_best_for_evidence(result.get('best_for', []))
+    result = _cross_check_best_for_from_strengths(result, promotions_by_bank)
+
+    name_lookup = {k.lower(): k for k in promotions_by_bank}
+    for bname in result.get('bank_analysis', {}):
+        matched_key = name_lookup.get(bname.lower())
+        if matched_key:
+            all_p      = promotions_by_bank[matched_key]
+            non_bau    = [p for p in all_p if not p.get('is_bau')]
+            result['bank_analysis'][bname]['count']     = len(non_bau)
+            result['bank_analysis'][bname]['bau_count'] = len(all_p) - len(non_bau)
+        else:
+            result['bank_analysis'][bname]['count']     = 0
+            result['bank_analysis'][bname]['bau_count'] = 0
+
+    bau_wins  = sum(1 for b in result.get('best_for', []) if b.get('is_bau'))
+    none_wins = sum(
+        1 for b in result.get('best_for', [])
+        if (b.get('bank') or '').lower() in ('none', '', 'n/a')
+    )
+    if none_wins:
+        none_cats = [
+            b['category'] for b in result.get('best_for', [])
+            if (b.get('bank') or '').lower() in ('none', '', 'n/a')
+        ]
+        print(
+            f'  ⚠️  {none_wins} best_for slot(s) still None after all fixes: {none_cats}\n'
+            f'     ↳ Check diagnostic above — these categories had no input data.'
+        )
+
+    print(
+        f'✅ Strategic insights generated via {_bot_name} '
+        f'({bau_wins} BAU winner(s), {none_wins} None slot(s))'
+    )
+    return result
