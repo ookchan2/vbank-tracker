@@ -522,8 +522,11 @@ def save_promotions(
     bank_name: str,
     promotions: List[Dict],
     current_run_id: int = 0,
+    today_str: str = None,   # shared run date — prevents midnight UTC skew
 ) -> Dict:
-    today = datetime.now().strftime('%Y-%m-%d')
+    # Use the caller-supplied date so that last_seen and mark_stale_as_inactive
+    # are always compared against the exact same calendar date string.
+    today = today_str or datetime.now().strftime('%Y-%m-%d')
     stats = {'new': 0, 'updated': 0, 'skipped': 0}
 
     with _db_connection() as conn:
@@ -639,9 +642,14 @@ def save_promotions(
 
 # ── 5. Mark stale / old inactive ─────────────────────────────────────────────
 
-def mark_stale_as_inactive(bank_ids_scraped: List[str], today_str: str = None) -> int:
+def mark_stale_as_inactive(
+    bank_ids_scraped: List[str],
+    today_str: str = None,   # shared run date — must match save_promotions
+) -> int:
     if not bank_ids_scraped:
         return 0
+    # Use the supplied date so the comparison is always against the same
+    # calendar date that was written into last_seen by save_promotions.
     today_str = today_str or datetime.now().strftime('%Y-%m-%d')
     total = 0
     with _db_connection() as conn:
@@ -678,6 +686,36 @@ def mark_inactive_old(days_threshold: int = 90) -> int:
         except Exception as exc:
             conn.rollback()
             print(f'  ❌ mark_inactive_old error: {exc}')
+            return 0
+
+
+def reactivate_promotions_seen_on(date_str: str) -> int:
+    """
+    Emergency recovery: reactivate all promotions whose last_seen date matches
+    date_str but were incorrectly marked inactive (e.g. by a date-skew bug
+    where save_promotions and mark_stale_as_inactive sampled datetime() on
+    opposite sides of a UTC midnight boundary).
+
+    Called automatically by main() when a post-staleness sanity check detects
+    0 active promotions immediately after a successful save run.
+    """
+    with _db_connection() as conn:
+        try:
+            cur = conn.execute(
+                "UPDATE promotions SET active = 1 "
+                "WHERE DATE(last_seen) = ? AND active = 0",
+                (date_str,)
+            )
+            conn.commit()
+            count = cur.rowcount
+            if count:
+                print(f'  🔄 Recovery: reactivated {count} promo(s) with last_seen={date_str}')
+            else:
+                print(f'  ⚠️  Recovery: no promotions found with last_seen={date_str}')
+            return count
+        except Exception as exc:
+            conn.rollback()
+            print(f'  ❌ reactivate_promotions_seen_on error: {exc}')
             return 0
 
 

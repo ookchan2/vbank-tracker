@@ -26,6 +26,7 @@ from database  import (
     save_promotions,
     mark_stale_as_inactive,
     mark_inactive_old,
+    reactivate_promotions_seen_on,
     generate_daily_report,
     export_to_json,
     get_active_promos_for_bank,
@@ -105,8 +106,9 @@ def main() -> int:
     from completing.  Soft failures (AI unavailable, email not sent) still
     return 0 — the scrape + DB write succeeded.
     """
-    t_start = time.monotonic()
-    today   = datetime.now().strftime('%Y-%m-%d')
+    t_start  = time.monotonic()
+    today    = datetime.now().strftime('%Y-%m-%d')
+    RUN_DATE = today   # single source of truth — never re-sample datetime mid-run
 
     print(f'\n{"═"*60}')
     print(f'  HK Virtual Bank Promotions Tracker  |  {today}')
@@ -246,7 +248,8 @@ def main() -> int:
         try:
             db_result = save_promotions(
                 bank_id, bank_name, promos,
-                current_run_id=current_run_id,
+                current_run_id = current_run_id,
+                today_str      = RUN_DATE,       # share the single run date
             )
         except Exception as exc:
             print(f'    ❌ save_promotions error for {bank_name}: {exc}')
@@ -289,27 +292,60 @@ def main() -> int:
             'skipping mark_stale_as_inactive to avoid false-expiry'
         )
     else:
-        # Only mark stale for banks where save_promotions actually succeeded
-        # (last_seen was refreshed today).  This prevents a partial-failure
-        # run from expiring rows for banks whose save errored out.
-        mark_stale_as_inactive(banks_ai_saved)
+        # Pass RUN_DATE so mark_stale_as_inactive uses the exact same
+        # calendar date that save_promotions wrote into last_seen.
+        # Without this, a midnight UTC boundary between the two calls
+        # would cause every row just saved to be immediately deactivated.
+        mark_stale_as_inactive(banks_ai_saved, today_str=RUN_DATE)
         mark_inactive_old(days_threshold=90)
 
-    # ── Step 6: Export data.json ──────────────────────────────────
-    print('\nStep 6 ── Export data.json for website')
-    export_to_json(DATA_JSON_PATH)
+    # ── Step 5b: Post-staleness sanity check ─────────────────────
+    # If the DB is now empty despite having just saved data, something went
+    # wrong (most likely a date-skew wipe).  Attempt automatic recovery
+    # before touching data.json.
+    _active_after_stale = get_active_promotions(include_bau=True)
+    if not _active_after_stale and banks_ai_saved:
+        print(
+            f'  🚨 CRITICAL: 0 active promotions after mark_stale_as_inactive! '
+            f'Triggering date-skew recovery for RUN_DATE={RUN_DATE}'
+        )
+        recovered = reactivate_promotions_seen_on(RUN_DATE)
+        if not recovered:
+            print(
+                '  ❌ Recovery found nothing — data.json will NOT be '
+                'overwritten to preserve the existing site data'
+            )
+    elif not _active_after_stale:
+        print(
+            '  ⚠️  0 active promotions in DB (no banks were saved this run) '
+            '— data.json will NOT be overwritten'
+        )
 
-    _run_ts = datetime.now().strftime('%Y-%m-%d %H:%M')
-    try:
-        with open(DATA_JSON_PATH, 'r', encoding='utf-8') as _f:
-            _jdata = _json.load(_f)
-        _jdata['updated']      = _run_ts
-        _jdata['last_updated'] = _run_ts
-        with open(DATA_JSON_PATH, 'w', encoding='utf-8') as _f:
-            _json.dump(_jdata, _f, ensure_ascii=False, indent=2)
-        print(f'  ✅ data.json timestamp patched → {_run_ts}')
-    except Exception as exc:
-        print(f'  ⚠️  data.json timestamp patch failed: {exc}')
+    # ── Step 6: Export data.json for website ─────────────────────
+    print('\nStep 6 ── Export data.json for website')
+
+    # Guard: re-read the post-recovery count.  Never overwrite a good
+    # data.json with one containing zero active promotions.
+    _active_for_export = get_active_promotions(include_bau=True)
+    if not _active_for_export:
+        print(
+            '  ⚠️  Skipping data.json export — 0 active promotions in DB '
+            '(preserving existing file)'
+        )
+    else:
+        export_to_json(DATA_JSON_PATH)
+
+        _run_ts = datetime.now().strftime('%Y-%m-%d %H:%M')
+        try:
+            with open(DATA_JSON_PATH, 'r', encoding='utf-8') as _f:
+                _jdata = _json.load(_f)
+            _jdata['updated']      = _run_ts
+            _jdata['last_updated'] = _run_ts
+            with open(DATA_JSON_PATH, 'w', encoding='utf-8') as _f:
+                _json.dump(_jdata, _f, ensure_ascii=False, indent=2)
+            print(f'  ✅ data.json timestamp patched → {_run_ts}')
+        except Exception as exc:
+            print(f'  ⚠️  data.json timestamp patch failed: {exc}')
 
     # ── Step 7: Daily report ──────────────────────────────────────
     print('\nStep 7 ── Generate daily report')

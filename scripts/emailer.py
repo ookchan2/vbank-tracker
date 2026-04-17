@@ -362,7 +362,7 @@ def build_html_email(
     scraped_data:       dict,
     strategic_insights: dict = None,
     new_promos:         list = None,
-    new_promos_week:    list = None,   # ← NEW: promotions from the past 6 days
+    new_promos_week:    list = None,
 ) -> str:
     """
     Builds the daily HTML email.
