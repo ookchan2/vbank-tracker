@@ -27,14 +27,31 @@
     transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s;
   }
   .new-promo-card {
-    border-radius: 14px;
-    overflow: hidden;
+    border-radius: 14px; overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border: 1px solid #e5e7eb;
-    background: #fff;
+    border: 1px solid #e5e7eb; background: #fff;
     transition: box-shadow 0.2s;
   }
   .new-promo-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.13); }
+
+  /* Insight table columns get sensible widths */
+  #insightsTable td:nth-child(1) { min-width:160px; white-space:nowrap; }
+  #insightsTable td:nth-child(2) { min-width:130px; white-space:nowrap; }
+  #insightsTable td:nth-child(3) { min-width:200px; }
+  #insightsTable td:nth-child(4) { min-width:200px; }
+  #insightsTable td:nth-child(5) { min-width:150px; }
+  #insightsTable td:nth-child(6) { min-width:200px; }
+
+  .toggle-table-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 14px; border-radius:20px; font-size:11px; font-weight:700;
+    background:rgba(255,255,255,0.18); color:inherit;
+    border:1px solid rgba(255,255,255,0.35); cursor:pointer;
+    transition:background 0.15s;
+  }
+  .toggle-table-btn:hover { background:rgba(255,255,255,0.30); }
+  .toggle-table-btn[data-hidden="true"]::before { content:"👁 Show Table"; }
+  .toggle-table-btn[data-hidden="false"]::before { content:"🙈 Hide Table"; }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -51,11 +68,11 @@
     <div class="flex gap-3 flex-wrap">
       <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
         <div class="text-2xl font-black" id="statTotal">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Total</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Active</div>
       </div>
       <div class="bg-green-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
         <div class="text-2xl font-black text-green-300" id="statActive">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Active ✅</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Valid ✅</div>
       </div>
       <div class="bg-orange-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
         <div class="text-2xl font-black text-orange-300" id="statExpiring">–</div>
@@ -122,46 +139,35 @@
   </div>
 </div>
 
-<!-- ══ NEW TODAY SECTION (collapsible) ══════════════════════════ -->
+<!-- ══ NEW TODAY SECTION ════════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-2" id="newTodaySection" style="display:none;">
   <details open class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
     <summary class="select-none">
-      <!-- Header (acts as the toggle) -->
       <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4
                   flex items-center justify-between cursor-pointer">
         <div class="flex items-center gap-3">
           <span class="text-2xl">🆕</span>
           <div>
-            <div class="font-extrabold text-white text-lg tracking-tight">
-              New Promotions Today
-            </div>
-            <div class="text-orange-100 text-xs mt-0.5">
-              今日首次偵測到的優惠 · start date on or after today
-            </div>
+            <div class="font-extrabold text-white text-lg tracking-tight">New Promotions Today</div>
+            <div class="text-orange-100 text-xs mt-0.5">今日首次偵測到的優惠 · start date on or after today</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <span id="newTodayCount"
-                class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+          <span id="newTodayCount" class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
           <span class="accordion-chevron chevron text-white text-base">▼</span>
         </div>
       </div>
     </summary>
-
-    <!-- Cards grid -->
     <div class="bg-amber-50 p-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newTodayCards"></div>
     </div>
-
-    <!-- Empty state -->
-    <div id="newTodayEmpty"
-         class="hidden bg-amber-50 px-5 py-10 text-center text-gray-400 text-sm">
+    <div id="newTodayEmpty" class="hidden bg-amber-50 px-5 py-10 text-center text-gray-400 text-sm">
       🔍 No new promotions detected today.
     </div>
   </details>
 </div>
 
-<!-- ══ NEW THIS WEEK SECTION (collapsible) ══════════════════════ -->
+<!-- ══ NEW THIS WEEK SECTION ════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newWeeklySection" style="display:none;">
   <details class="rounded-2xl shadow-sm overflow-hidden border border-indigo-200">
     <summary class="select-none">
@@ -170,90 +176,91 @@
         <div class="flex items-center gap-3">
           <span class="text-2xl">📅</span>
           <div>
-            <div class="font-extrabold text-white text-lg tracking-tight">
-              New This Week
-            </div>
-            <div class="text-indigo-100 text-xs mt-0.5">
-              本週新推出優惠 · past 6 days (excluding today)
-            </div>
+            <div class="font-extrabold text-white text-lg tracking-tight">New This Week</div>
+            <div class="text-indigo-100 text-xs mt-0.5">本週新推出優惠 · past 6 days (excluding today)</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <span id="newWeeklyCount"
-                class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+          <span id="newWeeklyCount" class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
           <span class="accordion-chevron chevron text-white text-base">▼</span>
         </div>
       </div>
     </summary>
-
-    <!-- Cards grid -->
     <div class="bg-indigo-50 p-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newWeeklyCards"></div>
     </div>
-
-    <!-- Empty state -->
-    <div id="newWeeklyEmpty"
-         class="hidden bg-indigo-50 px-5 py-10 text-center text-gray-400 text-sm">
+    <div id="newWeeklyEmpty" class="hidden bg-indigo-50 px-5 py-10 text-center text-gray-400 text-sm">
       🔍 No new promotions in the past 6 days.
     </div>
   </details>
 </div>
 
-<!-- ══ STRATEGIC INSIGHTS SECTION ════════════════════════════════ -->
+<!-- ══ STRATEGIC INSIGHTS ════════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4" id="strategicInsightsSection" style="display:none;">
   <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <summary class="px-5 py-4 flex items-center justify-between
-                    hover:bg-gray-50/80 select-none transition-colors">
-      <div class="flex items-center gap-3">
-        <span class="text-xl">🧠</span>
-        <div>
-          <div class="font-bold text-gray-800">Strategic Insights · Best in Category</div>
-          <div class="text-xs text-gray-400 mt-0.5">
-            AI-generated · daily · based on active promotions across all 8 banks
+    <summary class="select-none">
+      <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">🧠</span>
+          <div>
+            <div class="font-bold text-gray-800">Strategic Insights · Best in Category</div>
+            <div class="text-xs text-gray-400 mt-0.5">
+              AI-generated · daily · based on active promotions across all 8 banks
+            </div>
           </div>
         </div>
+        <div class="flex items-center gap-3">
+          <button class="toggle-table-btn" id="toggleInsightsBtn"
+                  data-hidden="false" onclick="toggleInsightsTable(event)"></button>
+          <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
+        </div>
       </div>
-      <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
     </summary>
-    <div class="px-5 pb-6 border-t border-gray-100">
+    <div class="px-5 pb-6 border-t border-gray-100" id="insightsTableWrap">
       <div class="mt-4 overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
         <table class="w-full border-collapse text-sm" id="insightsTable">
           <thead>
             <tr class="bg-gray-50 border-b-2 border-gray-200">
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Category</th>
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">🏆 Winner</th>
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Why</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Category</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">🏆 Winner</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Why Winner</th>
               <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">How AI Defines Best</th>
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Close Runners-Up</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Similar Banks</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Why They Don't Win</th>
             </tr>
           </thead>
           <tbody id="insightsTbody">
-            <tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">⏳ Loading insights…</td></tr>
+            <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">⏳ Loading insights…</td></tr>
           </tbody>
         </table>
       </div>
       <p class="mt-3 text-xs text-gray-400 italic">
-        ⚙️ BAU label = permanent feature with no end date (still counted as a competitive advantage)
+        ⚙️ BAU = permanent feature (no end date) · still counted as a competitive advantage
       </p>
     </div>
   </details>
 </div>
 
-<!-- ══ BANK-BY-BANK ANALYSIS SECTION ════════════════════════════ -->
+<!-- ══ BANK-BY-BANK ANALYSIS ════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4" id="bankAnalysisSection" style="display:none;">
   <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <summary class="px-5 py-4 flex items-center justify-between
-                    hover:bg-gray-50/80 select-none transition-colors">
-      <div class="flex items-center gap-3">
-        <span class="text-xl">📋</span>
-        <div>
-          <div class="font-bold text-gray-800">Bank-by-Bank Analysis</div>
-          <div class="text-xs text-gray-400 mt-0.5">
-            Focus · Key strengths · Detailed comparison vs ZA Bank
+    <summary class="select-none">
+      <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">📋</span>
+          <div>
+            <div class="font-bold text-gray-800">Bank-by-Bank Analysis</div>
+            <div class="text-xs text-gray-400 mt-0.5">
+              Focus · Key strengths (5–6 pts) · Better than ZA · Worse than ZA
+            </div>
           </div>
         </div>
+        <div class="flex items-center gap-3">
+          <button class="toggle-table-btn" id="toggleAnalysisBtn"
+                  data-hidden="false" onclick="toggleAnalysisGrid(event)"></button>
+          <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
+        </div>
       </div>
-      <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
     </summary>
     <div class="px-5 pb-6 border-t border-gray-100">
       <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4" id="bankAnalysisGrid">
@@ -263,7 +270,7 @@
   </details>
 </div>
 
-<!-- ── COMPARISON SECTION ────────────────────────────────────────── -->
+<!-- ── COMPARISON TABLE ──────────────────────────────────────────── -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4" id="comparisonSection" style="display:none">
   <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <summary class="px-5 py-4 flex items-center justify-between
@@ -292,7 +299,7 @@
   </details>
 </div>
 
-<!-- ── MAIN LAYOUT ─────────────────────────────────────────────── -->
+<!-- ── MAIN TABLE ────────────────────────────────────────────────── -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-10">
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <div id="loadingState" class="p-16 text-center text-gray-400">
@@ -371,34 +378,24 @@ const CAT_FILTER_LIST = [
   { key: 'Others 其他',        label: '📋 Others',     bg: '#6b7280' },
 ];
 
+// Fallback standard descriptions (used when AI omits the field)
 const HOW_DEFINED = {
   "Investment (Stock/Crypto Trading)":
-    "The AI identifies the bank offering the most comprehensive trading fee waivers — prioritising $0 platform fees, free stock trades, or zero crypto commissions.",
+    "Most comprehensive trading fee waivers — $0 platform fees, free stock trades, or zero crypto commissions.",
   "Fund Investment":
-    "The AI selects the bank covering the widest range of funds at $0 subscription fee, or permanently waiving switching fees with no expiry.",
+    "Widest range of funds at $0 subscription fee, or permanent fee waiver with no expiry.",
   "Spending/CashBack":
-    "The AI evaluates cashback rates and merchant network breadth. The winner delivers the highest consistent % cashback or the most versatile reward categories.",
+    "Highest consistent % cashback rate or most versatile reward categories with no cap.",
   "Welcome Bonus":
-    "The AI compares the total guaranteed HKD cash reward for a new account holder upon completing standard onboarding.",
+    "Highest total guaranteed HKD cash reward for a new account holder completing standard onboarding.",
   "Travel":
-    "The AI identifies the bank with the strongest travel ecosystem — named partners, lounge access, or the highest dedicated travel cashback rate.",
+    "Strongest travel ecosystem — named partners, lounge access, or highest dedicated travel cashback.",
   "Loan APR":
-    "The AI identifies the lowest explicitly stated APR on a personal loan currently offered.",
+    "Lowest explicitly stated APR on a personal loan currently offered.",
   "FX/Multi-Currency":
-    "The AI evaluates which bank offers the most competitive FX rates, lowest fees, or the most feature-rich multi-currency wallet.",
+    "Most competitive FX rates, lowest fees, or most feature-rich multi-currency wallet.",
   "Referral Bonus":
-    "The AI selects the bank offering the highest guaranteed HKD reward per successful referral.",
-};
-
-const INSIGHT_CAT_KEYWORDS = {
-  "Investment (Stock/Crypto Trading)": ["invest","stock","crypto","trading","brokerage","commission","$0","fee waiver","securities","ipo"],
-  "Fund Investment":  ["fund","基金","subscription fee","zero fee","$0","認購費","unit trust","mutual fund"],
-  "Spending/CashBack":["cashback","cash back","spending","card reward","rebate","消費","merchant"],
-  "Welcome Bonus":    ["welcome","new customer","account opening","onboard","迎新","sign up","join"],
-  "Travel":           ["travel","trip","flight","hotel","asia miles","lounge","旅遊","agoda","airline"],
-  "Loan APR":         ["loan","apr","interest rate","borrow","貸款","personal loan"],
-  "FX/Multi-Currency":["fx","forex","exchange","multi-currency","global wallet","remittance","外匯"],
-  "Referral Bonus":   ["referral","推薦","invite","refer a friend","referral code"],
+    "Highest guaranteed HKD reward per successful referral.",
 };
 
 const _BANK_COLOR_GENERIC = new Set(['bank','banking','digital','virtual']);
@@ -426,7 +423,7 @@ function catMeta(cat) {
 function catTag(cat) {
   if (cat && cat.includes('長期')) return '';
   const m = catMeta(cat);
-  return `<span class="cat-tag" style="background:${m.bg}">${m.emoji} ${cat}</span>`;
+  return `<span class="cat-tag" style="background:\({m.bg}">\){m.emoji} ${cat}</span>`;
 }
 
 function bauTag(p) {
@@ -461,46 +458,37 @@ function statusBadge(p) {
 
 // ── HKT date helpers ──────────────────────────────────────────────
 function hktToday() {
-  const hktMs = Date.now() + 8 * 3600 * 1000;
-  return new Date(hktMs).toISOString().substring(0, 10);
+  return new Date(Date.now() + 8*3600000).toISOString().substring(0,10);
 }
-
 function hktDaysAgo(n) {
-  const hktMs = Date.now() + 8 * 3600 * 1000 - n * 86400000;
-  return new Date(hktMs).toISOString().substring(0, 10);
+  return new Date(Date.now() + 8*3600000 - n*86400000).toISOString().substring(0,10);
 }
 
-// ── New-today logic ───────────────────────────────────────────────
-// A promotion qualifies for "new today" if:
-//   1. created_at date == today (HKT)
-//   2. start_date >= today OR no start_date (not a pre-existing promo detected late)
 function isNewToday(p, today) {
   if (p.is_bau) return false;
-  const created = (p.created_at || '').substring(0, 10);
+  const created = (p.created_at||'').substring(0,10);
   if (created !== today) return false;
-  const start = (p.start_date || '').substring(0, 10);
-  if (start && start < today) return false;  // started before today — not a new launch
+  const start = (p.start_date||'').substring(0,10);
+  if (start && start < today) return false;
   return true;
 }
 
-// ── New-this-week logic ───────────────────────────────────────────
-// Past 6 days BEFORE today (so today's items stay in the daily section only).
 function isNewThisWeek(p, today) {
   if (p.is_bau) return false;
-  const created   = (p.created_at || '').substring(0, 10);
+  const created   = (p.created_at||'').substring(0,10);
   const sixAgo    = hktDaysAgo(6);
   const yesterday = hktDaysAgo(1);
-  if (created < sixAgo || created > yesterday) return false;  // not in window
-  const start = (p.start_date || '').substring(0, 10);
-  if (start && start < sixAgo) return false;  // started before the window
+  if (created < sixAgo || created > yesterday) return false;
+  const start = (p.start_date||'').substring(0,10);
+  if (start && start < sixAgo) return false;
   return true;
 }
 
 // ── State ─────────────────────────────────────────────────────────
-let allPromos        = [];
-let filtered         = [];
-let activeBankTab    = '';
-let selectedCats     = [];
+let allPromos         = [];
+let filtered          = [];
+let activeBankTab     = '';
+let selectedCats      = [];
 let strategicInsights = null;
 
 // ── Load ──────────────────────────────────────────────────────────
@@ -509,23 +497,42 @@ async function loadData() {
     const res  = await fetch('./data.json?_=' + Date.now());
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    allPromos  = data.promotions || [];
+
+    // Show cached-data notice if AI was unavailable
+    if (data.ai_unavailable) {
+      const notice = document.createElement('div');
+      notice.className = 'max-w-screen-2xl mx-auto px-4 pt-3';
+      notice.innerHTML = `
+        <div class="bg-amber-50 border border-amber-300 rounded-xl px-4 py-3
+                    flex items-start gap-3 text-sm">
+          <span class="text-xl shrink-0">⚠️</span>
+          <div>
+            <div class="font-bold text-amber-800">Cached Data — AI Unavailable During Last Run</div>
+            <div class="text-amber-700 mt-0.5">
+              Promotions shown are from the last successful AI extraction run.
+              Today's changes may not be reflected.
+            </div>
+          </div>
+        </div>`;
+      document.querySelector('.max-w-screen-2xl').after(notice);
+    }
+
+    allPromos = (data.promotions || []).map(p => ({
+      ...p,
+      types: (p.types || []).filter(t => !t.includes('長期')).map(remapCat),
+    }));
 
     strategicInsights = data.strategic_insights || null;
 
-    allPromos = allPromos.map(p => ({
-      ...p,
-      types: (p.types || [])
-        .filter(t => !t.includes('長期'))
-        .map(t => remapCat(t)),
-    }));
+    // ── Fix 80 vs 79: count only active non-BAU ──────────────────
+    const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false);
+    const activeN      = activeNonBau.filter(p => getStatus(p) === 'active').length;
+    const expiringN    = activeNonBau.filter(p => getStatus(p) === 'expiring').length;
+    // Expired = promotions that exist but are inactive or past end_date
+    const expiredN     = allPromos.filter(p => !p.is_bau && getStatus(p) === 'expired').length;
+    const totalN       = activeNonBau.length;  // active only
 
-    const nonBau    = allPromos.filter(p => !p.is_bau);
-    const activeN   = nonBau.filter(p => getStatus(p) === 'active').length;
-    const expiringN = nonBau.filter(p => getStatus(p) === 'expiring').length;
-    const expiredN  = nonBau.filter(p => getStatus(p) === 'expired').length;
-    const totalN    = nonBau.length;
-    const banks     = [...new Set(allPromos.map(p => p.bank_name))];
+    const banks = [...new Set(allPromos.map(p => p.bank_name))];
 
     document.getElementById('statTotal').textContent    = totalN;
     document.getElementById('statActive').textContent   = activeN;
@@ -565,8 +572,8 @@ function remapCat(t) {
   return MAP[t] || t;
 }
 
-// ══ Build a card for any new-promo section ════════════════════════
-function buildPromoCard(p, accentColor) {
+// ── Promo card (used by New Today / New This Week) ────────────────
+function buildPromoCard(p) {
   const color   = bankColor(p.bank_name);
   const cats    = (p.types || ['Others 其他']).map(catTag).join('');
   const badge   = statusBadge(p);
@@ -577,30 +584,26 @@ function buildPromoCard(p, accentColor) {
     ? `<div class="mt-2">
          <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">👥 Quota / Eligibility</div>
          <div class="text-sm text-gray-700">${p.quota}</div>
-       </div>`
-    : '';
+       </div>` : '';
 
   const costHtml = p.cost
     ? `<div class="mt-2">
          <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">💲 Cost / Min Spend</div>
          <div class="text-sm text-gray-700">${p.cost}</div>
-       </div>`
-    : '';
+       </div>` : '';
 
   const sourceHtml = tcLink
     ? `<div class="mt-3 pt-3 border-t border-gray-100">
          <a href="${tcLink}" target="_blank" rel="noopener"
-            class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700
-                   text-white text-xs font-bold rounded-lg transition-colors">
+            class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600
+                   hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors">
            🔗 View Official Source ↗
          </a>
-       </div>`
-    : '';
+       </div>` : '';
 
   return `
     <div class="new-promo-card">
-      <div class="px-4 py-3 flex items-center justify-between"
-           style="background:${color};">
+      <div class="px-4 py-3 flex items-center justify-between" style="background:${color};">
         <div class="flex items-center gap-2">
           <span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span>
           <span class="font-extrabold text-white text-base">${p.bank_name}</span>
@@ -617,25 +620,22 @@ function buildPromoCard(p, accentColor) {
           ? `<div class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg
                          px-3 py-2 mb-1 border-l-2" style="border-color:${color}">${summary}</div>`
           : ''}
-        ${quotaHtml}${costHtml}${sourceHtml}
+        \({quotaHtml}\){costHtml}${sourceHtml}
       </div>
     </div>`;
 }
 
-// ══ BUILD BOTH NEW-SECTIONS ═══════════════════════════════════════
+// ── New sections ──────────────────────────────────────────────────
 function buildNewSections() {
   const today = hktToday();
 
-  // ── Daily ──────────────────────────────────────────────────────
-  const newToday = allPromos.filter(p => isNewToday(p, today));
-
+  // Today
+  const newToday   = allPromos.filter(p => isNewToday(p, today));
   const todaySec   = document.getElementById('newTodaySection');
   const todayCards = document.getElementById('newTodayCards');
   const todayCount = document.getElementById('newTodayCount');
   const todayEmpty = document.getElementById('newTodayEmpty');
-
   todaySec.style.display = 'block';
-
   if (!newToday.length) {
     todayCards.innerHTML = '';
     todayEmpty.classList.remove('hidden');
@@ -643,19 +643,16 @@ function buildNewSections() {
   } else {
     todayEmpty.classList.add('hidden');
     todayCount.textContent = `${newToday.length} new today`;
-    todayCards.innerHTML   = newToday.map(p => buildPromoCard(p, '#f97316')).join('');
+    todayCards.innerHTML   = newToday.map(p => buildPromoCard(p)).join('');
   }
 
-  // ── Weekly (past 6 days, not today) ───────────────────────────
-  const newWeek = allPromos.filter(p => isNewThisWeek(p, today));
-
+  // This week
+  const newWeek   = allPromos.filter(p => isNewThisWeek(p, today));
   const weekSec   = document.getElementById('newWeeklySection');
   const weekCards = document.getElementById('newWeeklyCards');
   const weekCount = document.getElementById('newWeeklyCount');
   const weekEmpty = document.getElementById('newWeeklyEmpty');
-
   weekSec.style.display = 'block';
-
   if (!newWeek.length) {
     weekCards.innerHTML = '';
     weekEmpty.classList.remove('hidden');
@@ -663,24 +660,23 @@ function buildNewSections() {
   } else {
     weekEmpty.classList.add('hidden');
     weekCount.textContent = `${newWeek.length} this week`;
-    weekCards.innerHTML   = newWeek.map(p => buildPromoCard(p, '#6366f1')).join('');
+    weekCards.innerHTML   = newWeek.map(p => buildPromoCard(p)).join('');
   }
 }
-// ══ END NEW SECTIONS ════════════════════════════════════════════
 
 // ── Bank Tabs ─────────────────────────────────────────────────────
 function buildBankTabs(banks) {
   const container = document.getElementById('bankTabs');
   banks.sort().forEach(b => {
     const c      = bankColor(b);
-    const safeId = 'tab-' + b.replace(/\s+/g, '-');
+    const safeId = 'tab-' + b.replace(/\s+/g,'-');
     const btn    = document.createElement('button');
     btn.id             = safeId;
     btn.dataset.bank   = b;
     btn.className      = 'bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold '
                        + 'border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
     btn.style.borderColor = c;
-    btn.innerHTML      = `<span style="color:${c}">●</span> ${b}`;
+    btn.innerHTML      = `<span style="color:\({c}">●</span> \){b}`;
     btn.onclick        = () => setBankTab(b);
     container.appendChild(btn);
   });
@@ -692,7 +688,7 @@ function setBankTab(bank) {
     btn.classList.remove('bg-indigo-600','text-white');
     btn.classList.add('text-gray-600','bg-white');
   });
-  const safeId    = bank ? 'tab-' + bank.replace(/\s+/g, '-') : 'tab-all';
+  const safeId    = bank ? 'tab-' + bank.replace(/\s+/g,'-') : 'tab-all';
   const activeBtn = document.getElementById(safeId);
   if (activeBtn) {
     activeBtn.classList.remove('text-gray-600','bg-white');
@@ -701,7 +697,7 @@ function setBankTab(bank) {
   applyFilters();
 }
 
-// ── Category multi-select buttons ─────────────────────────────────
+// ── Category filter buttons ───────────────────────────────────────
 function buildCatButtons() {
   const container = document.getElementById('catTagFilter');
   container.innerHTML =
@@ -709,11 +705,9 @@ function buildCatButtons() {
        Category:
      </span>` +
     CAT_FILTER_LIST.map(c => `
-      <button
-        class="cat-filter-btn cat-tag"
-        data-cat="${c.key}"
-        style="background:${c.bg}; opacity:${c.key === '__ALL__' ? '1' : '0.65'};
-               ${c.key === '__ALL__' ? 'box-shadow:0 0 0 3px rgba(0,0,0,0.28);' : ''}"
+      <button class="cat-filter-btn cat-tag" data-cat="${c.key}"
+        style="background:\({c.bg}; opacity:\){c.key==='__ALL__'?'1':'0.65'};
+               ${c.key==='__ALL__'?'box-shadow:0 0 0 3px rgba(0,0,0,0.28);':''}"
         onclick="toggleCat('${c.key}')">
         ${c.label}
       </button>`
@@ -725,7 +719,7 @@ function toggleCat(cat) {
   else {
     const idx = selectedCats.indexOf(cat);
     if (idx === -1) selectedCats.push(cat);
-    else            selectedCats.splice(idx, 1);
+    else            selectedCats.splice(idx,1);
   }
   updateCatButtons();
   applyFilters();
@@ -733,37 +727,40 @@ function toggleCat(cat) {
 
 function updateCatButtons() {
   document.querySelectorAll('.cat-filter-btn').forEach(btn => {
-    const cat          = btn.dataset.cat;
-    const isAll        = cat === '__ALL__';
-    const noneSelected = selectedCats.length === 0;
+    const cat = btn.dataset.cat, isAll = cat==='__ALL__', noneSelected = selectedCats.length===0;
     if (isAll) {
       btn.style.opacity   = noneSelected ? '1' : '0.45';
       btn.style.boxShadow = noneSelected ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
       btn.style.transform = 'scale(1)';
     } else {
-      const isSelected = selectedCats.includes(cat);
-      btn.style.opacity   = isSelected ? '1' : (noneSelected ? '0.65' : '0.38');
-      btn.style.boxShadow = isSelected ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
-      btn.style.transform = isSelected ? 'scale(1.07)' : 'scale(1)';
+      const sel = selectedCats.includes(cat);
+      btn.style.opacity   = sel ? '1' : (noneSelected ? '0.65' : '0.38');
+      btn.style.boxShadow = sel ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
+      btn.style.transform = sel ? 'scale(1.07)' : 'scale(1)';
     }
   });
 }
 
-// ══ STRATEGIC INSIGHTS ════════════════════════════════════════════
-
-function _findRunnerUps(category, winnerBank, bankAnalysis) {
-  const keywords = INSIGHT_CAT_KEYWORDS[category] || [category.toLowerCase()];
-  const runnerUps = [];
-  for (const [bName, data] of Object.entries(bankAnalysis || {})) {
-    if (bName === winnerBank) continue;
-    const text = [data.focus || '', ...(data.strengths || [])].join(' ').toLowerCase();
-    if (keywords.some(kw => text.includes(kw.toLowerCase()))) {
-      runnerUps.push(bName);
-    }
-  }
-  return runnerUps.slice(0, 2);
+// ── Toggle table visibility ───────────────────────────────────────
+function toggleInsightsTable(e) {
+  e.stopPropagation(); // don't trigger <details> toggle
+  const wrap = document.getElementById('insightsTableWrap');
+  const btn  = document.getElementById('toggleInsightsBtn');
+  const hidden = wrap.style.display === 'none';
+  wrap.style.display = hidden ? '' : 'none';
+  btn.dataset.hidden = hidden ? 'false' : 'true';
 }
 
+function toggleAnalysisGrid(e) {
+  e.stopPropagation();
+  const grid = document.getElementById('bankAnalysisGrid');
+  const btn  = document.getElementById('toggleAnalysisBtn');
+  const hidden = grid.style.display === 'none';
+  grid.style.display = hidden ? '' : 'none';
+  btn.dataset.hidden = hidden ? 'false' : 'true';
+}
+
+// ══ STRATEGIC INSIGHTS (6-column table) ══════════════════════════
 function buildStrategicInsights(insights) {
   const section = document.getElementById('strategicInsightsSection');
   if (!section) return;
@@ -773,17 +770,21 @@ function buildStrategicInsights(insights) {
   }
   section.style.display = 'block';
 
-  const bankAnalysis = insights.bank_analysis || {};
-
   const rows = insights.best_for.map(item => {
-    const cat    = item.category || '';
-    const bank   = item.bank || 'None';
-    const detail = item.detail || '—';
-    const isBau  = item.is_bau || false;
-    const isNone = ['none','n/a',''].includes(bank.toLowerCase());
-    const howDef = HOW_DEFINED[cat] || 'AI evaluates based on best overall value and current terms.';
-    const runners = _findRunnerUps(cat, bank, bankAnalysis);
-    const color   = isNone ? '#6b7280' : bankColor(bank);
+    const cat        = item.category      || '';
+    const bank       = item.bank          || 'None';
+    const detail     = item.detail        || '—';
+    // Column 4: use AI-generated standard, fall back to HOW_DEFINED
+    const standard   = (item.standard && item.standard.trim())
+                       ? item.standard
+                       : (HOW_DEFINED[cat] || '—');
+    // Column 5: similar banks (excluding the winner)
+    const similar    = (item.similar_banks || []).filter(b => b !== bank);
+    // Column 6: why they lose
+    const whyLose    = item.why_others_lose || '—';
+    const isBau      = item.is_bau || false;
+    const isNone     = ['none','n/a',''].includes(bank.toLowerCase());
+    const color      = isNone ? '#6b7280' : bankColor(bank);
 
     const bauPill = isBau
       ? `<span class="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-semibold">⚙️ BAU</span>`
@@ -792,32 +793,36 @@ function buildStrategicInsights(insights) {
     const winnerBadge = isNone
       ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">No clear winner</span>`
       : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-white"
-                style="background:${color}">${bank}</span>${bauPill}`;
+               style="background:\({color}">\){bank}</span>${bauPill}`;
 
-    const runnersHtml = runners.length
-      ? runners.map(r => {
-          const rc = bankColor(r);
-          return `<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold text-white mr-1"
-                         style="background:${rc};opacity:0.75">${r}</span>`;
+    const similarHtml = similar.length
+      ? similar.map(b => {
+          const bc = bankColor(b);
+          return `<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold text-white mr-1 mb-1"
+                         style="background:\({bc};opacity:0.8">\){b}</span>`;
         }).join('')
+      : `<span class="text-gray-400 text-xs italic">—</span>`;
+
+    const whyLoseHtml = (whyLose && whyLose !== '—')
+      ? `<div class="text-xs text-red-700 leading-relaxed">${whyLose}</div>`
       : `<span class="text-gray-400 text-xs italic">—</span>`;
 
     return `
       <tr class="border-b border-gray-100 hover:bg-indigo-50/20 align-top">
-        <td class="px-4 py-3 text-sm font-semibold text-gray-700 whitespace-nowrap">${cat}</td>
-        <td class="px-4 py-3 whitespace-nowrap">${winnerBadge}</td>
-        <td class="px-4 py-3 text-sm text-gray-600 max-w-xs leading-relaxed">${detail}</td>
-        <td class="px-4 py-3 text-xs text-gray-500 max-w-xs leading-relaxed">${howDef}</td>
-        <td class="px-4 py-3">${runnersHtml}</td>
+        <td class="px-4 py-3 text-sm font-semibold text-gray-700">${cat}</td>
+        <td class="px-4 py-3">${winnerBadge}</td>
+        <td class="px-4 py-3 text-sm text-gray-600 leading-relaxed">${detail}</td>
+        <td class="px-4 py-3 text-xs text-gray-500 leading-relaxed italic">${standard}</td>
+        <td class="px-4 py-3">${similarHtml}</td>
+        <td class="px-4 py-3">${whyLoseHtml}</td>
       </tr>`;
   }).join('');
 
   document.getElementById('insightsTbody').innerHTML =
-    rows || `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">No insights data.</td></tr>`;
+    rows || `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No insights data.</td></tr>`;
 }
 
 // ══ BANK-BY-BANK ANALYSIS ═════════════════════════════════════════
-
 function buildBankAnalysis(insights) {
   const section = document.getElementById('bankAnalysisSection');
   if (!section) return;
@@ -832,7 +837,7 @@ function buildBankAnalysis(insights) {
   const zaData       = zaEntry[1] || {};
   const zaCount      = zaData.count || 0;
 
-  const sorted = Object.entries(bankAnalysis).sort(([a], [b]) => {
+  const sorted = Object.entries(bankAnalysis).sort(([a],[b]) => {
     if (a.includes('ZA')) return -1;
     if (b.includes('ZA')) return 1;
     return a.localeCompare(b);
@@ -841,22 +846,22 @@ function buildBankAnalysis(insights) {
   const cards = sorted.map(([bName, data]) => {
     const isZA      = bName.includes('ZA');
     const color     = bankColor(bName);
-    const count     = data.count || 0;
+    const count     = data.count    || 0;
     const bauCnt    = data.bau_count || 0;
-    const focus     = data.focus || '';
-    const strengths = (data.strengths || []).slice(0, 4);
+    const focus     = data.focus     || '';
+    // Show up to 6 strengths
+    const strengths = (data.strengths || []).slice(0, 6);
     const expAlert  = data.expiring_alert || '';
     const pros      = data.vs_za_pros || '';
     const cons      = data.vs_za_cons || '';
 
     const strengthsHtml = strengths.length
       ? `<div class="space-y-1.5 mt-2">
-           ${strengths.map(s =>
-             `<div class="flex items-start gap-2 text-sm">
-                <span class="text-indigo-400 shrink-0 mt-0.5 font-bold">✓</span>
-                <span class="text-gray-700">${s}</span>
-              </div>`
-           ).join('')}
+           ${strengths.map(s => `
+             <div class="flex items-start gap-2 text-sm">
+               <span class="text-indigo-400 shrink-0 mt-0.5 font-bold text-base leading-none">✓</span>
+               <span class="text-gray-700 leading-snug">${s}</span>
+             </div>`).join('')}
          </div>`
       : '<div class="text-sm text-gray-400 italic mt-1">No strengths data.</div>';
 
@@ -865,56 +870,62 @@ function buildBankAnalysis(insights) {
                     text-xs text-amber-800 font-semibold">⚡ ${expAlert}</div>`
       : '';
 
+    // ── vs ZA section ─────────────────────────────────────────────
     let vsHtml = '';
     if (isZA) {
       vsHtml = `
         <div class="mt-4 bg-indigo-50 border border-indigo-100 rounded-xl p-3">
           <div class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">⭐ Base Comparison Bank</div>
           <div class="text-xs text-indigo-700 leading-relaxed">
-            ZA Bank serves as the reference point for all competitor analysis.
-            It currently has <strong>${count}</strong> active non-BAU promotion(s)
+            ZA Bank is the reference point for all competitor analysis.
+            Currently <strong>${count}</strong> active non-BAU promotion(s)
             and <strong>${bauCnt}</strong> permanent BAU feature(s).
           </div>
         </div>`;
-    } else if (pros || cons) {
+    } else {
       const diff      = count - zaCount;
       const diffSign  = diff > 0 ? `+${diff}` : `${diff}`;
       const diffColor = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-500' : 'text-gray-500';
       const diffLabel = diff > 0
-        ? `${diffSign} more promotions than ZA Bank`
+        ? `${diffSign} more than ZA Bank`
         : diff < 0
-          ? `${diffSign} fewer promotions than ZA Bank`
-          : 'Same number of promotions as ZA Bank';
+          ? `${diffSign} fewer than ZA Bank`
+          : 'Same count as ZA Bank';
+
+      const betterHtml = pros
+        ? `<div class="rounded-lg border border-green-200 bg-green-50 p-3">
+             <div class="text-xs font-bold text-green-700 uppercase tracking-wide mb-1.5">
+               ✅ Better than ZA Bank
+             </div>
+             <div class="text-sm text-green-800 leading-relaxed">${pros}</div>
+           </div>`
+        : '';
+
+      const worseHtml = cons
+        ? `<div class="rounded-lg border border-red-200 bg-red-50 p-3">
+             <div class="text-xs font-bold text-red-600 uppercase tracking-wide mb-1.5">
+               ❌ Worse than ZA Bank
+             </div>
+             <div class="text-sm text-red-800 leading-relaxed">${cons}</div>
+           </div>`
+        : '';
 
       vsHtml = `
         <div class="mt-4 border border-gray-200 rounded-xl overflow-hidden">
-          <div class="bg-gray-50 px-3 py-2 text-xs font-bold text-gray-500
-                      uppercase tracking-wide border-b border-gray-200">
-            vs ZA Bank (${zaCount} active)
+          <div class="bg-gray-50 px-3 py-2 border-b border-gray-200
+                      flex items-center justify-between">
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">
+              vs ZA Bank
+            </span>
+            <span class="text-xs font-bold \({diffColor}">\){diffLabel}</span>
           </div>
-          <div class="p-3 space-y-2.5">
-            <div class="text-xs text-gray-500 font-medium">
-              Overall: <span class="${diffColor} font-bold">${diffLabel}</span>
-              <span class="text-gray-400 ml-1">(${bName}: ${count} · ZA: ${zaCount})</span>
+          <div class="p-3 space-y-2">
+            <div class="text-xs text-gray-400">
+              \({bName}: <strong class="text-gray-700">\){count}</strong> active ·
+              ZA Bank: <strong class="text-gray-700">${zaCount}</strong> active
             </div>
-            ${pros
-              ? `<div class="flex items-start gap-2">
-                   <span class="text-green-500 shrink-0 mt-0.5 font-bold text-sm">✅</span>
-                   <div class="text-sm leading-relaxed">
-                     <span class="font-semibold text-green-700">Advantage over ZA:</span>
-                     <span class="text-green-800"> ${pros}</span>
-                   </div>
-                 </div>`
-              : ''}
-            ${cons
-              ? `<div class="flex items-start gap-2">
-                   <span class="text-red-400 shrink-0 mt-0.5 font-bold text-sm">❌</span>
-                   <div class="text-sm leading-relaxed">
-                     <span class="font-semibold text-red-600">Gap vs ZA:</span>
-                     <span class="text-red-700"> ${cons}</span>
-                   </div>
-                 </div>`
-              : ''}
+            ${betterHtml}
+            ${worseHtml}
           </div>
         </div>`;
     }
@@ -927,8 +938,8 @@ function buildBankAnalysis(insights) {
         <div class="px-5 py-4" style="background:${headerBg};">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <span class="bank-dot" style="background:${isZA ? 'rgba(255,255,255,0.5)' : color}"></span>
-              <span class="font-extrabold text-lg" style="color:${headerText}">${bName}</span>
+              <span class="bank-dot" style="background:${isZA?'rgba(255,255,255,0.5)':color}"></span>
+              <span class="font-extrabold text-lg" style="color:\({headerText}">\){bName}</span>
               ${isZA
                 ? `<span class="text-xs px-2 py-0.5 rounded-full font-bold"
                           style="background:rgba(255,255,255,0.2);color:#fff;">⭐ Base</span>`
@@ -936,7 +947,7 @@ function buildBankAnalysis(insights) {
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs px-3 py-1 rounded-full font-bold text-white"
-                    style="background:${isZA ? 'rgba(255,255,255,0.2)' : color}">
+                    style="background:${isZA?'rgba(255,255,255,0.2)':color}">
                 ${count} active
               </span>
               ${bauCnt > 0
@@ -947,9 +958,10 @@ function buildBankAnalysis(insights) {
           </div>
         </div>
         <div class="p-5 bg-white">
-          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Focus</div>
-          <div class="text-sm text-gray-700 mb-4">${focus || '—'}</div>
-          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Key Strengths</div>
+          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">🎯 Bank Focus</div>
+          <div class="text-sm text-gray-700 mb-4 leading-relaxed">${focus || '—'}</div>
+
+          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">💪 Key Strengths</div>
           ${strengthsHtml}
           ${expHtml}
           ${vsHtml}
@@ -988,15 +1000,13 @@ function buildComparisonTable() {
 
   const typeCounts = {};
   livePromos.forEach(p =>
-    (p.types || []).forEach(t => {
+    (p.types||[]).forEach(t => {
       if (!t.includes('長期') && !t.includes('Others'))
-        typeCounts[t] = (typeCounts[t] || 0) + 1;
+        typeCounts[t] = (typeCounts[t]||0) + 1;
     })
   );
   const topTypes = Object.entries(typeCounts)
-    .sort((a, b) => b[1] - a[1])
-    .map(e => e[0])
-    .slice(0, 8);
+    .sort((a,b) => b[1]-a[1]).map(e => e[0]).slice(0,8);
 
   let thead = `<tr class="bg-gray-50 border-b-2 border-gray-200">
     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500
@@ -1006,139 +1016,131 @@ function buildComparisonTable() {
     const color = bankColor(b.name);
     thead += `
       <th class="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide
-                 ${isZA ? 'bg-blue-50' : ''}"
-          style="color:${color}; min-width:95px;">
-        <span class="bank-dot" style="background:${color}; margin-right:3px;"></span>${b.name}
-        ${isZA ? '<br><span class="text-blue-400 font-normal normal-case text-xs">⭐ 基準 Base</span>' : ''}
+                 \({isZA?'bg-blue-50':''}" style="color:\){color}; min-width:95px;">
+        <span class="bank-dot" style="background:\({color}; margin-right:3px;"></span>\){b.name}
+        ${isZA ? '<br><span class="text-blue-400 font-normal normal-case text-xs">⭐ Base</span>' : ''}
       </th>`;
   });
   thead += '</tr>';
 
-  function makeRow(label, getVal, isBold = false) {
+  function makeRow(label, getVal, isBold=false) {
     const zaVal  = getVal(zaBank);
     const maxVal = Math.max(...banks.map(b => getVal(b)));
-    let r = `<tr class="border-b border-gray-100 hover:bg-indigo-50/20 transition-colors">
+    let r = `<tr class="border-b border-gray-100 hover:bg-indigo-50/20">
       <td class="px-4 py-2.5 text-sm text-gray-700 whitespace-nowrap
-                 ${isBold ? 'font-bold' : 'font-medium'}">${label}</td>`;
+                 \({isBold?'font-bold':'font-medium'}">\){label}</td>`;
     banks.forEach(b => {
       const isZA  = b.name.includes('ZA');
       const val   = getVal(b);
-      const isTop = !isZA && val === maxVal && maxVal > 0;
-      let indicator = '';
+      const isTop = !isZA && val===maxVal && maxVal>0;
+      let ind = '';
       if (!isZA) {
-        if      (val > zaVal)          indicator = `<span class="ml-1 text-green-500 text-xs font-bold">▲</span>`;
-        else if (val < zaVal)          indicator = `<span class="ml-1 text-red-400 text-xs font-bold">▼</span>`;
-        else if (val > 0 || zaVal > 0) indicator = `<span class="ml-1 text-gray-300 text-xs">—</span>`;
+        if      (val>zaVal)          ind = `<span class="ml-1 text-green-500 text-xs font-bold">▲</span>`;
+        else if (val<zaVal)          ind = `<span class="ml-1 text-red-400 text-xs font-bold">▼</span>`;
+        else if (val>0||zaVal>0)     ind = `<span class="ml-1 text-gray-300 text-xs">—</span>`;
       }
-      const display = val > 0
-        ? `<span class="${isTop ? 'text-green-600 font-bold' : isZA ? 'text-blue-700 font-bold' : 'text-gray-700'}">${val}</span>`
+      const disp = val>0
+        ? `<span class="\({isTop?'text-green-600 font-bold':isZA?'text-blue-700 font-bold':'text-gray-700'}">\){val}</span>`
         : `<span class="text-gray-200">0</span>`;
-      r += `<td class="px-4 py-2.5 text-center ${isZA ? 'bg-blue-50/50' : ''}">
-        ${display}${indicator}</td>`;
+      r += `<td class="px-4 py-2.5 text-center \({isZA?'bg-blue-50/50':''}">\){disp}${ind}</td>`;
     });
     return r + '</tr>';
   }
 
   function sectionRow(label) {
     return `<tr class="bg-gray-50/80 border-b border-gray-100">
-      <td colspan="${banks.length + 1}"
-          class="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-        ${label}</td></tr>`;
+      <td colspan="${banks.length+1}"
+          class="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">${label}</td></tr>`;
   }
 
   const rows = [];
   rows.push(sectionRow('📋 總覽 Overview'));
   rows.push(makeRow('✅ 有效優惠總數 Total Active', b => b.promos.length, true));
   rows.push(makeRow('🔄 長期/無到期 Ongoing',
-    b => b.promos.filter(p => !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))).length));
+    b => b.promos.filter(p => !p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length));
   rows.push(makeRow('⚡ 即將到期 Expiring ≤30d',
-    b => b.promos.filter(p => getStatus(p) === 'expiring').length));
+    b => b.promos.filter(p => getStatus(p)==='expiring').length));
   rows.push(sectionRow('🏷️ 優惠類別 By Category'));
   topTypes.forEach(type => {
-    const m     = catMeta(type);
-    const short = type.split(' ')[0];
+    const m = catMeta(type), short = type.split(' ')[0];
     rows.push(makeRow(
-      `<span style="color:${m.bg}" class="mr-1">${m.emoji}</span>${short}`,
-      b => b.promos.filter(p => (p.types || []).includes(type)).length
+      `<span style="color:\({m.bg}" class="mr-1">\){m.emoji}</span>${short}`,
+      b => b.promos.filter(p => (p.types||[]).includes(type)).length
     ));
   });
 
   document.getElementById('compTable').innerHTML =
-    `<thead>${thead}</thead><tbody>${rows.join('')}</tbody>`;
+    `<thead>\({thead}</thead><tbody>\){rows.join('')}</tbody>`;
 
   buildProsCons(zaBank, banks, topTypes);
 }
 
 function buildProsCons(zaBank, allBanks, topTypes) {
-  const others = allBanks.filter(b => b.name !== zaBank.name);
+  const others = allBanks.filter(b => b.name!==zaBank.name);
   if (!others.length) return;
-
-  const avg  = arr => arr.length ? arr.reduce((s, n) => s + n, 0) / arr.length : 0;
+  const avg  = arr => arr.length ? arr.reduce((s,n)=>s+n,0)/arr.length : 0;
   const pros = [], cons = [];
 
-  const avgCount = avg(others.map(b => b.promos.length));
+  const avgCount = avg(others.map(b=>b.promos.length));
   if (zaBank.promos.length >= avgCount)
-    pros.push(`有效優惠總數 (${zaBank.promos.length}) 高於或持平其他銀行平均 (${avgCount.toFixed(1)})`);
+    pros.push(`有效優惠總數 (\({zaBank.promos.length}) 高於或持平其他銀行平均 (\){avgCount.toFixed(1)})`);
   else
-    cons.push(`有效優惠總數 (${zaBank.promos.length}) 低於其他銀行平均 (${avgCount.toFixed(1)})`);
+    cons.push(`有效優惠總數 (\({zaBank.promos.length}) 低於其他銀行平均 (\){avgCount.toFixed(1)})`);
 
-  const beatCount = others.filter(b => zaBank.promos.length > b.promos.length).length;
-  if (beatCount === others.length && others.length > 1)
+  const beatCount = others.filter(b=>zaBank.promos.length>b.promos.length).length;
+  if (beatCount===others.length&&others.length>1)
     pros.push(`優惠總數領先全部 ${others.length} 間競爭銀行`);
-  else if (beatCount > others.length / 2)
-    pros.push(`優惠總數超越 ${beatCount}/${others.length} 間競爭銀行`);
+  else if (beatCount>others.length/2)
+    pros.push(`優惠總數超越 \({beatCount}/\){others.length} 間競爭銀行`);
 
-  const leadCats = [], weakCats = [];
+  const leadCats=[], weakCats=[];
   topTypes.forEach(type => {
-    const zaC  = zaBank.promos.filter(p => (p.types || []).includes(type)).length;
-    const avgC = avg(others.map(b => b.promos.filter(p => (p.types || []).includes(type)).length));
-    const m    = catMeta(type);
-    const s    = `${m.emoji}${type.split(' ')[0]}`;
-    if (zaC > avgC + 0.5) leadCats.push(s);
-    if (zaC < avgC - 0.5) weakCats.push(`${s} (ZA: ${zaC} vs 平均: ${avgC.toFixed(1)})`);
+    const zaC  = zaBank.promos.filter(p=>(p.types||[]).includes(type)).length;
+    const avgC = avg(others.map(b=>b.promos.filter(p=>(p.types||[]).includes(type)).length));
+    const m=catMeta(type), s=`\({m.emoji}\){type.split(' ')[0]}`;
+    if (zaC>avgC+0.5) leadCats.push(s);
+    if (zaC<avgC-0.5) weakCats.push(`\({s} (ZA: \){zaC} vs avg: ${avgC.toFixed(1)})`);
   });
   if (leadCats.length) pros.push(`在 ${leadCats.join('、')} 類別優惠數量領先市場`);
   if (weakCats.length) cons.push(`以下類別優惠相對較少：${weakCats.join('、')}`);
 
-  const zaOngoing  = zaBank.promos.filter(p => !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))).length;
-  const avgOngoing = avg(others.map(b => b.promos.filter(p => !p.end_date || (p.period && p.period.toLowerCase().includes('ongoing'))).length));
-  if (zaOngoing > avgOngoing + 0.5)
-    pros.push(`長期優惠比例高，${zaOngoing} 項長期有效 (其他平均 ${avgOngoing.toFixed(1)} 項)`);
-  else if (zaOngoing < avgOngoing - 0.5)
-    cons.push(`長期優惠相對較少 (${zaOngoing} 項，其他平均 ${avgOngoing.toFixed(1)} 項)`);
+  const zaOngoing  = zaBank.promos.filter(p=>!p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length;
+  const avgOngoing = avg(others.map(b=>b.promos.filter(p=>!p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length));
+  if (zaOngoing>avgOngoing+0.5)
+    pros.push(`長期優惠比例高：\({zaOngoing} 項長期有效 (其他平均 \){avgOngoing.toFixed(1)} 項)`);
+  else if (zaOngoing<avgOngoing-0.5)
+    cons.push(`長期優惠相對較少：\({zaOngoing} 項 (其他平均 \){avgOngoing.toFixed(1)} 項)`);
 
-  const zaExpiring = zaBank.promos.filter(p => getStatus(p) === 'expiring').length;
-  if (zaExpiring > 5)
+  const zaExpiring = zaBank.promos.filter(p=>getStatus(p)==='expiring').length;
+  if (zaExpiring>5)
     cons.push(`有 ${zaExpiring} 項優惠將在30天內到期，部分優惠持續性有待觀察`);
 
   document.getElementById('prosConsWrap').innerHTML = `
-    <div class="rounded-2xl border border-green-100
-                bg-gradient-to-br from-green-50 to-emerald-50 p-5">
+    <div class="rounded-2xl border border-green-100 bg-gradient-to-br from-green-50 to-emerald-50 p-5">
       <h3 class="font-bold text-green-700 mb-3 flex items-center gap-2">
         <span>✅</span> ZA Bank 相對優勢 Strengths
       </h3>
       <ul class="space-y-2">
         ${pros.length
-          ? pros.map(p => `<li class="flex items-start gap-2 text-sm text-green-800">
+          ? pros.map(p=>`<li class="flex items-start gap-2 text-sm text-green-800">
               <span class="text-green-500 shrink-0 mt-0.5">●</span><span>${p}</span></li>`).join('')
           : '<li class="text-sm text-gray-400 italic">暫無突出優勢</li>'}
       </ul>
     </div>
-    <div class="rounded-2xl border border-orange-100
-                bg-gradient-to-br from-orange-50 to-amber-50 p-5">
+    <div class="rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-amber-50 p-5">
       <h3 class="font-bold text-orange-700 mb-3 flex items-center gap-2">
         <span>⚠️</span> ZA Bank 可改進空間 Areas to Improve
       </h3>
       <ul class="space-y-2">
         ${cons.length
-          ? cons.map(c => `<li class="flex items-start gap-2 text-sm text-orange-800">
+          ? cons.map(c=>`<li class="flex items-start gap-2 text-sm text-orange-800">
               <span class="text-orange-400 shrink-0 mt-0.5">●</span><span>${c}</span></li>`).join('')
           : '<li class="text-sm text-gray-400 italic">暫無明顯不足</li>'}
       </ul>
     </div>`;
 }
 
-// ── Filter ────────────────────────────────────────────────────────
+// ── Filter & render ───────────────────────────────────────────────
 function applyFilters() {
   const search = document.getElementById('searchInput').value.toLowerCase();
   const status = document.getElementById('statusFilter').value;
@@ -1146,51 +1148,47 @@ function applyFilters() {
 
   filtered = allPromos.filter(p => {
     const s = getStatus(p);
+    if (status==='active'          && s!=='active')                    return false;
+    if (status==='expiring'        && s!=='expiring')                   return false;
+    if (status==='expired'         && s!=='expired')                    return false;
+    if (status==='active+expiring' && s!=='active' && s!=='expiring')   return false;
+    if (activeBankTab && p.bank_name!==activeBankTab)                   return false;
 
-    if (status === 'active'          && s !== 'active')                     return false;
-    if (status === 'expiring'        && s !== 'expiring')                    return false;
-    if (status === 'expired'         && s !== 'expired')                     return false;
-    if (status === 'active+expiring' && s !== 'active' && s !== 'expiring')  return false;
-
-    if (activeBankTab && p.bank_name !== activeBankTab) return false;
-
-    if (selectedCats.length > 0) {
+    if (selectedCats.length>0) {
       const hasBau    = selectedCats.includes('BAU');
-      const otherCats = selectedCats.filter(c => c !== 'BAU');
+      const otherCats = selectedCats.filter(c=>c!=='BAU');
       if (p.is_bau) {
         if (!hasBau) return false;
       } else {
-        if (otherCats.length === 0) return false;
-        if (!otherCats.some(c => (p.types || []).includes(c))) return false;
+        if (otherCats.length===0) return false;
+        if (!otherCats.some(c=>(p.types||[]).includes(c))) return false;
       }
     } else {
       if (p.is_bau) return false;
     }
 
     if (search) {
-      const hay = [
-        p.bank_name, p.title, p.highlight, p.description,
-        p.period, ...(p.types || []),
-      ].join(' ').toLowerCase();
+      const hay = [p.bank_name,p.title,p.highlight,p.description,
+                   p.period,...(p.types||[])].join(' ').toLowerCase();
       if (!hay.includes(search)) return false;
     }
     return true;
   });
 
-  if (sort === 'bank')    filtered.sort((a, b) => a.bank_name.localeCompare(b.bank_name));
-  if (sort === 'enddate') filtered.sort((a, b) => (a.end_date||'9999') < (b.end_date||'9999') ? -1 : 1);
-  if (sort === 'newest')  filtered.sort((a, b) => (b.created_at||'') > (a.created_at||'') ? 1 : -1);
+  if (sort==='bank')    filtered.sort((a,b)=>a.bank_name.localeCompare(b.bank_name));
+  if (sort==='enddate') filtered.sort((a,b)=>(a.end_date||'9999')<(b.end_date||'9999')?-1:1);
+  if (sort==='newest')  filtered.sort((a,b)=>(b.created_at||'')>(a.created_at||'')?1:-1);
 
   renderTable(filtered);
 
-  const nonBauTotal = allPromos.filter(p => !p.is_bau).length;
-  const bauTotal    = allPromos.filter(p => p.is_bau).length;
+  // Count stats — active non-BAU only (consistent with header)
+  const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false);
+  const bauTotal     = allPromos.filter(p => p.is_bau).length;
   document.getElementById('resultCount').textContent =
-    `Showing ${filtered.length} of ${nonBauTotal} promotions`
-    + (bauTotal > 0 ? ` (+${bauTotal} BAU via ⚙️ filter)` : '');
+    `Showing \({filtered.length} of \){activeNonBau.length} active promotions`
+    + (bauTotal>0 ? ` (+${bauTotal} BAU via ⚙️ filter)` : '');
 }
 
-// ── Render Table ──────────────────────────────────────────────────
 function renderTable(promos) {
   const tbody = document.getElementById('promoTbody');
   const empty = document.getElementById('emptyState');
@@ -1205,13 +1203,13 @@ function renderTable(promos) {
   empty.classList.add('hidden');
   wrap.classList.remove('hidden');
 
-  tbody.innerHTML = promos.map((p, i) => {
+  tbody.innerHTML = promos.map((p,i) => {
     const color     = bankColor(p.bank_name);
     const bau       = bauTag(p);
-    const cats      = (p.types || ['Others 其他']).map(catTag).join('') + bau;
+    const cats      = (p.types||['Others 其他']).map(catTag).join('') + bau;
     const badge     = statusBadge(p);
     const tcLink    = p.tc_link || p.url || '';
-    const isExpired = getStatus(p) === 'expired';
+    const isExpired = getStatus(p)==='expired';
     const detailId  = `detail-${i}`;
 
     const sourceHtml = (!isExpired && tcLink)
@@ -1221,8 +1219,7 @@ function renderTable(promos) {
                      text-xs font-semibold underline">
              🔗 View Official Source ↗
            </a>
-         </div>`
-      : '';
+         </div>` : '';
 
     const detailHtml = `
       <tr id="${detailId}" class="hidden bg-indigo-50/40">
@@ -1230,26 +1227,26 @@ function renderTable(promos) {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <div class="font-bold text-gray-400 uppercase text-xs mb-1">📅 Period</div>
-              <div class="text-gray-700">${p.period || '—'}</div>
+              <div class="text-gray-700">${p.period||'—'}</div>
             </div>
             <div>
               <div class="font-bold text-gray-400 uppercase text-xs mb-1">👥 Quota / Eligibility</div>
-              <div class="text-gray-700">${p.quota || '—'}</div>
+              <div class="text-gray-700">${p.quota||'—'}</div>
             </div>
             <div>
               <div class="font-bold text-gray-400 uppercase text-xs mb-1">💲 Cost / Min Spend</div>
-              <div class="text-gray-700">${p.cost || '—'}</div>
+              <div class="text-gray-700">${p.cost||'—'}</div>
             </div>
             <div class="md:col-span-3">
               <div class="font-bold text-gray-400 uppercase text-xs mb-1">📝 Summary</div>
-              <div class="text-gray-700 leading-relaxed">${p.description || p.highlight || '—'}</div>
+              <div class="text-gray-700 leading-relaxed">${p.description||p.highlight||'—'}</div>
             </div>
             ${sourceHtml}
           </div>
         </td>
       </tr>`;
 
-    const mainRow = `
+    return `
       <tr class="border-b border-gray-50 cursor-pointer hover:bg-gray-50"
           onclick="toggleDetail(${i})">
         <td class="px-4 py-3 whitespace-nowrap">
@@ -1258,18 +1255,16 @@ function renderTable(promos) {
         </td>
         <td class="px-4 py-3 max-w-xs">
           <div class="font-semibold text-gray-800 leading-snug">${p.title}</div>
-          <div class="text-gray-400 text-xs mt-0.5">${p.highlight || ''}</div>
+          <div class="text-gray-400 text-xs mt-0.5">${p.highlight||''}</div>
         </td>
         <td class="px-4 py-3">${cats}</td>
-        <td class="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">${p.period || '—'}</td>
+        <td class="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">${p.period||'—'}</td>
         <td class="px-4 py-3">${badge}</td>
         <td class="px-4 py-3 text-gray-400 text-xs">
           <span class="chevron" id="chevron-${i}">▼</span>
         </td>
       </tr>
       ${detailHtml}`;
-
-    return mainRow;
   }).join('');
 }
 
@@ -1287,19 +1282,19 @@ function exportExcel() {
   const rows = filtered.map(p => ({
     'Bank':        p.bank_name,
     'Title':       p.title,
-    'Categories':  (p.types || []).join(', '),
-    'BAU':         p.is_bau ? 'Yes' : 'No',
+    'Categories':  (p.types||[]).join(', '),
+    'BAU':         p.is_bau?'Yes':'No',
     'Status':      getStatus(p),
-    'Period':      p.period || '',
-    'Start Date':  p.start_date || '',
-    'End Date':    p.end_date || '',
-    'Quota':       p.quota || '',
-    'Cost':        p.cost || '',
-    'Highlight':   p.highlight || '',
-    'Description': p.description || '',
-    'Source Link': p.tc_link || p.url || '',
-    'Created':     p.created_at || '',
-    'Last Seen':   p.last_seen || '',
+    'Period':      p.period||'',
+    'Start Date':  p.start_date||'',
+    'End Date':    p.end_date||'',
+    'Quota':       p.quota||'',
+    'Cost':        p.cost||'',
+    'Highlight':   p.highlight||'',
+    'Description': p.description||'',
+    'Source Link': p.tc_link||p.url||'',
+    'Created':     p.created_at||'',
+    'Last Seen':   p.last_seen||'',
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [
