@@ -27,6 +27,7 @@ from database  import (
     mark_stale_as_inactive,
     mark_inactive_old,
     reactivate_promotions_seen_on,
+    reactivate_most_recently_seen,
     generate_daily_report,
     export_to_json,
     get_active_promos_for_bank,
@@ -79,13 +80,6 @@ def _save_html_fallback(html: str, path: str) -> None:
 # ── Patch data.json with an arbitrary dict of extra keys ─────────────────────
 
 def _patch_data_json(path: str, extra: dict) -> None:
-    """
-    Read data.json, merge `extra` into the top-level dict, then write it back.
-    Called once after strategic insights are generated so the website can read
-    `data.strategic_insights` without a separate file.
-
-    Failures are non-fatal — a warning is printed and the pipeline continues.
-    """
     keys = ', '.join(extra.keys())
     try:
         with open(path, 'r', encoding='utf-8') as f:
@@ -101,14 +95,9 @@ def _patch_data_json(path: str, extra: dict) -> None:
 # ── Main pipeline ─────────────────────────────────────────────────────────────
 
 def main() -> int:
-    """
-    Returns 0 on success, 1 on a hard failure that prevented the data pipeline
-    from completing.  Soft failures (AI unavailable, email not sent) still
-    return 0 — the scrape + DB write succeeded.
-    """
     t_start  = time.monotonic()
     today    = datetime.now().strftime('%Y-%m-%d')
-    RUN_DATE = today   # single source of truth — never re-sample datetime mid-run
+    RUN_DATE = today
 
     print(f'\n{"═"*60}')
     print(f'  HK Virtual Bank Promotions Tracker  |  {today}')
@@ -133,6 +122,41 @@ def main() -> int:
     # ── Step 2: AI ────────────────────────────────────────────────
     print('\nStep 2 ── Init AI')
     ai_ok = init_ai()
+
+    # ── Step 2b: Pre-run DB recovery when AI is unavailable ───────
+    # If the AI key is missing AND the DB has already gone fully
+    # inactive (e.g. from a prior staleness sweep), restore the most
+    # recently-seen batch NOW so every subsequent step has data to
+    # work with.  The recovery is idempotent and safe: if active
+    # promotions already exist, nothing is changed.
+    _pre_run_recovered = 0
+    if not ai_ok:
+        _pre_stats  = get_db_stats()
+        _pre_total  = _pre_stats.get('total_promotions', 0)
+        _pre_active = _pre_stats.get('active_promotions', 0)
+
+        if _pre_total > 0 and _pre_active == 0:
+            print(
+                f'\n  🚨 AI unavailable + 0 active promotions '
+                f'(DB has {_pre_total} total) → attempting DB recovery'
+            )
+            _pre_run_recovered = reactivate_most_recently_seen(window_days=7)
+            if _pre_run_recovered:
+                _post = get_db_stats()
+                print(
+                    f'  ✅ Recovery succeeded: {_pre_run_recovered} promotions restored '
+                    f'({_post.get("active_promotions", 0)} active, '
+                    f'{_post.get("bau_promotions", 0)} BAU)'
+                )
+            else:
+                print('  ⚠️  Recovery found nothing to restore — DB may be truly empty')
+        elif _pre_total > 0 and _pre_active > 0:
+            print(
+                f'\n  ℹ️  AI unavailable — using existing '
+                f'{_pre_active} active promotions from DB for email/website'
+            )
+        else:
+            print('\n  ⚠️  AI unavailable and DB is completely empty')
 
     # ── Step 3: Scrape all banks ──────────────────────────────────
     print(f'\nStep 3 ── Scrape all {len(BANK_CONFIGS)} banks')
@@ -176,7 +200,7 @@ def main() -> int:
     total_updated    = 0
     total_deduped    = 0
     total_db_matched = 0
-    banks_ai_saved: list[str] = []   # tracks banks where save_promotions succeeded
+    banks_ai_saved: list[str] = []
 
     for bank_id, result in scraped.items():
         bank_name   = result.get('bank_name', bank_id)
@@ -192,7 +216,7 @@ def main() -> int:
             print(f'    ⚠️  Scrape failed — skip AI for {bank_name}')
             continue
 
-        # 4a: Extract promotions ───────────────────────────────────
+        # 4a: Extract promotions
         try:
             promos = analyze_promotions(
                 bank_id     = bank_id,
@@ -209,7 +233,7 @@ def main() -> int:
             print(f'    ⚠️  0 promotions extracted for {bank_name}')
             continue
 
-        # 4b: Within-batch dedup ───────────────────────────────────
+        # 4b: Within-batch dedup
         try:
             titles  = [p.get('name') or p.get('title', '') for p in promos]
             dup_map = ai_dedup_titles(titles, bank_name)
@@ -229,7 +253,7 @@ def main() -> int:
             print(f'    ⚠️  0 promotions after within-batch dedup for {bank_name}')
             continue
 
-        # 4c: Match against existing DB records ───────────────────
+        # 4c: Match against existing DB records
         try:
             existing_db = get_active_promos_for_bank(bank_id)
             if existing_db:
@@ -243,22 +267,19 @@ def main() -> int:
         except Exception as exc:
             print(f'    ⚠️  DB-match error for {bank_name}: {exc} — formula pass only')
 
-        # 4d: Save to DB ───────────────────────────────────────────
+        # 4d: Save to DB
         total_extracted += len(promos)
         try:
             db_result = save_promotions(
                 bank_id, bank_name, promos,
                 current_run_id = current_run_id,
-                today_str      = RUN_DATE,       # share the single run date
+                today_str      = RUN_DATE,
             )
         except Exception as exc:
             print(f'    ❌ save_promotions error for {bank_name}: {exc}')
             continue
 
-        # Only record this bank as successfully saved so Step 5 only
-        # marks stale rows for banks where last_seen was actually refreshed.
         banks_ai_saved.append(bank_id)
-
         total_new     += db_result['new']
         total_updated += db_result['updated']
         print(
@@ -276,33 +297,20 @@ def main() -> int:
     print('\nStep 5 ── Mark stale / old promos inactive')
 
     if not ai_ok:
-        # AI was unavailable — save_promotions() was never called for any
-        # bank, so last_seen was never updated.  Running mark_stale_as_inactive
-        # now would flip every row to active=0, wiping the entire dataset.
-        # Skip both staleness passes to preserve the existing DB state.
         print(
             '  ⚠️  AI unavailable — skipping mark_stale_as_inactive and '
             'mark_inactive_old to preserve existing data'
         )
     elif not banks_ai_saved:
-        # AI was available but every bank either failed extraction or
-        # save_promotions raised — same risk: last_seen was never refreshed.
         print(
             '  ⚠️  No banks were successfully saved this run — '
             'skipping mark_stale_as_inactive to avoid false-expiry'
         )
     else:
-        # Pass RUN_DATE so mark_stale_as_inactive uses the exact same
-        # calendar date that save_promotions wrote into last_seen.
-        # Without this, a midnight UTC boundary between the two calls
-        # would cause every row just saved to be immediately deactivated.
         mark_stale_as_inactive(banks_ai_saved, today_str=RUN_DATE)
         mark_inactive_old(days_threshold=90)
 
     # ── Step 5b: Post-staleness sanity check ─────────────────────
-    # If the DB is now empty despite having just saved data, something went
-    # wrong (most likely a date-skew wipe).  Attempt automatic recovery
-    # before touching data.json.
     _active_after_stale = get_active_promotions(include_bau=True)
     if not _active_after_stale and banks_ai_saved:
         print(
@@ -312,20 +320,19 @@ def main() -> int:
         recovered = reactivate_promotions_seen_on(RUN_DATE)
         if not recovered:
             print(
-                '  ❌ Recovery found nothing — data.json will NOT be '
-                'overwritten to preserve the existing site data'
+                '  ❌ Recovery found nothing — attempting broad recovery'
             )
-    elif not _active_after_stale:
+            reactivate_most_recently_seen(window_days=7)
+    elif not _active_after_stale and not banks_ai_saved:
+        # AI was unavailable — the Step 2b recovery should already have
+        # restored data.  If still empty, log it but do not overwrite.
         print(
-            '  ⚠️  0 active promotions in DB (no banks were saved this run) '
-            '— data.json will NOT be overwritten'
+            '  ⚠️  Still 0 active promotions after Step 2b recovery attempt'
         )
 
     # ── Step 6: Export data.json for website ─────────────────────
     print('\nStep 6 ── Export data.json for website')
 
-    # Guard: re-read the post-recovery count.  Never overwrite a good
-    # data.json with one containing zero active promotions.
     _active_for_export = get_active_promotions(include_bau=True)
     if not _active_for_export:
         print(
@@ -336,14 +343,20 @@ def main() -> int:
         export_to_json(DATA_JSON_PATH)
 
         _run_ts = datetime.now().strftime('%Y-%m-%d %H:%M')
+        # Flag AI unavailability in data.json so the frontend can surface it
+        _extra_patch = {'updated': _run_ts, 'last_updated': _run_ts}
+        if not ai_ok:
+            _extra_patch['ai_unavailable'] = True
+            _extra_patch['cached_data']    = True
         try:
             with open(DATA_JSON_PATH, 'r', encoding='utf-8') as _f:
                 _jdata = _json.load(_f)
-            _jdata['updated']      = _run_ts
-            _jdata['last_updated'] = _run_ts
+            _jdata.update(_extra_patch)
             with open(DATA_JSON_PATH, 'w', encoding='utf-8') as _f:
                 _json.dump(_jdata, _f, ensure_ascii=False, indent=2)
             print(f'  ✅ data.json timestamp patched → {_run_ts}')
+            if not ai_ok:
+                print('  ℹ️  data.json flagged as cached (ai_unavailable=true)')
         except Exception as exc:
             print(f'  ⚠️  data.json timestamp patch failed: {exc}')
 
@@ -361,7 +374,7 @@ def main() -> int:
     for bid, count in summary['by_bank'].items():
         print(f'    {bid.upper()}: {count} active')
 
-    # ── Step 8: Strategic insights + weekly new promos ────────────
+    # ── Step 8: Strategic insights ────────────────────────────────
     print('\nStep 8 ── Generate AI strategic insights')
     all_active_with_bau = get_active_promotions(include_bau=True)
     bau_count_insights  = sum(1 for p in all_active_with_bau if p.get('is_bau', False))
@@ -372,19 +385,14 @@ def main() -> int:
         f'{len(all_active_with_bau) - bau_count_insights} time-limited)'
     )
 
-    # Build bank-name → promos map from the same DB snapshot as data.json.
     promos_by_name: dict = {}
     for p in all_active_with_bau:
         bname = p.get('bank_name') or p.get('bName') or p.get('bank') or 'Unknown'
         promos_by_name.setdefault(bname, []).append(p)
 
-    # Email lists: same DB snapshot, non-BAU only.
     all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
     new_promos_email = [p for p in new_promos          if not p.get('is_bau', False)]
 
-    # Promotions first seen in the past 6 days, excluding today's new batch.
-    # These populate a "new this week" section in the email so readers don't
-    # miss promotions that were new on previous days this week.
     new_promos_week_raw   = get_new_promotions_last_n_days(
         days           = 6,
         include_bau    = False,
@@ -409,23 +417,25 @@ def main() -> int:
             print(f'  ⚠️  Insights error: {exc}')
 
     if strategic_insights:
-        # Patch data.json so the website can read data.strategic_insights
-        # directly from the same file it already fetches — no extra request.
         _patch_data_json(DATA_JSON_PATH, {'strategic_insights': strategic_insights})
     else:
-        # Write an explicit null so the frontend can distinguish
-        # "not yet generated" from a network error loading data.json.
         _patch_data_json(DATA_JSON_PATH, {'strategic_insights': None})
         print('  ⚠️  Insights unavailable — continuing without it')
 
     # ── Step 9: Build & send email ────────────────────────────────
     print('\nStep 9 ── Build & send email')
+
+    # When AI was unavailable we still want a useful email — the
+    # recovery in Step 2b ensures all_promos_email is populated from
+    # the last known good state.  Pass ai_unavailable=True so the
+    # email body shows a clear "cached data" notice.
     html = build_html_email(
         promotions_data    = all_promos_email,
         scraped_data       = scraped_by_name,
         strategic_insights = strategic_insights,
         new_promos         = new_promos_email,
         new_promos_week    = new_promos_week_email,
+        ai_unavailable     = not ai_ok,
     )
     print('  ✅ HTML email built')
 
@@ -436,6 +446,12 @@ def main() -> int:
     _save_html_fallback(html, output_path)
 
     smtp_ready = all([addr, pwd, to])
+
+    # Use a modified subject when showing cached data
+    email_subject = (
+        f'🏦 VBank Daily Report — {datetime.now().strftime("%d %b %Y")} '
+        f'{"[Cached Data — AI Unavailable]" if not ai_ok else ""}'
+    ).strip()
 
     if _NO_EMAIL:
         print('  📴 Email skipped (--no-email)')
@@ -454,6 +470,7 @@ def main() -> int:
         try:
             success = send_email(
                 html_content    = html,
+                subject         = email_subject,
                 recipient       = to,
                 new_promos      = new_promos_email,
                 promotions_data = all_promos_email,
@@ -481,6 +498,7 @@ def main() -> int:
         f'🤖 deduped:{total_deduped} matched:{total_db_matched}  |  '
         f'⚙️  {bau_count_insights} BAU  |  '
         f'📦 DB:{db_stats.get("total_promotions", "?")} total'
+        + (f'  |  ⚠️  AI UNAVAILABLE (cached)' if not ai_ok else '')
     )
     print(f'{"═"*60}\n')
     return 0

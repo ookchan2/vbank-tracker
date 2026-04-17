@@ -25,11 +25,6 @@ def _get_conn() -> sqlite3.Connection:
 
 @contextmanager
 def _db_connection():
-    """
-    Context manager that opens, yields, and closes a connection.
-    Replaces the repetitive try/finally/conn.close() pattern in every function
-    and ensures the connection is always closed even if the caller raises.
-    """
     conn = _get_conn()
     try:
         yield conn
@@ -522,10 +517,8 @@ def save_promotions(
     bank_name: str,
     promotions: List[Dict],
     current_run_id: int = 0,
-    today_str: str = None,   # shared run date — prevents midnight UTC skew
+    today_str: str = None,
 ) -> Dict:
-    # Use the caller-supplied date so that last_seen and mark_stale_as_inactive
-    # are always compared against the exact same calendar date string.
     today = today_str or datetime.now().strftime('%Y-%m-%d')
     stats = {'new': 0, 'updated': 0, 'skipped': 0}
 
@@ -644,12 +637,10 @@ def save_promotions(
 
 def mark_stale_as_inactive(
     bank_ids_scraped: List[str],
-    today_str: str = None,   # shared run date — must match save_promotions
+    today_str: str = None,
 ) -> int:
     if not bank_ids_scraped:
         return 0
-    # Use the supplied date so the comparison is always against the same
-    # calendar date that was written into last_seen by save_promotions.
     today_str = today_str or datetime.now().strftime('%Y-%m-%d')
     total = 0
     with _db_connection() as conn:
@@ -692,12 +683,7 @@ def mark_inactive_old(days_threshold: int = 90) -> int:
 def reactivate_promotions_seen_on(date_str: str) -> int:
     """
     Emergency recovery: reactivate all promotions whose last_seen date matches
-    date_str but were incorrectly marked inactive (e.g. by a date-skew bug
-    where save_promotions and mark_stale_as_inactive sampled datetime() on
-    opposite sides of a UTC midnight boundary).
-
-    Called automatically by main() when a post-staleness sanity check detects
-    0 active promotions immediately after a successful save run.
+    date_str but were incorrectly marked inactive (e.g. by a date-skew bug).
     """
     with _db_connection() as conn:
         try:
@@ -716,6 +702,56 @@ def reactivate_promotions_seen_on(date_str: str) -> int:
         except Exception as exc:
             conn.rollback()
             print(f'  ❌ reactivate_promotions_seen_on error: {exc}')
+            return 0
+
+
+def reactivate_most_recently_seen(window_days: int = 7) -> int:
+    """
+    Emergency recovery for the AI-unavailable + empty-DB scenario.
+
+    Finds the most recent last_seen date across ALL promotions in the DB, then
+    reactivates every inactive promotion whose last_seen falls within
+    `window_days` of that date.  This restores the website and email to the
+    last known good state so they never show zero while awaiting the next
+    AI-enabled run.
+
+    window_days=7 means: if the last successful run was on 2026-04-14, all
+    promotions last seen on 2026-04-07 or later will be reactivated.
+    """
+    with _db_connection() as conn:
+        try:
+            row = conn.execute(
+                "SELECT MAX(DATE(last_seen)) AS max_date FROM promotions"
+            ).fetchone()
+            if not row or not row['max_date']:
+                print('  ⚠️  Recovery: DB is completely empty — nothing to reactivate')
+                return 0
+
+            max_date_str = row['max_date']
+            max_date     = datetime.strptime(max_date_str, '%Y-%m-%d')
+            cutoff       = (max_date - timedelta(days=window_days)).strftime('%Y-%m-%d')
+
+            cur = conn.execute(
+                "UPDATE promotions SET active = 1 "
+                "WHERE DATE(last_seen) >= ? AND active = 0",
+                (cutoff,)
+            )
+            conn.commit()
+            count = cur.rowcount
+            if count:
+                print(
+                    f'  🔄 Recovery: reactivated {count} promo(s) '
+                    f'(last_seen >= {cutoff};  most recent batch: {max_date_str})'
+                )
+            else:
+                print(
+                    f'  ⚠️  Recovery: all promotions already active '
+                    f'(most recent last_seen: {max_date_str})'
+                )
+            return count
+        except Exception as exc:
+            conn.rollback()
+            print(f'  ❌ reactivate_most_recently_seen error: {exc}')
             return 0
 
 
@@ -749,15 +785,6 @@ def get_new_promotions_last_n_days(
     include_bau: bool = False,
     exclude_run_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    """
-    Return active promotions first seen within the past `days` days,
-    excluding today's date (so it complements get_new_promotions_for_run
-    which covers today).
-
-    Pass exclude_run_id=current_run_id to also exclude any rows whose
-    first_run_id matches the current run — a belt-and-suspenders guard
-    in case created_at and the run boundary straddle midnight.
-    """
     since = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     today = datetime.now().strftime('%Y-%m-%d')
 
@@ -825,11 +852,6 @@ def get_active_promos_for_bank(bank_id: str) -> List[Dict[str, Any]]:
 
 
 def get_promotions_by_bank_name(bank_name: str) -> List[Dict[str, Any]]:
-    """
-    Return all active promotions (full rows) for a given bank_name string.
-    Used as the db_fetch_fn passed to ai_helper.generate_strategic_insights()
-    so that supplement_from_db() can fill sparse banks from the DB.
-    """
     with _db_connection() as conn:
         try:
             return _to_dicts(conn.execute(
@@ -843,10 +865,6 @@ def get_promotions_by_bank_name(bank_name: str) -> List[Dict[str, Any]]:
 
 
 def get_db_stats() -> Dict[str, Any]:
-    """
-    Lightweight summary of DB state — used in the main() final log line and
-    useful for health-check scripts.
-    """
     with _db_connection() as conn:
         try:
             total    = conn.execute('SELECT COUNT(*) FROM promotions').fetchone()[0]
@@ -997,12 +1015,6 @@ def merge_duplicate_promotions(dry_run: bool = True) -> int:
 # ── 8. Maintenance ────────────────────────────────────────────────────────────
 
 def vacuum_db() -> None:
-    """
-    Reclaim disk space after large deletions (e.g. after mark_inactive_old).
-    SQLite does not reclaim pages automatically; calling VACUUM rewrites the
-    entire database file.  Run this periodically (e.g. weekly) rather than
-    after every run — it is slow on large databases.
-    """
     with _db_connection() as conn:
         try:
             conn.execute('VACUUM')

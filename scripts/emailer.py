@@ -125,7 +125,7 @@ def _types_to_list(types_raw) -> list:
     return []
 
 
-# ── Promotion card (shared by daily + weekly sections) ───────────────────────
+# ── Promotion card ────────────────────────────────────────────────────────────
 
 def _new_promo_card(promo: dict) -> str:
     bank_name    = promo.get('bName') or promo.get('bank_name') or promo.get('bank') or 'Unknown'
@@ -223,10 +223,6 @@ def _new_section_html(
     empty_msg:    str,
     count_label:  str,
 ) -> str:
-    """
-    Generic collapsible 'new promotions' section used for both
-    the daily and weekly email sections.
-    """
     if not promos:
         return f"""
 <tr><td style="height:16px;"></td></tr>
@@ -280,6 +276,7 @@ def _build_plain_text(
     new_promos:      list,
     new_promos_week: list,
     now:             str,
+    ai_unavailable:  bool = False,
 ) -> str:
     non_bau   = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
     today_d   = datetime.now().date()
@@ -303,6 +300,15 @@ def _build_plain_text(
     lines = [
         f'VBank Tracker Daily Report — {now}',
         '=' * 50,
+    ]
+    if ai_unavailable:
+        lines += [
+            '',
+            '⚠️  NOTICE: AI extraction was unavailable today.',
+            '    Data shown is from the last successful AI run (cached).',
+            '    Promotions may not reflect today\'s latest changes.',
+        ]
+    lines += [
         '',
         f'TOTAL PROMOTIONS : {len(non_bau)}',
         f'ACTIVE           : {active_count}',
@@ -320,7 +326,6 @@ def _build_plain_text(
         lines.append(f'  {bname}: {len(promos)}')
     lines.append('')
 
-    # New today
     new_show = [p for p in (new_promos or []) if not p.get('is_bau', False)]
     if new_show:
         lines.append(f'NEWLY LAUNCHED TODAY ({len(new_show)}):')
@@ -329,12 +334,11 @@ def _build_plain_text(
             title = p.get('title') or p.get('name') or '?'
             tc    = p.get('tc_link') or p.get('url') or ''
             lines.append(f'  [{bank}] {title}')
-            if p.get('period'): lines.append(f'    Period : {p["period"]}')
+            if p.get('period'): lines.append(f'    Period      : {p["period"]}')
             if p.get('quota'):  lines.append(f'    Eligibility : {p["quota"]}')
             if tc:              lines.append(f'    Source      : {tc}')
         lines.append('')
 
-    # New this week
     week_show = [p for p in (new_promos_week or []) if not p.get('is_bau', False)]
     if week_show:
         lines.append(f'NEW THIS WEEK — PAST 6 DAYS ({len(week_show)}):')
@@ -363,16 +367,8 @@ def build_html_email(
     strategic_insights: dict = None,
     new_promos:         list = None,
     new_promos_week:    list = None,
+    ai_unavailable:     bool = False,   # ← NEW: shows cached-data notice
 ) -> str:
-    """
-    Builds the daily HTML email.
-
-    Sections:
-      1. Overall stats
-      2. Bank breakdown
-      3. 🆕 Newly Launched Today   — start_date >= today, created_at == today
-      4. 📅 New This Week           — created_at in past 6 days, start_date within window
-    """
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
     now             = datetime.now().strftime('%d %b %Y, %H:%M HKT')
@@ -475,6 +471,30 @@ def build_html_email(
   </td>
 </tr>"""
 
+    # ── AI unavailable cached-data notice banner ──────────────────
+    ai_notice_html = ''
+    if ai_unavailable:
+        ai_notice_html = """
+<tr><td style="height:16px;"></td></tr>
+<tr>
+  <td style="background:#fffbeb;border-radius:12px;padding:16px 20px;
+             border:1px solid #fcd34d;border-left:4px solid #f59e0b;">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="vertical-align:middle;width:36px;font-size:24px;">⚠️</td>
+      <td style="vertical-align:middle;">
+        <div style="font-size:13px;font-weight:800;color:#92400e;margin-bottom:3px;">
+          AI Extraction Unavailable Today — Showing Cached Data
+        </div>
+        <div style="font-size:12px;color:#b45309;line-height:1.5;">
+          The OPENAI_API_KEY was not available during this run, so no new promotions
+          were extracted or classified. The data shown below reflects the last
+          successful AI run. Promotions may not include today's latest changes.
+        </div>
+      </td>
+    </tr></table>
+  </td>
+</tr>"""
+
     # ── Section: Newly Launched Today ────────────────────────────
     today_section = _new_section_html(
         promos       = new_promos_show,
@@ -487,7 +507,7 @@ def build_html_email(
         count_label  = '{count} new promotion{s}',
     )
 
-    # ── Section: New This Week (past 6 days, not today) ──────────
+    # ── Section: New This Week ────────────────────────────────────
     week_section = _new_section_html(
         promos       = new_promos_wk_show,
         heading      = 'New This Week',
@@ -530,6 +550,9 @@ def build_html_email(
     </div>
   </td></tr>
   <tr><td style="height:20px;"></td></tr>
+
+  <!-- AI UNAVAILABLE NOTICE (shown only when ai_unavailable=True) -->
+  {ai_notice_html}
 
   <!-- OVERALL STATS -->
   <tr><td style="background:#ffffff;border-radius:14px;
@@ -624,6 +647,7 @@ def send_email(
     new_promos:      list = None,
     new_promos_week: list = None,
     promotions_data: list = None,
+    ai_unavailable:  bool = False,
 ) -> bool:
     smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.getenv('SMTP_PORT', '587'))
@@ -656,7 +680,9 @@ def send_email(
         print(f'❌ Missing env vars: {", ".join(missing)}')
         return False
 
-    subject = subject or f'🏦 VBank Daily Report — {datetime.now().strftime("%d %b %Y")}'
+    if not subject:
+        base = f'🏦 VBank Daily Report — {datetime.now().strftime("%d %b %Y")}'
+        subject = f'{base} [Cached Data — AI Unavailable]' if ai_unavailable else base
 
     now_str    = datetime.now().strftime('%d %b %Y, %H:%M HKT')
     plain_text = _build_plain_text(
@@ -664,6 +690,7 @@ def send_email(
         new_promos      or [],
         new_promos_week or [],
         now_str,
+        ai_unavailable  = ai_unavailable,
     )
 
     msg            = MIMEMultipart('alternative')
