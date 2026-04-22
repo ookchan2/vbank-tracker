@@ -399,8 +399,24 @@ _CONCRETE_EVIDENCE_RE = re.compile(
     re.IGNORECASE,
 )
 
-# ── UPDATED: Investment split into Stock Trading + Crypto Trading ─────────────
+# ── UPDATED: Stock split into HK Stock Trading + US Stock Trading ─────────────
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    # ── HK Stock Trading (HKEX-listed shares) ────────────────────────────────
+    'HK Stock Trading': [
+        'hk stock', 'hong kong stock', 'hkex', 'local stock',
+        'hk securities', 'hk shares', 'hong kong shares',
+        'hk brokerage', 'stock', 'securities', 'brokerage', 'ipo',
+        'trading fee', 'platform fee', '$0 commission', 'commission',
+        'powerdraw', 'free stock', 'equities', 'share trading',
+    ],
+    # ── US Stock Trading (NYSE / NASDAQ) ─────────────────────────────────────
+    'US Stock Trading': [
+        'us stock', 'us equities', 'us securities', 'us shares',
+        'american stock', 'nyse', 'nasdaq', 'us market',
+        'us brokerage', '$0 commission', 'commission',
+        'trading fee', 'platform fee', 'stock', 'equities',
+    ],
+    # ── Generic fallback (used by cross-check when HK/US not distinguishable) ─
     'Stock Trading': [
         'stock', 'securities', 'brokerage', 'ipo',
         'trading fee', 'platform fee', '$0 commission', 'commission',
@@ -512,7 +528,11 @@ def _cross_check_best_for_from_strengths(
         if bank.lower() not in ('none', '', 'n/a'):
             continue
 
-        keywords   = _CATEGORY_KEYWORDS.get(cat, [])
+        # Try exact category first, then fall back to generic 'Stock Trading'
+        keywords = _CATEGORY_KEYWORDS.get(cat, [])
+        if not keywords and cat in ('HK Stock Trading', 'US Stock Trading'):
+            keywords = _CATEGORY_KEYWORDS.get('Stock Trading', [])
+
         candidates: list[tuple[str, str]] = []
         for bname, bdata in bank_analysis.items():
             for s in (bdata.get('strengths') or []):
@@ -829,9 +849,12 @@ def _build_bank_summary_lines(promos: list) -> list[str]:
     return lines
 
 
-# ── UPDATED: Investment split into Stock Trading + Crypto Trading ─────────────
+# ── UPDATED: Stock split into HK Stock Trading + US Stock Trading ─────────────
 _DIAGNOSTIC_CATEGORIES: list[tuple[str, list[str]]] = [
-    ('Stock Trading',      ['投資', 'stock', 'securities', 'brokerage', 'ipo', '$0', 'commission']),
+    ('HK Stock Trading',   ['投資', 'hk stock', 'hong kong stock', 'hkex', 'local stock',
+                             'securities', 'brokerage', 'ipo', 'commission', 'trading fee']),
+    ('US Stock Trading',   ['投資', 'us stock', 'us equities', 'nasdaq', 'nyse',
+                             'american stock', 'commission', 'trading fee']),
     ('Crypto Trading',     ['投資', 'crypto', 'bitcoin', 'virtual asset', 'digital asset', 'cryptocurrency']),
     ('Fund Investment',    ['投資', 'fund', '基金', '$0認購費', 'subscription fee']),
     ('Referral Bonus',     ['推薦', 'referral', '多友多賞', 'invite']),
@@ -1041,28 +1064,36 @@ analysis or mark it as past.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 3 — CHINESE TYPE TAG → ENGLISH CATEGORY MAPPING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  [推薦]                   → "Referral Bonus"
-  [投資] + fund/基金       → "Fund Investment"
-  [投資] + stock/securities/brokerage/IPO → "Stock Trading"
-  [投資] + crypto/bitcoin/virtual asset   → "Crypto Trading"
-  [消費]                   → "Spending/CashBack"
-  [迎新]                   → "Welcome Bonus"
-  [旅遊]                   → "Travel"
-  [貸款]                   → "Loan APR"
-  [外匯]                   → "FX/Multi-Currency"
+  [推薦]                              → "Referral Bonus"
+  [投資] + fund/基金                  → "Fund Investment"
+  [投資] + hk stock/hkex/local stock/
+          securities/brokerage/IPO    → "HK Stock Trading"
+  [投資] + us stock/nyse/nasdaq/
+          american stock/us equities  → "US Stock Trading"
+  [投資] + crypto/bitcoin/
+          virtual asset               → "Crypto Trading"
+  [消費]                              → "Spending/CashBack"
+  [迎新]                              → "Welcome Bonus"
+  [旅遊]                              → "Travel"
+  [貸款]                              → "Loan APR"
+  [外匯]                              → "FX/Multi-Currency"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 4 — STRICT CATEGORY DEFINITIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Stock Trading    → stock/HK/US/A-share trading fee waivers, brokerage commissions, IPO rewards.
-• Crypto Trading   → crypto/virtual asset trading fee waivers, platform fees, digital asset promos.
-• Fund Investment  → fund subscription or switching fee promotions.
+• HK Stock Trading  → HKEX-listed stock trading fee waivers, zero brokerage
+                      commissions for HK shares, IPO cash/stock rewards.
+• US Stock Trading  → NYSE/NASDAQ stock trading fee waivers, zero brokerage
+                      commissions for US shares, platform fee for US equities.
+• Crypto Trading    → crypto/virtual asset trading fee waivers, platform fees,
+                      digital asset promotions.
+• Fund Investment   → fund subscription or switching fee promotions.
 • Spending/CashBack → card cashback or merchant spending rewards.
-• Welcome Bonus    → new customer account opening cash/gift rewards.
-• Travel           → travel insurance, flight/hotel, Asia Miles, Trip.com, lounge.
-• Loan APR         → personal loan with lowest specific APR quoted.
+• Welcome Bonus     → new customer account opening cash/gift rewards.
+• Travel            → travel insurance, flight/hotel, Asia Miles, Trip.com, lounge.
+• Loan APR          → personal loan with lowest specific APR quoted.
 • FX/Multi-Currency → FX rate promotions, global wallet, remittance.
-• Referral Bonus   → referral programs with a stated HKD reward amount.
+• Referral Bonus    → referral programs with a stated HKD reward amount.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 5 — MANDATORY WINNER SELECTION RULES
@@ -1071,7 +1102,10 @@ Output "None" ONLY when there is absolutely zero evidence of any promotion
 across ALL banks that relates to that category.
 
 CHECKLIST — before writing "None" for any category, verify:
-  Stock Trading    → ANY line with stock / brokerage / commission / IPO / free stock
+  HK Stock Trading → ANY line with hk stock / hkex / securities /
+                     brokerage / commission / IPO
+  US Stock Trading → ANY line with us stock / us equities / nyse /
+                     nasdaq / american stock
   Crypto Trading   → ANY line with crypto / bitcoin / virtual asset / digital asset
   Fund Investment  → ANY line with fund / 基金 / $0認購費 / zero subscription
   Referral Bonus   → ANY line tagged [推薦] OR with referral / 推薦 / 多友多賞
@@ -1094,15 +1128,12 @@ For EVERY best_for entry you MUST populate:
 
 • similar_banks: List ALL other banks that ALSO offer a similar promotion
   in the same category (even if their offer is weaker or limited).
-  This shows users the competitive landscape, e.g. for "$0 stock trading"
-  if multiple banks offer it, list them ALL — then explain why one wins.
   Example: ["Mox Bank", "WeLab Bank", "livi bank"]
 
 • why_others_lose: One or two sentences explaining WHY the winner beats
   each similar bank. Be specific — use fees, caps, expiry dates, scope.
   Example: "Mox only waives commission for the first 3 months;
-           WeLab requires 10+ trades/month to qualify; ZA Bank offers
-           permanent $0 commission with no trade minimum or cap."
+           WeLab requires 10+ trades/month to qualify."
 
   If similar_banks is empty (winner is the ONLY bank with this category),
   set why_others_lose to "Only bank currently offering this promotion."
@@ -1112,18 +1143,64 @@ SECTION 8 — SELF-CONSISTENCY CHECK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Before writing final JSON: verify that every "None" in best_for is NOT
 contradicted by a matching strength in bank_analysis for the same category.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9 — VERIFIED FACTS ABOUT ZA BANK STOCK TRADING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Use these verified facts when evaluating ZA Bank for stock trading categories:
+
+  ✅ ZA Bank (ZA Invest) charges $0 brokerage COMMISSION for BOTH HK stocks
+     AND US stocks — there is NO per-trade commission fee.
+  ⚠️  A platform fee (separate from commission) DOES apply at ZA Bank.
+  ❌ "StockBack" is a card cashback reward on card spending — it is NOT a
+     trading commission. Do NOT confuse StockBack with a trading fee.
+  ❌ NEVER state "ZA Bank charges trading commission" — this is factually
+     wrong. ZA Bank is commission-free; it only charges a platform fee.
+
+  When comparing ZA Bank to competitors:
+  • Commission = $0 at ZA Bank → strong advantage vs banks that charge commission
+  • Platform fee = charged → potential disadvantage vs banks with zero platform fee
+  • Evaluate each sub-category (HK vs US) separately if data supports it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 10 — FORBIDDEN COMPARISONS IN BANK ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The following are NOT valid competitive advantages and must NOT appear
+in vs_za_pros, vs_za_cons, or bank strengths:
+
+  ❌ Account opening speed comparisons
+     (e.g. "5-minute account opening", "faster onboarding than ZA",
+      "account opening in 3 min vs ZA's 2 min")
+     REASON: ALL Hong Kong virtual banks offer digital account opening
+     in minutes. This is a baseline UX feature — NOT a financial product
+     advantage. Including it as a "pro" is misleading and inaccurate.
+
+  ❌ Generic app speed / UI claims without a specific financial benefit
+  ❌ "Quick sign-up" or "instant registration" as a competitive differentiator
+
+  ✅ VALID advantages: specific fee savings (in HKD or %), named product
+     features with concrete benefit amounts, higher cashback %, lower APR,
+     more fund choices, longer promotion periods, higher referral payouts.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Return this EXACT JSON structure (no markdown, no code fences):
 {{
   "best_for": [
     {{
-      "category":       "Stock Trading",
+      "category":       "HK Stock Trading",
       "bank":           "BankName",
-      "detail":         "specific stock trading fee detail",
+      "detail":         "specific HK stock trading fee detail (commission and/or platform fee)",
       "is_bau":         false,
       "similar_banks":  ["BankA", "BankB"],
-      "why_others_lose":"BankA only waives for 3 months; BankB caps at 10 trades/month"
+      "why_others_lose":"BankA charges HKD X commission per trade; BankB has higher platform fee"
+    }},
+    {{
+      "category":       "US Stock Trading",
+      "bank":           "BankName",
+      "detail":         "specific US stock trading fee detail (commission and/or platform fee)",
+      "is_bau":         false,
+      "similar_banks":  ["BankA"],
+      "why_others_lose":"BankA charges commission on US trades; winner offers $0 commission"
     }},
     {{
       "category":       "Crypto Trading",
@@ -1202,7 +1279,7 @@ Return this EXACT JSON structure (no markdown, no code fences):
       "focus": "keywords",
       "strengths": ["s1", "s2", "s3"],
       "expiring_alert": "",
-      "vs_za_pros": "pros vs ZA Bank",
+      "vs_za_pros": "pros vs ZA Bank (NO account opening speed comparisons)",
       "vs_za_cons": "cons vs ZA Bank"
     }}
   }}

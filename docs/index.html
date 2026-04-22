@@ -72,7 +72,6 @@
       </div>
       <div class="bg-green-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
         <div class="text-2xl font-black text-green-300" id="statActive">–</div>
-        <!-- ── CHANGED: "Valid ✅" → "Active ✅" ── -->
         <div class="text-xs text-gray-300 uppercase tracking-wide">Active ✅</div>
       </div>
       <div class="bg-orange-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
@@ -112,7 +111,6 @@
                  focus:outline-none focus:ring-2 focus:ring-indigo-300"
           oninput="applyFilters()">
       </div>
-      <!-- ── CHANGED: "Valid" → "Active" in dropdown options ── -->
       <select id="statusFilter" onchange="applyFilters()"
         class="border border-gray-200 rounded-lg px-3 py-2 text-sm
                focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
@@ -380,17 +378,26 @@ const CAT_FILTER_LIST = [
   { key:'Others 其他',        label:'📋 Others',     bg:'#6b7280' },
 ];
 
-// ── CHANGED: split Investment → Stock Trading + Crypto Trading ──────────────
-// Also added "Investment (Stock/Crypto Trading)" as legacy fallback key so
-// old data.json generated before the split still shows "How AI Defines Best".
+// ── HOW_DEFINED: split Stock into HK + US; add legacy fallbacks ───────────────
 const HOW_DEFINED = {
+  // ── New split categories ──────────────────────────────────────────────────
+  "HK Stock Trading":
+    "Zero or lowest brokerage commission for HKEX-listed (HK) stocks, best IPO cash/stock reward. " +
+    "Note: commission-free ≠ platform-fee-free — evaluate the full cost including platform fees.",
+  "US Stock Trading":
+    "Zero or lowest brokerage commission for NYSE/NASDAQ-listed (US) stocks, or most competitive " +
+    "platform fee structure. Note: commission-free ≠ platform-fee-free.",
+  // ── Legacy fallback: old data.json before HK/US split ────────────────────
   "Stock Trading":
-    "Zero or lowest trading fee/commission for HK/US/A-share stocks, best IPO reward, or most comprehensive brokerage platform with no trade minimum.",
-  "Crypto Trading":
-    "Zero or lowest crypto/virtual-asset trading or platform fee, widest digital-asset selection, or strongest permanent crypto incentive.",
-  // ── Legacy fallback: shown when old data.json has merged category ──
+    "Zero or lowest trading fee/commission for HK/US/A-share stocks, best IPO reward, or most " +
+    "comprehensive brokerage platform with no trade minimum.",
+  // ── Legacy fallback: even older merged Investment category ────────────────
   "Investment (Stock/Crypto Trading)":
-    "Stock Trading: zero brokerage/commission for HK/US stocks, best IPO reward. Crypto Trading: zero platform fee for virtual assets. Best bank leads in both.",
+    "HK/US Stock Trading: zero brokerage commission, best IPO reward. " +
+    "Crypto Trading: zero platform fee for virtual assets. Best bank leads in both sub-categories.",
+  "Crypto Trading":
+    "Zero or lowest crypto/virtual-asset trading or platform fee, widest digital-asset selection, " +
+    "or strongest permanent crypto incentive.",
   "Fund Investment":
     "Widest range of funds at $0 subscription fee, or permanent fee waiver with no expiry.",
   "Spending/CashBack":
@@ -440,30 +447,20 @@ function bauTag(p) {
   return `<span class="cat-tag" style="background:#64748b">⚙️ BAU</span>`;
 }
 
-// ── FIXED: getStatus — DB active flag checked FIRST ───────────────────────
-// This ensures email counts (which use DB active=1 rows) match website counts.
-// After the database.py fix, mark_stale_as_inactive no longer deactivates
-// promos with future end_dates, so active=false + future end_date is rare.
-// Respecting the active flag keeps email and website in sync.
+// ── getStatus: DB active flag first, then end_date ────────────────────────
 function getStatus(p) {
-  // 1. If DB marked it inactive → always expired (aligns with email behavior)
   if (p.active === false) return 'expired';
-
-  // 2. If we have an explicit end_date, use it as the expiry signal
   if (p.end_date) {
     const diff = (new Date(p.end_date) - new Date()) / 86400000;
-    if (diff < 0)   return 'expired';   // end_date already passed
-    if (diff <= 30) return 'expiring';  // expires within 30 days
-    return 'active';                    // end_date is in the future → ACTIVE
+    if (diff < 0)   return 'expired';
+    if (diff <= 30) return 'expiring';
+    return 'active';
   }
-
-  // 3. No end_date → ongoing / active
   if (p.period === 'Ongoing' ||
       (p.period && p.period.toLowerCase().includes('ongoing'))) return 'active';
   return 'active';
 }
 
-// ── CHANGED: "Valid" → "Active" in status badge ───────────────────────────
 function statusBadge(p) {
   const s = getStatus(p);
   if (s === 'active')
@@ -485,32 +482,25 @@ function hktDaysAgo(n) {
   return new Date(Date.now() + 8*3600000 - n*86400000).toISOString().substring(0,10);
 }
 
-// ── FIXED: isNewToday — checks DB active flag to match email logic ─────────
 function isNewToday(p, today) {
   if (p.is_bau) return false;
-  // ── ADDED: respect DB active flag — inactive promos are not "new today" ──
   if (p.active === false) return false;
   if (getStatus(p) === 'expired') return false;
   const created = (p.created_at||'').substring(0,10);
   if (created !== today) return false;
-  // Start date gate: if start_date < today the promo is NOT new today
   const start = (p.start_date||'').substring(0,10);
   if (start && start < today) return false;
   return true;
 }
 
-// ── FIXED: isNewThisWeek — checks DB active flag to match email logic ──────
 function isNewThisWeek(p, today) {
   if (p.is_bau) return false;
-  // ── ADDED: respect DB active flag — inactive promos are not "new this week" ──
   if (p.active === false) return false;
   if (getStatus(p) === 'expired') return false;
   const created   = (p.created_at||'').substring(0,10);
   const sixAgo    = hktDaysAgo(6);
   const yesterday = hktDaysAgo(1);
   if (created < sixAgo || created > yesterday) return false;
-  // Start date gate: if start_date predates the "new this week" window,
-  // the promotion was already running before this week
   const start = (p.start_date||'').substring(0,10);
   if (start && start < sixAgo) return false;
   return true;
@@ -544,12 +534,12 @@ function insightsNoDataHtml() {
   <span class="key">"strategic_insights"</span>: {
     <span class="key">"best_for"</span>: [
       {
-        <span class="key">"category"</span>:        <span class="str">"Stock Trading"</span>,
+        <span class="key">"category"</span>:        <span class="str">"HK Stock Trading"</span>,
         <span class="key">"bank"</span>:            <span class="str">"ZA Bank"</span>,
-        <span class="key">"detail"</span>:          <span class="str">"Permanent $0 brokerage commission, no trade minimum"</span>,
+        <span class="key">"detail"</span>:          <span class="str">"$0 brokerage commission for HK stocks; platform fee applies"</span>,
         <span class="key">"is_bau"</span>:          <span class="bool">true</span>,
         <span class="key">"similar_banks"</span>:   [<span class="str">"Mox Bank"</span>, <span class="str">"WeLab Bank"</span>],
-        <span class="key">"why_others_lose"</span>: <span class="str">"Mox only waives for 3 months; WeLab requires 10+ trades/month"</span>
+        <span class="key">"why_others_lose"</span>: <span class="str">"Mox charges commission per trade; WeLab platform fee is higher"</span>
       },
       {
         <span class="key">"category"</span>:        <span class="str">"Crypto Trading"</span>,
@@ -581,7 +571,7 @@ function analysisNoDataHtml() {
             </div>
             <div class="text-amber-700 text-xs mb-3">
               Add a <code class="bg-amber-100 px-1 rounded">strategic_insights.bank_analysis</code>
-              object keyed by bank name. Each bank entry needs:
+              object keyed by bank name.
             </div>
             <pre class="schema-hint">
 {
@@ -592,14 +582,14 @@ function analysisNoDataHtml() {
         <span class="key">"bau_count"</span>:      <span class="num">3</span>,
         <span class="key">"focus"</span>:          <span class="str">"All-round digital banking with cashback and investment"</span>,
         <span class="key">"strengths"</span>: [
-          <span class="str">"1% cashback with no monthly cap"</span>,
-          <span class="str">"Zero-fee stock trading via ZA Invest"</span>,
-          <span class="str">"Welcome bonus up to HKD 500"</span>,
-          <span class="str">"Multi-currency wallet for 11 currencies"</span>,
-          <span class="str">"24/7 AI customer support"</span>,
-          <span class="str">"3.1% p.a. savings with no lock-in"</span>
+          <span class="str">"$0 brokerage commission for HK and US stocks (platform fee applies)"</span>,
+          <span class="str">"Permanent 0% crypto platform fee for new crypto customers"</span>,
+          <span class="str">"2.5% StockBack cashback on card spending"</span>,
+          <span class="str">"Welcome bonus up to HKD 2,026"</span>,
+          <span class="str">"0% fund subscription fee until Jul 2026"</span>,
+          <span class="str">"Multi-currency wallet for 11 currencies"</span>
         ],
-        <span class="key">"expiring_alert"</span>: <span class="str">"3 promotions expire within 30 days"</span>,
+        <span class="key">"expiring_alert"</span>: <span class="str">""</span>,
         <span class="key">"vs_za_pros"</span>:     <span class="bool">null</span>,
         <span class="key">"vs_za_cons"</span>:     <span class="bool">null</span>
       }
@@ -643,13 +633,12 @@ async function loadData() {
 
     strategicInsights = data.strategic_insights || null;
 
-    // ── FIXED: only count DB-active, non-BAU promotions ──────────────────
-    // getStatus() now checks p.active first, so these counts match the email.
+    // ── Count only DB-active, non-BAU, non-expired promos ──────────────────
     const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false && getStatus(p) !== 'expired');
     const activeN      = activeNonBau.filter(p => getStatus(p) === 'active').length;
     const expiringN    = activeNonBau.filter(p => getStatus(p) === 'expiring').length;
     const expiredN     = allPromos.filter(p => !p.is_bau && getStatus(p) === 'expired').length;
-    const totalN       = activeNonBau.length;
+    const totalN       = activeNonBau.length;   // active + expiring, NO past-ended
     const banks        = [...new Set(allPromos.map(p => p.bank_name))];
 
     document.getElementById('statTotal').textContent    = totalN;
@@ -745,7 +734,6 @@ function buildPromoCard(p) {
 function buildNewSections() {
   const today = hktToday();
 
-  // ── New Today ─────────────────────────────────────────────────
   const newToday   = allPromos.filter(p => isNewToday(p, today));
   const todaySec   = document.getElementById('newTodaySection');
   const todayCards = document.getElementById('newTodayCards');
@@ -762,7 +750,6 @@ function buildNewSections() {
     todayCards.innerHTML   = newToday.map(buildPromoCard).join('');
   }
 
-  // ── New This Week ─────────────────────────────────────────────
   const newWeek   = allPromos.filter(p => isNewThisWeek(p, today));
   const weekSec   = document.getElementById('newWeeklySection');
   const weekCards = document.getElementById('newWeeklyCards');
@@ -885,7 +872,7 @@ function buildStrategicInsights(insights) {
     const bank   = item.bank          || 'None';
     const detail = item.detail        || '—';
 
-    // ── HOW_DEFINED lookup — falls back to legacy merged-category key ──────
+    // HOW_DEFINED lookup with HK/US stock + legacy fallbacks
     const standard = (item.standard && item.standard.trim())
                      ? item.standard
                      : (HOW_DEFINED[cat] || '—');

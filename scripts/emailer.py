@@ -125,15 +125,14 @@ def _types_to_list(types_raw) -> list:
     return []
 
 
-# ── Shared expiry helper (used by both email and per-bank stats) ──────────────
-# ── FIXED: only use end_date for expiry detection — no period-text heuristic ──
-# ── This aligns email counts with website getStatus() logic ──────────────────
+# ── Shared expiry helper ──────────────────────────────────────────────────────
+# Uses end_date only — identical logic to the website's getStatus().
+# Returns 'past' | 'expiring' | 'active'.
+# 'past'     = end_date already passed   → NOT counted in total or active
+# 'expiring' = end_date within 30 days   → counted in total + expiring
+# 'active'   = no end_date or far future → counted in total + active
 
 def _classify_promo(p: dict, today_d, threshold_d) -> str:
-    """
-    Returns 'past' | 'expiring' | 'active' for a single non-BAU promotion.
-    Uses end_date only — identical logic to the website's getStatus().
-    """
     ed = p.get('end_date')
     if ed:
         try:
@@ -300,11 +299,11 @@ def _build_plain_text(
     now:             str,
     ai_unavailable:  bool = False,
 ) -> str:
-    non_bau    = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
-    today_d    = datetime.now().date()
-    threshold  = (datetime.now() + timedelta(days=30)).date()
+    non_bau   = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
+    today_d   = datetime.now().date()
+    threshold = (datetime.now() + timedelta(days=30)).date()
 
-    # ── FIXED: use end_date only — no period-text heuristic ──
+    # ── FIXED: use end_date only; 'past' promos excluded from total ──────────
     exp_count  = 0
     past_count = 0
     for p in non_bau:
@@ -314,7 +313,9 @@ def _build_plain_text(
         elif status == 'expiring':
             exp_count += 1
 
-    active_count = len(non_bau) - exp_count - past_count
+    # ── FIXED: total = active + expiring only (mirrors website statTotal) ────
+    total_shown  = len(non_bau) - past_count
+    active_count = total_shown - exp_count
 
     lines = [
         f'VBank Tracker Daily Report — {now}',
@@ -329,7 +330,7 @@ def _build_plain_text(
         ]
     lines += [
         '',
-        f'TOTAL PROMOTIONS : {len(non_bau)}',
+        f'TOTAL PROMOTIONS : {total_shown}',
         f'ACTIVE           : {active_count}',
         f'EXPIRING SOON    : {exp_count}',
         '',
@@ -342,7 +343,9 @@ def _build_plain_text(
 
     lines.append('PROMOTIONS BY BANK:')
     for bname, promos in sorted(banks.items()):
-        lines.append(f'  {bname}: {len(promos)}')
+        # ── FIXED: exclude past-ended from per-bank count ──
+        b_past = sum(1 for p in promos if _classify_promo(p, today_d, threshold) == 'past')
+        lines.append(f'  {bname}: {len(promos) - b_past}')
     lines.append('')
 
     new_show = [p for p in (new_promos or []) if not p.get('is_bau', False)]
@@ -398,24 +401,21 @@ def build_html_email(
     new_promos_week = new_promos_week or []
     now             = datetime.now().strftime('%d %b %Y, %H:%M HKT')
 
-    non_bau_data        = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
-    new_promos_show     = [p for p in new_promos      if not p.get('is_bau', False)]
-    new_promos_wk_show  = [p for p in new_promos_week if not p.get('is_bau', False)]
+    non_bau_data       = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
+    new_promos_show    = [p for p in new_promos      if not p.get('is_bau', False)]
+    new_promos_wk_show = [p for p in new_promos_week if not p.get('is_bau', False)]
 
     banks: dict = {}
     for p in non_bau_data:
         bank = p.get('bName') or p.get('bank_name') or p.get('bank') or 'Unknown'
         banks.setdefault(bank, []).append(p)
 
-    total_promos = len(non_bau_data)
-
     _now       = datetime.now()
     _today_d   = _now.date()
     _threshold = (_now + timedelta(days=30)).date()
 
-    # ── FIXED: use end_date only for expiry classification ──────────────────
-    # Removed period-text month heuristic that caused email/website mismatch.
-    # Now matches website's getStatus() logic exactly.
+    # ── FIXED: classify all non-BAU promos; exclude 'past' from total ────────
+    # Mirrors website getStatus() so email and website numbers match exactly.
     expiring_count = 0
     past_end_count = 0
     for _p in non_bau_data:
@@ -425,7 +425,9 @@ def build_html_email(
         elif _status == 'expiring':
             expiring_count += 1
 
-    active_count = total_promos - expiring_count - past_end_count
+    # FIXED: total = active + expiring (past-ended excluded, matches website)
+    total_promos = len(non_bau_data) - past_end_count
+    active_count = total_promos - expiring_count
 
     sorted_banks = sorted(
         banks.items(),
@@ -437,7 +439,7 @@ def build_html_email(
         color        = _bank_color(bank_name)
         display_name = _bank_display_name(bank_name)
 
-        # ── FIXED: per-bank expiry also uses end_date only ──────────────────
+        # ── FIXED: per-bank counts also exclude past-ended ───────────────────
         b_exp  = 0
         b_past = 0
         for _p in promos:
@@ -447,7 +449,8 @@ def build_html_email(
             elif _status == 'expiring':
                 b_exp += 1
 
-        b_active = len(promos) - b_exp - b_past
+        b_active        = len(promos) - b_exp - b_past
+        b_total_display = len(promos) - b_past   # FIXED: exclude past from total column
 
         exp_cell = (
             f'<span style="display:inline-block;background:#fef3c7;color:#92400e;'
@@ -473,7 +476,7 @@ def build_html_email(
   </td>
   <td style="padding:12px 16px;text-align:center;width:140px;">{exp_cell}</td>
   <td style="padding:12px 16px;text-align:center;width:76px;">
-    <div style="font-size:18px;font-weight:800;color:#6366f1;line-height:1;">{len(promos)}</div>
+    <div style="font-size:18px;font-weight:800;color:#6366f1;line-height:1;">{b_total_display}</div>
     <div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;
                 letter-spacing:.05em;margin-top:2px;">total</div>
   </td>
@@ -571,7 +574,7 @@ def build_html_email(
         <div style="font-size:10px;font-weight:700;color:#9ca3af;
                     text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Total</div>
         <div style="font-size:38px;font-weight:900;color:#6366f1;line-height:1;">{total_promos}</div>
-        <div style="font-size:11px;color:#c4cad4;margin-top:5px;">non-BAU promotions</div>
+        <div style="font-size:11px;color:#c4cad4;margin-top:5px;">non-BAU running</div>
       </td>
       <td width="33%" style="text-align:center;padding:24px 10px;
                               border-right:1px solid #f3f4f6;">
@@ -597,7 +600,7 @@ def build_html_email(
       📊 Promotions by Bank
     </div>
     <div style="font-size:12px;color:#9ca3af;margin-bottom:18px;">
-      Excluding BAU permanent features
+      Excluding BAU permanent features · past-ended promotions not counted
     </div>
     <table width="100%" cellpadding="0" cellspacing="0"
            style="border-collapse:collapse;border:1px solid #f3f4f6;
