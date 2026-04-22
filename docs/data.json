@@ -1,19 +1,19 @@
 {
-  "updated": "2026-04-21 09:14",
+  "updated": "2026-04-22 03:29",
   "promotions": [
     {
       "id": 74,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
       "title": "0 Handling Fee for the First Remittance to Chinese Mainland",
-      "highlight": "🌏 Zero handling fee on first transfer to Chinese Mainland",
-      "description": "Customers can enjoy 0 handling fee when making their first remittance to Chinese Mainland via 'Remit to Chinese Mainland·WeRemit' in the Airstar Bank App. Recipients can receive funds as soon as 1 hour after transfer. One-time offer per customer.",
+      "highlight": "💸 Zero handling fee on your first mainland China transfer",
+      "description": "Use 'Remit to Chinese Mainland·WeRemit' in the Airstar Bank App to enjoy zero handling fees on your first transfer to mainland China. Transfers can arrive as soon as 1 hour after sending.",
       "category": "",
       "start_date": null,
       "end_date": null,
-      "period": "During promotion period (dates not specified)",
-      "quota": "Limited quota, first come, first served. One-time offer per customer.",
-      "cost": "Any amount for remittance",
+      "period": "During promotion period",
+      "quota": "One-time offer per customer. Limited quota, first come, first served",
+      "cost": "Any remittance amount",
       "types": [
         "外匯",
         "消費"
@@ -23,7 +23,7 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 75,
@@ -31,37 +31,37 @@
       "bank_name": "Airstar Bank",
       "title": "Activate Money Safe, Get a Pacific Coffee Voucher",
       "highlight": "☕ Free HKD30 Pacific Coffee e-Cash Voucher",
-      "description": "Customers who deposit any amount into a 'Money Safe' account will receive a HKD30 Pacific Coffee e-Cash Voucher. Money Safe is an anti-fraud feature introduced by the Hong Kong Monetary Authority that allows customers to earn interest while keeping funds secure.",
+      "description": "Deposit any amount into a 'Money Safe' account to receive a HKD30 Pacific Coffee e-Cash Voucher. Money Safe is an anti-fraud feature introduced by HKMA that offers extra protection while still earning savings/time deposit interest rates.",
       "category": "",
       "start_date": null,
       "end_date": null,
-      "period": "Limited time (dates not specified)",
+      "period": "Limited time offer",
       "quota": "Limited quota, first come, first served",
       "cost": "Any deposit amount into Money Safe account",
       "types": [
-        "存款",
-        "消費"
+        "消費",
+        "存款"
       ],
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 76,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
       "title": "Travel with Visa Flight Booking Cash Rebate",
-      "highlight": "✈️ Up to $800 cash rebate on flight bookings",
-      "description": "Visa cardholders can enjoy cash rebates when using their Registered Eligible Visa Card to pay for air tickets booked with select airlines via their designated official Hong Kong or Macau websites. Eligible airlines include Air New Zealand, ANA, Ethiopian Airlines, EVA AIR, and Singapore Airlines.",
+      "highlight": "✈️ Up to HKD800 cash rebate on airline bookings",
+      "description": "Registered Eligible Visa cardholders can receive up to HKD800 cash rebate when booking air tickets with participating airlines (Air New Zealand, ANA, Ethiopian Airlines, EVA AIR or Singapore Airlines) through their official Hong Kong or Macau websites.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Promotion periods vary by airline",
-      "quota": "One-time reward per eligible cardholder",
-      "cost": "Minimum single transaction of $4,000 HKD/MOP for $240 rebate; $8,000 HKD/MOP or above for $800 rebate",
+      "quota": "One-time cash rebate reward per eligible cardholder",
+      "cost": "Minimum single transaction of HKD4,000",
       "types": [
         "旅遊",
         "消費"
@@ -71,21 +71,21 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 77,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
       "title": "Bank Securities Transfer: 7*24 Instant Arrival",
-      "highlight": "🔄 Instant 24/7 securities transfers in HKD, USD, and CNY",
-      "description": "Airstar Bank provides 24/7 securities transfer service with instant arrival. Customers can transfer securities in multiple currencies including HKD, USD, and CNY at any time of the day.",
+      "highlight": "🔄 24/7 instant securities transfers in multiple currencies",
+      "description": "Transfer securities in HKD, USD, and CNY with 24/7 availability and instant arrival. Enjoy seamless cross-currency securities transfers through the Airstar Bank platform.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
       "quota": "No cap",
-      "cost": "Free (subject to terms and conditions)",
+      "cost": "Free",
       "types": [
         "投資",
         "外匯"
@@ -95,20 +95,20 @@
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 79,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
       "title": "Money Safe Protection with Interest",
-      "highlight": "🔒 Enhanced protection against fraud while earning interest",
-      "description": "Money Safe is an anti-fraud feature introduced by the Hong Kong Monetary Authority that provides stronger protection for customers' funds. Customers can secure their funds while still earning Savings or Time Deposit interest rates, with funds unlockable only with an in-person appointment.",
+      "highlight": "🔒 Enhanced fraud protection while earning interest",
+      "description": "Secure your funds against fraud with the Money Safe feature while still earning Savings or Time Deposit interest rates. Funds are unlocked only with in-person appointment for maximum security.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
-      "quota": "No quota, available to all customers",
+      "quota": "No cap",
       "cost": "Free",
       "types": [
         "存款",
@@ -119,15 +119,15 @@
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 80,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
       "title": "Mobile Account Opening in 5 Minutes",
-      "highlight": "⏱️ Open an account in as fast as 5 minutes via mobile phone",
-      "description": "Airstar Bank offers fast mobile account opening that can be completed in as little as 5 minutes. This service supports both Hong Kong residents and visitors who are physically present in Hong Kong at the time of application.",
+      "highlight": "⏱️ Open an account in as fast as 5 minutes via mobile",
+      "description": "Open an Airstar Bank account in as little as 5 minutes through the mobile app. Available for both Hong Kong residents and visitors physically present in Hong Kong.",
       "category": "",
       "start_date": null,
       "end_date": null,
@@ -135,51 +135,51 @@
       "quota": "No cap",
       "cost": "Free",
       "types": [
-        "Others"
+        "迎新"
       ],
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 81,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
       "title": "No Account Fees or Minimum Balance",
-      "highlight": "💰 No account management fees and no minimum deposit requirements",
-      "description": "Airstar Bank offers free account services with no account management fees and no minimum deposit balance requirements. This allows customers to maintain their accounts without worrying about additional charges or maintaining specific balances.",
+      "highlight": "💯 Zero account management fees and no minimum balance",
+      "description": "Enjoy an Airstar Bank account with no account management fees and no minimum deposit balance requirement. Manage your money freely without worrying about maintenance charges.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
-      "quota": "Available to all customers",
+      "quota": "No cap",
       "cost": "Free",
       "types": [
-        "Others"
+        "消費"
       ],
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 82,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
       "title": "Personal Loan with Personalized Stellar APR",
-      "highlight": "💰 Loan up to 12x monthly salary with quick 5-minute disbursement",
-      "description": "Airstar Bank offers personal loans with personalized APR ranging from 7.43% to 35.05%. Customers can borrow up to 12 times their monthly salary or HKD1,000,000 (whichever is lower) with loan disbursement possible in as fast as 5 minutes.",
+      "highlight": "💳 Personalized loan rates from 7.43% to 35.05% APR",
+      "description": "Access personal loans with customized interest rates ranging from 7.43% to 35.05% APR. Repayment periods available from 6 to 60 months with loan amounts up to 12 times monthly salary or HKD1,000,000.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
       "quota": "No cap",
-      "cost": "APR ranges from 7.43% to 35.05% with repayment period of 6 to 60 months",
+      "cost": "Varies based on personalized APR",
       "types": [
         "貸款"
       ],
@@ -188,15 +188,15 @@
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 83,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
       "title": "Multi-Currency Savings Account with No Minimum Balance",
-      "highlight": "💵 No minimum balance multi-currency savings account",
-      "description": "Airstar Bank offers savings accounts with no minimum balance requirements. Customers can save in multiple currencies and access their funds anytime. The account comes with no account management fees.",
+      "highlight": "🌐 Save in multiple currencies with no minimum balance",
+      "description": "Open and maintain savings accounts in multiple currencies with no minimum balance requirement. Easily manage different currencies in one convenient platform.",
       "category": "",
       "start_date": null,
       "end_date": null,
@@ -212,21 +212,21 @@
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 84,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
       "title": "Flexible Time Deposit Placement",
-      "highlight": "🕒 Time deposits with flexible tenors and 24/7 placement",
-      "description": "Customers can enjoy time deposits with flexible tenors and the convenience of 24/7 placement. This allows for greater flexibility in managing fixed-term savings according to individual financial needs and goals.",
+      "highlight": "🕒 24/7 time deposit placement with flexible tenors",
+      "description": "Place time deposits at any time with flexible tenor options. Enjoy the convenience of setting up time deposits 24/7 through the Airstar Bank mobile app.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
-      "quota": "Available to all customers",
-      "cost": "Minimum deposit amount may apply",
+      "quota": "No cap",
+      "cost": "Varies based on deposit amount",
       "types": [
         "存款"
       ],
@@ -235,21 +235,44 @@
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 121,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
       "title": "Trade Hong Kong & US Stocks Instantly",
-      "highlight": "💹 Trade HK stocks from as low as HK$18, US stocks at just US$1.99 per order",
-      "description": "Airstar Bank offers low-cost trading services for both Hong Kong and US stocks. Customers can trade with minimal fees and access global markets including fractional shares, allowing investment with as little as 1 share for HK stocks or US$5 for US stocks.",
+      "highlight": "💰 Zero commission trading for HK stocks forever",
+      "description": "Enjoy commission-free trading on Hong Kong stocks with no expiration date. This offer applies to accounts that have already obtained eligibility during the specified promotion period.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Forever for eligible accounts",
+      "quota": "Limited to accounts opened during the promotion period",
+      "cost": "Free",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://www.airstarbank.com/en-hk/promotion",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-10",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 122,
+      "bank_id": "airstar",
+      "bank_name": "Airstar Bank",
+      "title": "Fractional Shares Investment",
+      "highlight": "🔢 Invest with as little as 1 share for HK stocks or US$5 for US stocks",
+      "description": "Start investing with minimal amounts through fractional share ownership. Purchase as little as 1 share for HK stocks or invest with as little as US$5 for US stocks.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
       "quota": "No cap",
-      "cost": "From HK$18 for HK stocks, US$1.99 for US stocks",
+      "cost": "As low as 1 share (HK) or US$5 (US)",
       "types": [
         "投資"
       ],
@@ -258,7 +281,100 @@
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-10",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 183,
+      "bank_id": "airstar",
+      "bank_name": "Airstar Bank",
+      "title": "24/7 Online Banking Services",
+      "highlight": "🕗 Round-the-clock access to all banking services",
+      "description": "Access full banking services 24 hours a day, 7 days a week through the Airstar mobile app. Includes a 24-hour customer hotline service for assistance at any time.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No cap",
+      "cost": "Free",
+      "types": [
+        "Others"
+      ],
+      "url": "",
+      "tc_link": "https://www.airstarbank.com/en-hk/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-13",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 214,
+      "bank_id": "airstar",
+      "bank_name": "Airstar Bank",
+      "title": "Quick Loan Approval and Disbursement",
+      "highlight": "⚡ Loan disbursement in as fast as 5 minutes",
+      "description": "Complete the entire loan process from application to disbursement in as little as 5 minutes. Available 24/7 with real-time service for quick access to funds when needed.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No cap",
+      "cost": "Varies based on loan amount and interest rate",
+      "types": [
+        "貸款"
+      ],
+      "url": "",
+      "tc_link": "https://www.airstarbank.com/en-hk/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-15",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 228,
+      "bank_id": "airstar",
+      "bank_name": "Airstar Bank",
+      "title": "Versatile Fund Transfer Options",
+      "highlight": "🌍 Transfer in multiple currencies including HKD, USD, and CNY",
+      "description": "Make transfers in various currencies including HKD, USD, CNY, and more. Enjoy the flexibility of cross-currency transfers through the Airstar Bank platform.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No cap",
+      "cost": "Free",
+      "types": [
+        "外匯",
+        "消費"
+      ],
+      "url": "",
+      "tc_link": "https://www.airstarbank.com/en-hk/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-19",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 242,
+      "bank_id": "airstar",
+      "bank_name": "Airstar Bank",
+      "title": "Low-Cost US Stock Trading",
+      "highlight": "📈 Trade US stocks for just US$1.99 per order",
+      "description": "Trade US stocks at a flat fee of only US$1.99 per order. Access a wide range of US stocks and ETFs with competitive pricing, regardless of order size.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No cap",
+      "cost": "US$1.99 per order",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://www.airstarbank.com/en-hk/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-22",
+      "last_seen": "2026-04-22"
     },
     {
       "id": 139,
@@ -279,54 +395,8 @@
       "url": "",
       "tc_link": "https://www.airstarbank.com/en-hk/promotion",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 183,
-      "bank_id": "airstar",
-      "bank_name": "Airstar Bank",
-      "title": "24/7 Online Banking Services",
-      "highlight": "🕒 Round-the-clock digital banking and customer support",
-      "description": "Airstar Bank provides 24/7 online banking services and a 24-hour customer hotline. Customers can access all their banking needs at any time, including transfers, deposits, loans, and foreign currency exchange, all through a single app.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Available to all customers",
-      "cost": "Free",
-      "types": [
-        "Others"
-      ],
-      "url": "",
-      "tc_link": "https://www.airstarbank.com/en-hk/promotion",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-13",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 228,
-      "bank_id": "airstar",
-      "bank_name": "Airstar Bank",
-      "title": "Versatile Fund Transfer Options",
-      "highlight": "🔄 24/7 instant transfers in multiple currencies via FPS",
-      "description": "Airstar Bank supports transfers in multiple currencies including HKD, USD, CNY, and more. Customers can transfer funds via mobile numbers, email addresses, or account numbers with 24/7 instant transfer capabilities for HKD and CNY through the Faster Payment System (FPS).",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Available to all customers",
-      "cost": "Free for most transfers",
-      "types": [
-        "外匯"
-      ],
-      "url": "",
-      "tc_link": "https://www.airstarbank.com/en-hk/promotion",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-19",
       "last_seen": "2026-04-21"
     },
     {
@@ -351,29 +421,6 @@
       "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-19"
-    },
-    {
-      "id": 122,
-      "bank_id": "airstar",
-      "bank_name": "Airstar Bank",
-      "title": "Fractional Shares Investment",
-      "highlight": "🔢 Invest in fractional shares with just 1 share for HK stocks or US$5 for US stocks",
-      "description": "Airstar Bank allows customers to invest in fractional shares, making it possible to start investing with just 1 share for Hong Kong stocks or as little as US$5 for US stocks. This lowers the entry barrier for investing in high-priced stocks.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Available to all customers",
-      "cost": "Minimum 1 share (HK) or US$5 (US)",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://www.airstarbank.com/en-hk/promotion",
-      "is_bau": true,
-      "active": false,
-      "created_at": "2026-04-10",
-      "last_seen": "2026-04-18"
     },
     {
       "id": 78,
@@ -470,29 +517,6 @@
       "last_seen": "2026-04-15"
     },
     {
-      "id": 214,
-      "bank_id": "airstar",
-      "bank_name": "Airstar Bank",
-      "title": "Fast Loan Disbursement",
-      "highlight": "⚡ Complete loan process in as fast as 5 minutes",
-      "description": "Airstar Bank offers a streamlined loan application process where customers can go from application to loan disbursement in as fast as 5 minutes. The service is available 24/7 for real-time processing.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "No cap",
-      "cost": "Free application process",
-      "types": [
-        "貸款"
-      ],
-      "url": "",
-      "tc_link": "https://www.airstarbank.com/en-hk/promotion",
-      "is_bau": true,
-      "active": false,
-      "created_at": "2026-04-15",
-      "last_seen": "2026-04-15"
-    },
-    {
       "id": 166,
       "bank_id": "airstar",
       "bank_name": "Airstar Bank",
@@ -520,14 +544,14 @@
       "bank_id": "ant",
       "bank_name": "Ant Bank",
       "title": "eM+ High Yield Account (Libra Savings) with up to 2.0% p.a. Interest Rate",
-      "highlight": "💰 Earn up to 2.0% p.a. on HKD savings",
-      "description": "Customers who successfully upgrade to eM+ High Yield Account (Libra Savings) through the AlipayHK App can enjoy tiered interest rates up to 2.0% p.a. The high rate applies to deposit amounts between HKD 200,000 - 800,000, with 0.5% p.a. on first 200,000 and regular savings rate of 0.001% for amounts above 800,000.",
+      "highlight": "💰 Earn up to 2.0% p.a. interest on your deposits",
+      "description": "Customers who successfully upgrade to eM+ High Yield Account (Libra Savings) through the AlipayHK App can enjoy up to 2.0% p.a. interest rate on their deposits. The 2.0% p.a. interest rate applies to deposit amounts ranging between HKD 200,000-800,000, while deposits up to HKD 200,000 earn 0.5% p.a.",
       "category": "",
       "start_date": "2026-01-03",
       "end_date": null,
-      "period": "Ongoing from January 3, 2026",
-      "quota": "No cap",
-      "cost": "Free",
+      "period": "From 2026-01-03",
+      "quota": "No cap mentioned",
+      "cost": "Minimum deposit of HKD 200,000 to enjoy the 2.0% p.a. rate",
       "types": [
         "存款"
       ],
@@ -536,21 +560,21 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 96,
       "bank_id": "ant",
       "bank_name": "Ant Bank",
       "title": "SME Loan Cash Rebate Promotion",
-      "highlight": "💵 Up to HKD 100,000 cash rebate on first drawdown",
-      "description": "Small and medium enterprises can enjoy a cash rebate of up to HKD 100,000 on their first loan drawdown. This limited-time promotion is designed to help businesses access funding with additional cash incentives.",
+      "highlight": "💸 Receive up to HKD 100,000 cash rebate",
+      "description": "SME loan customers can enjoy up to HKD 100,000 cash rebate upon their first loan drawdown. This is a limited-time promotion for business owners seeking financing solutions through Ant Bank.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Limited time promotion",
-      "quota": "SME customers only",
-      "cost": "Loan application required",
+      "quota": "No cap mentioned",
+      "cost": "First loan drawdown required",
       "types": [
         "貸款"
       ],
@@ -559,15 +583,15 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 97,
       "bank_id": "ant",
       "bank_name": "Ant Bank",
       "title": "Multi-Currency Savings Account Upgrade",
-      "highlight": "🌐 Support for HKD, RMB and USD currencies",
-      "description": "The savings account has been upgraded to support multiple currencies, including Hong Kong Dollar, Renminbi, and US Dollar. This feature allows customers to manage different currencies in a single account for convenient international transactions.",
+      "highlight": "🌎 Support for HKD, RMB, and USD in one account",
+      "description": "Ant Bank's savings account has been upgraded to support multiple currencies including HKD, RMB, and USD. Customers can experience the new feature through the Ant Bank APP and can transfer directly from their Libra Savings account to third-party accounts with a daily transfer limit of up to HKD 1 million.",
       "category": "",
       "start_date": null,
       "end_date": null,
@@ -575,15 +599,84 @@
       "quota": "No cap",
       "cost": "Free",
       "types": [
-        "外匯",
-        "存款"
+        "存款",
+        "外匯"
       ],
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 157,
+      "bank_id": "ant",
+      "bank_name": "Ant Bank",
+      "title": "One-Stop Hong Kong and US Stock Trading Platform",
+      "highlight": "🌐 Access to Hong Kong and US stock markets",
+      "description": "Ant Bank offers a one-stop trading platform connecting Hong Kong and US stock markets, providing global investment opportunities. The platform offers various investment options including Hong Kong stocks, US stocks, and ETFs, all accessible in one place.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "Hong Kong residents only (not applicable to mainland and overseas users without Hong Kong resident identity)",
+      "cost": "Investment costs vary",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-10",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 188,
+      "bank_id": "ant",
+      "bank_name": "Ant Bank",
+      "title": "Ant Bank Investment Fund Platform Transaction Fee Waiver",
+      "highlight": "🏦 Enjoy 0% fund subscription fee and redemption fee waivers",
+      "description": "Customers can enjoy a transaction fee waiver promotion when opening an investment account with Ant Bank's new investment fund platform. There are no platform fees charged, making it a truly '0' cost investment experience with subscription fees starting from 0% and redemption fees waived.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Limited time offer",
+      "quota": "No cap mentioned",
+      "cost": "Minimum fund subscription as low as HKD 1",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-13",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 240,
+      "bank_id": "ant",
+      "bank_name": "Ant Bank",
+      "title": "Secure Deposit Protection Service",
+      "highlight": "🔒 Extra security for your bank deposits",
+      "description": "Ant Bank (Hong Kong) has launched the Secure Deposit Protection service, an anti-fraud measure introduced by the Hong Kong Monetary Authority. The service covers Libra Savings and current savings accounts, allowing customers to lock their spare deposits which cannot be transferred out through any channels or methods.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No cap",
+      "cost": "Free",
+      "types": [
+        "Others"
+      ],
+      "url": "",
+      "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-21",
+      "last_seen": "2026-04-22"
     },
     {
       "id": 99,
@@ -604,7 +697,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-21"
     },
@@ -627,7 +720,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-21"
     },
@@ -650,7 +743,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-21"
     },
@@ -673,30 +766,7 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-10",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 157,
-      "bank_id": "ant",
-      "bank_name": "Ant Bank",
-      "title": "One-Stop Hong Kong and US Stock Trading Platform",
-      "highlight": "🌎 Access to both Hong Kong and US stock markets in one platform",
-      "description": "Ant Bank provides a one-stop trading platform connecting Hong Kong and US stock markets, allowing customers to capture global investment opportunities. The platform offers access to Hong Kong stocks, US stocks, and ETFs.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Available to Hong Kong residents only",
-      "cost": "Trading fees apply",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
-      "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-21"
     },
@@ -719,31 +789,8 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 188,
-      "bank_id": "ant",
-      "bank_name": "Ant Bank",
-      "title": "Ant Bank Investment Fund Platform Transaction Fee Waiver",
-      "highlight": "🏦 Zero platform fees and fee waivers for fund transactions",
-      "description": "Ant Bank has launched a new investment fund platform with zero platform fees. As a limited-time offer, customers can enjoy fee waivers for both fund subscriptions (up to 0.8% normally) and redemptions, providing a true zero-cost investment experience.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Limited time offer",
-      "quota": "All customers with an investment account",
-      "cost": "Free",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-13",
       "last_seen": "2026-04-21"
     },
     {
@@ -765,31 +812,8 @@
       "url": "",
       "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 240,
-      "bank_id": "ant",
-      "bank_name": "Ant Bank",
-      "title": "SafetyGuard Deposit Protection",
-      "highlight": "🔒 Lock your savings against unauthorized transfers",
-      "description": "The SafetyGuard service allows customers to lock their savings, preventing any outbound transfers through any channel including local and cross-border transfers. This anti-fraud measure helps reduce the risk of fraudsters immediately transferring funds out of accounts, while locked deposits still earn interest and remain protected by the Deposit Protection Scheme.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "All eligible accounts including Libra Savings and savings accounts",
-      "cost": "Free",
-      "types": [
-        "存款"
-      ],
-      "url": "",
-      "tc_link": "https://www.antbank.hk/em-plus-offer?lang=en_us",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-21",
       "last_seen": "2026-04-21"
     },
     {
@@ -1329,8 +1353,8 @@
       "bank_id": "fusion",
       "bank_name": "Fusion Bank",
       "title": "Quick Account Opening in 5 Minutes",
-      "highlight": "⏱️ Open an account before your coffee is ready",
-      "description": "Open a Fusion Bank account in as little as 5 minutes using just your HKID card and mobile number. The streamlined digital onboarding process is designed for maximum convenience and efficiency.",
+      "highlight": "⏱️ Open a bank account in just 5 minutes with only HKID and phone number",
+      "description": "Open a Fusion Bank account in as little as 5 minutes using just your Hong Kong ID card and mobile number. The entire process can be completed before your coffee is ready, making banking more convenient than ever.",
       "category": "",
       "start_date": null,
       "end_date": null,
@@ -1338,6 +1362,7 @@
       "quota": "Hong Kong identity card holders aged 18 or above, non-US persons only",
       "cost": "Free",
       "types": [
+        "迎新",
         "Others"
       ],
       "url": "",
@@ -1345,38 +1370,39 @@
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 87,
       "bank_id": "fusion",
       "bank_name": "Fusion Bank",
       "title": "Small Savings Account Starting from HKD 1",
-      "highlight": "💰 Start your savings with just HKD 1",
-      "description": "Begin saving with Fusion Bank with as little as HKD 1. The flexible savings plan allows you to save for your next adventure or personal milestone with no minimum deposit requirement.",
+      "highlight": "💰 Start saving with as little as HKD 1",
+      "description": "Flexible savings program allowing customers to start saving with as little as HKD 1. Designed to help customers save for their next adventure or personal milestone, making financial goals more accessible.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
       "quota": "No cap",
-      "cost": "Free",
+      "cost": "Minimum HKD 1",
       "types": [
-        "存款"
+        "存款",
+        "Others"
       ],
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 88,
       "bank_id": "fusion",
       "bank_name": "Fusion Bank",
       "title": "Multi-Currency Local Transfers (HKD, CNY, USD)",
-      "highlight": "🌐 Transfer in HKD, CNY and USD locally",
-      "description": "Transfer funds instantly in multiple currencies including HKD, CNY, and USD to other local accounts. The service makes foreign exchange simpler and more accessible for everyday use.",
+      "highlight": "🌐 Transfer funds locally in HKD, CNY, and USD anytime",
+      "description": "Transfer money locally in multiple currencies including HKD, CNY, and USD instantly. Service available anytime and from anywhere, with all funds stored securely in your account.",
       "category": "",
       "start_date": null,
       "end_date": null,
@@ -1384,45 +1410,47 @@
       "quota": "No cap",
       "cost": "Free",
       "types": [
-        "外匯"
+        "外匯",
+        "Others"
       ],
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 89,
       "bank_id": "fusion",
       "bank_name": "Fusion Bank",
       "title": "Global Remittance Services",
-      "highlight": "🌍 Send money globally from your smartphone",
-      "description": "Send money around the world directly from your smartphone. Buy foreign currency at real-time exchange rates and transfer it internationally or use it with payment networks for cashless spending worldwide.",
+      "highlight": "🌍 Send money globally from your smartphone with real-time exchange rates",
+      "description": "Send money globally directly from your smartphone to connect with family and friends around the world. Buy foreign currency with real-time exchange rates and send it out or use it with payment networks for cashless spending everywhere.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
       "quota": "No cap",
-      "cost": "Foreign exchange fees may apply",
+      "cost": "Foreign exchange rates apply",
       "types": [
-        "外匯"
+        "外匯",
+        "Others"
       ],
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 90,
       "bank_id": "fusion",
       "bank_name": "Fusion Bank",
       "title": "Deposit Protection up to HKD 800,000",
-      "highlight": "🛡️ Deposits protected up to HKD 800,000",
-      "description": "Fusion Bank is a member of Hong Kong's Deposit Protection Scheme. All eligible deposits are protected up to a maximum of HKD 800,000 per depositor, providing security and peace of mind for customers.",
+      "highlight": "🛡️ Deposits protected up to HKD 800,000 per depositor",
+      "description": "As a licensed digital bank in Hong Kong and a member of Hong Kong's Deposit Protection Scheme, eligible deposits with Fusion Bank are protected up to a maximum of HKD 800,000 per depositor.",
       "category": "",
       "start_date": null,
       "end_date": null,
@@ -1430,37 +1458,39 @@
       "quota": "No cap",
       "cost": "Free",
       "types": [
-        "存款"
+        "存款",
+        "Others"
       ],
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 93,
       "bank_id": "fusion",
       "bank_name": "Fusion Bank",
-      "title": "Flash Monday High-Interest HKD Time Deposit",
-      "highlight": "⚡ Special high-interest time deposits every Monday",
-      "description": "Take advantage of Fusion Bank's Flash Monday promotion offering high-interest HKD time deposits. A limited-time opportunity to maximize returns on your deposits.",
+      "title": "Fusion Flash Monday HKD Time Deposit Promotion",
+      "highlight": "⚡ Special high-interest HKD time deposits on Mondays",
+      "description": "Special high-interest rates for HKD time deposits available on Mondays as part of the Flash Monday promotion. Offers customers an opportunity to earn enhanced returns on their Hong Kong dollar deposits.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Limited time offer",
-      "quota": "Limited availability",
-      "cost": "Deposit required",
+      "quota": "Subject to terms and conditions",
+      "cost": "HKD time deposit required",
       "types": [
-        "存款"
+        "存款",
+        "Others"
       ],
       "url": "",
       "tc_link": "https://www.fusionbank.com/common/detail.html?key=fusionflash&lang=en",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 94,
@@ -1468,30 +1498,31 @@
       "bank_name": "Fusion Bank",
       "title": "Savings Interest Plus",
       "highlight": "📈 Enhanced interest rates on savings accounts",
-      "description": "Enjoy boosted interest rates on your Fusion Bank savings account. This special offer provides better returns on your deposits compared to standard savings rates.",
+      "description": "Special promotion offering enhanced interest rates on savings accounts. Helps customers maximize returns on their deposits with Fusion Bank.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Limited time offer",
       "quota": "Subject to terms and conditions",
-      "cost": "Deposit required",
+      "cost": "Savings account required",
       "types": [
-        "存款"
+        "存款",
+        "Others"
       ],
       "url": "",
       "tc_link": "https://www.fusionbank.com/common/detail.html?key=savinginterestplus&lang=en",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 187,
       "bank_id": "fusion",
       "bank_name": "Fusion Bank",
       "title": "Fusion Bank Foreign Exchange Time Deposit Interest Rewards",
-      "highlight": "💹 Enhanced interest rates for FX time deposits",
-      "description": "Enjoy special interest rate rewards when you exchange currencies and place them in time deposits. Available for exchanges between HKD, USD, and CNY with no amount limit.",
+      "highlight": "💱 Enhanced interest rates on time deposits with foreign exchange",
+      "description": "Special interest rate rewards for customers who exchange foreign currency and place it in time deposits. Available for exchanges between HKD, USD, and CNY with no amount limit.",
       "category": "",
       "start_date": null,
       "end_date": null,
@@ -1507,7 +1538,7 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-13",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 241,
@@ -1528,7 +1559,7 @@
       "url": "",
       "tc_link": "https://www.fusionbank.com/?lang=en",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-21",
       "last_seen": "2026-04-21"
     },
@@ -2071,13 +2102,13 @@
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "Pay Tax with Mox Credit Card and Earn up to HKD500 Cash Reward",
-      "highlight": "💰 Split your tax payment and earn up to HKD500 cash reward",
-      "description": "Pay your tax bill with Mox Credit Card and apply for Instalment to spread the payment. Earn up to HKD500 in cash rewards when paying your second tax instalment with Mox Credit Card.",
+      "highlight": "💰 Earn up to HKD500 cash reward when paying tax with Mox Credit Card",
+      "description": "Pay your tax bill with Mox Credit Card and apply for Instalment during the promotional period. Split the payment and earn up to HKD500 in cash rewards.",
       "category": "",
       "start_date": "2026-04-01",
       "end_date": "2026-04-30",
       "period": "2026-04-01 to 2026-04-30",
-      "quota": "No quota mentioned",
+      "quota": "No cap mentioned",
       "cost": "Tax payment required",
       "types": [
         "消費"
@@ -2087,20 +2118,20 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 2,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "Instant Loan Promotion with Cash Reward up to HKD10,888",
-      "highlight": "💸 Get low interest rate from 1.18% and cash reward up to HKD10,888",
-      "description": "Apply for a designated Instant Loan through the Mox app with rates as low as 1.18%. Successful applicants can receive up to HKD10,888 in cash rewards. The entire process from quotation to disbursement is handled through the app.",
+      "highlight": "💸 Get attractive rate as low as 1.18% on Instant Loan plus cash reward",
+      "description": "Apply for Mox's designated Instant Loan with attractive rate as low as 1.18%. Get instant approval and disbursement through the Mox app. Successfully apply during the promotional period to enjoy up to HKD10,888 cash reward.",
       "category": "",
       "start_date": null,
       "end_date": "2026-04-30",
       "period": "Until 2026-04-30",
-      "quota": "No quota mentioned",
+      "quota": "No cap mentioned",
       "cost": "Loan application required",
       "types": [
         "貸款"
@@ -2110,21 +2141,21 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 3,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "Keeta Exclusive Discount with Mox Card",
-      "highlight": "⚡ Enjoy up to HKD20 off per order, saving up to HKD80 for the whole month",
-      "description": "Order from Keeta with your Mox Card and enjoy an exclusive discount of up to HKD20 off per order. Maximum savings of up to HKD80 for the whole month. Additional surprise vouchers and welcome rewards are available.",
+      "highlight": "⚡ Save up to HKD80 when ordering on Keeta with Mox Card",
+      "description": "Exclusive flash sale for Mox Card users ordering on Keeta. Enjoy up to HKD20 off per order, saving up to HKD80 throughout the month. Additional surprise vouchers and welcome rewards are also available.",
       "category": "",
       "start_date": null,
       "end_date": "2026-04-30",
       "period": "Until 2026-04-30",
-      "quota": "No quota mentioned",
-      "cost": "Keeta order payment required",
+      "quota": "No cap mentioned",
+      "cost": "Keeta order required",
       "types": [
         "消費"
       ],
@@ -2133,45 +2164,44 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 4,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "Xiaomi Shopping Cash Rebate and Installment Offer",
-      "highlight": "📱 Up to 7% total cash rewards + 0% interest installments for up to 12 months",
-      "description": "Shop at mi.com or any Xiaomi Store with your Mox Credit Card to earn up to 5% extra cash rebate (capped at HKD450) plus 0% interest installments for up to 12 months. Combined with standard 2% Unlimited CashBack for up to 7% total rewards.",
+      "highlight": "📱 Get up to 7% total cash rewards at Xiaomi + 0% Instalments",
+      "description": "Shop at mi.com or any Xiaomi Store with Mox Credit Card to unlock up to 5% extra cash rebate (capped at HKD450) plus up to 12-month 0% interest instalments. Combined with standard up to 2% Unlimited CashBack, customers can enjoy up to 7% in total cash rewards.",
       "category": "",
       "start_date": null,
       "end_date": null,
-      "period": "Not specified",
-      "quota": "Cash rebate capped at HKD450",
-      "cost": "Xiaomi purchase required",
+      "period": "No specific period mentioned",
+      "quota": "Extra cash rebate capped at HKD450",
+      "cost": "Cumulative spend at Xiaomi required (amount not specified)",
       "types": [
-        "消費",
-        "迎新"
+        "消費"
       ],
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 5,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "Mox Journey from Scratch Promotion",
-      "highlight": "🎁 Complete missions to earn scratch cards with prizes up to HKD8,888",
-      "description": "Complete any of five simple challenges to receive a Mox Scratch Card with instant prizes. The top prize is worth HKD8,888 (HKD8,000 in SOL cryptocurrency plus HKD888 cash reward). More completed missions mean more chances to win.",
+      "highlight": "💥 Complete missions and scratch to win up to HKD8,888",
+      "description": "Take on any of five simple challenges to get a Mox Scratch Card. Scratch to instantly reveal prizes. Complete more missions to multiply chances of winning the top prize of HKD8,888 (HKD8,000 SOL(s) (Solana) + HKD888 cash reward).",
       "category": "",
       "start_date": "2026-03-16",
       "end_date": "2026-06-15",
       "period": "2026-03-16 to 2026-06-15",
-      "quota": "Limited quantity, first-come, first-served",
-      "cost": "Complete missions related to investment, foreign exchange, or bill payment",
+      "quota": "Limited quota available, first-come, first-served",
+      "cost": "Completion of missions required",
       "types": [
         "投資"
       ],
@@ -2180,21 +2210,21 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 6,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "Indulge and Grow Bonus Deposit Promotion",
-      "highlight": "💵 Deposit your bonus to earn interest plus chances to win a 1-month free lunch",
-      "description": "Deposit your bonus into Mox to earn interest while getting a chance to win a 1-month 'free lunch' through a lucky draw. For every HKD10,000 deposited, customers get one entry into the lucky draw, increasing chances of winning with higher deposits.",
+      "highlight": "💰 Deposit your bonus and win a 1-month free lunch",
+      "description": "Deposit your bonus into Mox to earn interest and get a chance to win a 1-month 'free lunch'. For every HKD10,000 deposited, customers get one entry into the lucky draw. More deposits mean higher chances of winning.",
       "category": "",
       "start_date": null,
       "end_date": "2026-04-30",
       "period": "Until 2026-04-30",
-      "quota": "No quota mentioned",
-      "cost": "Minimum HKD10,000 deposit for one lucky draw entry",
+      "quota": "No cap mentioned",
+      "cost": "Minimum HKD10,000 deposit required per lucky draw entry",
       "types": [
         "存款"
       ],
@@ -2203,21 +2233,21 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 7,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "Mox x csl 'Best-in-Town' Exclusive Plan Offer",
-      "highlight": "📱 Get up to HKD1,380 rebates + free NowTV beIN SPORTS Super Pack",
-      "description": "Sign up for a new plan or renew your existing one with csl while setting up Mox Credit Card autopay. Enjoy an HKD180 monthly fee rebate plus a free Now TV beIN SPORTS Super Pack 1-Month Pass valued at HKD188.",
+      "highlight": "📱 Get up to HKD1,380 Rebates on csl plans + a Free NowTV Pass",
+      "description": "Exclusive offer for customers who sign up for a new plan or renew with csl while setting up Mox Credit Card autopay. Benefits include HKD180 monthly fee rebate plus a free Now TV beIN SPORTS Super Pack 1-Month Pass valued at HKD188.",
       "category": "",
       "start_date": null,
       "end_date": null,
-      "period": "Not specified",
-      "quota": "No quota mentioned",
-      "cost": "csl plan subscription with Mox Credit Card autopay",
+      "period": "No specific period mentioned",
+      "quota": "No cap mentioned",
+      "cost": "csl plan signup/renewal with Mox Credit Card autopay required",
       "types": [
         "消費"
       ],
@@ -2226,7 +2256,7 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 8,
@@ -2234,31 +2264,31 @@
       "bank_name": "Mox Bank",
       "title": "Travel Pick & Go Eggstra Care+ Free Add-on Coverage",
       "highlight": "✈️ Get 1 FREE add-on coverage with Travel Pick & Go insurance",
-      "description": "Apply for Travel Pick & Go insurance and receive 1 free add-on coverage. This helps protect travelers from financial stress caused by unexpected events during their trips.",
+      "description": "Apply for Travel Pick & Go insurance during the promotional period to receive 1 FREE add-on coverage. This offer helps safeguard trips from financial stress due to unexpected events.",
       "category": "",
       "start_date": "2026-03-04",
       "end_date": "2026-04-30",
       "period": "2026-03-04 to 2026-04-30",
-      "quota": "No quota mentioned",
+      "quota": "No cap mentioned",
       "cost": "Travel Pick & Go insurance purchase required",
       "types": [
-        "旅遊",
-        "保險"
+        "保險",
+        "旅遊"
       ],
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 9,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "MOXTRIP25 Multi-Reward Travel Promotion",
-      "highlight": "✈️ Earn up to 28,500 Asia Miles through spending and saving",
-      "description": "New customers who enter invitation code 'MOXTRAVEL' to open a Mox account and apply for a Mox Credit Card can earn up to 28,500 miles through spending and saving activities. This is enough for a round-trip flight to destinations in Asia.",
+      "highlight": "✈️ Earn up to 28,500 miles through spending and saving",
+      "description": "New customers who enter invitation code 'MOXTRAVEL' to open a Mox account and apply for a Mox Credit Card can earn up to 28,500 miles through spending and saving. This is enough for a round-trip flight to Asia.",
       "category": "",
       "start_date": null,
       "end_date": "2026-06-30",
@@ -2274,175 +2304,222 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 10,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "Samsung S26 Series Exclusive Offer at The Club",
-      "highlight": "📱 HKD100 off Samsung S26 series at The Club with promo code",
-      "description": "Spend HKD1,800 or more on The Club with your Mox Credit Card and enter promo code CLUBMOX2026 to enjoy an instant HKD100 discount on the new Samsung S26 series. This is in addition to the standard up to 2% Unlimited CashBack.",
+      "highlight": "📱 Get HKD100 off new Samsung S26 series at The Club",
+      "description": "Exclusive offer for the new Samsung S26 series at The Club. Spend HKD1,800 or more on The Club with Mox Credit Card and enter promo code CLUBMOX2026 to enjoy an instant HKD100 discount. This is in addition to up to 2% Unlimited CashBack.",
       "category": "",
       "start_date": null,
       "end_date": "2026-03-31",
       "period": "Until 2026-03-31",
-      "quota": "No quota mentioned",
-      "cost": "Minimum spend of HKD1,800 on The Club",
+      "quota": "No cap mentioned",
+      "cost": "Minimum spend of HKD1,800 required",
       "types": [
-        "消費",
-        "迎新"
+        "消費"
       ],
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 11,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "Mox x Uber Taxi Spending Reward",
-      "highlight": "🚕 Get HKD10 off each Uber Taxi ride per month, up to HKD90 total",
-      "description": "Pay for Uber Taxi rides with your Mox Card and enjoy HKD10 off each ride per month, for a total savings of up to HKD90. Exclusive promo code must be claimed and applied.",
+      "highlight": "🚕 Get up to HKD90 off Uber Taxi rides",
+      "description": "Mox is offering a spending reward for Uber Taxi users. Pay with Mox Card to enjoy HKD10 off each Uber Taxi ride per month. This offer is available for various purposes including visiting family, weekend outings, or catching flights.",
       "category": "",
       "start_date": null,
       "end_date": "2026-04-30",
       "period": "Until 2026-04-30",
-      "quota": "No quota mentioned",
-      "cost": "Uber Taxi ride payment required",
+      "quota": "Limited to HKD10 off per ride, per month",
+      "cost": "Uber Taxi ride payment with Mox Card required",
       "types": [
-        "消費"
+        "消費",
+        "旅遊"
       ],
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 12,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "MOXDEPO Invitation Code Time Deposit Promotion",
-      "highlight": "💰 Get HKD2,500 cash rewards with HKD250,000 time deposit",
-      "description": "Open a Mox Account using invitation code 'MOXDEPO', complete account opening within 15 days, place a Time Deposit of at least HKD250,000 within 7 days, and maintain the balance until the end of the hold fund period to earn HKD2,500 cash rewards.",
+      "highlight": "💵 Earn HKD2,500 cash rewards with HKD250,000 Time Deposit",
+      "description": "Open a Mox Account using invitation code 'MOXDEPO', complete account opening within 15 days, place a Time Deposit of at least HKD250,000 within 7 days, and maintain the balance until the end of the Hold Fund Period to earn HKD2,500 cash rewards.",
       "category": "",
       "start_date": null,
       "end_date": "2026-04-24",
       "period": "Until 2026-04-24",
-      "quota": "Only for customers who have not held any Mox Account in the past 12 months",
-      "cost": "Minimum HKD250,000 time deposit required",
+      "quota": "Only for customers who haven't held a Mox Account in the past 12 months",
+      "cost": "Minimum Time Deposit of HKD250,000 required",
       "types": [
-        "存款",
-        "迎新"
+        "迎新",
+        "存款"
       ],
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 14,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "MOXSMART Invitation Code Double Rewards",
-      "highlight": "💰 20% CashBack at 5 merchants + 12% p.a. welcome savings rate",
-      "description": "New Mox customers who sign up with invitation code 'MOXSMART' can spend at selected merchants (HKTVmall, foodpanda, Uber, Keeta, or Taobao) to enjoy 20% CashBack for a full year, plus standard up to 2% Unlimited CashBack. Also earn a welcome savings rate of 12% p.a. from deposits.",
+      "highlight": "🔥 Earn 20% CashBack from selected merchants plus 12% p.a. savings rate",
+      "description": "New Mox customers who enter invitation code 'MOXSMART' can spend on favorite merchants including HKTVmall, foodpanda, Uber, Keeta, or Taobao to enjoy a full year of 20% CashBack, plus standard up to 2% Unlimited CashBack on all spending. Additionally, earn a total welcome savings rate of 12% p.a. from deposit.",
       "category": "",
       "start_date": null,
       "end_date": null,
-      "period": "Not specified",
+      "period": "No specific period mentioned",
       "quota": "New customers only",
-      "cost": "Spending at selected merchants required",
+      "cost": "Spending at select merchants required",
       "types": [
+        "迎新",
         "消費",
-        "存款",
-        "迎新"
+        "存款"
       ],
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 15,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "MOXBILL26 HKT Bills Payment Promotion",
-      "highlight": "💸 Earn up to HKD1,200 cash rewards for paying HKT bills",
-      "description": "Open a Mox Account with invitation code MOXBILL26, apply for a Mox Credit Card, and pay HKT bills to unlock cash rewards worth up to HKD1,200. Additionally earn up to 2% Unlimited CashBack on payments.",
+      "highlight": "💸 Earn up to HKD1,200 cash rewards when paying HKT bills",
+      "description": "Open a Mox Account with invitation code MOXBILL26, apply for a Mox Credit Card, and pay HKT bills to unlock cash rewards worth up to HKD1,200. Customers can earn rewards while paying their regular bills.",
       "category": "",
       "start_date": null,
       "end_date": "2026-06-30",
       "period": "Until 2026-06-30",
-      "quota": "Limited, first come, first served",
-      "cost": "HKT bill payment required",
+      "quota": "Limited quota, first come, first served",
+      "cost": "HKT bills payment required",
       "types": [
-        "消費",
-        "迎新"
+        "迎新",
+        "消費"
       ],
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 16,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
-      "title": "Trip.com Exclusive Discount with Mox Credit",
-      "highlight": "✈️ Up to 8% off Trip.com bookings + up to 2% Unlimited CashBack",
-      "description": "Mox Credit Card holders can enjoy up to 8% discount on Trip.com bookings all year long. Additionally earn up to 2% Unlimited CashBack on all purchases made with Mox Credit Card.",
+      "title": "Trip.com Exclusive Discount with Mox Credit Card",
+      "highlight": "✈️ Get up to 8% Off Trip.com bookings + up to 2% Unlimited CashBack",
+      "description": "Mox Credit Card users can enjoy exclusive discounts on Trip.com bookings all year long. The offer includes up to 8% off on bookings plus up to 2% Unlimited CashBack, making it an attractive option for frequent travelers.",
       "category": "",
       "start_date": null,
       "end_date": "2026-12-31",
-      "period": "Ongoing",
-      "quota": "No quota mentioned",
-      "cost": "Trip.com booking with Mox Credit Card required",
+      "period": "All year long",
+      "quota": "No cap mentioned",
+      "cost": "Trip.com booking payment with Mox Credit Card required",
       "types": [
-        "旅遊",
-        "消費"
+        "消費",
+        "旅遊"
       ],
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
-      "is_bau": true,
+      "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
     },
     {
       "id": 21,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
       "title": "CLUBLINK New Customer Welcome Offer",
-      "highlight": "💰 Get HKD1,000 cash reward for spending at The Club or Club Travel",
-      "description": "Open a Mox Account using invitation code 'CLUBLINK' and spend at least HKD1,000 on The Club or Club Travel platforms with Mox Credit Card within 30 days to receive a cash reward of HKD1,000. Additionally access exclusive discounts on over 100+ popular electronics through Mox Zone.",
+      "highlight": "🛍️ Earn HKD1,000 cash reward with The Club spending + exclusive discounts",
+      "description": "New customers who open a Mox account using invitation code 'CLUBLINK' and spend HKD1,000 on The Club or Club Travel platforms with Mox Credit Card within 30 days will receive a cash reward of HKD1,000. Additionally, access exclusive discounts on over 100+ popular electronics all year round through Mox Zone.",
       "category": "",
       "start_date": null,
       "end_date": "2026-06-30",
       "period": "Until 2026-06-30",
-      "quota": "Limited, first come, first served",
-      "cost": "Minimum HKD1,000 spend at The Club or Club Travel required",
+      "quota": "Limited quota, first come, first served",
+      "cost": "Minimum spend of HKD1,000 on The Club or Club Travel required",
       "types": [
-        "消費",
-        "迎新"
+        "迎新",
+        "消費"
       ],
       "url": "https://mox.com/promotions/",
       "tc_link": "https://mox.com/promotions/",
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 146,
+      "bank_id": "mox",
+      "bank_name": "Mox Bank",
+      "title": "New Customer Xiaomi Promotion with XM1500MOX",
+      "highlight": "💰 New customers earn up to HKD2,150 cash rewards",
+      "description": "New Mox customers who sign up with invitation code XM1500MOX can earn cash rewards worth up to HKD2,150. The promotion is tied to the Xiaomi spending offer where customers can enjoy up to 7% cash rewards when shopping at Xiaomi.",
+      "category": "",
+      "start_date": null,
+      "end_date": "2026-06-30",
+      "period": "No specific period mentioned",
+      "quota": "No cap mentioned",
+      "cost": "Xiaomi spending required",
+      "types": [
+        "迎新",
+        "消費"
+      ],
+      "url": "",
+      "tc_link": "https://mox.com/promotions/",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-10",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 162,
+      "bank_id": "mox",
+      "bank_name": "Mox Bank",
+      "title": "0% Fund Subscription Fee - All Fees Waived",
+      "highlight": "💰 Enjoy 0% fund subscription fee on any fund purchase",
+      "description": "Mox Invest offers 0% fund subscription fee on any fund purchase during the promotional period. Low entry barrier with investments starting as low as HKD100/USD100. Other fees like Annual Management fees, custodian fees, and administration fees still apply.",
+      "category": "",
+      "start_date": "2026-04-01",
+      "end_date": "2026-06-30",
+      "period": "2026-04-01 to 2026-06-30",
+      "quota": "No cap mentioned",
+      "cost": "Minimum investment of HKD100/USD100",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://mox.com/promotions/",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-11",
+      "last_seen": "2026-04-22"
     },
     {
       "id": 28,
@@ -2469,53 +2546,6 @@
       "last_seen": "2026-04-21"
     },
     {
-      "id": 146,
-      "bank_id": "mox",
-      "bank_name": "Mox Bank",
-      "title": "1500MOX Invitation Code Spending Reward",
-      "highlight": "💸 Earn up to HKD1,500 cash rewards plus 2% Unlimited CashBack",
-      "description": "New customers who use invitation code '1500MOX' to open a Mox account and apply for a Mox Credit Card can earn up to HKD1,500 in cash rewards by meeting spending requirements at any merchant in Hong Kong. Unlock 2% Unlimited CashBack with no balance requirement.",
-      "category": "",
-      "start_date": null,
-      "end_date": "2026-06-30",
-      "period": "Until 2026-06-30",
-      "quota": "New customers only",
-      "cost": "Spending requirement (amount not specified)",
-      "types": [
-        "消費",
-        "迎新"
-      ],
-      "url": "",
-      "tc_link": "https://mox.com/promotions/",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-10",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 162,
-      "bank_id": "mox",
-      "bank_name": "Mox Bank",
-      "title": "0% Fund Subscription Fee - All Fees Waived",
-      "highlight": "💰 0% subscription fee on any fund purchase with low entry as HKD100/USD100",
-      "description": "Mox Invest offers 0% subscription fee on all fund purchases during the promotion period. Low entry threshold of just HKD100/USD100 makes investing accessible to beginners. Other fees like Annual Management fees and custodian fees still apply.",
-      "category": "",
-      "start_date": "2026-04-01",
-      "end_date": "2026-06-30",
-      "period": "2026-04-01 to 2026-06-30",
-      "quota": "No quota mentioned",
-      "cost": "Minimum HKD100/USD100 investment",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://mox.com/promotions/",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-11",
-      "last_seen": "2026-04-21"
-    },
-    {
       "id": 238,
       "bank_id": "mox",
       "bank_name": "Mox Bank",
@@ -2534,7 +2564,7 @@
       "url": "",
       "tc_link": "https://mox.com/promotions/moxtrip25/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-21",
       "last_seen": "2026-04-21"
     },
@@ -2558,7 +2588,7 @@
       "url": "",
       "tc_link": "https://mox.com/promotions/moxtrip25/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-21",
       "last_seen": "2026-04-21"
     },
@@ -3199,12 +3229,35 @@
       "bank_name": "PAObank",
       "title": "3-Minute Investment Account Opening for Existing Customers",
       "highlight": "⏱️ Open an account in as fast as 3 minutes",
-      "description": "Customers can open an account with Ping An Digital Bank in as little as 3 minutes. This fast account opening process requires no minimum balance and is available for standard cases where no additional information or documents are required.",
+      "description": "Customers can open a bank account in as fast as 3 minutes with no minimum balance requirement. This quick account opening process is available to both Hong Kong residents and visitors.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
-      "quota": "Available to all eligible customers",
+      "quota": "No cap",
+      "cost": "Free",
+      "types": [
+        "迎新"
+      ],
+      "url": "",
+      "tc_link": "https://www.pingandb.com/en/",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 67,
+      "bank_id": "pao",
+      "bank_name": "PAObank",
+      "title": "24×7 Full Banking Capability",
+      "highlight": "🕗 Full banking capability available 24/7",
+      "description": "Customers can access full banking services 24 hours a day, 7 days a week through the mobile app. This includes deposits, transfers, remittance, and currency exchange.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No cap",
       "cost": "Free",
       "types": [
         "Others"
@@ -3214,7 +3267,99 @@
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 69,
+      "bank_id": "pao",
+      "bank_name": "PAObank",
+      "title": "Zero Subscription and Redemption Fee for Money Market Funds",
+      "highlight": "💰 0 transaction fee for money market funds",
+      "description": "Customers can subscribe to and redeem money market funds with zero transaction fees. Redemption funds can be credited to the bank account as fast as the same day.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No cap",
+      "cost": "Minimum subscription amount of HK$100 or US$20",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://www.pingandb.com/en/",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 71,
+      "bank_id": "pao",
+      "bank_name": "PAObank",
+      "title": "US Stocks Extended Trading Hours",
+      "highlight": "🌎 Extended 16-hour US stock trading window",
+      "description": "Customers can trade US stocks during an extended 16-hour window that includes pre-market, regular market, and after-hours trading. This provides more flexibility for trading across different time zones.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No cap",
+      "cost": "USD0.012 per share with minimum USD7.88 per trade",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://www.pingandb.com/en/",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 72,
+      "bank_id": "pao",
+      "bank_name": "PAObank",
+      "title": "Free Hong Kong Stock Real-time Level 1 Market Data",
+      "highlight": "📊 Free real-time Level 1 market data",
+      "description": "Customers with activated stock investment services can access free Level 1 real-time market data and unlimited real-time quotes. This helps investors make timely trading decisions.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "Customers with activated stock investment services",
+      "cost": "Free",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://www.pingandb.com/en/",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 225,
+      "bank_id": "pao",
+      "bank_name": "PAObank",
+      "title": "Zero Platform Fee for Hong Kong and US Stocks",
+      "highlight": "💼 0 platform fee for HK stock trading",
+      "description": "Investors can trade Hong Kong stocks with no platform fee. The service includes real-time Level 1 market data and indices to help make informed trading decisions.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No cap",
+      "cost": "0.15% commission with minimum HKD50 per trade",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://www.pingandb.com/en/",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-18",
+      "last_seen": "2026-04-22"
     },
     {
       "id": 66,
@@ -3235,30 +3380,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 67,
-      "bank_id": "pao",
-      "bank_name": "PAObank",
-      "title": "24×7 Full Banking Capability",
-      "highlight": "🕒 Access banking services anytime, anywhere through the app",
-      "description": "Ping An Digital Bank provides round-the-clock banking services through their mobile application. Customers can access a full range of banking features and services 24 hours a day, 7 days a week.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Available to all customers",
-      "cost": "Free",
-      "types": [
-        "Others"
-      ],
-      "url": "",
-      "tc_link": "https://www.pingandb.com/en/",
-      "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-21"
     },
@@ -3281,30 +3403,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 69,
-      "bank_id": "pao",
-      "bank_name": "PAObank",
-      "title": "Zero Subscription and Redemption Fee for Money Market Funds",
-      "highlight": "⚡ Same-day credit for money market fund redemptions",
-      "description": "Customers can enjoy same-day credit to their bank accounts when redeeming money market funds. This provides quick access to liquidity when needed, even during market holidays.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Available to all investment account holders",
-      "cost": "Free",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://www.pingandb.com/en/",
-      "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-21"
     },
@@ -3327,53 +3426,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 71,
-      "bank_id": "pao",
-      "bank_name": "PAObank",
-      "title": "US Stocks Extended Trading Hours",
-      "highlight": "🕐 Trade US stocks for up to 16 hours daily",
-      "description": "Ping An Digital Bank offers extended trading hours for US stocks, including pre-market, regular market, and after-hours trading. This provides a total trading window of up to 16 hours per day for greater flexibility.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Available to all investment account holders",
-      "cost": "Standard trading commission applies",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://www.pingandb.com/en/",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 72,
-      "bank_id": "pao",
-      "bank_name": "PAObank",
-      "title": "Free Hong Kong Stock Real-time Level 1 Market Data",
-      "highlight": "📈 Free unlimited real-time Level 1 market quotes",
-      "description": "Customers with activated stock investment services can access free real-time Level 1 market data and indices for Hong Kong stocks. This includes unlimited real-time quotes to help make informed trading decisions.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Available to all activated stock investment account holders",
-      "cost": "Free",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://www.pingandb.com/en/",
-      "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-21"
     },
@@ -3396,7 +3449,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-21"
     },
@@ -3419,7 +3472,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
       "last_seen": "2026-04-21"
     },
@@ -3442,31 +3495,8 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/tc/investment.html",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-15",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 225,
-      "bank_id": "pao",
-      "bank_name": "PAObank",
-      "title": "Zero Platform Fee for Hong Kong and US Stocks",
-      "highlight": "🇺🇸 Trade US stocks for USD0.012 per share (min. USD7.88)",
-      "description": "Customers can trade US stocks with a commission of USD0.012 per share and a minimum charge of USD7.88 per trade. No platform fees are charged for US stock trading.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Available to all investment account holders",
-      "cost": "USD0.012 per share (min. USD7.88 per trade)",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://www.pingandb.com/en/",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-18",
       "last_seen": "2026-04-21"
     },
     {
@@ -3488,7 +3518,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/tc/stock.html",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-21",
       "last_seen": "2026-04-21"
     },
@@ -3511,7 +3541,7 @@
       "url": "",
       "tc_link": "https://www.pingandb.com/en/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-21",
       "last_seen": "2026-04-21"
     },
@@ -3613,7 +3643,7 @@
       "bank_name": "WeLab Bank",
       "title": "WeLab Global Wallet - Best FX Rates in Town",
       "highlight": "💱 Enjoy the best FX rates in town for currency exchange",
-      "description": "WeLab Global Wallet offers the best exchange rates in Hong Kong based on comparison with 28 retail banks. Helps customers save money when conducting foreign currency transactions for international opportunities.",
+      "description": "WeLab Bank offers the best exchange rates compared to 28 retail banks in Hong Kong. This allows customers to get the most competitive rates when conducting foreign exchange transactions.",
       "category": "",
       "start_date": null,
       "end_date": "2026-01-14",
@@ -3624,11 +3654,80 @@
         "外匯"
       ],
       "url": "",
-      "tc_link": "https://www.welab.bank/",
+      "tc_link": "https://www.welab.bank/en/",
       "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 59,
+      "bank_id": "welab",
+      "bank_name": "WeLab Bank",
+      "title": "WeLab Featured Funds - $0 Subscription and Switching Fees",
+      "highlight": "🔄 Unlimited $0 subscription fee and $0 switching fee",
+      "description": "WeLab Bank charges a monthly platform fee (0.1%) based on total fund holdings instead of charging subscription or switching fees per transaction like traditional banks. This allows for unlimited fund trading without per-transaction fees.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No cap",
+      "cost": "Monthly platform fee of 0.1% of fund holdings value",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://www.welab.bank/en/feature/2026-wm-april-cash-reward/",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 62,
+      "bank_id": "welab",
+      "bank_name": "WeLab Bank",
+      "title": "WeLab Bank Personal Loan 'R-Friend Referral' Campaign",
+      "highlight": "💸 Receive up to HKD 23,888 cash rebate on loan approval",
+      "description": "Successful WeLab Bank Personal Loan applicants with an approved loan amount of minimum HKD 150,001 and tenor of 24 months can enjoy up to HKD 23,888 cash rebate if the loan is drawn down within 7 days after approval.",
+      "category": "",
+      "start_date": null,
+      "end_date": "2026-06-30",
+      "period": "Until 2026-06-30",
+      "quota": "No cap mentioned",
+      "cost": "Minimum loan amount of HKD 150,001",
+      "types": [
+        "貸款"
+      ],
+      "url": "",
+      "tc_link": "https://www.welab.bank/en/feature/loan_mgm/",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 141,
+      "bank_id": "welab",
+      "bank_name": "WeLab Bank",
+      "title": "Investment Fund Cash Rewards - Up to HKD 4,000",
+      "highlight": "💰 Earn up to HKD 1,500 cash reward with qualifying investments",
+      "description": "Invest with an aggregate investment amount of at least HKD 100,000 (or equivalent) through Featured Fund Services or GoWealth Digital Wealth Advisory. Hold your fund units until 31 May 2026 and ensure your Current Wealth increases by at least HKD 100,000 to qualify for rewards.",
+      "category": "",
+      "start_date": "2026-04-09",
+      "end_date": "2026-04-21",
+      "period": "2026-04-09 to 2026-04-21",
+      "quota": "One-time only per eligible customer",
+      "cost": "Minimum investment of HKD 100,000",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://www.welab.bank/en/feature/2026-wm-april-cash-reward/",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-10",
+      "last_seen": "2026-04-22"
     },
     {
       "id": 54,
@@ -3650,30 +3749,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/en/",
       "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 59,
-      "bank_id": "welab",
-      "bank_name": "WeLab Bank",
-      "title": "WeLab Featured Funds - $0 Subscription and Switching Fees",
-      "highlight": "🔄 Unlimited $0 subscription fee and $0 switching fee for all fund investments",
-      "description": "WeLab Bank charges a monthly platform fee of 0.1% instead of per-transaction fees, helping customers save up to 85% in fees compared to traditional banks. Applies to all fund investments through Featured Funds and Digital Wealth Advisory services.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "No cap",
-      "cost": "0.1% monthly platform fee based on fund holdings value",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://www.welab.bank/",
-      "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-21"
     },
@@ -3696,54 +3772,8 @@
       "url": "",
       "tc_link": "https://www.welab.bank/en/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 62,
-      "bank_id": "welab",
-      "bank_name": "WeLab Bank",
-      "title": "WeLab Bank Personal Loan 'R-Friend Referral' Campaign",
-      "highlight": "💵 Get up to HKD 23,888 cash rebate with qualifying loan drawdown",
-      "description": "Apply for a WeLab Bank Personal Loan with a minimum approved amount of HKD 150,001 and tenor of 24 months or more. Draw down the loan within 7 days after approval to enjoy a cash rebate of up to HKD 23,888.",
-      "category": "",
-      "start_date": null,
-      "end_date": "2026-06-30",
-      "period": "Until 2026-06-30",
-      "quota": "No cap mentioned",
-      "cost": "Minimum loan amount of HKD 150,001 with 24+ month tenor",
-      "types": [
-        "貸款"
-      ],
-      "url": "",
-      "tc_link": "https://www.welab.bank/en/feature/loan_mgm/",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 141,
-      "bank_id": "welab",
-      "bank_name": "WeLab Bank",
-      "title": "Investment Fund Cash Rewards - Up to HKD 4,000",
-      "highlight": "💰 Earn up to HKD 1,500 cash reward with eligible fund investments",
-      "description": "Invest a minimum of HKD 100,000 in funds between 9-21 April 2026 and hold them until 31 May 2026 to receive cash rewards. Your Investment Account value must increase by at least HKD 100,000 during this period to qualify.",
-      "category": "",
-      "start_date": "2026-04-09",
-      "end_date": "2026-04-21",
-      "period": "2026-04-09 to 2026-04-21",
-      "quota": "No cap mentioned",
-      "cost": "Minimum investment of HKD 100,000 (or equivalent)",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://www.welab.bank/en/feature/2026-wm-april-cash-reward/",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-10",
       "last_seen": "2026-04-21"
     },
     {
@@ -3765,7 +3795,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/en/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-10",
       "last_seen": "2026-04-21"
     },
@@ -3812,7 +3842,7 @@
       "url": "",
       "tc_link": "https://www.welab.bank/",
       "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-20",
       "last_seen": "2026-04-21"
     },
@@ -4341,13 +4371,13 @@
       "bank_id": "za",
       "bank_name": "ZA Bank",
       "title": "ZA Bank 0% Fund Subscription Fee Offer until 31 Jul 2026",
-      "highlight": "💰 Enjoy 0% subscription fees on ALL funds with no cap",
-      "description": "Retail banking users who have activated investment fund trading services can enjoy 0% fund subscription fee offer and redemption fee waivers for all funds. Let 100% of your money go into the market with this fee waiver promotion.",
+      "highlight": "🏦 Enjoy 0% subscription fees on ALL funds with no cap",
+      "description": "Retail banking users who have activated investment fund trading services with ZA Bank can enjoy 0% fund subscription fee offer and redemption fee waivers for all funds. This allows 100% of your money to go directly into the market.",
       "category": "",
       "start_date": null,
       "end_date": "2026-07-31",
       "period": "Until 2026-07-31",
-      "quota": "All ZA Bank retail users who activate investment fund trading services",
+      "quota": "All retail banking users with activated investment fund trading services",
       "cost": "Free",
       "types": [
         "投資"
@@ -4357,7 +4387,428 @@
       "is_bau": false,
       "active": true,
       "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 36,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Card StockBack New Customer 2.5% Offer",
+      "highlight": "💰 Earn 1% stock rebates on all eligible spending with ZA Card",
+      "description": "Customers who use ZA Card for eligible transactions (minimum HKD 10) can earn stock rebates equal to 1% of the transaction amount. Each purchase gives you a StockBack chance valid for 48 hours where you can select from 6 available stocks as your reward.",
+      "category": "",
+      "start_date": "2025-11-03",
+      "end_date": "2026-06-30",
+      "period": "2025-11-03 to 2026-06-30",
+      "quota": "All ZA Card users eligible",
+      "cost": "Minimum spend of HKD 10 per transaction",
+      "types": [
+        "消費",
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 39,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "Year-Round Travel Offers with ZA Card",
+      "highlight": "✈️ Exclusive discounts and benefits for travelers",
+      "description": "ZA Bank offers special year-round travel discounts and benefits for customers. These promotions provide savings on travel-related purchases and services when using ZA Bank products.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Year-round",
+      "quota": "ZA Bank customers",
+      "cost": "Varies by specific travel offer",
+      "types": [
+        "旅遊",
+        "消費"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 40,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Bank Multi-Currency Savings Account",
+      "highlight": "💱 Hold and exchange 11 different currencies in one account",
+      "description": "ZA Bank offers a multi-currency savings account that allows customers to hold 11 different currencies (HKD, CNY, USD, GBP, SGD, EUR, CAD, AUD, JPY, NZD, CHF) and exchange between them 24/7 at competitive rates. This permanent product feature enables flexible currency management.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "All account holders",
+      "cost": "Free",
+      "types": [
+        "存款",
+        "外匯"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 41,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Bank Free Cash Withdrawals across Hong Kong",
+      "highlight": "💵 Free cash withdrawals at over 3,000 Visa ATMs in Hong Kong",
+      "description": "ZA Bank customers can withdraw cash for free at over 3,000 Visa ATMs across Hong Kong with their ZA Card. This permanent feature offers convenient access to cash without withdrawal fees within Hong Kong.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "All ZA Card holders",
+      "cost": "Free for Hong Kong withdrawals; overseas withdrawals may incur fees",
+      "types": [
+        "消費"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 42,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "Free Crypto Trading Platform Fee for New Customers",
+      "highlight": "💸 New crypto traders enjoy 90 days of zero platform fees",
+      "description": "Customers who activate crypto trading services with ZA Bank for the first time can enjoy 0 platform fee on all crypto trading transactions for the first 90 days from service activation. No cap on the number of transactions or trading volume.",
+      "category": "",
+      "start_date": "2026-02-01",
+      "end_date": "2026-06-30",
+      "period": "2026-02-01 to 2026-06-30",
+      "quota": "First-time crypto service activators only",
+      "cost": "Free",
+      "types": [
+        "投資",
+        "迎新"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 43,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "Custom Card Number Selection for ZA Card",
+      "highlight": "🔢 Choose the last 6 digits of your ZA Card number",
+      "description": "ZA Bank offers the unique ability to choose the last 6 digits on your ZA Card face - the first bank in Hong Kong to provide this personalization feature. This permanent product feature lets customers create a more memorable card number.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "All ZA Card applicants",
+      "cost": "Free",
+      "types": [
+        "消費"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 45,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Bank Free Instant FPS Transfers",
+      "highlight": "⚡ Free and instant transfers via FPS",
+      "description": "ZA Bank offers free instant transfers through the Faster Payment System (FPS). Customers can send and receive HKD and CNY using just a mobile phone number, and easily manage frequent payees. Group Lai See feature allows sending to multiple recipients with one tap.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "All account holders",
+      "cost": "Free",
+      "types": [
+        "消費"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 112,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "Insurance Application in as Fast as 3 Minutes",
+      "highlight": "⏱️ Get insured in as fast as 3 minutes via your smartphone",
+      "description": "ZA Bank offers a fully digital insurance application process that takes as little as 3 minutes to complete. Customers can apply for various insurance products including life insurance, critical illness insurance, and Voluntary Health Insurance Scheme (VHIS) directly through their smartphone.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "All eligible applicants",
+      "cost": "Varies by insurance product",
+      "types": [
+        "保險"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-09",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 148,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "Payment Connect Zero-Fee Cross-Border Transfers",
+      "highlight": "🌏 Send money between Mainland China and Hong Kong instantly with zero fees",
+      "description": "ZA Bank's Payment Connect service allows customers to send money between Mainland China and Hong Kong in real-time with zero transfer fees. This permanent feature offers convenient cross-border money movement.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "No restrictions",
+      "cost": "Free",
+      "types": [
+        "外匯"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-10",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 150,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "Customer Referral Rewards Program for Account Opening",
+      "highlight": "🤝 Earn up to HKD 90,000 by referring friends to open ZA Bank accounts",
+      "description": "Refer friends in Hong Kong to open ZA Bank accounts and earn rewards in three ways: compete for top 20 referrers in each phase for up to HKD 10,000, earn cash for each successful referral, and earn additional rewards when referred friends meet fund deposit and diversified asset holding requirements.",
+      "category": "",
+      "start_date": "2026-03-26",
+      "end_date": "2026-05-27",
+      "period": "2026-03-26 to 2026-05-27",
+      "quota": "Top 20 referrers in each of 9 phases for leaderboard rewards",
+      "cost": "Free to refer; referred friends must complete specified requirements",
+      "types": [
+        "推薦"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-10",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 180,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Card with No Annual or Hidden Fees",
+      "highlight": "📈 Trade stocks with 0 brokerage and 0 custody fees",
+      "description": "ZA Bank offers stock trading with zero brokerage fees and zero custody fees, with platform fees as low as USD 1.99/HKD 18 per transaction. This permanent feature provides cost-effective stock trading services to all investment account holders.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "All investment account holders",
+      "cost": "Platform fee starting from USD 1.99/HKD 18 per transaction",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-13",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 197,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Bank Quick Loan Approval",
+      "highlight": "⚡ Loan approval results in as fast as 90 seconds",
+      "description": "ZA Bank offers a streamlined loan application process with approval results available in as fast as 90 seconds for new customers. Loans of up to HKD 1,000,000 are available with APR as low as 1.30%. Various loan products are offered including Instalment Loan, Card Statement Instalment, and Debt Consolidation.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "Eligible applicants only",
+      "cost": "Interest rates and terms vary based on credit assessment",
+      "types": [
+        "貸款"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-14",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 199,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Card Statement Instalment Program SURPRISE Cash Reward",
+      "highlight": "💰 Get cash rewards up to HKD 2,000 with promo code SURPRISE",
+      "description": "Apply for the ZA Card Statement Instalment Plan with promo code SURPRISE and receive cash rewards upon successful application. Rewards vary based on loan amount: HKD 588 for loans between HKD 200,000-399,999, HKD 688 for HKD 400,000-799,999, and HKD 2,000 for loans of HKD 800,000 or more.",
+      "category": "",
+      "start_date": null,
+      "end_date": "2026-06-30",
+      "period": "Until 2026-06-30",
+      "quota": "Must complete 7-day cooling period after successful application",
+      "cost": "Must apply for a loan with minimum 18-month repayment period and minimum HKD 200,000 loan amount",
+      "types": [
+        "貸款"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-14",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 215,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Bank 6th Anniversary StockBack Campaign",
+      "highlight": "🎉 Win up to HKD 60,000 in StockBack rewards and exclusive metal cards",
+      "description": "ZA Bank's 6th Anniversary celebration offers multiple ways to earn StockBack rewards including a lucky draw with prizes up to HKD 60,000, special coffee merchant rebates, and a leaderboard competition for exclusive metal cards worth HKD 1,000.",
+      "category": "",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-21",
+      "period": "2026-04-01 to 2026-04-21",
+      "quota": "Various quotas for different components of the campaign",
+      "cost": "Various requirements for different parts of the promotion",
+      "types": [
+        "消費",
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-17",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 226,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Bank 24x7 Customer Service",
+      "highlight": "🕒 Round-the-clock customer service support",
+      "description": "ZA Bank provides 24x7 customer service support to assist customers at any time of day or night. This permanent service feature ensures customers can get help whenever they need it, without being restricted by traditional banking hours.",
+      "category": "",
+      "start_date": null,
+      "end_date": null,
+      "period": "Ongoing",
+      "quota": "All ZA Bank customers",
+      "cost": "Free",
+      "types": [
+        "Others"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": true,
+      "active": true,
+      "created_at": "2026-04-19",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 229,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Bank New User HKD 200 StockBack Welcome Gift",
+      "highlight": "🎁 New customers receive HKD 200 in stock of their choice",
+      "description": "New ZA Bank customers can select one stock from six options (GE.US, HSBC.US, AZN.US, AMAT.US, MS.US, UNH.US) and receive HKD 200 worth of that stock as a welcome gift. Part of ZA Bank's 6th Anniversary celebration.",
+      "category": "",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-21",
+      "period": "2026-04-01 to 2026-04-21",
+      "quota": "New customers only",
+      "cost": "Free",
+      "types": [
+        "迎新",
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-20",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 234,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "ZA Bank 6th Anniversary Coffee Merchant Promotion",
+      "highlight": "☕ Earn 6% StockBack at all coffee merchants, 12% at selected stores",
+      "description": "During the promotion period, customers using ZA Card at local coffee merchants can earn 6% StockBack rewards on eligible transactions. Spending at specifically designated coffee merchants earns an enhanced 12% StockBack reward. Total rewards capped at HKD 50 per customer.",
+      "category": "",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-21",
+      "period": "2026-04-01 to 2026-04-21",
+      "quota": "Cap of HKD 50 in total special rebates per customer",
+      "cost": "Minimum spend of HKD 10 per transaction",
+      "types": [
+        "消費",
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-21",
+      "last_seen": "2026-04-22"
+    },
+    {
+      "id": 235,
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "title": "Stock PowerDraw Promotion",
+      "highlight": "🎰 Get a chance to win free stocks with every stock purchase",
+      "description": "Customers who complete stock purchase transactions receive one Stock PowerDraw chance valid for 24 hours. Winners can receive Designated Stock Redemption Coupons for stocks ranked in the top 100 by market value in the US stocks market.",
+      "category": "",
+      "start_date": "2026-02-01",
+      "end_date": "2026-06-30",
+      "period": "2026-02-01 to 2026-06-30",
+      "quota": "US stock purchases must have platform fee of minimum USD 2; HK stocks minimum HKD 20",
+      "cost": "Must make qualifying stock purchase transactions",
+      "types": [
+        "投資"
+      ],
+      "url": "",
+      "tc_link": "https://bank.za.group/en/promotion",
+      "is_bau": false,
+      "active": true,
+      "created_at": "2026-04-21",
+      "last_seen": "2026-04-22"
     },
     {
       "id": 35,
@@ -4379,169 +4830,6 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 36,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "ZA Card StockBack New Customer 2.5% Offer",
-      "highlight": "🏆 Earn stocks on every qualifying purchase with your ZA Card",
-      "description": "When spending with ZA Card, you'll receive StockBack chances for every qualified transaction of HKD 10 or more. Each StockBack chance allows you to select one stock from six options, with reward amount being 1% of the transaction amount.",
-      "category": "",
-      "start_date": "2025-11-03",
-      "end_date": "2026-06-30",
-      "period": "2025-11-03 to 2026-06-30",
-      "quota": "All ZA Card users eligible, each StockBack chance valid for 48 hours",
-      "cost": "Minimum HKD 10 per transaction",
-      "types": [
-        "消費",
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 39,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "Year-Round Travel Offers with ZA Card",
-      "highlight": "✈️ Exclusive travel discounts all year round",
-      "description": "ZA Card users can enjoy year-round travel offers and discounts when booking flights, hotels, and other travel services. A permanent product feature offering savings for travelers.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "All ZA Card users",
-      "cost": "Varies by specific offer",
-      "types": [
-        "旅遊",
-        "消費"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 40,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "Multi-Currency Savings Account",
-      "highlight": "🌐 Hold 11 different currencies in one account",
-      "description": "ZA Bank offers a multi-currency savings account that allows users to hold 11 different currencies, including HKD, CNY, USD, GBP, SGD, EUR, CAD, AUD, JPY, NZD, and CHF. Users can exchange currencies 24/7 at their preferred rates.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "All ZA Bank users",
-      "cost": "Free",
-      "types": [
-        "外匯"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 41,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "Free Cash Withdrawals Throughout Hong Kong",
-      "highlight": "💵 Withdraw cash for free at over 3,000 Visa ATMs",
-      "description": "ZA Card users can enjoy free cash withdrawals at over 3,000 Visa ATMs across Hong Kong. This is a permanent feature of the ZA Card, providing convenient access to cash without fees within Hong Kong.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "All ZA Card users",
-      "cost": "Free",
-      "types": [
-        "Others"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 42,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "Free Crypto Trading Platform Fee for New Customers",
-      "highlight": "📈 Trade stocks with 0 brokerage, 0 custody fees",
-      "description": "ZA Bank offers stock trading with zero brokerage fees and zero custody fees. Platform fees are as low as USD 1.99/HKD 18 per transaction, making it a cost-effective way to invest in stocks.",
-      "category": "",
-      "start_date": "2026-02-01",
-      "end_date": "2026-06-30",
-      "period": "Ongoing",
-      "quota": "All ZA Bank investment account users",
-      "cost": "Platform fee as low as USD 1.99/HKD 18 per transaction",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 43,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "Custom Card Number Selection for ZA Card",
-      "highlight": "🔢 Choose the last 6 digits on your card face",
-      "description": "ZA Bank is the first in Hong Kong to allow customers to choose the last 6 digits on their card face. This personalization feature gives customers the ability to customize their ZA Card number.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "All ZA Card users",
-      "cost": "Free",
-      "types": [
-        "Others"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 45,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "ZA Bank FPS Free Instant Transfers",
-      "highlight": "💸 No fees for instant transfers via FPS",
-      "description": "ZA Bank users can send and receive money instantly via FPS with no transfer fees. Users can receive HKD and CNY with just their mobile phone number and send Group Lai See with one tap.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "All ZA Bank users",
-      "cost": "Free",
-      "types": [
-        "Others"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
       "active": true,
       "created_at": "2026-04-09",
       "last_seen": "2026-04-21"
@@ -4594,29 +4882,6 @@
       "last_seen": "2026-04-21"
     },
     {
-      "id": 148,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "Payment Connect Zero-Fee Cross-Border Transfers",
-      "highlight": "🌎 Transfer money globally with zero ZA Bank fees",
-      "description": "Send money to over 140 countries and regions via SWIFT with zero fees charged by ZA Bank. This service allows customers to make international transfers without paying ZA Bank transfer fees.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "All ZA Bank users",
-      "cost": "Free from ZA Bank (recipient bank may charge fees)",
-      "types": [
-        "Others"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-10",
-      "last_seen": "2026-04-21"
-    },
-    {
       "id": 149,
       "bank_id": "za",
       "bank_name": "ZA Bank",
@@ -4632,29 +4897,6 @@
       "types": [
         "迎新",
         "投資"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-10",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 150,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "Customer Referral Rewards Program for Account Opening",
-      "highlight": "🏆 Top 20 referrers can win up to HKD 10,000 per phase (9 phases)",
-      "description": "During the promotion period divided into 9 phases, the top 20 referrers with the most successful account referrals in each phase can receive cash rewards up to HKD 10,000 per phase. The cumulative reward potential across all phases is HKD 90,000.",
-      "category": "",
-      "start_date": "2026-03-26",
-      "end_date": "2026-05-27",
-      "period": "2026-03-26 to 2026-05-27",
-      "quota": "Top 20 referrers in each of 9 phases",
-      "cost": "Free",
-      "types": [
-        "推薦"
       ],
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
@@ -4706,30 +4948,7 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-13",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 180,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "ZA Card with No Annual or Hidden Fees",
-      "highlight": "💳 Visa debit card with zero annual fees and no hidden charges",
-      "description": "ZA Card is a Visa debit card with no annual fees or hidden charges. It supports Apple Pay and Google Pay for convenient mobile payments and truly belongs to the customer without ongoing costs.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "All ZA Bank users",
-      "cost": "Free",
-      "types": [
-        "Others"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-13",
       "last_seen": "2026-04-21"
     },
@@ -4753,57 +4972,8 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-14",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 199,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "ZA Card Statement Instalment Program SURPRISE Cash Reward",
-      "highlight": "💵 Get up to HKD 2,000 cash reward with the promo code SURPRISE",
-      "description": "Apply for ZA Card Statement Instalment Plan with promo code SURPRISE and successfully withdraw funds for a repayment period of 18 months or more. Cash rewards are tiered based on loan amount, from HKD 588 to HKD 2,000.",
-      "category": "",
-      "start_date": null,
-      "end_date": "2026-06-30",
-      "period": "Until 2026-06-30",
-      "quota": "All eligible applicants with loan amounts starting from HKD 200,000",
-      "cost": "Minimum loan amount of HKD 200,000 required for rewards",
-      "types": [
-        "貸款",
-        "迎新"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-14",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 215,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "6th Anniversary StockBack Rewards Campaign",
-      "highlight": "🎉 Win stock rewards worth up to HKD 6 million collectively",
-      "description": "Special anniversary campaign with six different promotional components, including StockBack lottery prizes up to HKD 60,000, special rewards for users with ages ending in '6', 6% StockBack on coffee purchases, and more.",
-      "category": "",
-      "start_date": "2026-04-01",
-      "end_date": "2026-04-21",
-      "period": "2026-04-01 to 2026-04-21",
-      "quota": "All ZA Bank users eligible for different components, with specific requirements for each",
-      "cost": "Free for some components; minimum HKD 10 spending for others",
-      "types": [
-        "迎新",
-        "消費",
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-17",
       "last_seen": "2026-04-21"
     },
     {
@@ -4826,102 +4996,8 @@
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
       "is_bau": false,
-      "active": true,
+      "active": false,
       "created_at": "2026-04-17",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 226,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "24/7 Banking Services",
-      "highlight": "🪙 Trade cryptocurrencies 24/7 directly with HKD or USD",
-      "description": "ZA Bank allows users to trade cryptocurrencies 24/7 directly with their HKD or USD deposits. This service provides convenient access to crypto markets at any time of day or night.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "All ZA Bank users with activated crypto trading services",
-      "cost": "Platform fees apply (varies by promotion)",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
-      "active": true,
-      "created_at": "2026-04-19",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 229,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "New Customer HKD 200 StockBack Welcome Gift",
-      "highlight": "🎁 HKD 200 in free stock for new customers",
-      "description": "As part of the 6th Anniversary campaign, new users can select 1 stock from a choice of 6 options and receive HKD 200 worth of that stock as a welcome gift. Options include GE, HSBC, AZN, AMAT, MS, and UNH.",
-      "category": "",
-      "start_date": "2026-04-01",
-      "end_date": "2026-04-21",
-      "period": "2026-04-01 to 2026-04-21",
-      "quota": "New customers only",
-      "cost": "Free",
-      "types": [
-        "迎新",
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-20",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 234,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "6% StockBack at Coffee Merchants",
-      "highlight": "☕ Earn 6% in stock rewards at all coffee merchants",
-      "description": "During the promotion period, users can earn 6% in stock rewards when spending at any local coffee merchants with their ZA Card. The maximum combined reward from this and the 12% StockBack promotion is capped at HKD 50 per user.",
-      "category": "",
-      "start_date": "2026-04-01",
-      "end_date": "2026-04-21",
-      "period": "2026-04-01 to 2026-04-21",
-      "quota": "All eligible ZA Card users, maximum HKD 50 reward per user",
-      "cost": "Minimum HKD 10 per transaction",
-      "types": [
-        "消費",
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-21",
-      "last_seen": "2026-04-21"
-    },
-    {
-      "id": 235,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "Stock PowerDraw Promotion",
-      "highlight": "🎲 Chance to win free stocks with every stock purchase",
-      "description": "Receive one Stock PowerDraw chance for each qualifying stock purchase transaction. Each chance lets you win designated stock redemption coupons that can be redeemed for stocks ranked in the top 100 by market value in the US stock market.",
-      "category": "",
-      "start_date": "2026-02-01",
-      "end_date": "2026-06-30",
-      "period": "2026-02-01 to 2026-06-30",
-      "quota": "All eligible users with ZA Bank App version 3.8.9 or above",
-      "cost": "Minimum platform fee of USD 2 for US stocks or HKD 20 for HK stocks per transaction",
-      "types": [
-        "投資"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": false,
-      "active": true,
-      "created_at": "2026-04-21",
       "last_seen": "2026-04-21"
     },
     {
@@ -5277,29 +5353,6 @@
       "last_seen": "2026-04-14"
     },
     {
-      "id": 197,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "Fast Loan Approval Process",
-      "highlight": "⚡ Loan approval in as fast as 90 seconds",
-      "description": "ZA Bank offers a streamlined loan application process with approval results in as fast as 90 seconds. Loans of up to HKD 1,000,000 are available with annualized percentage rates as low as 1.30%.",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Eligible loan applicants",
-      "cost": "Interest charges apply",
-      "types": [
-        "貸款"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
-      "active": false,
-      "created_at": "2026-04-14",
-      "last_seen": "2026-04-14"
-    },
-    {
       "id": 33,
       "bank_id": "za",
       "bank_name": "ZA Bank",
@@ -5360,29 +5413,6 @@
       "cost": "Varies by destination and amount",
       "types": [
         "外匯"
-      ],
-      "url": "",
-      "tc_link": "https://bank.za.group/en/promotion",
-      "is_bau": true,
-      "active": false,
-      "created_at": "2026-04-09",
-      "last_seen": "2026-04-13"
-    },
-    {
-      "id": 112,
-      "bank_id": "za",
-      "bank_name": "ZA Bank",
-      "title": "Insurance Application in as Fast as 3 Minutes",
-      "highlight": "🛡️ Apply for insurance in as fast as 3 minutes via smartphone",
-      "description": "In partnership with ZA Insure, ZA Bank offers a quick insurance application process that can be completed in as fast as 3 minutes via smartphone. Coverage options include life insurance, critical illness insurance, and Voluntary Health Insurance Scheme (VHIS).",
-      "category": "",
-      "start_date": null,
-      "end_date": null,
-      "period": "Ongoing",
-      "quota": "Available to eligible applicants",
-      "cost": "Varies by insurance product",
-      "types": [
-        "保險"
       ],
       "url": "",
       "tc_link": "https://bank.za.group/en/promotion",
@@ -5627,160 +5657,210 @@
       "last_seen": "2026-04-09"
     }
   ],
-  "last_updated": "2026-04-21 09:14",
+  "last_updated": "2026-04-22 03:29",
   "strategic_insights": {
     "best_for": [
       {
-        "category": "Investment (Stock/Crypto Trading)",
-        "bank": "WeLab Bank",
-        "detail": "Strong investment fund offerings with $0 fees",
-        "is_bau": true
+        "category": "Stock Trading",
+        "bank": "Airstar Bank",
+        "detail": "Zero commission trading for HK stocks forever with no minimum trade requirement",
+        "is_bau": true,
+        "similar_banks": [
+          "PAObank",
+          "ZA Bank"
+        ],
+        "why_others_lose": "PAObank offers zero platform fee but doesn't specify commission waiver; ZA Bank offers zero brokerage but Airstar's 'forever' guarantee is more explicitly permanent"
+      },
+      {
+        "category": "Crypto Trading",
+        "bank": "ZA Bank",
+        "detail": "New crypto traders enjoy 90 days of zero platform fees until 2026-06-30",
+        "is_bau": false,
+        "similar_banks": [],
+        "why_others_lose": "Only bank currently offering this promotion."
       },
       {
         "category": "Spending/CashBack",
         "bank": "ZA Bank",
-        "detail": "2.5% StockBack on spending for new customers",
-        "is_bau": false
+        "detail": "6th Anniversary promotion with 6% StockBack at all coffee merchants, 12% at selected stores until 2026-04-21",
+        "is_bau": false,
+        "similar_banks": [
+          "Mox Bank"
+        ],
+        "why_others_lose": "Mox offers lower rewards than ZA's 6-12% StockBack; ZA's promotion is still active on 2026-04-22 through end of day"
       },
       {
         "category": "Welcome Bonus",
         "bank": "ZA Bank",
-        "detail": "HKD 2,026 in rewards plus 2.5% stock cashback",
-        "is_bau": false
+        "detail": "Receive HKD 2,026 in rewards and 2.5% stock cashback until 2026-05-27",
+        "is_bau": false,
+        "similar_banks": [
+          "Mox Bank"
+        ],
+        "why_others_lose": "Mox's new customer rewards are more complicated with multiple conditions; ZA offers a higher guaranteed cash value"
       },
       {
         "category": "Travel",
         "bank": "Mox Bank",
-        "detail": "Up to 28,500 Asia Miles through spending and saving in MOXTRIP25 promotion",
-        "is_bau": false
+        "detail": "MOXTRIP25 promotion earning up to 28,500 miles through spending and saving until 2026-06-30",
+        "is_bau": false,
+        "similar_banks": [
+          "ZA Bank"
+        ],
+        "why_others_lose": "ZA Bank's travel offers don't specify high-value mile rewards; Mox's 28,500 miles offer represents superior value"
       },
       {
         "category": "Loan APR",
-        "bank": "Mox Bank",
-        "detail": "Low interest rate from 1.18% plus cash reward up to HKD10,888",
-        "is_bau": false
+        "bank": "Airstar Bank",
+        "detail": "Personalized loan rates starting from 7.43% APR",
+        "is_bau": true,
+        "similar_banks": [
+          "Mox Bank"
+        ],
+        "why_others_lose": "Mox Bank's Instant Loan promotion quotes a rate of 1.18%, but this appears to be a monthly rate rather than APR; Airstar's 7.43% APR is clearly stated"
       },
       {
         "category": "FX/Multi-Currency",
         "bank": "WeLab Bank",
-        "detail": "Best FX rates in town with $0 foreign currency transaction fee",
-        "is_bau": true
+        "detail": "WeLab Global Wallet with best FX rates in town for currency exchange",
+        "is_bau": true,
+        "similar_banks": [
+          "ZA Bank",
+          "livi bank",
+          "Airstar Bank"
+        ],
+        "why_others_lose": "WeLab explicitly claims 'best FX rates in town'; other banks offer multi-currency but don't make this competitive claim"
       },
       {
         "category": "Fund Investment",
         "bank": "ZA Bank",
-        "detail": "0% subscription fees on ALL funds with no cap until July 31, 2026",
-        "is_bau": false
+        "detail": "0% subscription fees on ALL funds with no cap until 2026-07-31",
+        "is_bau": false,
+        "similar_banks": [
+          "Mox Bank",
+          "WeLab Bank",
+          "Ant Bank",
+          "PAObank"
+        ],
+        "why_others_lose": "Mox's 0% fund fee ends 2026-06-30; WeLab and Ant Bank have limited fund selections; PAObank only waives fees for money market funds"
       },
       {
         "category": "Referral Bonus",
         "bank": "ZA Bank",
-        "detail": "Top 20 referrers can win up to HKD 10,000 per phase across 9 phases",
-        "is_bau": false
+        "detail": "Earn up to HKD 90,000 by referring friends to open ZA Bank accounts until 2026-05-27",
+        "is_bau": false,
+        "similar_banks": [
+          "WeLab Bank"
+        ],
+        "why_others_lose": "WeLab's referral program for Tesla Loans offers just HKD 800 per referral; ZA Bank's program has much higher potential earnings"
       }
     ],
     "bank_analysis": {
       "ZA Bank": {
-        "focus": "Comprehensive rewards & stock-based incentives",
+        "focus": "digital lifestyle, investments, rewards",
         "strengths": [
-          "Industry-leading StockBack program",
-          "Highest welcome bonus at HKD 2,026",
-          "Strong fund investment offer with 0% fees"
+          "High-value referral program (up to HKD 90,000)",
+          "Comprehensive StockBack rewards ecosystem",
+          "Strong fund investment promotions with 0% fees",
+          "Robust crypto trading platform for new users"
         ],
-        "expiring_alert": "StockBack 6th Anniversary campaign ending April 21, 2026",
+        "expiring_alert": "6th Anniversary coffee merchant StockBack promotion ends April 21, 2026 (TODAY)",
         "vs_za_pros": null,
         "vs_za_cons": null,
         "count": 15,
-        "bau_count": 10
-      },
-      "Mox Bank": {
-        "focus": "Travel rewards & diversified promotions",
-        "strengths": [
-          "Best travel rewards with Asia Miles program",
-          "Competitive loan offer at 1.18% APR",
-          "Extensive promotion portfolio (18 offers)"
-        ],
-        "expiring_alert": "Several promotions ending April 30, 2026: Pay Tax, Instant Loan, Keeta Discount",
-        "vs_za_pros": "Superior travel partnerships & rewards; lower loan APR",
-        "vs_za_cons": "Less attractive stock-based rewards; lower welcome bonus",
-        "count": 18,
-        "bau_count": 3
-      },
-      "WeLab Bank": {
-        "focus": "FX & global spending capabilities",
-        "strengths": [
-          "Best FX rates with zero foreign currency transaction fees",
-          "Strong investment fund offerings with $0 fees",
-          "AI-powered wealth advisory"
-        ],
-        "expiring_alert": "Investment Fund Cash Rewards ending April 21, 2026",
-        "vs_za_pros": "Superior FX rates; better global spending capabilities",
-        "vs_za_cons": "Fewer promotions overall; less attractive welcome offer",
-        "count": 3,
-        "bau_count": 6
-      },
-      "Airstar Bank": {
-        "focus": "Core banking & transfer efficiency",
-        "strengths": [
-          "24/7 instant securities transfers",
-          "Comprehensive protection features",
-          "No account fees or minimum balance requirements"
-        ],
-        "expiring_alert": "Travel with Visa Flight Booking Cash Rebate (end date varies)",
-        "vs_za_pros": "Better securities transfer speed; more permanent features",
-        "vs_za_cons": "Less attractive promotions; weaker investment offerings",
-        "count": 3,
-        "bau_count": 11
-      },
-      "Ant Bank": {
-        "focus": "SME lending & accessibility",
-        "strengths": [
-          "SME loan with up to HKD 100,000 cash rebate",
-          "Low minimum investment thresholds (HKD 1)",
-          "Fixed deposit with no early withdrawal penalty"
-        ],
-        "expiring_alert": "Investment Fund Transaction Fee Waiver ending soon",
-        "vs_za_pros": "Better SME lending offers; lower investment minimums",
-        "vs_za_cons": "Fewer consumer promotions; less attractive cashback",
-        "count": 3,
         "bau_count": 9
       },
-      "Fusion Bank": {
-        "focus": "Time deposits & savings interest",
+      "Mox Bank": {
+        "focus": "travel rewards, lifestyle partnerships, credit products",
         "strengths": [
-          "High-interest HKD time deposits on Mondays",
-          "Multi-currency capabilities",
-          "Global remittance services"
+          "Superior travel rewards with MOXTRIP25 (up to 28,500 miles)",
+          "Diverse merchant partnerships across retail and lifestyle",
+          "Multiple credit card promotions with cashback",
+          "Attractive tax payment rewards up to HKD 500"
         ],
-        "expiring_alert": "Flash Monday High-Interest HKD Time Deposit (limited time)",
-        "vs_za_pros": "Better time deposit rates on Mondays",
-        "vs_za_cons": "Fewer overall promotions; weaker investment offerings",
+        "expiring_alert": "Several promotions ending April 30, 2026, including Tax payment rewards and Keeta discount",
+        "vs_za_pros": "Better travel rewards program with higher miles earning potential; more varied merchant partnerships",
+        "vs_za_cons": "More complicated welcome offers than ZA's straightforward HKD 2,026 reward; shorter fund promotion period (ends June 30 vs ZA's July 31)",
+        "count": 19,
+        "bau_count": 0
+      },
+      "Airstar Bank": {
+        "focus": "everyday banking, stock trading, permanent features",
+        "strengths": [
+          "Permanent zero-commission HK stock trading",
+          "Low starting APR (7.43%) for personal loans",
+          "Diverse permanent features including 24/7 securities transfers",
+          "No account fees or minimum balance requirements"
+        ],
+        "expiring_alert": "",
+        "vs_za_pros": "More permanent features with no expiration dates; clearer commitment to zero-commission stock trading forever",
+        "vs_za_cons": "Fewer active time-limited promotions compared to ZA; no competitive crypto offering",
+        "count": 4,
+        "bau_count": 12
+      },
+      "WeLab Bank": {
+        "focus": "FX rates, fund investments, loan products",
+        "strengths": [
+          "Claims best FX rates for currency exchange",
+          "Zero subscription and switching fees for funds",
+          "Tesla loan referral program",
+          "Strong loan cash rebate up to HKD 23,888"
+        ],
+        "expiring_alert": "Investment Fund Cash Rewards promotion just ended on April 21, 2026",
+        "vs_za_pros": "Superior FX rates offering; better loan cash rebates",
+        "vs_za_cons": "Lower referral rewards compared to ZA's program; fewer active promotions overall",
         "count": 3,
-        "bau_count": 6
+        "bau_count": 2
+      },
+      "Ant Bank": {
+        "focus": "savings rates, SME services",
+        "strengths": [
+          "High yield savings account with 2.0% p.a. interest",
+          "SME loan cash rebate up to HKD 100,000",
+          "Fund platform transaction fee waiver"
+        ],
+        "expiring_alert": "",
+        "vs_za_pros": "Better offering for SME customers with higher loan cash rebates",
+        "vs_za_cons": "Fewer active promotions than ZA; limited fund selection for fee waiver",
+        "count": 3,
+        "bau_count": 3
+      },
+      "Fusion Bank": {
+        "focus": "deposit products, foreign exchange",
+        "strengths": [
+          "Enhanced interest rates on time deposits with foreign exchange",
+          "Monday flash time deposit promotion",
+          "Multi-currency capabilities"
+        ],
+        "expiring_alert": "",
+        "vs_za_pros": "More focus on deposit products with special rates",
+        "vs_za_cons": "Much fewer active promotions than ZA; no competitive investment offerings",
+        "count": 3,
+        "bau_count": 5
       },
       "PAObank": {
-        "focus": "Investment tools & stock trading",
+        "focus": "investment services, trading hours",
         "strengths": [
-          "Professional stock analysis tools",
-          "Zero platform fees for HK & US stocks",
-          "Extended US stock trading hours (16 hours)"
+          "Zero platform fee for Hong Kong and US stocks",
+          "Extended US stock trading hours",
+          "Free real-time market data for Hong Kong stocks"
         ],
-        "expiring_alert": "No time-limited promotions currently running",
-        "vs_za_pros": "Better stock analysis tools; longer US trading hours",
-        "vs_za_cons": "No time-limited promotions; weaker cashback offerings",
+        "expiring_alert": "",
+        "vs_za_pros": "Extended US stock trading hours; better market data offerings",
+        "vs_za_cons": "No time-limited promotions currently; fewer rewards programs than ZA",
         "count": 0,
-        "bau_count": 14
+        "bau_count": 6
       },
       "livi bank": {
-        "focus": "Insurance & SME services",
+        "focus": "basic banking services, insurance products",
         "strengths": [
-          "Comprehensive insurance offerings",
-          "SME financing solutions",
-          "BOC card partnerships"
+          "Preferential savings rate with no minimum deposit",
+          "Rewards universe program",
+          "Diverse insurance offerings including pet care"
         ],
-        "expiring_alert": "liviSave Preferential Savings Rate (ongoing but could change)",
-        "vs_za_pros": "More diverse insurance products; better SME services",
-        "vs_za_cons": "Fewer consumer promotions; less attractive investment offerings",
+        "expiring_alert": "",
+        "vs_za_pros": "More comprehensive insurance product lineup including pet insurance",
+        "vs_za_cons": "Fewer active promotions than ZA; less competitive in investment and trading areas",
         "count": 3,
         "bau_count": 13
       }
