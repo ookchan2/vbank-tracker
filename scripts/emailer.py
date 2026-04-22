@@ -126,13 +126,14 @@ def _types_to_list(types_raw) -> list:
 
 
 # ── Shared expiry helper ──────────────────────────────────────────────────────
-# Uses end_date only — identical logic to the website's getStatus().
-# Returns 'past' | 'expiring' | 'active'.
-# 'past'     = end_date already passed   → NOT counted in total or active
-# 'expiring' = end_date within 30 days   → counted in total + expiring
-# 'active'   = no end_date or far future → counted in total + active
 
 def _classify_promo(p: dict, today_d, threshold_d) -> str:
+    """
+    Returns 'past' | 'expiring' | 'active'.
+    'past'     = end_date already passed   → NOT counted in total or active
+    'expiring' = end_date within 30 days   → counted in total + expiring
+    'active'   = no end_date or far future → counted in total + active
+    """
     ed = p.get('end_date')
     if ed:
         try:
@@ -144,6 +145,50 @@ def _classify_promo(p: dict, today_d, threshold_d) -> str:
         except (ValueError, TypeError):
             pass
     return 'active'
+
+
+# ── Multiple recipients helper ────────────────────────────────────────────────
+
+def _collect_recipients(override: str = None) -> list[str]:
+    """
+    Gather all configured recipient emails from:
+      - override argument (comma-separated)
+      - RECIPIENT_EMAIL  env var (comma-separated, primary)
+      - RECIPIENT_EMAIL_2 env var (second recipient)
+      - RECIPIENT_EMAIL_3 env var (third recipient)
+      - Legacy fallbacks: EMAIL_RECIPIENT, EMAIL_TO
+
+    To add a new recipient, set RECIPIENT_EMAIL_2 (or _3) in your
+    GitHub Actions secrets — no code changes needed.
+    """
+    raw_emails: list[str] = []
+
+    # Override argument
+    if override:
+        raw_emails.extend(override.split(','))
+
+    # Env vars in priority order
+    for env_var in (
+        'RECIPIENT_EMAIL',
+        'RECIPIENT_EMAIL_2',
+        'RECIPIENT_EMAIL_3',
+        'EMAIL_RECIPIENT',
+        'EMAIL_TO',
+    ):
+        val = os.getenv(env_var, '').strip()
+        if val:
+            raw_emails.extend(val.split(','))
+
+    # Deduplicate, preserve order, strip whitespace
+    seen:   set[str]  = set()
+    result: list[str] = []
+    for e in raw_emails:
+        e = e.strip()
+        if e and e not in seen:
+            seen.add(e)
+            result.append(e)
+
+    return result
 
 
 # ── Promotion card ────────────────────────────────────────────────────────────
@@ -243,8 +288,16 @@ def _new_section_html(
     header_dark:  str,
     empty_msg:    str,
     count_label:  str,
+    skip_if_empty: bool = False,
 ) -> str:
+    """
+    Build a promotions section.
+    If skip_if_empty=True and promos is empty, return '' (section omitted entirely).
+    Otherwise show an empty-state placeholder.
+    """
     if not promos:
+        if skip_if_empty:
+            return ''  # ← section completely omitted (requirement d)
         return f"""
 <tr><td style="height:16px;"></td></tr>
 <tr><td style="background:#f9fafb;border-radius:14px;padding:22px 20px;
@@ -303,7 +356,6 @@ def _build_plain_text(
     today_d   = datetime.now().date()
     threshold = (datetime.now() + timedelta(days=30)).date()
 
-    # ── FIXED: use end_date only; 'past' promos excluded from total ──────────
     exp_count  = 0
     past_count = 0
     for p in non_bau:
@@ -313,12 +365,14 @@ def _build_plain_text(
         elif status == 'expiring':
             exp_count += 1
 
-    # ── FIXED: total = active + expiring only (mirrors website statTotal) ────
     total_shown  = len(non_bau) - past_count
     active_count = total_shown - exp_count
 
+    # Date only for plain text header (no time)
+    date_only = datetime.now().strftime('%d %b %Y')
+
     lines = [
-        f'VBank Tracker Daily Report — {now}',
+        f'VBank Tracker Daily Report — {date_only}',
         '=' * 50,
     ]
     if ai_unavailable:
@@ -328,8 +382,41 @@ def _build_plain_text(
             '    Data shown is from the last successful AI run (cached).',
             '    Promotions may not reflect today\'s latest changes.',
         ]
+
+    # ── Order: Today new → This week new → Totals (matching email order) ──────
+
+    new_show = [p for p in (new_promos or []) if not p.get('is_bau', False)]
+    if new_show:
+        lines += [
+            '',
+            f'NEWLY LAUNCHED TODAY ({len(new_show)}):',
+        ]
+        for p in new_show:
+            bank  = p.get('bName') or p.get('bank_name') or '?'
+            title = p.get('title') or p.get('name') or '?'
+            tc    = p.get('tc_link') or p.get('url') or ''
+            lines.append(f'  [{bank}] {title}')
+            if p.get('period'): lines.append(f'    Period      : {p["period"]}')
+            if p.get('quota'):  lines.append(f'    Eligibility : {p["quota"]}')
+            if tc:              lines.append(f'    Source      : {tc}')
+        lines.append('')
+
+    week_show = [p for p in (new_promos_week or []) if not p.get('is_bau', False)]
+    if week_show:
+        lines += [
+            f'NEW THIS WEEK — PAST 6 DAYS ({len(week_show)}):',
+        ]
+        for p in week_show:
+            bank  = p.get('bName') or p.get('bank_name') or '?'
+            title = p.get('title') or p.get('name') or '?'
+            tc    = p.get('tc_link') or p.get('url') or ''
+            lines.append(f'  [{bank}] {title}')
+            if tc: lines.append(f'    Source : {tc}')
+        lines.append('')
+    elif not new_show:
+        lines += ['', 'NEW THIS WEEK — PAST 6 DAYS: None', '']
+
     lines += [
-        '',
         f'TOTAL PROMOTIONS : {total_shown}',
         f'ACTIVE           : {active_count}',
         f'EXPIRING SOON    : {exp_count}',
@@ -343,40 +430,9 @@ def _build_plain_text(
 
     lines.append('PROMOTIONS BY BANK:')
     for bname, promos in sorted(banks.items()):
-        # ── FIXED: exclude past-ended from per-bank count ──
         b_past = sum(1 for p in promos if _classify_promo(p, today_d, threshold) == 'past')
         lines.append(f'  {bname}: {len(promos) - b_past}')
     lines.append('')
-
-    new_show = [p for p in (new_promos or []) if not p.get('is_bau', False)]
-    if new_show:
-        lines.append(f'NEWLY LAUNCHED TODAY ({len(new_show)}):')
-        for p in new_show:
-            bank  = p.get('bName') or p.get('bank_name') or '?'
-            title = p.get('title') or p.get('name') or '?'
-            tc    = p.get('tc_link') or p.get('url') or ''
-            lines.append(f'  [{bank}] {title}')
-            if p.get('period'): lines.append(f'    Period      : {p["period"]}')
-            if p.get('quota'):  lines.append(f'    Eligibility : {p["quota"]}')
-            if tc:              lines.append(f'    Source      : {tc}')
-        lines.append('')
-    else:
-        lines.append('NEWLY LAUNCHED TODAY: None')
-        lines.append('')
-
-    week_show = [p for p in (new_promos_week or []) if not p.get('is_bau', False)]
-    if week_show:
-        lines.append(f'NEW THIS WEEK — PAST 6 DAYS ({len(week_show)}):')
-        for p in week_show:
-            bank  = p.get('bName') or p.get('bank_name') or '?'
-            title = p.get('title') or p.get('name') or '?'
-            tc    = p.get('tc_link') or p.get('url') or ''
-            lines.append(f'  [{bank}] {title}')
-            if tc: lines.append(f'    Source : {tc}')
-        lines.append('')
-    else:
-        lines.append('NEW THIS WEEK — PAST 6 DAYS: None')
-        lines.append('')
 
     lines += [
         '—',
@@ -399,7 +455,9 @@ def build_html_email(
 ) -> str:
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
-    now             = datetime.now().strftime('%d %b %Y, %H:%M HKT')
+
+    # ── Date only (no time) for email header ──────────────────────────────────
+    date_only = datetime.now().strftime('%d %b %Y')          # e.g. "22 Apr 2026"
 
     non_bau_data       = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
     new_promos_show    = [p for p in new_promos      if not p.get('is_bau', False)]
@@ -414,8 +472,6 @@ def build_html_email(
     _today_d   = _now.date()
     _threshold = (_now + timedelta(days=30)).date()
 
-    # ── FIXED: classify all non-BAU promos; exclude 'past' from total ────────
-    # Mirrors website getStatus() so email and website numbers match exactly.
     expiring_count = 0
     past_end_count = 0
     for _p in non_bau_data:
@@ -425,7 +481,6 @@ def build_html_email(
         elif _status == 'expiring':
             expiring_count += 1
 
-    # FIXED: total = active + expiring (past-ended excluded, matches website)
     total_promos = len(non_bau_data) - past_end_count
     active_count = total_promos - expiring_count
 
@@ -439,7 +494,6 @@ def build_html_email(
         color        = _bank_color(bank_name)
         display_name = _bank_display_name(bank_name)
 
-        # ── FIXED: per-bank counts also exclude past-ended ───────────────────
         b_exp  = 0
         b_past = 0
         for _p in promos:
@@ -450,7 +504,7 @@ def build_html_email(
                 b_exp += 1
 
         b_active        = len(promos) - b_exp - b_past
-        b_total_display = len(promos) - b_past   # FIXED: exclude past from total column
+        b_total_display = len(promos) - b_past
 
         exp_cell = (
             f'<span style="display:inline-block;background:#fef3c7;color:#92400e;'
@@ -482,7 +536,7 @@ def build_html_email(
   </td>
 </tr>"""
 
-    # ── AI unavailable cached-data notice banner ──────────────────
+    # ── AI unavailable notice banner ──────────────────────────────────────────
     ai_notice_html = ''
     if ai_unavailable:
         ai_notice_html = """
@@ -497,7 +551,7 @@ def build_html_email(
           AI Extraction Unavailable Today — Showing Cached Data
         </div>
         <div style="font-size:12px;color:#b45309;line-height:1.5;">
-          The OPENAI_API_KEY was not available during this run, so no new promotions
+          The POE_API_KEY was not available during this run, so no new promotions
           were extracted or classified. The data shown below reflects the last
           successful AI run. Promotions may not include today's latest changes.
         </div>
@@ -506,29 +560,35 @@ def build_html_email(
   </td>
 </tr>"""
 
-    # ── Section: Newly Launched Today ────────────────────────────
+    # ── Section: Newly Launched Today ─────────────────────────────────────────
+    # Requirement (d): skip_if_empty=True → section omitted entirely if no promos today
     today_section = _new_section_html(
-        promos       = new_promos_show,
-        heading      = 'Newly Launched Today',
-        sub_heading  = '今日新推出優惠 · start date on or after today · active only',
-        icon         = '🆕',
-        header_color = 'linear-gradient(135deg,#ff6b35 0%,#f7931e 100%)',
-        header_dark  = '#f97316',
-        empty_msg    = 'No new promotions today',
-        count_label  = '{count} new promotion{s}',
+        promos        = new_promos_show,
+        heading       = 'Newly Launched Today',
+        sub_heading   = '今日新推出優惠 · start date on or after today · active only',
+        icon          = '🆕',
+        header_color  = 'linear-gradient(135deg,#ff6b35 0%,#f7931e 100%)',
+        header_dark   = '#f97316',
+        empty_msg     = 'No new promotions today',
+        count_label   = '{count} new promotion{s}',
+        skip_if_empty = True,   # ← omit section when there are no new promos today
     )
 
-    # ── Section: New This Week ────────────────────────────────────
+    # ── Section: New This Week ────────────────────────────────────────────────
     week_section = _new_section_html(
-        promos       = new_promos_wk_show,
-        heading      = 'New This Week',
-        sub_heading  = '本週新推出優惠 · past 6 days (excluding today) · active only',
-        icon         = '📅',
-        header_color = 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)',
-        header_dark  = '#6366f1',
-        empty_msg    = 'No new promotions in the past 6 days',
-        count_label  = '{count} new this week',
+        promos        = new_promos_wk_show,
+        heading       = 'New This Week',
+        sub_heading   = '本週新推出優惠 · past 6 days (excluding today) · active only',
+        icon          = '📅',
+        header_color  = 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)',
+        header_dark   = '#6366f1',
+        empty_msg     = 'No new promotions in the past 6 days',
+        count_label   = '{count} new this week',
+        skip_if_empty = False,  # ← always show "New This Week" (even if empty)
     )
+
+    # ── Build final HTML ──────────────────────────────────────────────────────
+    # Order: Header → AI notice → Today new (if any) → This week new → Stats → Bank breakdown → Footer
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -543,57 +603,103 @@ def build_html_email(
 <tr><td align="center" style="padding:28px 12px;">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;">
 
-  <!-- HEADER -->
-  <tr><td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 55%,#0f3460 100%);
-                 border-radius:18px;padding:34px 28px;text-align:center;">
-    <div style="font-size:42px;margin-bottom:10px;">🏦</div>
-    <div style="font-size:25px;font-weight:900;color:#ffffff;letter-spacing:-.5px;">
+  <!-- ══════════════════════════════════════════════
+       HEADER — white background, BLACK title text
+       Date only, no time (requirement a + b)
+       ══════════════════════════════════════════════ -->
+  <tr><td style="background:#ffffff;border-radius:18px;padding:32px 28px;
+                 text-align:center;border:2px solid #e5e7eb;
+                 box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+
+    <!-- Bank icon -->
+    <div style="font-size:44px;margin-bottom:12px;">🏦</div>
+
+    <!-- Title: BLACK text for easy vision (requirement a) -->
+    <div style="font-size:26px;font-weight:900;color:#111827;
+                letter-spacing:-.5px;line-height:1.2;">
       VBank Tracker
     </div>
-    <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.45);
-                margin-top:5px;letter-spacing:1.2px;text-transform:uppercase;">
+
+    <!-- Subtitle -->
+    <div style="font-size:12px;font-weight:700;color:#6b7280;
+                margin-top:6px;letter-spacing:1.2px;text-transform:uppercase;">
       Daily Promotions Report
     </div>
-    <div style="display:inline-block;margin-top:14px;padding:5px 18px;
-                background:rgba(255,255,255,0.08);border-radius:20px;
-                font-size:12px;color:rgba(255,255,255,0.55);">
-      {now}
+
+    <!-- Date only — no time (requirement b) -->
+    <div style="display:inline-block;margin-top:14px;padding:6px 20px;
+                background:#f3f4f6;border-radius:20px;
+                font-size:13px;color:#374151;font-weight:700;
+                border:1px solid #e5e7eb;">
+      📅 {date_only}
     </div>
+
   </td></tr>
   <tr><td style="height:20px;"></td></tr>
 
-  <!-- AI UNAVAILABLE NOTICE -->
+  <!-- AI UNAVAILABLE NOTICE (shows only when AI failed) -->
   {ai_notice_html}
 
-  <!-- OVERALL STATS -->
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 1: NEWLY LAUNCHED TODAY
+       (requirement c — first section after title)
+       (requirement d — omitted entirely if no promos today)
+       ══════════════════════════════════════════════════════ -->
+  {today_section}
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 2: NEW THIS WEEK
+       (requirement c — second section)
+       ══════════════════════════════════════════════════════ -->
+  {week_section}
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION 3: OVERALL STATS + BANK BREAKDOWN
+       (requirement c — final section)
+       ══════════════════════════════════════════════════════ -->
+  <tr><td style="height:20px;"></td></tr>
+
+  <!-- Overall stats -->
   <tr><td style="background:#ffffff;border-radius:14px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
       <td width="33%" style="text-align:center;padding:24px 10px;
                               border-right:1px solid #f3f4f6;">
         <div style="font-size:10px;font-weight:700;color:#9ca3af;
-                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Total</div>
-        <div style="font-size:38px;font-weight:900;color:#6366f1;line-height:1;">{total_promos}</div>
+                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">
+          Total
+        </div>
+        <div style="font-size:38px;font-weight:900;color:#6366f1;line-height:1;">
+          {total_promos}
+        </div>
         <div style="font-size:11px;color:#c4cad4;margin-top:5px;">non-BAU running</div>
       </td>
       <td width="33%" style="text-align:center;padding:24px 10px;
                               border-right:1px solid #f3f4f6;">
         <div style="font-size:10px;font-weight:700;color:#9ca3af;
-                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Active Promos</div>
-        <div style="font-size:38px;font-weight:900;color:#10b981;line-height:1;">{active_count}</div>
+                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">
+          Active Promos
+        </div>
+        <div style="font-size:38px;font-weight:900;color:#10b981;line-height:1;">
+          {active_count}
+        </div>
         <div style="font-size:11px;color:#c4cad4;margin-top:5px;">currently active</div>
       </td>
       <td width="33%" style="text-align:center;padding:24px 10px;">
         <div style="font-size:10px;font-weight:700;color:#9ca3af;
-                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Expiring Soon</div>
-        <div style="font-size:38px;font-weight:900;color:#f59e0b;line-height:1;">{expiring_count}</div>
+                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">
+          Expiring Soon
+        </div>
+        <div style="font-size:38px;font-weight:900;color:#f59e0b;line-height:1;">
+          {expiring_count}
+        </div>
         <div style="font-size:11px;color:#c4cad4;margin-top:5px;">within 30 days</div>
       </td>
     </tr></table>
   </td></tr>
   <tr><td style="height:20px;"></td></tr>
 
-  <!-- BANK BREAKDOWN -->
+  <!-- Bank breakdown -->
   <tr><td style="background:#ffffff;border-radius:14px;padding:22px 22px 16px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
     <div style="font-size:17px;font-weight:800;color:#1f2937;margin-bottom:4px;">
@@ -623,12 +729,6 @@ def build_html_email(
       <tbody>{bank_rows}</tbody>
     </table>
   </td></tr>
-
-  <!-- NEWLY LAUNCHED TODAY -->
-  {today_section}
-
-  <!-- NEW THIS WEEK (past 6 days) -->
-  {week_section}
 
   <!-- FOOTER -->
   <tr><td style="height:16px;"></td></tr>
@@ -673,64 +773,80 @@ def send_email(
         os.getenv('SMTP_PASS')          or
         os.getenv('EMAIL_PASS')
     )
-    email_to = (
-        recipient                    or
-        os.getenv('RECIPIENT_EMAIL') or
-        os.getenv('EMAIL_RECIPIENT') or
-        os.getenv('EMAIL_TO')
-    )
 
-    if not all([smtp_user, smtp_pass, email_to]):
+    # ── Collect all recipients (supports RECIPIENT_EMAIL_2, _3, comma-sep) ───
+    all_recipients = _collect_recipients(override=recipient)
+
+    if not all([smtp_user, smtp_pass]):
         missing = [
             name for name, val in [
                 ('GMAIL_ADDRESS',      smtp_user),
                 ('GMAIL_APP_PASSWORD', smtp_pass),
-                ('RECIPIENT_EMAIL',    email_to),
             ] if not val
         ]
-        print(f'❌ Missing env vars: {", ".join(missing)}')
+        print(f'❌ Missing SMTP credentials: {", ".join(missing)}')
+        return False
+
+    if not all_recipients:
+        print('❌ No recipient emails configured. '
+              'Set RECIPIENT_EMAIL (and optionally RECIPIENT_EMAIL_2) env vars.')
         return False
 
     if not subject:
-        base = f'🏦 VBank Daily Report — {datetime.now().strftime("%d %b %Y")}'
-        subject = f'{base} [Cached Data — AI Unavailable]' if ai_unavailable else base
+        date_str = datetime.now().strftime('%d %b %Y')
+        base     = f'🏦 VBank Daily Report — {date_str}'
+        subject  = f'{base} [Cached Data — AI Unavailable]' if ai_unavailable else base
 
+    # Plain text uses date + time (for audit/logging purposes only)
     now_str    = datetime.now().strftime('%d %b %Y, %H:%M HKT')
     plain_text = _build_plain_text(
         promotions_data or [],
         new_promos      or [],
         new_promos_week or [],
         now_str,
-        ai_unavailable  = ai_unavailable,
+        ai_unavailable = ai_unavailable,
     )
 
-    msg            = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From']    = smtp_user
-    msg['To']      = email_to
-    msg.attach(MIMEText(plain_text,   'plain', 'utf-8'))
-    msg.attach(MIMEText(html_content, 'html',  'utf-8'))
+    # ── Send individually to each recipient (privacy: no one sees others) ────
+    success_count = 0
+    for email_to in all_recipients:
+        msg            = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From']    = smtp_user
+        msg['To']      = email_to
+        msg.attach(MIMEText(plain_text,   'plain', 'utf-8'))
+        msg.attach(MIMEText(html_content, 'html',  'utf-8'))
 
-    for attempt in range(1, _SMTP_MAX_RETRIES + 1):
-        try:
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
-                server.ehlo()
-                server.starttls()
-                server.ehlo()
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(smtp_user, [email_to], msg.as_string())
-            print(f'✅ Email sent → {email_to}')
-            return True
-        except smtplib.SMTPException as exc:
-            if attempt < _SMTP_MAX_RETRIES:
-                wait = 2 ** attempt
-                print(f'  ⚠️  SMTP attempt {attempt} failed: {exc} — retrying in {wait}s…')
-                time.sleep(wait)
-            else:
-                print(f'❌ Email send failed after {_SMTP_MAX_RETRIES} attempts: {exc}')
-                return False
-        except Exception as exc:
-            print(f'❌ Email send error: {exc}')
-            return False
+        for attempt in range(1, _SMTP_MAX_RETRIES + 1):
+            try:
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
+                    server.ehlo()
+                    server.starttls()
+                    server.ehlo()
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(smtp_user, [email_to], msg.as_string())
+                print(f'  ✅ Email sent → {email_to}')
+                success_count += 1
+                break
+            except smtplib.SMTPException as exc:
+                if attempt < _SMTP_MAX_RETRIES:
+                    wait = 2 ** attempt
+                    print(f'  ⚠️  SMTP attempt {attempt} failed for {email_to}: '
+                          f'{exc} — retrying in {wait}s…')
+                    time.sleep(wait)
+                else:
+                    print(f'  ❌ Email send failed for {email_to} after '
+                          f'{_SMTP_MAX_RETRIES} attempts: {exc}')
+            except Exception as exc:
+                print(f'  ❌ Email send error for {email_to}: {exc}')
+                break
 
-    return False
+    if success_count == len(all_recipients):
+        print(f'✅ Email sent → {len(all_recipients)} recipient(s)')
+        return True
+    elif success_count > 0:
+        print(f'⚠️  Email partial: {success_count}/{len(all_recipients)} recipients received it')
+        return True
+    else:
+        print(f'❌ Email failed for all {len(all_recipients)} recipient(s)')
+        return False
