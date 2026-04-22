@@ -3,11 +3,12 @@
 One-time cleanup utility for the promotions database.
 
 Usage (from project root):
-    python scripts/cleanup_reset.py --dry-run         # preview only
-    python scripts/cleanup_reset.py                    # formula pass only
-    python scripts/cleanup_reset.py --ai               # formula + AI pass
-    python scripts/cleanup_reset.py --purge mox        # delete ALL mox records
-    python scripts/cleanup_reset.py --summary          # show DB state only
+    python scripts/cleanup_reset.py --dry-run              # preview only
+    python scripts/cleanup_reset.py                         # formula pass only
+    python scripts/cleanup_reset.py --ai                    # formula + AI pass
+    python scripts/cleanup_reset.py --purge mox             # delete ALL mox records
+    python scripts/cleanup_reset.py --purge-nonbank         # remove govt/charity content
+    python scripts/cleanup_reset.py --summary               # show DB state only
 """
 
 import argparse
@@ -25,6 +26,40 @@ _CLEANUP_JACCARD = 0.22   # lower = more aggressive (live: 0.28)
 _CLEANUP_LCP     = 0.55   # lower = more aggressive (live: 0.60)
 _CLEANUP_MIN_LEN = 6
 
+# ── Non-bank / government / charity content patterns ─────────────────────────
+_NON_BANK_PATTERNS: list[str] = [
+    # Wang Fuk Court specific
+    'wang fuk court',
+    'support fund for wang fuk',
+    'tax deduction for wang fuk',
+    '宏福苑',
+    '大埔宏福苑',
+    'wangfuk',
+    # Disaster / relief
+    'tai po fire',
+    'taipofire',
+    'relief fund',
+    'disaster relief',
+    # Government / IRD
+    'inland revenue ordinance',
+    'inland revenue department',
+    'ird.gov.hk',
+    'cefs.gov.hk',
+    'hab033',
+    # Generic charity / donation (non-bank)
+    'approved charitable donation',
+    'donation acknowledgement',
+    'donation receipt',
+    'charity donation',
+    'tax deduction for donation',
+    'tax deduction arrangement',
+    '援助基金',
+]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Summary
+# ─────────────────────────────────────────────────────────────────────────────
 
 def show_summary():
     conn = _get_conn()
@@ -55,6 +90,68 @@ def show_summary():
     finally:
         conn.close()
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Non-bank content purge
+# ─────────────────────────────────────────────────────────────────────────────
+
+def purge_nonbank_content(dry_run: bool = True) -> int:
+    """
+    Find and deactivate promotions that are government / charity content,
+    not actual bank promotions (e.g. Wang Fuk Court donation tax deductions).
+    """
+    conn = _get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, bank_id, title, highlight "
+            "FROM promotions WHERE active = 1"
+        ).fetchall()
+
+        discard_ids: list[int] = []
+
+        for row in rows:
+            combined = ' '.join([
+                (row['title']     or ''),
+                (row['highlight'] or ''),
+            ]).lower()
+
+            for pat in _NON_BANK_PATTERNS:
+                if pat.lower() in combined:
+                    tag = '[DRY RUN] ' if dry_run else ''
+                    print(
+                        f"  🚫 {tag}NON-BANK CONTENT\n"
+                        f"     id={row['id']}  bank={row['bank_id']}\n"
+                        f"     title='{(row['title'] or '')[:80]}'\n"
+                        f"     matched='{pat}'"
+                    )
+                    discard_ids.append(row['id'])
+                    break  # one match is enough per row
+
+        if not discard_ids:
+            print("  ✅ No non-bank content found — DB is clean")
+        elif not dry_run:
+            conn.execute(
+                f"UPDATE promotions SET active = 0 "
+                f"WHERE id IN ({','.join('?' * len(discard_ids))})",
+                discard_ids,
+            )
+            conn.commit()
+
+        tag = '[DRY RUN] ' if dry_run else ''
+        print(f"\n  {tag}Non-bank purge: {len(discard_ids)} record(s) flagged")
+        return len(discard_ids)
+
+    except Exception as e:
+        conn.rollback()
+        print(f'  ❌ purge_nonbank_content error: {e}')
+        return 0
+    finally:
+        conn.close()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Formula-based dedup
+# ─────────────────────────────────────────────────────────────────────────────
 
 def formula_merge(dry_run: bool = True) -> int:
     """
@@ -148,6 +245,10 @@ def formula_merge(dry_run: bool = True) -> int:
         conn.close()
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  AI-based dedup
+# ─────────────────────────────────────────────────────────────────────────────
+
 def ai_merge(dry_run: bool = True) -> int:
     """
     AI-based semantic dedup pass — catches synonyms the formula misses.
@@ -217,6 +318,10 @@ def ai_merge(dry_run: bool = True) -> int:
         conn.close()
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Bank purge
+# ─────────────────────────────────────────────────────────────────────────────
+
 def purge_bank(bank_id: str, dry_run: bool = True) -> int:
     """
     Hard-delete ALL records (active + inactive) for one bank.
@@ -251,17 +356,23 @@ def purge_bank(bank_id: str, dry_run: bool = True) -> int:
         conn.close()
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Entry point
+# ─────────────────────────────────────────────────────────────────────────────
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Cleanup duplicate promotions in DB'
+        description='Cleanup duplicate / invalid promotions in DB'
     )
-    parser.add_argument('--dry-run', action='store_true',
+    parser.add_argument('--dry-run',       action='store_true',
                         help='Preview changes only, no DB writes')
-    parser.add_argument('--ai',      action='store_true',
+    parser.add_argument('--ai',            action='store_true',
                         help='Also run AI semantic dedup pass after formula pass')
-    parser.add_argument('--purge',   metavar='BANK_ID',
+    parser.add_argument('--purge',         metavar='BANK_ID',
                         help='Delete ALL records for one bank (use with caution)')
-    parser.add_argument('--summary', action='store_true',
+    parser.add_argument('--purge-nonbank', action='store_true',
+                        help='Deactivate govt/charity content that is not a bank promotion')
+    parser.add_argument('--summary',       action='store_true',
                         help='Show DB summary only, then exit')
     args = parser.parse_args()
 
@@ -271,18 +382,30 @@ if __name__ == '__main__':
 
     show_summary()
 
+    # ── Summary only ──────────────────────────────────────────────────────────
     if args.summary:
         sys.exit(0)
 
+    # ── Hard-delete one bank ──────────────────────────────────────────────────
     if args.purge:
         print(f'\n🗑️  Purging bank: {args.purge.lower()}')
         purge_bank(args.purge.lower(), dry_run=args.dry_run)
         show_summary()
         sys.exit(0)
 
+    # ── Non-bank content purge ────────────────────────────────────────────────
+    if args.purge_nonbank:
+        print('\n🚫 Non-bank content purge pass...\n')
+        purge_nonbank_content(dry_run=args.dry_run)
+        if not args.dry_run:
+            show_summary()
+        sys.exit(0)
+
+    # ── Formula dedup ─────────────────────────────────────────────────────────
     print('📐 Formula-based dedup pass...\n')
     n1 = formula_merge(dry_run=args.dry_run)
 
+    # ── AI dedup (optional) ───────────────────────────────────────────────────
     n2 = 0
     if args.ai:
         print('\n🤖 AI-based dedup pass...')
