@@ -149,7 +149,7 @@
           <span class="text-2xl">🆕</span>
           <div>
             <div class="font-extrabold text-white text-lg tracking-tight">New Promotions Today</div>
-            <div class="text-orange-100 text-xs mt-0.5">今日首次偵測到的優惠 · start date on or after today</div>
+            <div class="text-orange-100 text-xs mt-0.5">今日首次偵測到的優惠 · start date on or after today · not yet expired</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -177,7 +177,7 @@
           <span class="text-2xl">📅</span>
           <div>
             <div class="font-extrabold text-white text-lg tracking-tight">New This Week</div>
-            <div class="text-indigo-100 text-xs mt-0.5">本週新推出優惠 · past 6 days (excluding today)</div>
+            <div class="text-indigo-100 text-xs mt-0.5">本週新推出優惠 · past 6 days (excluding today) · active only</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -378,9 +378,12 @@ const CAT_FILTER_LIST = [
   { key:'Others 其他',        label:'📋 Others',     bg:'#6b7280' },
 ];
 
+// ── UPDATED: Investment split into Stock Trading + Crypto Trading ──
 const HOW_DEFINED = {
-  "Investment (Stock/Crypto Trading)":
-    "Most comprehensive trading fee waivers — $0 platform fees, free stock trades, or zero crypto commissions.",
+  "Stock Trading":
+    "Zero or lowest trading fee/commission for HK/US/A-share stocks, best IPO reward, or most comprehensive brokerage platform with no trade minimum.",
+  "Crypto Trading":
+    "Zero or lowest crypto/virtual-asset trading or platform fee, widest digital-asset selection, or strongest permanent crypto incentive.",
   "Fund Investment":
     "Widest range of funds at $0 subscription fee, or permanent fee waiver with no expiry.",
   "Spending/CashBack":
@@ -430,13 +433,22 @@ function bauTag(p) {
   return `<span class="cat-tag" style="background:#64748b">⚙️ BAU</span>`;
 }
 
+// ── FIXED: end_date is the definitive expiry signal ───────────────
+// If end_date is in the future → promotion CANNOT be expired regardless
+// of the `active` flag in the database.
 function getStatus(p) {
+  // 1. If we have an explicit end_date, use it as the single source of truth.
+  if (p.end_date) {
+    const diff = (new Date(p.end_date) - new Date()) / 86400000;
+    if (diff < 0)   return 'expired';   // end_date already passed
+    if (diff <= 30) return 'expiring';  // expires within 30 days
+    return 'active';                    // end_date is in the future → ACTIVE
+  }
+  // 2. No end_date — fall back to the DB active flag.
   if (!p.active) return 'expired';
-  if (!p.end_date || p.period === 'Ongoing' ||
+  // 3. Ongoing / no expiry date.
+  if (p.period === 'Ongoing' ||
       (p.period && p.period.toLowerCase().includes('ongoing'))) return 'active';
-  const diff = (new Date(p.end_date) - new Date()) / 86400000;
-  if (diff < 0)   return 'expired';
-  if (diff <= 30) return 'expiring';
   return 'active';
 }
 
@@ -460,20 +472,31 @@ function hktToday() {
 function hktDaysAgo(n) {
   return new Date(Date.now() + 8*3600000 - n*86400000).toISOString().substring(0,10);
 }
+
+// ── FIXED: isNewToday — also checks the promo hasn't expired ─────
 function isNewToday(p, today) {
   if (p.is_bau) return false;
+  // Do not show in "new today" if the promotion has already expired
+  if (getStatus(p) === 'expired') return false;
   const created = (p.created_at||'').substring(0,10);
   if (created !== today) return false;
+  // Start date gate: if start_date < today the promo is NOT new today
   const start = (p.start_date||'').substring(0,10);
   if (start && start < today) return false;
   return true;
 }
+
+// ── FIXED: isNewThisWeek — also checks the promo hasn't expired ──
 function isNewThisWeek(p, today) {
   if (p.is_bau) return false;
+  // Do not show expired promos in "new this week"
+  if (getStatus(p) === 'expired') return false;
   const created   = (p.created_at||'').substring(0,10);
   const sixAgo    = hktDaysAgo(6);
   const yesterday = hktDaysAgo(1);
   if (created < sixAgo || created > yesterday) return false;
+  // Start date gate: if start_date predates the "new this week" window,
+  // the promotion was already running before this week
   const start = (p.start_date||'').substring(0,10);
   if (start && start < sixAgo) return false;
   return true;
@@ -485,7 +508,7 @@ let activeBankTab     = '';
 let selectedCats      = [];
 let strategicInsights = null;
 
-// ── No-data placeholder: shows schema hint so you know exactly what to add ──
+// ── No-data placeholder ───────────────────────────────────────────
 function insightsNoDataHtml() {
   return `
     <tr>
@@ -507,13 +530,20 @@ function insightsNoDataHtml() {
   <span class="key">"strategic_insights"</span>: {
     <span class="key">"best_for"</span>: [
       {
-        <span class="key">"category"</span>:       <span class="str">"Welcome Bonus"</span>,
-        <span class="key">"bank"</span>:           <span class="str">"ZA Bank"</span>,
-        <span class="key">"detail"</span>:         <span class="str">"Up to HKD 500 cash reward for new users"</span>,
-        <span class="key">"standard"</span>:       <span class="str">"Highest total guaranteed HKD reward for standard onboarding"</span>,
-        <span class="key">"similar_banks"</span>:  [<span class="str">"Mox Bank"</span>, <span class="str">"WeLab Bank"</span>],
-        <span class="key">"why_others_lose"</span>: <span class="str">"Mox requires higher spend; WeLab caps at lower amount"</span>,
-        <span class="key">"is_bau"</span>:         <span class="bool">false</span>
+        <span class="key">"category"</span>:        <span class="str">"Stock Trading"</span>,
+        <span class="key">"bank"</span>:            <span class="str">"ZA Bank"</span>,
+        <span class="key">"detail"</span>:          <span class="str">"Permanent $0 brokerage commission, no trade minimum"</span>,
+        <span class="key">"is_bau"</span>:          <span class="bool">true</span>,
+        <span class="key">"similar_banks"</span>:   [<span class="str">"Mox Bank"</span>, <span class="str">"WeLab Bank"</span>],
+        <span class="key">"why_others_lose"</span>: <span class="str">"Mox only waives for 3 months; WeLab requires 10+ trades/month"</span>
+      },
+      {
+        <span class="key">"category"</span>:        <span class="str">"Crypto Trading"</span>,
+        <span class="key">"bank"</span>:            <span class="str">"ZA Bank"</span>,
+        <span class="key">"detail"</span>:          <span class="str">"Permanent 0% crypto platform fee for new crypto customers"</span>,
+        <span class="key">"is_bau"</span>:          <span class="bool">true</span>,
+        <span class="key">"similar_banks"</span>:   [<span class="str">"Ant Bank"</span>],
+        <span class="key">"why_others_lose"</span>: <span class="str">"Ant Bank crypto waiver has an expiry date; ZA Bank is permanent"</span>
       }
     ]
   }
@@ -558,21 +588,6 @@ function analysisNoDataHtml() {
         <span class="key">"expiring_alert"</span>: <span class="str">"3 promotions expire within 30 days"</span>,
         <span class="key">"vs_za_pros"</span>:     <span class="bool">null</span>,
         <span class="key">"vs_za_cons"</span>:     <span class="bool">null</span>
-      },
-      <span class="key">"Mox Bank"</span>: {
-        <span class="key">"count"</span>:          <span class="num">8</span>,
-        <span class="key">"bau_count"</span>:      <span class="num">2</span>,
-        <span class="key">"focus"</span>:          <span class="str">"Travel rewards and unlimited cashback"</span>,
-        <span class="key">"strengths"</span>: [
-          <span class="str">"2% travel cashback on overseas spend"</span>,
-          <span class="str">"Zero FX conversion fees (BAU)"</span>,
-          <span class="str">"Unlimited cashback with no cap"</span>,
-          <span class="str">"HKD 200 referral bonus per invite"</span>,
-          <span class="str">"Round-up savings feature"</span>
-        ],
-        <span class="key">"expiring_alert"</span>: <span class="str">""</span>,
-        <span class="key">"vs_za_pros"</span>:     <span class="str">"Better travel cashback; no FX fees vs ZA's 0.3%"</span>,
-        <span class="key">"vs_za_cons"</span>:     <span class="str">"No crypto or stock trading; weaker welcome bonus"</span>
       }
     }
   }
@@ -614,7 +629,7 @@ async function loadData() {
 
     strategicInsights = data.strategic_insights || null;
 
-    const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false);
+    const activeNonBau = allPromos.filter(p => !p.is_bau && getStatus(p) !== 'expired');
     const activeN      = activeNonBau.filter(p => getStatus(p) === 'active').length;
     const expiringN    = activeNonBau.filter(p => getStatus(p) === 'expiring').length;
     const expiredN     = allPromos.filter(p => !p.is_bau && getStatus(p) === 'expired').length;
@@ -714,6 +729,7 @@ function buildPromoCard(p) {
 function buildNewSections() {
   const today = hktToday();
 
+  // ── New Today ─────────────────────────────────────────────────
   const newToday   = allPromos.filter(p => isNewToday(p, today));
   const todaySec   = document.getElementById('newTodaySection');
   const todayCards = document.getElementById('newTodayCards');
@@ -730,6 +746,7 @@ function buildNewSections() {
     todayCards.innerHTML   = newToday.map(buildPromoCard).join('');
   }
 
+  // ── New This Week ─────────────────────────────────────────────
   const newWeek   = allPromos.filter(p => isNewThisWeek(p, today));
   const weekSec   = document.getElementById('newWeeklySection');
   const weekCards = document.getElementById('newWeeklyCards');
@@ -839,7 +856,6 @@ function toggleAnalysisGrid(e) {
   btn.dataset.hidden = hidden ? 'false' : 'true';
 }
 
-// ── Strategic Insights — always renders; shows schema hint if no data ──
 function buildStrategicInsights(insights) {
   const tbody = document.getElementById('insightsTbody');
 
@@ -896,7 +912,6 @@ function buildStrategicInsights(insights) {
   tbody.innerHTML = rows;
 }
 
-// ── Bank Analysis — always renders; shows schema hint if no data ──
 function buildBankAnalysis(insights) {
   const grid = document.getElementById('bankAnalysisGrid');
 
@@ -1252,7 +1267,7 @@ function applyFilters() {
 
   renderTable(filtered);
 
-  const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false);
+  const activeNonBau = allPromos.filter(p => !p.is_bau && getStatus(p) !== 'expired');
   const bauTotal     = allPromos.filter(p => p.is_bau).length;
   document.getElementById('resultCount').textContent =
     `Showing ${filtered.length} of ${activeNonBau.length} active promotions`

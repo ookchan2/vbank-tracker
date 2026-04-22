@@ -197,6 +197,7 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_first_run  ON promotions(first_run_id);
             CREATE INDEX IF NOT EXISTS idx_is_bau     ON promotions(is_bau);
             CREATE INDEX IF NOT EXISTS idx_bank_name  ON promotions(bank_name);
+            CREATE INDEX IF NOT EXISTS idx_end_date   ON promotions(end_date);
         ''')
 
         conn.commit()
@@ -639,6 +640,14 @@ def mark_stale_as_inactive(
     bank_ids_scraped: List[str],
     today_str: str = None,
 ) -> int:
+    """
+    Mark promotions as inactive only when BOTH conditions are true:
+      1. last_seen < today  (wasn't found in today's scrape)
+      2. end_date is NULL/empty OR end_date < today
+         (do NOT deactivate a promotion whose end_date is still in the future —
+          a future end_date means the promotion is officially still running even
+          if the scraper missed it today)
+    """
     if not bank_ids_scraped:
         return 0
     today_str = today_str or datetime.now().strftime('%Y-%m-%d')
@@ -648,12 +657,20 @@ def mark_stale_as_inactive(
             for bank_id in bank_ids_scraped:
                 cur = conn.execute('''
                     UPDATE promotions SET active = 0
-                    WHERE bank_id = ?
-                      AND active  = 1
+                    WHERE bank_id        = ?
+                      AND active         = 1
                       AND DATE(last_seen) < ?
-                ''', (bank_id, today_str))
+                      AND (
+                            end_date IS NULL
+                         OR end_date  = ''
+                         OR DATE(end_date) < ?
+                      )
+                ''', (bank_id, today_str, today_str))
                 if cur.rowcount:
-                    print(f'  🗑️  {bank_id}: {cur.rowcount} promo(s) marked inactive')
+                    print(
+                        f'  🗑️  {bank_id}: {cur.rowcount} promo(s) marked inactive '
+                        f'(end_date past or unknown)'
+                    )
                 total += cur.rowcount
             conn.commit()
             return total
@@ -681,10 +698,6 @@ def mark_inactive_old(days_threshold: int = 90) -> int:
 
 
 def reactivate_promotions_seen_on(date_str: str) -> int:
-    """
-    Emergency recovery: reactivate all promotions whose last_seen date matches
-    date_str but were incorrectly marked inactive (e.g. by a date-skew bug).
-    """
     with _db_connection() as conn:
         try:
             cur = conn.execute(
@@ -706,11 +719,6 @@ def reactivate_promotions_seen_on(date_str: str) -> int:
 
 
 def reactivate_most_recently_seen(window_days: int = 7) -> int:
-    """
-    Emergency recovery for the AI-unavailable + empty-DB scenario.
-    Finds the most recent last_seen date and reactivates every inactive
-    promotion whose last_seen falls within window_days of that date.
-    """
     with _db_connection() as conn:
         try:
             row = conn.execute(
@@ -778,6 +786,15 @@ def get_new_promotions_last_n_days(
     include_bau: bool = False,
     exclude_run_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
+    """
+    Returns promotions created within the past N days that are:
+    - active = 1
+    - not BAU (unless include_bau=True)
+    - start_date gate: start_date must be NULL or >= `since` date
+      (a promo that started 2 weeks ago is NOT "new this week")
+    - end_date gate: only include if end_date is NULL or still in the future
+      (don't return already-expired promos in the "new this week" list)
+    """
     since = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     today = datetime.now().strftime('%Y-%m-%d')
 
@@ -790,13 +807,15 @@ def get_new_promotions_last_n_days(
             )
             return _to_dicts(conn.execute(f'''
                 SELECT * FROM promotions
-                WHERE active          = 1
+                WHERE active           = 1
                   AND DATE(created_at) >= ?
                   AND DATE(created_at) <  ?
+                  AND (start_date IS NULL OR start_date = '' OR DATE(start_date) >= ?)
+                  AND (end_date   IS NULL OR end_date   = '' OR DATE(end_date)   >= ?)
                   {bau_clause}
                   {run_clause}
                 ORDER BY created_at DESC, bank_id ASC
-            ''', (since, today)).fetchall())
+            ''', (since, today, since, today)).fetchall())
         except Exception as exc:
             print(f'  ❌ get_new_promotions_last_n_days error: {exc}')
             return []
@@ -1035,23 +1054,6 @@ def export_to_json(
     strategic_insights: Optional[Dict] = None,
     ai_unavailable:     bool           = False,
 ) -> None:
-    """
-    Export all promotions (active + expired) to data.json so the website can
-    support the "Expired Only" filter.  The website JS counts correctly because
-    statTotal is computed from active-only rows after load.
-
-    Parameters
-    ----------
-    output_path:
-        Destination path for data.json (e.g. docs/data.json).
-    strategic_insights:
-        If provided, the dict is embedded under the "strategic_insights" key.
-        Pass the return value of generate_strategic_insights() from ai_helper.
-    ai_unavailable:
-        Set to True when the AI run was skipped/failed.  The website will show
-        a yellow "Cached Data" banner when this flag is present in the JSON.
-    """
-    # Include both active and inactive so the "Expired Only" UI filter works
     all_promos = load_promotions(active_only=False)
     records: List[Dict] = []
 
@@ -1086,7 +1088,6 @@ def export_to_json(
             'last_seen':   p.get('last_seen')   or '',
         })
 
-    # ── Build output payload ──────────────────────────────────────
     output: Dict[str, Any] = {
         'updated':    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'promotions': records,
@@ -1100,7 +1101,6 @@ def export_to_json(
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    # ── Log counts that match what the website header will display ─
     active_non_bau = sum(1 for r in records if r['active'] and not r['is_bau'])
     bau_n          = sum(1 for r in records if r['is_bau'])
     expired_n      = sum(1 for r in records if not r['active'])

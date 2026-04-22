@@ -6,13 +6,13 @@ import json
 import os
 import re
 import time
+from datetime import datetime
 from typing import Optional
 
 _api_key     = None
 _bot_name    = "Claude-3-7-Sonnet"
 AI_AVAILABLE = False
 
-# Respect POE_BOT_NAME env override so you can swap models without editing code.
 _ENV_BOT_NAME = os.environ.get('POE_BOT_NAME', '').strip()
 
 MODELS_TO_TRY = (
@@ -56,6 +56,7 @@ You are a specialist at extracting bank promotion data from website text.
 
 Bank: BANK_NAME_PLACEHOLDER
 Source URL: URL_PLACEHOLDER
+Today's Date: TODAY_DATE_PLACEHOLDER
 
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  CRITICAL RULES — read carefully before extracting                  ║
@@ -116,6 +117,20 @@ Source URL: URL_PLACEHOLDER
 ║                                                                      ║
 ║     ❌ BAD extraction (nav item): "Travel with ZA Card"            ║
 ║     ✅ GOOD extraction (real deal): "Trip.com 8% off + 2% CashBack"║
+║                                                                      ║
+║  9. ⚠️  START DATE GATE (today = TODAY_DATE_PLACEHOLDER):           ║
+║     If start_date is found AND start_date < TODAY_DATE_PLACEHOLDER  ║
+║     → this promotion launched BEFORE today; it is NOT new today.    ║
+║     A promotion that started 2026-04-01 found on 2026-04-17 is NOT ║
+║     a newly launched promotion — it has been running for 16 days.   ║
+║                                                                      ║
+║  10. ✅ EXPIRY VALIDATION (today = TODAY_DATE_PLACEHOLDER):         ║
+║      If end_date > TODAY_DATE_PLACEHOLDER the promotion is still    ║
+║      ACTIVE — it has NOT expired.                                   ║
+║      Example: end_date="2026-05-27", today="2026-04-17"            ║
+║      → This promo runs for 40 more days. Mark end_date accurately   ║
+║        and do NOT treat it as expired or past.                      ║
+║      Only set is_bau=false and include the end_date as-is.         ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 ALLOWED CATEGORY TAGS (Chinese, pick 1-3 per promotion):
@@ -146,11 +161,13 @@ Remember: return ONLY the JSON array starting with [ and ending with ]."""
 
 
 def _build_prompt(bank_name: str, url: str, text: str) -> str:
+    today = datetime.now().strftime('%Y-%m-%d')
     return (
         _PROMPT_TMPL
-        .replace('BANK_NAME_PLACEHOLDER', bank_name)
-        .replace('URL_PLACEHOLDER',       url)
-        .replace('TEXT_PLACEHOLDER',      text)
+        .replace('BANK_NAME_PLACEHOLDER',  bank_name)
+        .replace('URL_PLACEHOLDER',        url)
+        .replace('TODAY_DATE_PLACEHOLDER', today)
+        .replace('TEXT_PLACEHOLDER',       text)
     )
 
 
@@ -195,7 +212,6 @@ def _run_async(coro) -> str:
 
 
 def _call(messages: list, label: str = '') -> str:
-    """Call the active Poe AI model and return the raw text response."""
     if not AI_AVAILABLE or _api_key is None:
         return ''
     t = time.monotonic()
@@ -299,11 +315,6 @@ def _parse_object(raw: str) -> Optional[dict]:
 
 
 def _trim_text(text: str, max_chars: int = 25_000) -> str:
-    """
-    Symmetric head+tail trim.
-    25,000 chars leaves comfortable headroom within every supported model's
-    context window once the fixed prompt overhead (~5,000 chars) is added.
-    """
     if len(text) <= max_chars:
         return text
     keep = max_chars // 2
@@ -388,12 +399,19 @@ _CONCRETE_EVIDENCE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# ── UPDATED: Investment split into Stock Trading + Crypto Trading ─────────────
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
-    'Investment (Stock/Crypto Trading)': [
-        'crypto', 'bitcoin', 'virtual asset', 'digital asset',
+    'Stock Trading': [
         'stock', 'securities', 'brokerage', 'ipo',
-        'trading fee', 'platform fee', '$0', 'commission',
-        'powerdraw', 'free stock',
+        'trading fee', 'platform fee', '$0 commission', 'commission',
+        'powerdraw', 'free stock', 'hk stock', 'us stock',
+        'equities', 'share trading',
+    ],
+    'Crypto Trading': [
+        'crypto', 'bitcoin', 'virtual asset', 'digital asset',
+        'cryptocurrency', 'btc', 'eth', 'virtual currency',
+        'crypto platform fee', 'crypto trading fee',
+        'digital asset fee', 'crypto commission',
     ],
     'Fund Investment': [
         'fund', '基金', 'mutual fund', 'unit trust',
@@ -811,15 +829,17 @@ def _build_bank_summary_lines(promos: list) -> list[str]:
     return lines
 
 
+# ── UPDATED: Investment split into Stock Trading + Crypto Trading ─────────────
 _DIAGNOSTIC_CATEGORIES: list[tuple[str, list[str]]] = [
-    ('Investment (Stock/Crypto Trading)', ['投資', 'crypto', 'stock', '$0', 'commission']),
-    ('Fund Investment',                   ['投資', 'fund', '基金', '$0認購費', 'subscription fee']),
-    ('Referral Bonus',                    ['推薦', 'referral', '多友多賞', 'invite']),
-    ('Travel',                            ['旅遊', 'trip', 'travel', 'asia miles', 'flight', 'hotel']),
-    ('Spending/CashBack',                 ['消費', 'cashback', 'cash back', 'rebate']),
-    ('Welcome Bonus',                     ['迎新', 'welcome', 'new customer']),
-    ('Loan APR',                          ['貸款', 'loan', 'apr']),
-    ('FX/Multi-Currency',                 ['外匯', 'fx', 'multi-currency', 'global wallet']),
+    ('Stock Trading',      ['投資', 'stock', 'securities', 'brokerage', 'ipo', '$0', 'commission']),
+    ('Crypto Trading',     ['投資', 'crypto', 'bitcoin', 'virtual asset', 'digital asset', 'cryptocurrency']),
+    ('Fund Investment',    ['投資', 'fund', '基金', '$0認購費', 'subscription fee']),
+    ('Referral Bonus',     ['推薦', 'referral', '多友多賞', 'invite']),
+    ('Travel',             ['旅遊', 'trip', 'travel', 'asia miles', 'flight', 'hotel']),
+    ('Spending/CashBack',  ['消費', 'cashback', 'cash back', 'rebate']),
+    ('Welcome Bonus',      ['迎新', 'welcome', 'new customer']),
+    ('Loan APR',           ['貸款', 'loan', 'apr']),
+    ('FX/Multi-Currency',  ['外匯', 'fx', 'multi-currency', 'global wallet']),
 ]
 
 _SPARSE_THRESHOLD = 3
@@ -993,9 +1013,11 @@ def generate_strategic_insights(
         return None
 
     promotions_text = '\n\n'.join(bank_summaries)
+    today           = datetime.now().strftime('%Y-%m-%d')
 
-    prompt = f"""You are a Hong Kong virtual bank analyst. \
+    prompt = f"""You are a Hong Kong virtual bank analyst.
 Analyze these active promotions and return strategic insights as JSON.
+Today's date: {today}
 
 {promotions_text}
 
@@ -1008,37 +1030,49 @@ A permanent zero-fee or zero-commission feature is often the strongest
 competitive advantage — do NOT skip it just because it has no end date.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 2 — CHINESE TYPE TAG → ENGLISH CATEGORY MAPPING
+SECTION 2 — DATE VALIDATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  [推薦]           → "Referral Bonus"
-  [投資] + fund    → "Fund Investment"
-  [投資] + stock   → "Investment (Stock/Crypto Trading)"
-  [投資] + crypto  → "Investment (Stock/Crypto Trading)"
-  [消費]           → "Spending/CashBack"
-  [迎新]           → "Welcome Bonus"
-  [旅遊]           → "Travel"   ← ANY [旅遊] line MUST be evaluated for Travel
-  [貸款]           → "Loan APR"
-  [外匯]           → "FX/Multi-Currency"
+Today is {today}.
+⚠️  If a promotion has end_date > {today}, it is STILL ACTIVE — never
+treat it as expired.  Example: end_date="2026-05-27" on {today}
+means the promotion runs for another 35 days.  Do NOT exclude it from
+analysis or mark it as past.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 3 — STRICT CATEGORY DEFINITIONS
+SECTION 3 — CHINESE TYPE TAG → ENGLISH CATEGORY MAPPING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Investment (Stock/Crypto Trading) → trading fee waivers, brokerage commission, IPO rewards.
-• Fund Investment                   → fund subscription or switching fee promotions.
-• Spending/CashBack                 → card cashback or merchant spending rewards.
-• Welcome Bonus                     → new customer account opening cash/gift rewards.
-• Travel                            → travel insurance, flight/hotel, Asia Miles, Trip.com, lounge.
-• Loan APR                          → personal loan with lowest specific APR quoted.
-• FX/Multi-Currency                 → FX rate promotions, global wallet, remittance.
-• Referral Bonus                    → referral programs with a stated HKD reward amount.
+  [推薦]                   → "Referral Bonus"
+  [投資] + fund/基金       → "Fund Investment"
+  [投資] + stock/securities/brokerage/IPO → "Stock Trading"
+  [投資] + crypto/bitcoin/virtual asset   → "Crypto Trading"
+  [消費]                   → "Spending/CashBack"
+  [迎新]                   → "Welcome Bonus"
+  [旅遊]                   → "Travel"
+  [貸款]                   → "Loan APR"
+  [外匯]                   → "FX/Multi-Currency"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 4 — MANDATORY WINNER SELECTION RULES
+SECTION 4 — STRICT CATEGORY DEFINITIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Stock Trading    → stock/HK/US/A-share trading fee waivers, brokerage commissions, IPO rewards.
+• Crypto Trading   → crypto/virtual asset trading fee waivers, platform fees, digital asset promos.
+• Fund Investment  → fund subscription or switching fee promotions.
+• Spending/CashBack → card cashback or merchant spending rewards.
+• Welcome Bonus    → new customer account opening cash/gift rewards.
+• Travel           → travel insurance, flight/hotel, Asia Miles, Trip.com, lounge.
+• Loan APR         → personal loan with lowest specific APR quoted.
+• FX/Multi-Currency → FX rate promotions, global wallet, remittance.
+• Referral Bonus   → referral programs with a stated HKD reward amount.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5 — MANDATORY WINNER SELECTION RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Output "None" ONLY when there is absolutely zero evidence of any promotion
 across ALL banks that relates to that category.
 
 CHECKLIST — before writing "None" for any category, verify:
+  Stock Trading    → ANY line with stock / brokerage / commission / IPO / free stock
+  Crypto Trading   → ANY line with crypto / bitcoin / virtual asset / digital asset
   Fund Investment  → ANY line with fund / 基金 / $0認購費 / zero subscription
   Referral Bonus   → ANY line tagged [推薦] OR with referral / 推薦 / 多友多賞
   Travel           → ANY line tagged [旅遊] OR with trip.com / travel / flight /
@@ -1046,15 +1080,35 @@ CHECKLIST — before writing "None" for any category, verify:
                      ⚠️  If ANY [旅遊] line exists → Travel winner MUST NOT be None
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 5 — EVIDENCE GATE
+SECTION 6 — EVIDENCE GATE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 The "detail" field MUST contain at least ONE concrete verifiable fact:
   • Specific HKD/USD amount, percentage, $0/zero-fee, specific date,
     named concrete product (Trip.com, Asia Miles, Agoda…),
-    or travel/commission/fee/cashback keyword.
+    or trading/commission/fee/cashback keyword.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 6 — SELF-CONSISTENCY CHECK
+SECTION 7 — SIMILAR BANKS & WHY THEY DON'T WIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+For EVERY best_for entry you MUST populate:
+
+• similar_banks: List ALL other banks that ALSO offer a similar promotion
+  in the same category (even if their offer is weaker or limited).
+  This shows users the competitive landscape, e.g. for "$0 stock trading"
+  if multiple banks offer it, list them ALL — then explain why one wins.
+  Example: ["Mox Bank", "WeLab Bank", "livi bank"]
+
+• why_others_lose: One or two sentences explaining WHY the winner beats
+  each similar bank. Be specific — use fees, caps, expiry dates, scope.
+  Example: "Mox only waives commission for the first 3 months;
+           WeLab requires 10+ trades/month to qualify; ZA Bank offers
+           permanent $0 commission with no trade minimum or cap."
+
+  If similar_banks is empty (winner is the ONLY bank with this category),
+  set why_others_lose to "Only bank currently offering this promotion."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8 — SELF-CONSISTENCY CHECK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Before writing final JSON: verify that every "None" in best_for is NOT
 contradicted by a matching strength in bank_analysis for the same category.
@@ -1063,14 +1117,78 @@ contradicted by a matching strength in bank_analysis for the same category.
 Return this EXACT JSON structure (no markdown, no code fences):
 {{
   "best_for": [
-    {{"category": "Investment (Stock/Crypto Trading)", "bank": "BankName", "detail": "specific detail", "is_bau": false}},
-    {{"category": "Spending/CashBack",                "bank": "BankName", "detail": "specific % or HKD amount", "is_bau": false}},
-    {{"category": "Welcome Bonus",                    "bank": "BankName", "detail": "HKD amount", "is_bau": false}},
-    {{"category": "Travel",                           "bank": "BankName", "detail": "specific benefit with named partner or %", "is_bau": false}},
-    {{"category": "Loan APR",                         "bank": "BankName", "detail": "X.XX% APR", "is_bau": false}},
-    {{"category": "FX/Multi-Currency",                "bank": "BankName", "detail": "specific detail with named product or %", "is_bau": false}},
-    {{"category": "Fund Investment",                  "bank": "BankName", "detail": "specific fund subscription detail with 0% or $0", "is_bau": false}},
-    {{"category": "Referral Bonus",                   "bank": "BankName", "detail": "HKD amount per referral", "is_bau": false}}
+    {{
+      "category":       "Stock Trading",
+      "bank":           "BankName",
+      "detail":         "specific stock trading fee detail",
+      "is_bau":         false,
+      "similar_banks":  ["BankA", "BankB"],
+      "why_others_lose":"BankA only waives for 3 months; BankB caps at 10 trades/month"
+    }},
+    {{
+      "category":       "Crypto Trading",
+      "bank":           "BankName",
+      "detail":         "specific crypto fee/platform detail",
+      "is_bau":         false,
+      "similar_banks":  ["BankA"],
+      "why_others_lose":"BankA's crypto waiver expired; BankB has higher platform fee"
+    }},
+    {{
+      "category":       "Spending/CashBack",
+      "bank":           "BankName",
+      "detail":         "specific % or HKD amount",
+      "is_bau":         false,
+      "similar_banks":  [],
+      "why_others_lose":"Only bank currently offering this promotion."
+    }},
+    {{
+      "category":       "Welcome Bonus",
+      "bank":           "BankName",
+      "detail":         "HKD amount",
+      "is_bau":         false,
+      "similar_banks":  ["BankA", "BankB"],
+      "why_others_lose":"specific comparative reason"
+    }},
+    {{
+      "category":       "Travel",
+      "bank":           "BankName",
+      "detail":         "specific benefit with named partner or %",
+      "is_bau":         false,
+      "similar_banks":  [],
+      "why_others_lose":"Only bank currently offering this promotion."
+    }},
+    {{
+      "category":       "Loan APR",
+      "bank":           "BankName",
+      "detail":         "X.XX% APR",
+      "is_bau":         false,
+      "similar_banks":  ["BankA"],
+      "why_others_lose":"BankA's APR is higher at X.XX%"
+    }},
+    {{
+      "category":       "FX/Multi-Currency",
+      "bank":           "BankName",
+      "detail":         "specific detail with named product or %",
+      "is_bau":         false,
+      "similar_banks":  [],
+      "why_others_lose":"Only bank currently offering this promotion."
+    }},
+    {{
+      "category":       "Fund Investment",
+      "bank":           "BankName",
+      "detail":         "specific fund subscription detail with 0% or $0",
+      "is_bau":         false,
+      "similar_banks":  ["BankA"],
+      "why_others_lose":"BankA limits zero-fee to selected funds only"
+    }},
+    {{
+      "category":       "Referral Bonus",
+      "bank":           "BankName",
+      "detail":         "HKD amount per referral",
+      "is_bau":         false,
+      "similar_banks":  ["BankA", "BankB"],
+      "why_others_lose":"BankA pays HKD 100 less per referral; BankB has a cap of 3 referrals"
+    }}
   ],
   "bank_analysis": {{
     "ZA Bank": {{
