@@ -125,6 +125,28 @@ def _types_to_list(types_raw) -> list:
     return []
 
 
+# ── Shared expiry helper (used by both email and per-bank stats) ──────────────
+# ── FIXED: only use end_date for expiry detection — no period-text heuristic ──
+# ── This aligns email counts with website getStatus() logic ──────────────────
+
+def _classify_promo(p: dict, today_d, threshold_d) -> str:
+    """
+    Returns 'past' | 'expiring' | 'active' for a single non-BAU promotion.
+    Uses end_date only — identical logic to the website's getStatus().
+    """
+    ed = p.get('end_date')
+    if ed:
+        try:
+            end_d = datetime.strptime(str(ed)[:10], '%Y-%m-%d').date()
+            if end_d < today_d:
+                return 'past'
+            if end_d <= threshold_d:
+                return 'expiring'
+        except (ValueError, TypeError):
+            pass
+    return 'active'
+
+
 # ── Promotion card ────────────────────────────────────────────────────────────
 
 def _new_promo_card(promo: dict) -> str:
@@ -214,7 +236,7 @@ def _new_promo_card(promo: dict) -> str:
 
 
 def _new_section_html(
-    promos:       list[dict],
+    promos:       list,
     heading:      str,
     sub_heading:  str,
     icon:         str,
@@ -278,23 +300,20 @@ def _build_plain_text(
     now:             str,
     ai_unavailable:  bool = False,
 ) -> str:
-    non_bau   = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
-    today_d   = datetime.now().date()
-    threshold = (datetime.now() + timedelta(days=30)).date()
+    non_bau    = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
+    today_d    = datetime.now().date()
+    threshold  = (datetime.now() + timedelta(days=30)).date()
 
+    # ── FIXED: use end_date only — no period-text heuristic ──
     exp_count  = 0
     past_count = 0
     for p in non_bau:
-        ed = p.get('end_date')
-        if ed:
-            try:
-                end_d = datetime.strptime(str(ed)[:10], '%Y-%m-%d').date()
-                if end_d < today_d:
-                    past_count += 1
-                elif end_d <= threshold:
-                    exp_count += 1
-            except (ValueError, TypeError):
-                pass
+        status = _classify_promo(p, today_d, threshold)
+        if status == 'past':
+            past_count += 1
+        elif status == 'expiring':
+            exp_count += 1
+
     active_count = len(non_bau) - exp_count - past_count
 
     lines = [
@@ -338,6 +357,9 @@ def _build_plain_text(
             if p.get('quota'):  lines.append(f'    Eligibility : {p["quota"]}')
             if tc:              lines.append(f'    Source      : {tc}')
         lines.append('')
+    else:
+        lines.append('NEWLY LAUNCHED TODAY: None')
+        lines.append('')
 
     week_show = [p for p in (new_promos_week or []) if not p.get('is_bau', False)]
     if week_show:
@@ -348,6 +370,9 @@ def _build_plain_text(
             tc    = p.get('tc_link') or p.get('url') or ''
             lines.append(f'  [{bank}] {title}')
             if tc: lines.append(f'    Source : {tc}')
+        lines.append('')
+    else:
+        lines.append('NEW THIS WEEK — PAST 6 DAYS: None')
         lines.append('')
 
     lines += [
@@ -367,7 +392,7 @@ def build_html_email(
     strategic_insights: dict = None,
     new_promos:         list = None,
     new_promos_week:    list = None,
-    ai_unavailable:     bool = False,   # ← NEW: shows cached-data notice
+    ai_unavailable:     bool = False,
 ) -> str:
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
@@ -387,27 +412,18 @@ def build_html_email(
     _now       = datetime.now()
     _today_d   = _now.date()
     _threshold = (_now + timedelta(days=30)).date()
-    _this_m    = _now.strftime('%b').lower()
-    _next_m    = ['jan','feb','mar','apr','may','jun',
-                  'jul','aug','sep','oct','nov','dec'][_now.month % 12]
 
+    # ── FIXED: use end_date only for expiry classification ──────────────────
+    # Removed period-text month heuristic that caused email/website mismatch.
+    # Now matches website's getStatus() logic exactly.
     expiring_count = 0
     past_end_count = 0
     for _p in non_bau_data:
-        _ed = _p.get('end_date')
-        if _ed:
-            try:
-                _end_d = datetime.strptime(str(_ed)[:10], '%Y-%m-%d').date()
-                if _end_d < _today_d:
-                    past_end_count += 1
-                elif _today_d <= _end_d <= _threshold:
-                    expiring_count += 1
-            except (ValueError, TypeError):
-                pass
-        else:
-            _period = str(_p.get('period', '')).lower()
-            if _this_m in _period or _next_m in _period:
-                expiring_count += 1
+        _status = _classify_promo(_p, _today_d, _threshold)
+        if _status == 'past':
+            past_end_count += 1
+        elif _status == 'expiring':
+            expiring_count += 1
 
     active_count = total_promos - expiring_count - past_end_count
 
@@ -421,23 +437,15 @@ def build_html_email(
         color        = _bank_color(bank_name)
         display_name = _bank_display_name(bank_name)
 
+        # ── FIXED: per-bank expiry also uses end_date only ──────────────────
         b_exp  = 0
         b_past = 0
         for _p in promos:
-            _ed = _p.get('end_date')
-            if _ed:
-                try:
-                    _end_d = datetime.strptime(str(_ed)[:10], '%Y-%m-%d').date()
-                    if _end_d < _today_d:
-                        b_past += 1
-                    elif _today_d <= _end_d <= _threshold:
-                        b_exp += 1
-                except (ValueError, TypeError):
-                    pass
-            else:
-                _period = str(_p.get('period', '')).lower()
-                if _this_m in _period or _next_m in _period:
-                    b_exp += 1
+            _status = _classify_promo(_p, _today_d, _threshold)
+            if _status == 'past':
+                b_past += 1
+            elif _status == 'expiring':
+                b_exp += 1
 
         b_active = len(promos) - b_exp - b_past
 
@@ -499,7 +507,7 @@ def build_html_email(
     today_section = _new_section_html(
         promos       = new_promos_show,
         heading      = 'Newly Launched Today',
-        sub_heading  = '今日新推出優惠 · start date on or after today',
+        sub_heading  = '今日新推出優惠 · start date on or after today · active only',
         icon         = '🆕',
         header_color = 'linear-gradient(135deg,#ff6b35 0%,#f7931e 100%)',
         header_dark  = '#f97316',
@@ -511,7 +519,7 @@ def build_html_email(
     week_section = _new_section_html(
         promos       = new_promos_wk_show,
         heading      = 'New This Week',
-        sub_heading  = '本週新推出優惠 · past 6 days (excluding today)',
+        sub_heading  = '本週新推出優惠 · past 6 days (excluding today) · active only',
         icon         = '📅',
         header_color = 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)',
         header_dark  = '#6366f1',
@@ -551,7 +559,7 @@ def build_html_email(
   </td></tr>
   <tr><td style="height:20px;"></td></tr>
 
-  <!-- AI UNAVAILABLE NOTICE (shown only when ai_unavailable=True) -->
+  <!-- AI UNAVAILABLE NOTICE -->
   {ai_notice_html}
 
   <!-- OVERALL STATS -->
@@ -570,7 +578,7 @@ def build_html_email(
         <div style="font-size:10px;font-weight:700;color:#9ca3af;
                     text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Active Promos</div>
         <div style="font-size:38px;font-weight:900;color:#10b981;line-height:1;">{active_count}</div>
-        <div style="font-size:11px;color:#c4cad4;margin-top:5px;">currently valid</div>
+        <div style="font-size:11px;color:#c4cad4;margin-top:5px;">currently active</div>
       </td>
       <td width="33%" style="text-align:center;padding:24px 10px;">
         <div style="font-size:10px;font-weight:700;color:#9ca3af;

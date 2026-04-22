@@ -68,11 +68,12 @@
     <div class="flex gap-3 flex-wrap">
       <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
         <div class="text-2xl font-black" id="statTotal">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Active</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Total</div>
       </div>
       <div class="bg-green-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
         <div class="text-2xl font-black text-green-300" id="statActive">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Valid ✅</div>
+        <!-- ── CHANGED: "Valid ✅" → "Active ✅" ── -->
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Active ✅</div>
       </div>
       <div class="bg-orange-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
         <div class="text-2xl font-black text-orange-300" id="statExpiring">–</div>
@@ -111,11 +112,12 @@
                  focus:outline-none focus:ring-2 focus:ring-indigo-300"
           oninput="applyFilters()">
       </div>
+      <!-- ── CHANGED: "Valid" → "Active" in dropdown options ── -->
       <select id="statusFilter" onchange="applyFilters()"
         class="border border-gray-200 rounded-lg px-3 py-2 text-sm
                focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
-        <option value="active+expiring" selected>✅⚡ Valid + Expiring</option>
-        <option value="active">✅ Valid Only</option>
+        <option value="active+expiring" selected>✅⚡ Active + Expiring</option>
+        <option value="active">✅ Active Only</option>
         <option value="expiring">⚡ Expiring Soon</option>
         <option value="all">All (Active + Expired)</option>
         <option value="expired">✗ Expired Only</option>
@@ -149,7 +151,7 @@
           <span class="text-2xl">🆕</span>
           <div>
             <div class="font-extrabold text-white text-lg tracking-tight">New Promotions Today</div>
-            <div class="text-orange-100 text-xs mt-0.5">今日首次偵測到的優惠 · start date on or after today · not yet expired</div>
+            <div class="text-orange-100 text-xs mt-0.5">今日首次偵測到的優惠 · DB active · start date on or after today</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -177,7 +179,7 @@
           <span class="text-2xl">📅</span>
           <div>
             <div class="font-extrabold text-white text-lg tracking-tight">New This Week</div>
-            <div class="text-indigo-100 text-xs mt-0.5">本週新推出優惠 · past 6 days (excluding today) · active only</div>
+            <div class="text-indigo-100 text-xs mt-0.5">本週新推出優惠 · past 6 days (excluding today) · DB active only</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -378,12 +380,17 @@ const CAT_FILTER_LIST = [
   { key:'Others 其他',        label:'📋 Others',     bg:'#6b7280' },
 ];
 
-// ── UPDATED: Investment split into Stock Trading + Crypto Trading ──
+// ── CHANGED: split Investment → Stock Trading + Crypto Trading ──────────────
+// Also added "Investment (Stock/Crypto Trading)" as legacy fallback key so
+// old data.json generated before the split still shows "How AI Defines Best".
 const HOW_DEFINED = {
   "Stock Trading":
     "Zero or lowest trading fee/commission for HK/US/A-share stocks, best IPO reward, or most comprehensive brokerage platform with no trade minimum.",
   "Crypto Trading":
     "Zero or lowest crypto/virtual-asset trading or platform fee, widest digital-asset selection, or strongest permanent crypto incentive.",
+  // ── Legacy fallback: shown when old data.json has merged category ──
+  "Investment (Stock/Crypto Trading)":
+    "Stock Trading: zero brokerage/commission for HK/US stocks, best IPO reward. Crypto Trading: zero platform fee for virtual assets. Best bank leads in both.",
   "Fund Investment":
     "Widest range of funds at $0 subscription fee, or permanent fee waiver with no expiry.",
   "Spending/CashBack":
@@ -433,30 +440,35 @@ function bauTag(p) {
   return `<span class="cat-tag" style="background:#64748b">⚙️ BAU</span>`;
 }
 
-// ── FIXED: end_date is the definitive expiry signal ───────────────
-// If end_date is in the future → promotion CANNOT be expired regardless
-// of the `active` flag in the database.
+// ── FIXED: getStatus — DB active flag checked FIRST ───────────────────────
+// This ensures email counts (which use DB active=1 rows) match website counts.
+// After the database.py fix, mark_stale_as_inactive no longer deactivates
+// promos with future end_dates, so active=false + future end_date is rare.
+// Respecting the active flag keeps email and website in sync.
 function getStatus(p) {
-  // 1. If we have an explicit end_date, use it as the single source of truth.
+  // 1. If DB marked it inactive → always expired (aligns with email behavior)
+  if (p.active === false) return 'expired';
+
+  // 2. If we have an explicit end_date, use it as the expiry signal
   if (p.end_date) {
     const diff = (new Date(p.end_date) - new Date()) / 86400000;
     if (diff < 0)   return 'expired';   // end_date already passed
     if (diff <= 30) return 'expiring';  // expires within 30 days
     return 'active';                    // end_date is in the future → ACTIVE
   }
-  // 2. No end_date — fall back to the DB active flag.
-  if (!p.active) return 'expired';
-  // 3. Ongoing / no expiry date.
+
+  // 3. No end_date → ongoing / active
   if (p.period === 'Ongoing' ||
       (p.period && p.period.toLowerCase().includes('ongoing'))) return 'active';
   return 'active';
 }
 
+// ── CHANGED: "Valid" → "Active" in status badge ───────────────────────────
 function statusBadge(p) {
   const s = getStatus(p);
   if (s === 'active')
     return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                         text-xs font-bold bg-green-100 text-green-700">✅ Valid</span>`;
+                         text-xs font-bold bg-green-100 text-green-700">✅ Active</span>`;
   if (s === 'expiring') {
     const diff = Math.ceil((new Date(p.end_date) - new Date()) / 86400000);
     return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
@@ -473,10 +485,11 @@ function hktDaysAgo(n) {
   return new Date(Date.now() + 8*3600000 - n*86400000).toISOString().substring(0,10);
 }
 
-// ── FIXED: isNewToday — also checks the promo hasn't expired ─────
+// ── FIXED: isNewToday — checks DB active flag to match email logic ─────────
 function isNewToday(p, today) {
   if (p.is_bau) return false;
-  // Do not show in "new today" if the promotion has already expired
+  // ── ADDED: respect DB active flag — inactive promos are not "new today" ──
+  if (p.active === false) return false;
   if (getStatus(p) === 'expired') return false;
   const created = (p.created_at||'').substring(0,10);
   if (created !== today) return false;
@@ -486,10 +499,11 @@ function isNewToday(p, today) {
   return true;
 }
 
-// ── FIXED: isNewThisWeek — also checks the promo hasn't expired ──
+// ── FIXED: isNewThisWeek — checks DB active flag to match email logic ──────
 function isNewThisWeek(p, today) {
   if (p.is_bau) return false;
-  // Do not show expired promos in "new this week"
+  // ── ADDED: respect DB active flag — inactive promos are not "new this week" ──
+  if (p.active === false) return false;
   if (getStatus(p) === 'expired') return false;
   const created   = (p.created_at||'').substring(0,10);
   const sixAgo    = hktDaysAgo(6);
@@ -629,7 +643,9 @@ async function loadData() {
 
     strategicInsights = data.strategic_insights || null;
 
-    const activeNonBau = allPromos.filter(p => !p.is_bau && getStatus(p) !== 'expired');
+    // ── FIXED: only count DB-active, non-BAU promotions ──────────────────
+    // getStatus() now checks p.active first, so these counts match the email.
+    const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false && getStatus(p) !== 'expired');
     const activeN      = activeNonBau.filter(p => getStatus(p) === 'active').length;
     const expiringN    = activeNonBau.filter(p => getStatus(p) === 'expiring').length;
     const expiredN     = allPromos.filter(p => !p.is_bau && getStatus(p) === 'expired').length;
@@ -865,12 +881,15 @@ function buildStrategicInsights(insights) {
   }
 
   const rows = insights.best_for.map(item => {
-    const cat      = item.category      || '';
-    const bank     = item.bank          || 'None';
-    const detail   = item.detail        || '—';
+    const cat    = item.category      || '';
+    const bank   = item.bank          || 'None';
+    const detail = item.detail        || '—';
+
+    // ── HOW_DEFINED lookup — falls back to legacy merged-category key ──────
     const standard = (item.standard && item.standard.trim())
                      ? item.standard
                      : (HOW_DEFINED[cat] || '—');
+
     const similar  = (item.similar_banks || []).filter(b => b !== bank);
     const whyLose  = item.why_others_lose || '—';
     const isBau    = item.is_bau || false;
@@ -1267,7 +1286,7 @@ function applyFilters() {
 
   renderTable(filtered);
 
-  const activeNonBau = allPromos.filter(p => !p.is_bau && getStatus(p) !== 'expired');
+  const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false && getStatus(p) !== 'expired');
   const bauTotal     = allPromos.filter(p => p.is_bau).length;
   document.getElementById('resultCount').textContent =
     `Showing ${filtered.length} of ${activeNonBau.length} active promotions`
