@@ -6,16 +6,17 @@ import re
 import time
 from dataclasses import dataclass, field
 from typing import Optional
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-MAX_CHARS_PER_SECTION = 10_000  # raised from 8k — gives AI more context per page
-MAX_CHARS_TOTAL       = 50_000  # raised from 40k — banks with many promos need more
+MAX_CHARS_PER_SECTION = 10_000
+MAX_CHARS_TOTAL       = 50_000
 MIN_CONTENT_CHARS     = 200
-MAX_RETRIES           = 3       # raised from 2 — extra resilience for slow banks
+MAX_RETRIES           = 3
 CONCURRENCY_LIMIT     = 3
 
 USER_AGENT = (
@@ -41,63 +42,75 @@ _BLOCKED_EXTENSIONS = re.compile(
     re.IGNORECASE,
 )
 
+# ── Bank domain allow-list (Issue 1 fix) ──────────────────────────────────────
+# Only scrape URLs whose hostname matches one of these patterns.
+# Any URL outside the bank's domain is silently skipped.
+
+BANK_DOMAINS: dict[str, list[str]] = {
+    'za':      ['bank.za.group', 'za.group'],
+    'mox':     ['mox.com'],
+    'livi':    ['livibank.com'],
+    'welab':   ['welab.bank'],
+    'pao':     ['pingandb.com'],
+    'airstar': ['airstarbank.com'],
+    'fusion':  ['fusionbank.com'],
+    'ant':     ['antbank.hk'],
+}
+
+
+def _is_valid_bank_url(url: str, bank_id: str) -> bool:
+    """Return True only if url's hostname belongs to the bank's allowed domains."""
+    allowed = BANK_DOMAINS.get(bank_id, [])
+    if not allowed:
+        return True  # no restriction configured → allow
+    try:
+        hostname = urlparse(url).hostname or ''
+    except Exception:
+        return False
+    return any(hostname == d or hostname.endswith('.' + d) for d in allowed)
+
+
 # ── Bank configs ──────────────────────────────────────────────────────────────
-#
-#  URL STRATEGY (3 tiers per bank):
-#  1. Overview / home pages     → general promotions listing
-#  2. Product / BAU pages       → feature pages without "promotion" in URL
-#  3. MGM / referral pages      → URLs containing "mgm" or referral keyword
-#
-#  For banks without a dedicated promotions area, product pages are also
-#  included (e.g. ZA Bank loan/statement-instalment, Mox individual campaigns).
-#
+
 BANK_CONFIGS: dict[str, dict] = {
     'za': {
         'name':       'ZA Bank',
         'color':      '#25CD9C',
         'urls': [
-            # Tier 1 — promotions overview
             'https://bank.za.group/en/promotion',
             'https://bank.za.group/en',
             'https://bank.za.group/',
-            # Tier 2 — product pages (these contain embedded promos)
             'https://bank.za.group/hk/usstock',
             'https://bank.za.group/hkstock',
             'https://bank.za.group/hk/fund',
-            'https://bank.za.group/hk/loan',                   # ← NEW: loan product page
-            'https://bank.za.group/hk/statement-instalment',   # ← NEW: statement instalment
-            # Tier 3 — campaign / MGM pages
+            'https://bank.za.group/hk/loan',
+            'https://bank.za.group/hk/statement-instalment',
             'https://bank.za.group/hk/open-account-mgm',
-            'https://bank.za.group/6th-anniversary-campaign',  # ← NEW: 6th anniversary
+            'https://bank.za.group/6th-anniversary-campaign',
         ],
         'link':       'https://bank.za.group/en/promotion',
-        'wait_extra': 4000,   # raised slightly
+        'wait_extra': 4000,
     },
     'mox': {
         'name':       'Mox Bank',
         'color':      '#ec4899',
         'urls': [
-            # Tier 1 — promotions hub (lists ALL active promos)
             'https://mox.com/promotions/',
             'https://mox.com/zh/promotions/',
             'https://mox.com/',
-            # Tier 2 — specific campaign pages
-            # These must be listed individually because Mox's SPA hub may not
-            # render individual card details in the AI-visible text.
-            'https://mox.com/zh/promotions/moxsmart/',                           # ← was wrongly expired
-            'https://mox.com/zh/promotions/The-Club/',                           # ← was wrongly expired
-            'https://mox.com/zh/promotions/1500mox/',                            # ← was wrongly expired
-            'https://mox.com/promotions/Personal-Accident-Cushion-Promotion-Jan2026/', # ← was wrongly expired
-            'https://mox.com/promotions/CLUBLINK/',                              # ← was wrongly expired
-            'https://mox.com/promotions/moxtrip25/',                             # ← was wrongly expired
-            'https://mox.com/promotions/MOXHKT25/',                              # ← was wrongly expired
-            'https://mox.com/zh/promotions/best-in-town-telco/',                 # ← NEW: missing promo
-            'https://mox.com/promotions/mox-zone-at-the-club-hkt/',              # ← NEW: missing promo
-            # Tier 3 — referral
+            'https://mox.com/zh/promotions/moxsmart/',
+            'https://mox.com/zh/promotions/The-Club/',
+            'https://mox.com/zh/promotions/1500mox/',
+            'https://mox.com/promotions/Personal-Accident-Cushion-Promotion-Jan2026/',
+            'https://mox.com/promotions/CLUBLINK/',
+            'https://mox.com/promotions/moxtrip25/',
+            'https://mox.com/promotions/MOXHKT25/',
+            'https://mox.com/zh/promotions/best-in-town-telco/',
+            'https://mox.com/promotions/mox-zone-at-the-club-hkt/',
             'https://mox.com/zh/promotions/Mox-Referral-Programme/',
         ],
         'link':       'https://mox.com/promotions/',
-        'wait_extra': 4000,   # raised — Mox SPA needs time to hydrate
+        'wait_extra': 4000,
         'max_retries': 3,
     },
     'livi': {
@@ -108,24 +121,21 @@ BANK_CONFIGS: dict[str, dict] = {
             'https://www.livibank.com/zh_HK/',
         ],
         'link':       'https://www.livibank.com/',
-        'wait_extra': 12000,  # raised — livi is the slowest loader
+        'wait_extra': 12000,
         'max_retries': 3,
     },
     'welab': {
         'name':       'WeLab Bank',
         'color':      '#7c3aed',
         'urls': [
-            # Tier 1 — feature / promotions hub
             'https://www.welab.bank/en/feature/',
             'https://www.welab.bank/en/',
             'https://www.welab.bank/',
-            # Tier 2 — individual campaign pages (must be listed to avoid missing)
-            'https://www.welab.bank/en/feature/2026-wm-april-cash-reward/',     # ← NEW: April investment
+            'https://www.welab.bank/en/feature/2026-wm-april-cash-reward/',
             'https://www.welab.bank/zh/feature/dcp-easter-lucky-draw-2026/',
             'https://www.welab.bank/zh/feature/2-in-1-welcome-rewards-apr26/',
             'https://www.welab.bank/zh/feature/tesla-mega-combo/',
             'https://www.welab.bank/zh/feature/fund/',
-            # Tier 3 — MGM / referral
             'https://www.welab.bank/en/feature/loan_mgm/',
             'https://www.welab.bank/zh/feature/loan_mgm/',
         ],
@@ -160,22 +170,19 @@ BANK_CONFIGS: dict[str, dict] = {
         'name':       'Fusion Bank',
         'color':      '#14b8a6',
         'urls': [
-            # Tier 1 — home (lists promotions)
             'https://www.fusionbank.com/?lang=en',
             'https://www.fusionbank.com/?lang=zh-HK',
-            # Tier 2 — individual campaign detail pages
             'https://www.fusionbank.com/common/detail.html?key=fxtd2023&lang=en',
             'https://www.fusionbank.com/common/detail.html?key=fxtd2023&lang=tc',
             'https://www.fusionbank.com/common/detail.html?key=fusionflash&lang=en',
             'https://www.fusionbank.com/common/detail.html?key=fusionflash&lang=tc',
             'https://www.fusionbank.com/common/detail.html?key=savinginterestplus&lang=en',
             'https://www.fusionbank.com/common/detail.html?key=savinginterestplus&lang=tc',
-            # Tier 3 — MGM
-            'https://www.fusionbank.com/common/detail.html?key=mgm_4&lang=en',  # ← NEW: en version
+            'https://www.fusionbank.com/common/detail.html?key=mgm_4&lang=en',
             'https://www.fusionbank.com/common/detail.html?key=mgm_4&lang=tc',
         ],
         'link':       'https://www.fusionbank.com/?lang=en',
-        'wait_extra': 7000,   # raised — Fusion detail pages are slow
+        'wait_extra': 7000,
         'max_retries': 3,
     },
     'ant': {
@@ -189,7 +196,7 @@ BANK_CONFIGS: dict[str, dict] = {
             'https://www.antbank.hk/fund?lang=en_us',
         ],
         'link':       'https://www.antbank.hk/em-plus-offer?lang=en_us',
-        'wait_extra': 9000,   # raised — Ant Bank is JS-heavy
+        'wait_extra': 9000,
         'max_retries': 3,
     },
 }
@@ -358,6 +365,29 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
         text      = '',
     )
 
+    # ── Domain validation: filter out any URLs outside the bank's domains ─────
+    valid_urls   = []
+    skipped_urls = []
+    for url in cfg['urls']:
+        if _is_valid_bank_url(url, bank_id):
+            valid_urls.append(url)
+        else:
+            skipped_urls.append(url)
+            print(
+                f'    ⛔ Domain guard SKIPPED non-bank URL for {cfg["name"]}: {url}'
+            )
+
+    if skipped_urls:
+        print(
+            f'    ⛔ {len(skipped_urls)} URL(s) outside {cfg["name"]} domain skipped — '
+            f'prevents cross-site content contamination'
+        )
+
+    if not valid_urls:
+        result.errors.append('All URLs failed domain validation')
+        result.elapsed_s = round(time.monotonic() - t_start, 2)
+        return result
+
     context: BrowserContext = await browser.new_context(
         viewport            = {'width': 1366, 'height': 900},
         user_agent          = USER_AGENT,
@@ -375,14 +405,38 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
         page = await context.new_page()
 
         async def _handle_route(route):
-            if _BLOCKED_EXTENSIONS.search(route.request.url):
+            req_url = route.request.url
+            # Block media/font resources
+            if _BLOCKED_EXTENSIONS.search(req_url):
                 await route.abort()
-            else:
-                await route.continue_()
+                return
+            # Block navigation to external (non-bank) domains
+            # This prevents the browser from loading third-party pages
+            # that could contaminate the scraped text with non-bank content
+            try:
+                req_hostname = urlparse(req_url).hostname or ''
+                allowed      = BANK_DOMAINS.get(bank_id, [])
+                if allowed and not any(
+                    req_hostname == d or req_hostname.endswith('.' + d)
+                    for d in allowed
+                ):
+                    # Allow known CDN / analytics that don't add promo content
+                    _CDN_ALLOW = {
+                        'cdn.tailwindcss.com', 'fonts.googleapis.com',
+                        'fonts.gstatic.com', 'cdnjs.cloudflare.com',
+                        'unpkg.com', 'jsdelivr.net',
+                    }
+                    if not any(cdn in req_hostname for cdn in _CDN_ALLOW):
+                        if route.request.resource_type in ('document', 'xhr', 'fetch'):
+                            await route.abort()
+                            return
+            except Exception:
+                pass
+            await route.continue_()
 
         await page.route('**/*', _handle_route)
 
-        for url in cfg['urls']:
+        for url in valid_urls:
             print(f'    → {url}')
             text, shot = await _try_url(page, url, wait_extra, retries)
 

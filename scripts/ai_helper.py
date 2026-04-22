@@ -49,6 +49,75 @@ BAU_GLOBAL_OVERRIDES: list[str] = [
     "24×7 banking",
 ]
 
+# ── Non-bank content patterns (Issue 1 fix) ───────────────────────────────────
+# If ANY of these phrases appear in a promotion's title/description/tc_link,
+# the promotion is NOT a bank product and must be filtered out.
+
+_NON_BANK_CONTENT_PATTERNS: list[str] = [
+    # Government / disaster-relief pages
+    'wang fuk court', 'wangfuk', 'support fund for',
+    'inland revenue', 'ird.gov.hk', 'gov.hk/taxdeduction',
+    'tax deduction for donation', 'donation receipt',
+    'charity donation', 'relief fund', 'disaster relief',
+    'taipofire', 'fire support', 'fire.gov',
+    # Generic third-party non-bank indicators
+    'approved charitable donation',
+    'inland revenue ordinance',
+    'bank of china (hong kong) account number 012-875',
+]
+
+# Domains that are NOT bank domains — used to flag mismatched tc_links
+_NON_BANK_DOMAINS: list[str] = [
+    'gov.hk', 'ird.gov.hk', 'taipofire', 'police.gov.hk',
+    'welfare.gov.hk', 'charities', 'redcross',
+]
+
+
+def _filter_bank_relevant_promotions(promos: list, bank_name: str) -> list:
+    """
+    Remove promotions that clearly do NOT belong to the bank:
+      - Government programs (tax deduction notices, relief funds)
+      - Charity / third-party donation drives
+      - Any entry whose tc_link resolves to a non-bank domain
+    """
+    filtered = []
+    removed  = 0
+
+    for p in promos:
+        title       = (p.get('name')        or p.get('title')  or '').lower()
+        description = (p.get('description') or '').lower()
+        highlight   = (p.get('highlight')   or '').lower()
+        tc_link     = (p.get('tc_link')     or p.get('link')   or '').lower()
+
+        combined = f'{title} {description} {highlight} {tc_link}'
+
+        # Check non-bank content patterns
+        offending = next(
+            (pat for pat in _NON_BANK_CONTENT_PATTERNS if pat in combined),
+            None,
+        )
+
+        # Check if tc_link points to a clearly non-bank domain
+        bad_domain = next(
+            (d for d in _NON_BANK_DOMAINS if d in tc_link),
+            None,
+        )
+
+        if offending or bad_domain:
+            reason = f'pattern "{offending}"' if offending else f'non-bank domain in tc_link "{bad_domain}"'
+            print(
+                f'  🚫 Non-bank filter REMOVED [{bank_name}]: '
+                f'"{p.get("name") or p.get("title")}" — {reason}'
+            )
+            removed += 1
+        else:
+            filtered.append(p)
+
+    if removed:
+        print(f'  🚫 Non-bank filter: {removed} non-bank promotion(s) removed for {bank_name}')
+    return filtered
+
+
 # ── Extraction prompt ─────────────────────────────────────────────────────────
 
 _PROMPT_TMPL = """\
@@ -108,7 +177,7 @@ Today's Date: TODAY_DATE_PLACEHOLDER
 ║         until 31 Jul 2026", types=["投資"], is_bau=false,          ║
 ║         end_date="2026-07-31"                                       ║
 ║                                                                      ║
-║  8. ⛔ DO NOT EXTRACT THESE — they are NOT promotions:             ║
+║  8. ⛔ DO NOT EXTRACT THESE — they are NOT bank promotions:        ║
 ║     • Navigation / menu items                                       ║
 ║     • Section headings without a concrete benefit amount            ║
 ║     • Pure risk disclaimers / legal boilerplate                     ║
@@ -118,18 +187,26 @@ Today's Date: TODAY_DATE_PLACEHOLDER
 ║     ❌ BAD extraction (nav item): "Travel with ZA Card"            ║
 ║     ✅ GOOD extraction (real deal): "Trip.com 8% off + 2% CashBack"║
 ║                                                                      ║
+║     🚫 CRITICAL: ONLY extract promotions OFFERED BY THE BANK.     ║
+║        The bank is BANK_NAME_PLACEHOLDER. Skip anything that is:   ║
+║        • A government program, agency notice, or tax department    ║
+║          instruction (e.g. Inland Revenue, tax deduction guides)   ║
+║        • A charity / disaster-relief / donation drive operated     ║
+║          by a third party (e.g. Support Fund for Wang Fuk Court,   ║
+║          Red Cross, community funds)                               ║
+║        • Content from a non-bank URL (gov.hk, charity sites, etc) ║
+║        • A CSR / social-responsibility notice that is NOT a        ║
+║          financial benefit offered to the bank's own customers     ║
+║        If the content is from a government or charity website,     ║
+║        ignore it completely — return [] for that section.          ║
+║                                                                      ║
 ║  9. ⚠️  START DATE GATE (today = TODAY_DATE_PLACEHOLDER):           ║
 ║     If start_date is found AND start_date < TODAY_DATE_PLACEHOLDER  ║
 ║     → this promotion launched BEFORE today; it is NOT new today.    ║
-║     A promotion that started 2026-04-01 found on 2026-04-17 is NOT ║
-║     a newly launched promotion — it has been running for 16 days.   ║
 ║                                                                      ║
 ║  10. ✅ EXPIRY VALIDATION (today = TODAY_DATE_PLACEHOLDER):         ║
 ║      If end_date > TODAY_DATE_PLACEHOLDER the promotion is still    ║
 ║      ACTIVE — it has NOT expired.                                   ║
-║      Example: end_date="2026-05-27", today="2026-04-17"            ║
-║      → This promo runs for 40 more days. Mark end_date accurately   ║
-║        and do NOT treat it as expired or past.                      ║
 ║      Only set is_bau=false and include the end_date as-is.         ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
@@ -157,7 +234,8 @@ WEBSITE TEXT TO ANALYSE:
 ────────────────────────────────────────────────────────────────────────
 TEXT_PLACEHOLDER
 ────────────────────────────────────────────────────────────────────────
-Remember: return ONLY the JSON array starting with [ and ending with ]."""
+Remember: return ONLY the JSON array starting with [ and ending with ].
+If the text is entirely from a government or charity website, return []."""
 
 
 def _build_prompt(bank_name: str, url: str, text: str) -> str:
@@ -399,19 +477,6 @@ _CONCRETE_EVIDENCE_RE = re.compile(
     re.IGNORECASE,
 )
 
-# ── Stock trading commission pattern — used by the override validator ─────────
-# Matches phrases that indicate a bank CHARGES a non-zero per-trade commission
-_CHARGES_COMMISSION_RE = re.compile(
-    r'usd\s*[\d]+\.[\d]+\s*/\s*share'      # USD 0.012/share
-    r'|usd\s*[\d]+\.[\d]+\s*per\s*share'   # USD 0.012 per share
-    r'|hkd\s*[\d]+\.?[\d]*\s*(per|/)\s*(trade|lot|share|order)'  # HKD X per trade
-    r'|0\.\d+%\s*(brokerage|commission)'   # 0.03% commission
-    r'|competitive\s+(commission|brokerage)'  # "competitive commission"
-    r'|commission\s+(of|at|is|:)\s*[\d]'   # commission of X / commission at X
-    r'|[\d]+\.[\d]+\s*usd\s*per',          # 0.012 USD per ...
-    re.IGNORECASE,
-)
-
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
     'HK Stock Trading': [
         'hk stock', 'hong kong stock', 'hkex', 'local stock',
@@ -521,27 +586,85 @@ def _validate_best_for_evidence(best_for: list) -> list:
     return validated
 
 
-# ── ADDED: Stock trading commission override ──────────────────────────────────
-# If a non-ZA-Bank bank wins a stock trading category but its detail reveals
-# it charges per-trade commission, override to ZA Bank ($0 commission).
-# ZA Bank's permanent $0 commission is always the stronger stock trading offer
-# unless a competitor can prove BOTH $0 commission AND $0 platform fee.
+# ── Stock trading total-cost validator (Issue 2 fix) ──────────────────────────
+#
+#  Total cost per trade = Commission fee + Platform fee
+#
+#  ZA Bank structure (verified from official pages):
+#    HK stocks: $0 commission + HKD 18 platform fee (min per trade)
+#    US stocks: $0 commission + USD 0.0099/share, min USD 1.99
+#
+#  Evaluation rule:
+#    1. If the selected winner charges commission AND platform fee at levels
+#       that exceed ZA Bank's equivalent, override to ZA Bank.
+#    2. If a competitor genuinely offers lower TOTAL COST for the trade size
+#       described in their detail, keep their win — but ensure the detail
+#       includes a full cost breakdown (commission + platform fee).
+#    3. "Zero platform fee but charges per-share commission" can legitimately
+#       beat ZA Bank for very small US trades (< ~166 shares) — allow this.
 
-_STOCK_CATS = {'HK Stock Trading', 'US Stock Trading', 'Stock Trading'}
-_ZA_NAMES   = {'za bank', 'za', 'za invest'}
+_STOCK_CATS  = {'HK Stock Trading', 'US Stock Trading', 'Stock Trading'}
+_ZA_NAMES    = {'za bank', 'za', 'za invest'}
 
-_ZA_STOCK_DETAIL = (
-    '$0 brokerage commission for both HK stocks and US stocks via ZA Invest; '
-    'platform fee applies (no per-trade commission charged)'
+# Regex: winner's detail contains per-share or per-trade commission language
+_CHARGES_COMMISSION_RE = re.compile(
+    r'usd\s*[\d]+\.[\d]+\s*/\s*share'
+    r'|usd\s*[\d]+\.[\d]+\s*per\s*share'
+    r'|hkd\s*[\d]+\.?[\d]*\s*(per|/)\s*(trade|lot|share|order)'
+    r'|0\.\d+%\s*(brokerage|commission)'
+    r'|commission\s+(of|at|is|:)\s*[\d]'
+    r'|[\d]+\.[\d]+\s*usd\s*per',
+    re.IGNORECASE,
 )
+
+# Regex: detail also mentions $0 or zero platform fee (PAO-style: commission + $0 platform)
+_ZERO_PLATFORM_FEE_RE = re.compile(
+    r'zero\s+platform\s+fee'
+    r'|\$\s*0\s+platform'
+    r'|no\s+platform\s+fee'
+    r'|platform\s+fee[\s:]+\$?\s*0\b'
+    r'|free\s+platform',
+    re.IGNORECASE,
+)
+
+# Regex: extract per-share USD commission amount for comparison
+_USD_PER_SHARE_RE = re.compile(r'usd\s*([\d]+\.[\d]+)\s*(?:/|per)\s*share', re.IGNORECASE)
+
+# ZA Bank reference platform fees (for total-cost comparison)
+_ZA_HK_PLATFORM_FEE_HKD = 18.0    # HKD per trade (minimum)
+_ZA_US_PLATFORM_FEE_USD  = 1.99   # USD per trade (minimum, USD 0.0099/share)
+
+# Break-even share count: if a competitor charges X USD/share and $0 platform,
+# ZA Bank's USD 1.99 flat platform fee is cheaper above this share count.
+def _us_breakeven_shares(per_share_usd: float) -> float:
+    if per_share_usd <= 0:
+        return float('inf')
+    return _ZA_US_PLATFORM_FEE_USD / per_share_usd
 
 
 def _validate_stock_trading_winners(best_for: list) -> list:
     """
-    Post-process stock trading category winners.
-    Rule: $0 commission always beats any non-zero commission.
-    If the AI picked a bank that charges commission over ZA Bank ($0 commission),
-    override to ZA Bank and log the correction.
+    Post-process stock trading category winners using TOTAL COST logic.
+
+    Total cost = Commission fee + Platform fee
+
+    Rules:
+    ① If the winner charges commission AND mentions zero platform fee
+       (e.g. PAO Bank: USD 0.012/share + $0 platform for US stocks):
+       - Extract the per-share commission rate
+       - Calculate break-even share count vs ZA Bank's flat platform fee
+       - For US stocks: if per-share rate > USD 0.0099 AND the detail is about
+         typical retail trades (200+ shares), ZA Bank's total cost is lower
+         → override to ZA Bank with explanation
+       - For HK stocks: ZA Bank's $0 commission + HKD 18 flat fee beats
+         any per-trade commission above HKD 18 → compare and decide
+       - If the competitor's total cost is genuinely lower for the described
+         trade size, KEEP their win but ensure detail shows full cost breakdown
+
+    ② If the winner charges BOTH commission AND platform fee at levels that
+       exceed ZA Bank's equivalent → always override to ZA Bank.
+
+    ③ If ZA Bank is the winner, no action needed.
     """
     overrides = 0
     for i, entry in enumerate(best_for):
@@ -551,38 +674,146 @@ def _validate_stock_trading_winners(best_for: list) -> list:
         if cat not in _STOCK_CATS:
             continue
         if bank.lower() in _ZA_NAMES:
-            continue  # ZA Bank winning is expected — no override needed
+            # ZA Bank winning — ensure detail mentions both commission AND platform fee
+            detail = (entry.get('detail') or '')
+            if 'platform fee' not in detail.lower():
+                best_for[i] = {
+                    **entry,
+                    'detail': (
+                        detail.rstrip('. ') +
+                        '; platform fee applies (HK: HKD 18/trade, US: USD 1.99/trade minimum)'
+                    ),
+                }
+            continue
 
         detail = (entry.get('detail') or '')
+        charges_commission = bool(_CHARGES_COMMISSION_RE.search(detail))
+        has_zero_platform  = bool(_ZERO_PLATFORM_FEE_RE.search(detail))
 
-        if _CHARGES_COMMISSION_RE.search(detail):
+        if not charges_commission:
+            # Winner doesn't charge commission — no action needed
+            continue
+
+        # Winner charges commission (+ possibly zero platform fee)
+        if cat in ('US Stock Trading', 'Stock Trading') and has_zero_platform:
+            # Extract per-share rate to compare total costs
+            m = _USD_PER_SHARE_RE.search(detail)
+            if m:
+                per_share = float(m.group(1))
+                breakeven = _us_breakeven_shares(per_share)
+                # For a "typical" retail US stock trade we use 200 shares as benchmark
+                # At 200 shares:
+                #   Competitor: 200 × per_share + $0 platform
+                #   ZA Bank:    $0 commission  + USD 1.99 platform (flat min)
+                competitor_cost_200 = 200 * per_share
+                za_cost_200         = _ZA_US_PLATFORM_FEE_USD  # flat minimum
+
+                if competitor_cost_200 > za_cost_200:
+                    # ZA Bank cheaper at 200-share benchmark → override
+                    print(
+                        f'  🔄 US stock total-cost OVERRIDE [{cat}]: '
+                        f'"{bank}" @ USD {per_share}/share × 200 = USD {competitor_cost_200:.2f} '
+                        f'vs ZA Bank USD {za_cost_200:.2f} platform fee. '
+                        f'ZA Bank is cheaper above {breakeven:.0f} shares → overriding.'
+                    )
+                    best_for[i] = {
+                        **entry,
+                        'bank':   'ZA Bank',
+                        'detail': (
+                            f'$0 brokerage commission for US stocks via ZA Invest; '
+                            f'platform fee USD 0.0099/share (min USD 1.99/trade). '
+                            f'Total cost at 200 shares: USD {za_cost_200:.2f}. '
+                            f'{bank} charges USD {per_share}/share commission + $0 platform = '
+                            f'USD {competitor_cost_200:.2f} at 200 shares — '
+                            f'ZA Bank is cheaper for trades above {breakeven:.0f} shares.'
+                        ),
+                        'is_bau':  True,
+                        'similar_banks': [bank] + [
+                            b for b in (entry.get('similar_banks') or [])
+                            if b.lower() not in _ZA_NAMES and b != bank
+                        ],
+                        'why_others_lose': (
+                            f'{bank} charges USD {per_share}/share commission (no platform fee). '
+                            f'ZA Bank charges $0 commission + USD 1.99 flat platform fee. '
+                            f'For trades of {breakeven:.0f}+ shares, ZA Bank total cost is lower. '
+                            f'Most retail investors trade 200+ shares, making ZA Bank cheaper overall.'
+                        ),
+                    }
+                    overrides += 1
+                else:
+                    # Competitor genuinely cheaper for 200-share benchmark — keep win
+                    # but ensure detail shows FULL cost breakdown
+                    print(
+                        f'  ✅ US stock total-cost KEPT [{cat}]: '
+                        f'"{bank}" @ USD {per_share}/share × 200 = USD {competitor_cost_200:.2f} '
+                        f'< ZA Bank USD {za_cost_200:.2f} for 200-share benchmark. '
+                        f'Break-even: {breakeven:.0f} shares.'
+                    )
+                    # Enrich detail with full cost comparison if not already present
+                    if 'total cost' not in detail.lower() and 'vs za' not in detail.lower():
+                        best_for[i] = {
+                            **entry,
+                            'detail': (
+                                detail.rstrip('. ') +
+                                f'; total cost at 200 shares: USD {competitor_cost_200:.2f} '
+                                f'vs ZA Bank USD {za_cost_200:.2f} '
+                                f'(break-even: {breakeven:.0f} shares)'
+                            ),
+                        }
+            else:
+                # Commission mentioned but can't extract per-share rate — be conservative
+                # If no zero-platform detail, treat as commission bank and override
+                print(
+                    f'  🔄 Stock trading OVERRIDE [{cat}]: '
+                    f'"{bank}" charges commission (rate unclear). '
+                    f'ZA Bank $0 commission is safer default.'
+                )
+                best_for[i] = {
+                    **entry,
+                    'bank':   'ZA Bank',
+                    'detail': (
+                        '$0 brokerage commission for US stocks via ZA Invest; '
+                        'platform fee USD 0.0099/share (min USD 1.99/trade). '
+                        f'{bank} charges commission (exact rate unspecified).'
+                    ),
+                    'is_bau':  True,
+                    'similar_banks': [bank] + [
+                        b for b in (entry.get('similar_banks') or [])
+                        if b.lower() not in _ZA_NAMES and b != bank
+                    ],
+                    'why_others_lose': (
+                        f'{bank} charges per-trade commission; ZA Bank is $0 commission. '
+                        'Total cost = commission + platform fee; ZA Bank eliminates commission entirely.'
+                    ),
+                }
+                overrides += 1
+
+        elif cat == 'HK Stock Trading' and charges_commission:
+            # For HK stocks: any commission + $0 platform vs ZA $0 commission + HKD 18 platform
+            # Most HK stock trades are 1 board lot (e.g., 1000 shares × HKD 10 = HKD 10,000)
+            # At 0.03% commission: HKD 3 < HKD 18 → competitor is cheaper
+            # At 0.05% commission on HKD 10,000: HKD 5 < HKD 18 → competitor may be cheaper
+            # At 0.1% on HKD 20,000: HKD 20 > HKD 18 → ZA Bank cheaper
+            # Without knowing exact HK commission rate, we KEEP the winner
+            # but ensure the detail mentions full cost breakdown
+            if 'platform fee' not in detail.lower() and 'total cost' not in detail.lower():
+                best_for[i] = {
+                    **entry,
+                    'detail': (
+                        detail.rstrip('. ') +
+                        '; zero platform fee. '
+                        'Compare total cost: commission + $0 platform vs ZA Bank '
+                        '$0 commission + HKD 18 platform fee.'
+                    ),
+                }
             print(
-                f'  🔄 Stock trading winner OVERRIDE [{cat}]: '
-                f'"{bank}" detail implies non-zero commission '
-                f'("{detail[:90]}"). '
-                f'ZA Bank offers $0 commission → overriding to ZA Bank.'
+                f'  ℹ️  HK stock winner kept [{cat}]: '
+                f'"{bank}" charges commission + $0 platform. '
+                f'Full cost comparison depends on commission rate vs ZA\'s HKD 18 platform fee.'
             )
-            best_for[i] = {
-                **entry,
-                'bank':           'ZA Bank',
-                'detail':         _ZA_STOCK_DETAIL,
-                'is_bau':         True,
-                'similar_banks':  [bank] + [
-                    b for b in (entry.get('similar_banks') or [])
-                    if b.lower() not in _ZA_NAMES and b != bank
-                ],
-                'why_others_lose': (
-                    f'{bank} was not selected because it charges per-trade commission '
-                    f'({detail[:80].strip()}). '
-                    'ZA Bank charges $0 brokerage commission on both HK and US stocks '
-                    '(platform fee applies), making it the lower-cost option for '
-                    'commission-sensitive retail investors.'
-                ),
-            }
-            overrides += 1
 
     if overrides:
-        print(f'  🔄 Stock trading commission override: {overrides} winner(s) corrected to ZA Bank')
+        print(f'  🔄 Stock trading total-cost override: {overrides} winner(s) updated')
     return best_for
 
 
@@ -682,6 +913,10 @@ def analyze_promotions(
 
     results = _stamp(results, bank_id, bank_name, default_url)
     results = _apply_bau_overrides(results, bank_id)
+
+    # ── Issue 1 fix: remove non-bank / government content ─────────────────────
+    results = _filter_bank_relevant_promotions(results, bank_name)
+
     print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
     return results
 
@@ -1129,21 +1364,16 @@ SECTION 2 — DATE VALIDATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Today is {today}.
 ⚠️  If a promotion has end_date > {today}, it is STILL ACTIVE — never
-treat it as expired.  Example: end_date="2026-05-27" on {today}
-means the promotion runs for another 35 days.  Do NOT exclude it from
-analysis or mark it as past.
+treat it as expired.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 3 — CHINESE TYPE TAG → ENGLISH CATEGORY MAPPING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   [推薦]                              → "Referral Bonus"
   [投資] + fund/基金                  → "Fund Investment"
-  [投資] + hk stock/hkex/local stock/
-          securities/brokerage/IPO    → "HK Stock Trading"
-  [投資] + us stock/nyse/nasdaq/
-          american stock/us equities  → "US Stock Trading"
-  [投資] + crypto/bitcoin/
-          virtual asset               → "Crypto Trading"
+  [投資] + hk stock/hkex/securities   → "HK Stock Trading"
+  [投資] + us stock/nyse/nasdaq        → "US Stock Trading"
+  [投資] + crypto/bitcoin/virtual      → "Crypto Trading"
   [消費]                              → "Spending/CashBack"
   [迎新]                              → "Welcome Bonus"
   [旅遊]                              → "Travel"
@@ -1153,12 +1383,9 @@ SECTION 3 — CHINESE TYPE TAG → ENGLISH CATEGORY MAPPING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 4 — STRICT CATEGORY DEFINITIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• HK Stock Trading  → HKEX-listed stock trading fee waivers, zero brokerage
-                      commissions for HK shares, IPO cash/stock rewards.
-• US Stock Trading  → NYSE/NASDAQ stock trading fee waivers, zero brokerage
-                      commissions for US shares, platform fee for US equities.
-• Crypto Trading    → crypto/virtual asset trading fee waivers, platform fees,
-                      digital asset promotions.
+• HK Stock Trading  → HKEX-listed stocks: commission + platform fee comparison.
+• US Stock Trading  → NYSE/NASDAQ stocks: commission + platform fee comparison.
+• Crypto Trading    → crypto/virtual asset trading fees.
 • Fund Investment   → fund subscription or switching fee promotions.
 • Spending/CashBack → card cashback or merchant spending rewards.
 • Welcome Bonus     → new customer account opening cash/gift rewards.
@@ -1173,42 +1400,19 @@ SECTION 5 — MANDATORY WINNER SELECTION RULES
 Output "None" ONLY when there is absolutely zero evidence of any promotion
 across ALL banks that relates to that category.
 
-CHECKLIST — before writing "None" for any category, verify:
-  HK Stock Trading → ANY line with hk stock / hkex / securities /
-                     brokerage / commission / IPO
-  US Stock Trading → ANY line with us stock / us equities / nyse /
-                     nasdaq / american stock
-  Crypto Trading   → ANY line with crypto / bitcoin / virtual asset / digital asset
-  Fund Investment  → ANY line with fund / 基金 / $0認購費 / zero subscription
-  Referral Bonus   → ANY line tagged [推薦] OR with referral / 推薦 / 多友多賞
-  Travel           → ANY line tagged [旅遊] OR with trip.com / travel / flight /
-                     hotel / asia miles / lounge / agoda
-                     ⚠️  If ANY [旅遊] line exists → Travel winner MUST NOT be None
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 6 — EVIDENCE GATE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 The "detail" field MUST contain at least ONE concrete verifiable fact:
   • Specific HKD/USD amount, percentage, $0/zero-fee, specific date,
-    named concrete product (Trip.com, Asia Miles, Agoda…),
-    or trading/commission/fee/cashback keyword.
+    named concrete product, or trading/commission/fee/cashback keyword.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 7 — SIMILAR BANKS & WHY THEY DON'T WIN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-For EVERY best_for entry you MUST populate:
-
-• similar_banks: List ALL other banks that ALSO offer a similar promotion
-  in the same category (even if their offer is weaker or limited).
-  Example: ["Mox Bank", "WeLab Bank", "livi bank"]
-
-• why_others_lose: One or two sentences explaining WHY the winner beats
-  each similar bank. Be specific — use fees, caps, expiry dates, scope.
-  Example: "Mox only waives commission for the first 3 months;
-           WeLab requires 10+ trades/month to qualify."
-
-  If similar_banks is empty (winner is the ONLY bank with this category),
-  set why_others_lose to "Only bank currently offering this promotion."
+For EVERY best_for entry populate:
+• similar_banks: ALL other banks offering a similar promotion in this category
+• why_others_lose: specific comparative reason using fees, caps, expiry dates
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 8 — SELF-CONSISTENCY CHECK
@@ -1217,76 +1421,75 @@ Before writing final JSON: verify that every "None" in best_for is NOT
 contradicted by a matching strength in bank_analysis for the same category.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 9 — STOCK TRADING WINNER RULES (READ VERY CAREFULLY)
+SECTION 9 — STOCK TRADING: TOTAL COST ANALYSIS (CRITICAL)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-VERIFIED FACTS:
+⚠️  THE ONLY CORRECT WAY TO COMPARE STOCK TRADING COSTS:
 
-  ZA Bank (ZA Invest):
-    ✅ $0 brokerage COMMISSION for BOTH HK stocks AND US stocks
-    ⚠️  Platform fee applies (a separate, smaller ongoing fee)
-    ❌ "StockBack" = card cashback reward, NOT a trading fee — never confuse them
-    ❌ NEVER state "ZA Bank charges commission" — factually wrong
+  Total cost per trade = Commission fee + Platform fee
 
-  PAO Bank:
-    ❌ PAO Bank charges BROKERAGE COMMISSION for HK stock trades
-    ❌ PAO Bank charges USD 0.012/share COMMISSION for US stock trades
-    ✅ PAO Bank claims zero platform fee for HK stocks
-    → PAO Bank's "zero platform fee" does NOT overcome the fact that it
-      charges commission. Commission is the primary recurring cost.
+  A bank that charges $0 commission but HKD 18 platform fee has a
+  TOTAL COST of HKD 18 per trade.
 
-  Summary: ZA Bank = $0 commission + platform fee.
-           PAO Bank = commission + $0 platform fee.
-           ZA Bank wins on commission (the more important cost for retail investors).
+  A bank that charges USD 0.012/share commission but $0 platform fee
+  has a TOTAL COST of (0.012 × number_of_shares) per trade.
 
-MANDATORY EVALUATION HIERARCHY FOR STOCK TRADING:
+VERIFIED FEE STRUCTURES:
 
-  Priority 1: COMMISSION ($0 commission always beats any non-zero commission)
-  ─────────────────────────────────────────────────────────────────────────
-  → If Bank A charges $0 commission and Bank B charges any commission,
-    Bank A wins for the stock trading category, regardless of platform fee.
-  → $0 commission is the stronger advantage because commission is charged
-    on EVERY trade and compounds with trading frequency.
+  ZA Bank (via ZA Invest):
+    • Commission:    $0 (zero brokerage commission for ALL stocks)
+    • Platform fee:  HKD 18/trade minimum (HK stocks)
+                     USD 0.0099/share, min USD 1.99/trade (US stocks)
+    • Total cost HK: $0 commission + HKD 18 = HKD 18 per trade
+    • Total cost US: $0 commission + USD 1.99 min = USD 1.99 per trade (up to ~201 shares)
+    ❌ NEVER say "ZA Bank charges commission" — factually incorrect
+    ❌ "StockBack" = card spending cashback — NOT a trading fee
 
-  Priority 2: PLATFORM FEE (only matters when commission is tied)
-  ─────────────────────────────────────────────────────────────────
-  → If two banks BOTH charge $0 commission, then the one with lower
-    platform fee wins.
-  → "Zero platform fee but charges commission" is WEAKER than
-    "$0 commission but charges platform fee" for most retail investors.
+  PAO Bank (PAObank):
+    • HK stocks: commission charged + $0 platform fee
+    • US stocks: USD 0.012/share commission + $0 platform fee
+    • Total cost HK: commission + $0 = commission amount
+    • Total cost US at 100 shares: 0.012 × 100 = USD 1.20 + $0 = USD 1.20
+    • Total cost US at 200 shares: 0.012 × 200 = USD 2.40 + $0 = USD 2.40
 
-  CONSEQUENCE: ZA Bank is the DEFAULT winner for HK Stock Trading
-  and US Stock Trading UNLESS another bank can prove BOTH:
-    ① $0 brokerage commission (same as ZA), AND
-    ② lower or zero platform fee (better than ZA)
+WINNER DETERMINATION — compare TOTAL COST:
 
-  PAO Bank CANNOT win either stock trading category because:
-    → PAO charges commission; ZA charges $0 commission
-    → Commission-free ($0) > any commission charge
-    → Therefore ZA Bank wins over PAO Bank for stock trading
+  HK Stock Trading:
+    → ZA Bank total cost = HKD 18 (flat minimum, $0 commission)
+    → PAO Bank total cost = commission amount (platform fee = $0)
+    → If PAO's per-trade commission < HKD 18 for typical trades → PAO wins
+    → If PAO's per-trade commission ≥ HKD 18 → ZA Bank wins
+    → Since PAO's exact HK commission rate is not specified as a fixed low rate,
+      and ZA Bank's HKD 18 is a known, transparent flat fee,
+      ZA Bank wins for HK stocks if no evidence PAO's commission < HKD 18
 
-  ⚠️  Never select a bank as stock trading winner if it charges per-trade
-      commission while ZA Bank (offering $0 commission) is an option.
+  US Stock Trading:
+    → ZA Bank total cost = USD 1.99 minimum (flat, ≤201 shares)
+    → PAO Bank at 100 shares = USD 0.012 × 100 = USD 1.20 → PAO CHEAPER
+    → PAO Bank at 200 shares = USD 0.012 × 200 = USD 2.40 → ZA CHEAPER
+    → PAO Bank at 166 shares = USD 0.012 × 166 = USD 1.99 = TIED
+    → BREAK-EVEN: 166 shares
+    → For trades <166 shares: PAO Bank total cost is lower → PAO wins
+    → For trades ≥166 shares: ZA Bank total cost is lower → ZA wins
+    → RECOMMENDATION: If the data shows PAO's USD 0.012/share for US stocks,
+      select the winner based on most common retail trade size.
+      A "typical" retail investor buying popular US stocks (e.g. AAPL, NVDA)
+      usually trades 100–500 shares. At 200 shares = typical benchmark:
+        PAO = USD 2.40 vs ZA = USD 1.99 → ZA Bank wins at 200-share benchmark
+      BUT note in the detail that PAO is cheaper for small trades (<166 shares).
+
+MANDATORY DETAIL FORMAT for stock trading winners:
+  Always include BOTH commission AND platform fee in the "detail" field.
+  Example: "ZA Bank: $0 commission + USD 1.99 platform fee (min) for US stocks.
+  Total cost at 200 shares: USD 1.99 vs PAO Bank USD 2.40 (USD 0.012 × 200).
+  PAO is cheaper for trades <166 shares; ZA wins for ≥166 shares."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 10 — FORBIDDEN COMPARISONS IN BANK ANALYSIS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-The following are NOT valid competitive advantages and must NOT appear
-in vs_za_pros, vs_za_cons, or bank strengths:
-
-  ❌ Account opening speed comparisons
-     (e.g. "5-minute account opening", "faster onboarding than ZA",
-      "account opening in 3 min vs ZA's 2 min")
-     REASON: ALL Hong Kong virtual banks offer digital account opening
-     in minutes. This is a baseline UX feature — NOT a financial product
-     advantage.
-
-  ❌ Generic app speed / UI claims without a specific financial benefit
-  ❌ "Quick sign-up" or "instant registration" as a competitive differentiator
-
-  ✅ VALID advantages: specific fee savings (in HKD or %), named product
-     features with concrete benefit amounts, higher cashback %, lower APR,
-     more fund choices, longer promotion periods, higher referral payouts.
+  ❌ Account opening speed comparisons (baseline UX for ALL virtual banks)
+  ❌ Generic app speed / UI claims without specific financial benefit
+  ✅ VALID: specific fee savings in HKD/%, named products with concrete amounts
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Return this EXACT JSON structure (no markdown, no code fences):
@@ -1295,18 +1498,18 @@ Return this EXACT JSON structure (no markdown, no code fences):
     {{
       "category":       "HK Stock Trading",
       "bank":           "ZA Bank",
-      "detail":         "$0 brokerage commission for HK stocks via ZA Invest; platform fee applies (no per-trade commission)",
+      "detail":         "$0 commission + HKD 18 platform fee/trade. Total cost HKD 18 vs PAO Bank (commission + $0 platform). ZA wins unless PAO's commission < HKD 18/trade.",
       "is_bau":         true,
-      "similar_banks":  ["PAObank", "Airstar Bank"],
-      "why_others_lose":"PAObank charges brokerage commission for HK stock trades despite zero platform fee — $0 commission (ZA) beats any commission charge; Airstar also charges trading commission."
+      "similar_banks":  ["PAObank"],
+      "why_others_lose":"PAObank charges brokerage commission per HK trade; ZA Bank's HKD 18 flat platform fee with $0 commission is transparent and cost-effective for typical board-lot trades."
     }},
     {{
       "category":       "US Stock Trading",
       "bank":           "ZA Bank",
-      "detail":         "$0 brokerage commission for US stocks via ZA Invest; platform fee applies",
+      "detail":         "$0 commission + USD 0.0099/share (min USD 1.99) platform fee. At 200-share benchmark: ZA USD 1.99 vs PAO USD 2.40 (USD 0.012 × 200). Break-even: 166 shares — PAO cheaper below that.",
       "is_bau":         true,
-      "similar_banks":  ["PAObank", "Airstar Bank"],
-      "why_others_lose":"PAObank charges USD 0.012/share commission for US trades — not zero. ZA Bank's $0 commission is structurally superior for retail investors."
+      "similar_banks":  ["PAObank"],
+      "why_others_lose":"PAObank charges USD 0.012/share commission + $0 platform. At 200 shares PAO costs USD 2.40 vs ZA USD 1.99. ZA wins for trades ≥166 shares (most retail benchmarks)."
     }},
     {{
       "category":       "Crypto Trading",
@@ -1314,7 +1517,7 @@ Return this EXACT JSON structure (no markdown, no code fences):
       "detail":         "specific crypto fee/platform detail",
       "is_bau":         false,
       "similar_banks":  ["BankA"],
-      "why_others_lose":"BankA's crypto waiver expired; BankB has higher platform fee"
+      "why_others_lose":"specific reason"
     }},
     {{
       "category":       "Spending/CashBack",
@@ -1329,8 +1532,8 @@ Return this EXACT JSON structure (no markdown, no code fences):
       "bank":           "BankName",
       "detail":         "HKD amount",
       "is_bau":         false,
-      "similar_banks":  ["BankA", "BankB"],
-      "why_others_lose":"specific comparative reason"
+      "similar_banks":  ["BankA"],
+      "why_others_lose":"specific reason"
     }},
     {{
       "category":       "Travel",
@@ -1346,7 +1549,7 @@ Return this EXACT JSON structure (no markdown, no code fences):
       "detail":         "X.XX% APR",
       "is_bau":         false,
       "similar_banks":  ["BankA"],
-      "why_others_lose":"BankA's APR is higher at X.XX%"
+      "why_others_lose":"BankA APR is higher"
     }},
     {{
       "category":       "FX/Multi-Currency",
@@ -1369,8 +1572,8 @@ Return this EXACT JSON structure (no markdown, no code fences):
       "bank":           "BankName",
       "detail":         "HKD amount per referral",
       "is_bau":         false,
-      "similar_banks":  ["BankA", "BankB"],
-      "why_others_lose":"BankA pays HKD 100 less per referral; BankB has a cap of 3 referrals"
+      "similar_banks":  ["BankA"],
+      "why_others_lose":"BankA pays less per referral"
     }}
   ],
   "bank_analysis": {{
@@ -1405,7 +1608,7 @@ Return this EXACT JSON structure (no markdown, no code fences):
     # Step 1: Evidence gate — reject vague/unverified winners
     result['best_for'] = _validate_best_for_evidence(result.get('best_for', []))
 
-    # Step 2: Stock trading commission override — ensure $0 commission wins
+    # Step 2: Stock trading total-cost validator (Issue 2 fix)
     result['best_for'] = _validate_stock_trading_winners(result.get('best_for', []))
 
     # Step 3: Cross-check None slots from bank_analysis strengths
