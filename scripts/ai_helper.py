@@ -49,18 +49,51 @@ BAU_GLOBAL_OVERRIDES: list[str] = [
     "24×7 banking",
 ]
 
-# ── Non-bank content patterns (Issue 1 fix) ───────────────────────────────────
+# ── Non-bank content patterns ─────────────────────────────────────────────────
 # If ANY of these phrases appear in a promotion's title/description/tc_link,
 # the promotion is NOT a bank product and must be filtered out.
+#
+# This is the SECOND layer of defence (scraper.py is the first).
+# It catches anything the AI mistakenly extracted despite the scrubber.
+#
+# To block a new non-bank source: add its URL fragment or a key phrase here
+# AND to scraper.py's BLOCKED_CONTENT_STRINGS list.
 
 _NON_BANK_CONTENT_PATTERNS: list[str] = [
-    # Government / disaster-relief pages
-    'wang fuk court', 'wangfuk', 'support fund for',
-    'inland revenue', 'ird.gov.hk', 'gov.hk/taxdeduction',
-    'tax deduction for donation', 'donation receipt',
-    'charity donation', 'relief fund', 'disaster relief',
-    'taipofire', 'fire support', 'fire.gov',
-    # Generic third-party non-bank indicators
+    # ── Specific blocked URLs (exact fragments) ────────────────────────────────
+    'taipofire.gov.hk',              # https://www.taipofire.gov.hk/eng/taxdeduction.html
+    'taxdeduction.html',             # any path ending in taxdeduction.html
+    'hab033',                        # eform.cefs.gov.hk/form/hab033
+    'cefs.gov.hk',
+    # ── Wang Fuk Court / disaster-relief ──────────────────────────────────────
+    'wang fuk court',
+    'wangfuk',
+    '宏福苑',
+    'support fund for wang fuk',
+    'support fund for',
+    '大埔宏福苑',
+    '援助基金',
+    'tai po fire',
+    # ── Government / tax authority pages ──────────────────────────────────────
+    'inland revenue',
+    'ird.gov.hk',
+    'gov.hk/taxdeduction',
+    'tax deduction for donation',
+    'tax deduction arrangement',
+    'donation receipt',
+    'donation acknowledgement',
+    'letter of appreciation',
+    'government sincerely thanks',
+    '政府衷心感謝',
+    '捐款致謝',
+    '稅務扣除安排',
+    # ── Charity / relief funds ─────────────────────────────────────────────────
+    'charity donation',
+    'relief fund',
+    'disaster relief',
+    'taipofire',
+    'fire support',
+    'fire.gov',
     'approved charitable donation',
     'inland revenue ordinance',
     'bank of china (hong kong) account number 012-875',
@@ -68,8 +101,15 @@ _NON_BANK_CONTENT_PATTERNS: list[str] = [
 
 # Domains that are NOT bank domains — used to flag mismatched tc_links
 _NON_BANK_DOMAINS: list[str] = [
-    'gov.hk', 'ird.gov.hk', 'taipofire', 'police.gov.hk',
-    'welfare.gov.hk', 'charities', 'redcross',
+    'gov.hk',
+    'ird.gov.hk',
+    'taipofire.gov.hk',
+    'taipofire',
+    'cefs.gov.hk',
+    'police.gov.hk',
+    'welfare.gov.hk',
+    'charities',
+    'redcross',
 ]
 
 
@@ -79,6 +119,9 @@ def _filter_bank_relevant_promotions(promos: list, bank_name: str) -> list:
       - Government programs (tax deduction notices, relief funds)
       - Charity / third-party donation drives
       - Any entry whose tc_link resolves to a non-bank domain
+
+    This is the second-layer filter. The first layer is scraper.py's
+    _scrub_blocked_content() which strips blocked sentences before AI sees them.
     """
     filtered = []
     removed  = 0
@@ -104,7 +147,10 @@ def _filter_bank_relevant_promotions(promos: list, bank_name: str) -> list:
         )
 
         if offending or bad_domain:
-            reason = f'pattern "{offending}"' if offending else f'non-bank domain in tc_link "{bad_domain}"'
+            reason = (
+                f'pattern "{offending}"' if offending
+                else f'non-bank domain in tc_link "{bad_domain}"'
+            )
             print(
                 f'  🚫 Non-bank filter REMOVED [{bank_name}]: '
                 f'"{p.get("name") or p.get("title")}" — {reason}'
@@ -194,6 +240,8 @@ Today's Date: TODAY_DATE_PLACEHOLDER
 ║        • A charity / disaster-relief / donation drive operated     ║
 ║          by a third party (e.g. Support Fund for Wang Fuk Court,   ║
 ║          Red Cross, community funds)                               ║
+║        • Content mentioning taipofire.gov.hk, hab033, cefs.gov.hk ║
+║          or any gov.hk domain — these are NEVER bank promotions    ║
 ║        • Content from a non-bank URL (gov.hk, charity sites, etc) ║
 ║        • A CSR / social-responsibility notice that is NOT a        ║
 ║          financial benefit offered to the bank's own customers     ║
@@ -235,7 +283,9 @@ WEBSITE TEXT TO ANALYSE:
 TEXT_PLACEHOLDER
 ────────────────────────────────────────────────────────────────────────
 Remember: return ONLY the JSON array starting with [ and ending with ].
-If the text is entirely from a government or charity website, return []."""
+If the text is entirely from a government or charity website, return [].
+If you see any mention of taipofire.gov.hk, wang fuk court, hab033,
+cefs.gov.hk, or tax deduction for donation — skip that content entirely."""
 
 
 def _build_prompt(bank_name: str, url: str, text: str) -> str:
@@ -586,27 +636,11 @@ def _validate_best_for_evidence(best_for: list) -> list:
     return validated
 
 
-# ── Stock trading total-cost validator (Issue 2 fix) ──────────────────────────
-#
-#  Total cost per trade = Commission fee + Platform fee
-#
-#  ZA Bank structure (verified from official pages):
-#    HK stocks: $0 commission + HKD 18 platform fee (min per trade)
-#    US stocks: $0 commission + USD 0.0099/share, min USD 1.99
-#
-#  Evaluation rule:
-#    1. If the selected winner charges commission AND platform fee at levels
-#       that exceed ZA Bank's equivalent, override to ZA Bank.
-#    2. If a competitor genuinely offers lower TOTAL COST for the trade size
-#       described in their detail, keep their win — but ensure the detail
-#       includes a full cost breakdown (commission + platform fee).
-#    3. "Zero platform fee but charges per-share commission" can legitimately
-#       beat ZA Bank for very small US trades (< ~166 shares) — allow this.
+# ── Stock trading total-cost validator ────────────────────────────────────────
 
 _STOCK_CATS  = {'HK Stock Trading', 'US Stock Trading', 'Stock Trading'}
 _ZA_NAMES    = {'za bank', 'za', 'za invest'}
 
-# Regex: winner's detail contains per-share or per-trade commission language
 _CHARGES_COMMISSION_RE = re.compile(
     r'usd\s*[\d]+\.[\d]+\s*/\s*share'
     r'|usd\s*[\d]+\.[\d]+\s*per\s*share'
@@ -617,7 +651,6 @@ _CHARGES_COMMISSION_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Regex: detail also mentions $0 or zero platform fee (PAO-style: commission + $0 platform)
 _ZERO_PLATFORM_FEE_RE = re.compile(
     r'zero\s+platform\s+fee'
     r'|\$\s*0\s+platform'
@@ -627,15 +660,12 @@ _ZERO_PLATFORM_FEE_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Regex: extract per-share USD commission amount for comparison
 _USD_PER_SHARE_RE = re.compile(r'usd\s*([\d]+\.[\d]+)\s*(?:/|per)\s*share', re.IGNORECASE)
 
-# ZA Bank reference platform fees (for total-cost comparison)
-_ZA_HK_PLATFORM_FEE_HKD = 18.0    # HKD per trade (minimum)
-_ZA_US_PLATFORM_FEE_USD  = 1.99   # USD per trade (minimum, USD 0.0099/share)
+_ZA_HK_PLATFORM_FEE_HKD = 18.0
+_ZA_US_PLATFORM_FEE_USD  = 1.99
 
-# Break-even share count: if a competitor charges X USD/share and $0 platform,
-# ZA Bank's USD 1.99 flat platform fee is cheaper above this share count.
+
 def _us_breakeven_shares(per_share_usd: float) -> float:
     if per_share_usd <= 0:
         return float('inf')
@@ -643,29 +673,6 @@ def _us_breakeven_shares(per_share_usd: float) -> float:
 
 
 def _validate_stock_trading_winners(best_for: list) -> list:
-    """
-    Post-process stock trading category winners using TOTAL COST logic.
-
-    Total cost = Commission fee + Platform fee
-
-    Rules:
-    ① If the winner charges commission AND mentions zero platform fee
-       (e.g. PAO Bank: USD 0.012/share + $0 platform for US stocks):
-       - Extract the per-share commission rate
-       - Calculate break-even share count vs ZA Bank's flat platform fee
-       - For US stocks: if per-share rate > USD 0.0099 AND the detail is about
-         typical retail trades (200+ shares), ZA Bank's total cost is lower
-         → override to ZA Bank with explanation
-       - For HK stocks: ZA Bank's $0 commission + HKD 18 flat fee beats
-         any per-trade commission above HKD 18 → compare and decide
-       - If the competitor's total cost is genuinely lower for the described
-         trade size, KEEP their win but ensure detail shows full cost breakdown
-
-    ② If the winner charges BOTH commission AND platform fee at levels that
-       exceed ZA Bank's equivalent → always override to ZA Bank.
-
-    ③ If ZA Bank is the winner, no action needed.
-    """
     overrides = 0
     for i, entry in enumerate(best_for):
         cat  = (entry.get('category') or '').strip()
@@ -674,7 +681,6 @@ def _validate_stock_trading_winners(best_for: list) -> list:
         if cat not in _STOCK_CATS:
             continue
         if bank.lower() in _ZA_NAMES:
-            # ZA Bank winning — ensure detail mentions both commission AND platform fee
             detail = (entry.get('detail') or '')
             if 'platform fee' not in detail.lower():
                 best_for[i] = {
@@ -686,30 +692,22 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                 }
             continue
 
-        detail = (entry.get('detail') or '')
+        detail             = (entry.get('detail') or '')
         charges_commission = bool(_CHARGES_COMMISSION_RE.search(detail))
         has_zero_platform  = bool(_ZERO_PLATFORM_FEE_RE.search(detail))
 
         if not charges_commission:
-            # Winner doesn't charge commission — no action needed
             continue
 
-        # Winner charges commission (+ possibly zero platform fee)
         if cat in ('US Stock Trading', 'Stock Trading') and has_zero_platform:
-            # Extract per-share rate to compare total costs
             m = _USD_PER_SHARE_RE.search(detail)
             if m:
-                per_share = float(m.group(1))
-                breakeven = _us_breakeven_shares(per_share)
-                # For a "typical" retail US stock trade we use 200 shares as benchmark
-                # At 200 shares:
-                #   Competitor: 200 × per_share + $0 platform
-                #   ZA Bank:    $0 commission  + USD 1.99 platform (flat min)
+                per_share           = float(m.group(1))
+                breakeven           = _us_breakeven_shares(per_share)
                 competitor_cost_200 = 200 * per_share
-                za_cost_200         = _ZA_US_PLATFORM_FEE_USD  # flat minimum
+                za_cost_200         = _ZA_US_PLATFORM_FEE_USD
 
                 if competitor_cost_200 > za_cost_200:
-                    # ZA Bank cheaper at 200-share benchmark → override
                     print(
                         f'  🔄 US stock total-cost OVERRIDE [{cat}]: '
                         f'"{bank}" @ USD {per_share}/share × 200 = USD {competitor_cost_200:.2f} '
@@ -741,15 +739,12 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                     }
                     overrides += 1
                 else:
-                    # Competitor genuinely cheaper for 200-share benchmark — keep win
-                    # but ensure detail shows FULL cost breakdown
                     print(
                         f'  ✅ US stock total-cost KEPT [{cat}]: '
                         f'"{bank}" @ USD {per_share}/share × 200 = USD {competitor_cost_200:.2f} '
                         f'< ZA Bank USD {za_cost_200:.2f} for 200-share benchmark. '
                         f'Break-even: {breakeven:.0f} shares.'
                     )
-                    # Enrich detail with full cost comparison if not already present
                     if 'total cost' not in detail.lower() and 'vs za' not in detail.lower():
                         best_for[i] = {
                             **entry,
@@ -761,8 +756,6 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                             ),
                         }
             else:
-                # Commission mentioned but can't extract per-share rate — be conservative
-                # If no zero-platform detail, treat as commission bank and override
                 print(
                     f'  🔄 Stock trading OVERRIDE [{cat}]: '
                     f'"{bank}" charges commission (rate unclear). '
@@ -789,13 +782,6 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                 overrides += 1
 
         elif cat == 'HK Stock Trading' and charges_commission:
-            # For HK stocks: any commission + $0 platform vs ZA $0 commission + HKD 18 platform
-            # Most HK stock trades are 1 board lot (e.g., 1000 shares × HKD 10 = HKD 10,000)
-            # At 0.03% commission: HKD 3 < HKD 18 → competitor is cheaper
-            # At 0.05% commission on HKD 10,000: HKD 5 < HKD 18 → competitor may be cheaper
-            # At 0.1% on HKD 20,000: HKD 20 > HKD 18 → ZA Bank cheaper
-            # Without knowing exact HK commission rate, we KEEP the winner
-            # but ensure the detail mentions full cost breakdown
             if 'platform fee' not in detail.lower() and 'total cost' not in detail.lower():
                 best_for[i] = {
                     **entry,
@@ -914,7 +900,8 @@ def analyze_promotions(
     results = _stamp(results, bank_id, bank_name, default_url)
     results = _apply_bau_overrides(results, bank_id)
 
-    # ── Issue 1 fix: remove non-bank / government content ─────────────────────
+    # ── Second-layer filter: remove non-bank / government content ─────────────
+    # (First layer is scraper.py's _scrub_blocked_content)
     results = _filter_bank_relevant_promotions(results, bank_name)
 
     print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
@@ -1428,61 +1415,19 @@ SECTION 9 — STOCK TRADING: TOTAL COST ANALYSIS (CRITICAL)
 
   Total cost per trade = Commission fee + Platform fee
 
-  A bank that charges $0 commission but HKD 18 platform fee has a
-  TOTAL COST of HKD 18 per trade.
-
-  A bank that charges USD 0.012/share commission but $0 platform fee
-  has a TOTAL COST of (0.012 × number_of_shares) per trade.
-
-VERIFIED FEE STRUCTURES:
-
   ZA Bank (via ZA Invest):
     • Commission:    $0 (zero brokerage commission for ALL stocks)
     • Platform fee:  HKD 18/trade minimum (HK stocks)
                      USD 0.0099/share, min USD 1.99/trade (US stocks)
-    • Total cost HK: $0 commission + HKD 18 = HKD 18 per trade
-    • Total cost US: $0 commission + USD 1.99 min = USD 1.99 per trade (up to ~201 shares)
     ❌ NEVER say "ZA Bank charges commission" — factually incorrect
-    ❌ "StockBack" = card spending cashback — NOT a trading fee
 
   PAO Bank (PAObank):
     • HK stocks: commission charged + $0 platform fee
     • US stocks: USD 0.012/share commission + $0 platform fee
-    • Total cost HK: commission + $0 = commission amount
-    • Total cost US at 100 shares: 0.012 × 100 = USD 1.20 + $0 = USD 1.20
-    • Total cost US at 200 shares: 0.012 × 200 = USD 2.40 + $0 = USD 2.40
 
 WINNER DETERMINATION — compare TOTAL COST:
-
-  HK Stock Trading:
-    → ZA Bank total cost = HKD 18 (flat minimum, $0 commission)
-    → PAO Bank total cost = commission amount (platform fee = $0)
-    → If PAO's per-trade commission < HKD 18 for typical trades → PAO wins
-    → If PAO's per-trade commission ≥ HKD 18 → ZA Bank wins
-    → Since PAO's exact HK commission rate is not specified as a fixed low rate,
-      and ZA Bank's HKD 18 is a known, transparent flat fee,
-      ZA Bank wins for HK stocks if no evidence PAO's commission < HKD 18
-
-  US Stock Trading:
-    → ZA Bank total cost = USD 1.99 minimum (flat, ≤201 shares)
-    → PAO Bank at 100 shares = USD 0.012 × 100 = USD 1.20 → PAO CHEAPER
-    → PAO Bank at 200 shares = USD 0.012 × 200 = USD 2.40 → ZA CHEAPER
-    → PAO Bank at 166 shares = USD 0.012 × 166 = USD 1.99 = TIED
-    → BREAK-EVEN: 166 shares
-    → For trades <166 shares: PAO Bank total cost is lower → PAO wins
-    → For trades ≥166 shares: ZA Bank total cost is lower → ZA wins
-    → RECOMMENDATION: If the data shows PAO's USD 0.012/share for US stocks,
-      select the winner based on most common retail trade size.
-      A "typical" retail investor buying popular US stocks (e.g. AAPL, NVDA)
-      usually trades 100–500 shares. At 200 shares = typical benchmark:
-        PAO = USD 2.40 vs ZA = USD 1.99 → ZA Bank wins at 200-share benchmark
-      BUT note in the detail that PAO is cheaper for small trades (<166 shares).
-
-MANDATORY DETAIL FORMAT for stock trading winners:
-  Always include BOTH commission AND platform fee in the "detail" field.
-  Example: "ZA Bank: $0 commission + USD 1.99 platform fee (min) for US stocks.
-  Total cost at 200 shares: USD 1.99 vs PAO Bank USD 2.40 (USD 0.012 × 200).
-  PAO is cheaper for trades <166 shares; ZA wins for ≥166 shares."
+  US stocks break-even: 166 shares (PAO cheaper below, ZA cheaper above)
+  At 200-share benchmark: ZA Bank USD 1.99 vs PAO USD 2.40 → ZA wins
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 10 — FORBIDDEN COMPARISONS IN BANK ANALYSIS
@@ -1605,14 +1550,9 @@ Return this EXACT JSON structure (no markdown, no code fences):
         return None
 
     # ── Post-processing pipeline ──────────────────────────────────────────────
-    # Step 1: Evidence gate — reject vague/unverified winners
     result['best_for'] = _validate_best_for_evidence(result.get('best_for', []))
-
-    # Step 2: Stock trading total-cost validator (Issue 2 fix)
     result['best_for'] = _validate_stock_trading_winners(result.get('best_for', []))
-
-    # Step 3: Cross-check None slots from bank_analysis strengths
-    result = _cross_check_best_for_from_strengths(result, promotions_by_bank)
+    result             = _cross_check_best_for_from_strengths(result, promotions_by_bank)
 
     name_lookup = {k.lower(): k for k in promotions_by_bank}
     for bname in result.get('bank_analysis', {}):

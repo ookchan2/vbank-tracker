@@ -42,7 +42,53 @@ _BLOCKED_EXTENSIONS = re.compile(
     re.IGNORECASE,
 )
 
-# ── Bank domain allow-list (Issue 1 fix) ──────────────────────────────────────
+# ── Blocked content strings ───────────────────────────────────────────────────
+# Any sentence or paragraph containing ANY of these strings is stripped from
+# the scraped text BEFORE it reaches the AI extractor.
+# Add new entries here to block future non-bank notices — no other code changes needed.
+#
+# Why two-layer (scraper + ai_helper)?
+#   • scraper.py  → strips the sentence FROM the raw text so AI never sees it
+#   • ai_helper.py → post-extraction gate catches anything AI extracted anyway
+#
+BLOCKED_CONTENT_STRINGS: list[str] = [
+    # ── Specific URLs to block completely ─────────────────────────────────────
+    'taipofire.gov.hk',              # https://www.taipofire.gov.hk/eng/taxdeduction.html
+    'taxdeduction.html',             # any taxdeduction path
+    'hab033',                        # eform.cefs.gov.hk/form/hab033 (donation form)
+    'cefs.gov.hk',                   # Hong Kong Community Engagement Foundation Services
+    # ── Wang Fuk Court / disaster-relief notices ──────────────────────────────
+    'wang fuk court',
+    '宏福苑',                         # Wang Fuk Court in Chinese
+    'support fund for wang fuk',
+    'wangfuk',
+    'tai po fire',
+    '大埔宏福苑',                      # Chinese name of the estate
+    '援助基金',                        # Support Fund (Chinese)
+    # ── Generic government / charity content ──────────────────────────────────
+    'donation acknowledgement',
+    'tax deduction for donor',
+    'tax deduction arrangement',
+    'tax deduction for donation',
+    'inland revenue department',
+    'ird.gov.hk',
+    'relief fund',
+    'disaster relief',
+    'approved charitable donation',
+    'letter of appreciation',        # government thank-you letter language
+    'government sincerely thanks',
+    '政府衷心感謝',                    # Chinese version of above
+    '捐款致謝',                        # Donation acknowledgement (Chinese)
+    '稅務扣除安排',                    # Tax deduction arrangement (Chinese)
+]
+
+# Pre-compile a single regex for fast matching across all patterns
+_BLOCKED_CONTENT_RE = re.compile(
+    '|'.join(re.escape(s) for s in BLOCKED_CONTENT_STRINGS),
+    re.IGNORECASE,
+)
+
+# ── Bank domain allow-list ────────────────────────────────────────────────────
 # Only scrape URLs whose hostname matches one of these patterns.
 # Any URL outside the bank's domain is silently skipped.
 
@@ -254,6 +300,47 @@ def _content_hash(text: str) -> str:
     return hashlib.md5(text[:500].encode('utf-8', errors='replace')).hexdigest()
 
 
+def _scrub_blocked_content(text: str, bank_name: str = '') -> str:
+    """
+    Remove any sentence / clause that contains a blocked URL or phrase.
+
+    Strategy:
+      1. Split the text on sentence boundaries ('. ', '。', '！', '？', newlines).
+      2. Drop any fragment that matches _BLOCKED_CONTENT_RE.
+      3. Rejoin the clean fragments.
+
+    This runs BEFORE the text is passed to the AI, so blocked content
+    never reaches the extraction prompt.
+    """
+    if not text:
+        return text
+
+    # Split on sentence-like boundaries while keeping the delimiter
+    # so we don't lose punctuation context for the surviving sentences.
+    fragments = re.split(r'(?<=[.。!?！？])\s+|\n+', text)
+
+    clean:   list[str] = []
+    removed: int       = 0
+
+    for frag in fragments:
+        if _BLOCKED_CONTENT_RE.search(frag):
+            removed += 1
+            # Log only the first 80 chars so the URL itself is visible in CI logs
+            snippet = frag.strip()[:80]
+            print(f'    🧹 Scrubbed blocked content: "{snippet}…"')
+        else:
+            clean.append(frag)
+
+    if removed:
+        label = f' [{bank_name}]' if bank_name else ''
+        print(
+            f'    🧹 Content scrubber{label}: '
+            f'{removed} fragment(s) removed containing blocked URLs/phrases'
+        )
+
+    return ' '.join(clean)
+
+
 def _deduplicate_sections(
     sections: list[tuple[str, str]],
 ) -> list[tuple[str, str]]:
@@ -343,7 +430,10 @@ async def _try_url(
             msg = str(exc)[:150]
             if attempt < retries:
                 wait_s = 2 ** attempt
-                print(f'    ⚠  attempt {attempt}/{retries} failed for {url}: {msg[:80]} — retrying in {wait_s}s…')
+                print(
+                    f'    ⚠  attempt {attempt}/{retries} failed for {url}: '
+                    f'{msg[:80]} — retrying in {wait_s}s…'
+                )
                 await asyncio.sleep(wait_s)
             else:
                 print(f'    ⚠  all {retries} attempts exhausted for {url}: {msg}')
@@ -366,16 +456,14 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
     )
 
     # ── Domain validation: filter out any URLs outside the bank's domains ─────
-    valid_urls   = []
-    skipped_urls = []
+    valid_urls:   list[str] = []
+    skipped_urls: list[str] = []
     for url in cfg['urls']:
         if _is_valid_bank_url(url, bank_id):
             valid_urls.append(url)
         else:
             skipped_urls.append(url)
-            print(
-                f'    ⛔ Domain guard SKIPPED non-bank URL for {cfg["name"]}: {url}'
-            )
+            print(f'    ⛔ Domain guard SKIPPED non-bank URL for {cfg["name"]}: {url}')
 
     if skipped_urls:
         print(
@@ -406,13 +494,20 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
 
         async def _handle_route(route):
             req_url = route.request.url
-            # Block media/font resources
+
+            # ── Block media / font resources ──────────────────────────────────
             if _BLOCKED_EXTENSIONS.search(req_url):
                 await route.abort()
                 return
-            # Block navigation to external (non-bank) domains
-            # This prevents the browser from loading third-party pages
-            # that could contaminate the scraped text with non-bank content
+
+            # ── Block requests to explicitly blocked content URLs ─────────────
+            # This prevents the browser from even loading the taipofire page,
+            # donation forms, or any other non-bank resource at the network level.
+            if _BLOCKED_CONTENT_RE.search(req_url):
+                await route.abort()
+                return
+
+            # ── Block navigation to external (non-bank) domains ───────────────
             try:
                 req_hostname = urlparse(req_url).hostname or ''
                 allowed      = BANK_DOMAINS.get(bank_id, [])
@@ -420,11 +515,10 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
                     req_hostname == d or req_hostname.endswith('.' + d)
                     for d in allowed
                 ):
-                    # Allow known CDN / analytics that don't add promo content
                     _CDN_ALLOW = {
                         'cdn.tailwindcss.com', 'fonts.googleapis.com',
-                        'fonts.gstatic.com', 'cdnjs.cloudflare.com',
-                        'unpkg.com', 'jsdelivr.net',
+                        'fonts.gstatic.com',   'cdnjs.cloudflare.com',
+                        'unpkg.com',           'jsdelivr.net',
                     }
                     if not any(cdn in req_hostname for cdn in _CDN_ALLOW):
                         if route.request.resource_type in ('document', 'xhr', 'fetch'):
@@ -432,6 +526,7 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
                             return
             except Exception:
                 pass
+
             await route.continue_()
 
         await page.route('**/*', _handle_route)
@@ -441,6 +536,12 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
             text, shot = await _try_url(page, url, wait_extra, retries)
 
             if text and len(text) > MIN_CONTENT_CHARS:
+                # ── Scrub blocked content BEFORE storing ──────────────────────
+                # This is the primary defence: non-bank notices (e.g. Wang Fuk Court
+                # tax deduction, taipofire.gov.hk links) are removed here, before
+                # the text ever enters the AI extraction prompt.
+                text = _scrub_blocked_content(text, cfg['name'])
+
                 sections.append((url, text))
                 if best_shot is None and shot:
                     best_shot  = shot
@@ -451,6 +552,8 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
                 print(f'    🔁 thin ({thin_len} chars) → requests fallback for {url}')
                 fb = scrape_with_requests(url)
                 if fb and len(fb) > MIN_CONTENT_CHARS:
+                    # ── Scrub fallback text too ────────────────────────────────
+                    fb = _scrub_blocked_content(fb, cfg['name'])
                     sections.append((url, fb))
                     print(f'    ✓  requests: {len(fb):,} chars')
                 else:
@@ -504,8 +607,8 @@ async def _run_all() -> dict[str, dict]:
 
             result = await _scrape_bank(browser, bank_id)
 
-            mark  = '✅' if result.success else '❌'
-            total = len(cfg['urls'])
+            mark       = '✅' if result.success else '❌'
+            total      = len(cfg['urls'])
             error_note = f' | {len(result.errors)} error(s)' if result.errors else ''
             print(
                 f'  {mark}  {cfg["name"]}: '
