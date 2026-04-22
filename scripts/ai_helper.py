@@ -399,9 +399,20 @@ _CONCRETE_EVIDENCE_RE = re.compile(
     re.IGNORECASE,
 )
 
-# ── UPDATED: Stock split into HK Stock Trading + US Stock Trading ─────────────
+# ── Stock trading commission pattern — used by the override validator ─────────
+# Matches phrases that indicate a bank CHARGES a non-zero per-trade commission
+_CHARGES_COMMISSION_RE = re.compile(
+    r'usd\s*[\d]+\.[\d]+\s*/\s*share'      # USD 0.012/share
+    r'|usd\s*[\d]+\.[\d]+\s*per\s*share'   # USD 0.012 per share
+    r'|hkd\s*[\d]+\.?[\d]*\s*(per|/)\s*(trade|lot|share|order)'  # HKD X per trade
+    r'|0\.\d+%\s*(brokerage|commission)'   # 0.03% commission
+    r'|competitive\s+(commission|brokerage)'  # "competitive commission"
+    r'|commission\s+(of|at|is|:)\s*[\d]'   # commission of X / commission at X
+    r'|[\d]+\.[\d]+\s*usd\s*per',          # 0.012 USD per ...
+    re.IGNORECASE,
+)
+
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
-    # ── HK Stock Trading (HKEX-listed shares) ────────────────────────────────
     'HK Stock Trading': [
         'hk stock', 'hong kong stock', 'hkex', 'local stock',
         'hk securities', 'hk shares', 'hong kong shares',
@@ -409,14 +420,12 @@ _CATEGORY_KEYWORDS: dict[str, list[str]] = {
         'trading fee', 'platform fee', '$0 commission', 'commission',
         'powerdraw', 'free stock', 'equities', 'share trading',
     ],
-    # ── US Stock Trading (NYSE / NASDAQ) ─────────────────────────────────────
     'US Stock Trading': [
         'us stock', 'us equities', 'us securities', 'us shares',
         'american stock', 'nyse', 'nasdaq', 'us market',
         'us brokerage', '$0 commission', 'commission',
         'trading fee', 'platform fee', 'stock', 'equities',
     ],
-    # ── Generic fallback (used by cross-check when HK/US not distinguishable) ─
     'Stock Trading': [
         'stock', 'securities', 'brokerage', 'ipo',
         'trading fee', 'platform fee', '$0 commission', 'commission',
@@ -512,6 +521,71 @@ def _validate_best_for_evidence(best_for: list) -> list:
     return validated
 
 
+# ── ADDED: Stock trading commission override ──────────────────────────────────
+# If a non-ZA-Bank bank wins a stock trading category but its detail reveals
+# it charges per-trade commission, override to ZA Bank ($0 commission).
+# ZA Bank's permanent $0 commission is always the stronger stock trading offer
+# unless a competitor can prove BOTH $0 commission AND $0 platform fee.
+
+_STOCK_CATS = {'HK Stock Trading', 'US Stock Trading', 'Stock Trading'}
+_ZA_NAMES   = {'za bank', 'za', 'za invest'}
+
+_ZA_STOCK_DETAIL = (
+    '$0 brokerage commission for both HK stocks and US stocks via ZA Invest; '
+    'platform fee applies (no per-trade commission charged)'
+)
+
+
+def _validate_stock_trading_winners(best_for: list) -> list:
+    """
+    Post-process stock trading category winners.
+    Rule: $0 commission always beats any non-zero commission.
+    If the AI picked a bank that charges commission over ZA Bank ($0 commission),
+    override to ZA Bank and log the correction.
+    """
+    overrides = 0
+    for i, entry in enumerate(best_for):
+        cat  = (entry.get('category') or '').strip()
+        bank = (entry.get('bank')     or '').strip()
+
+        if cat not in _STOCK_CATS:
+            continue
+        if bank.lower() in _ZA_NAMES:
+            continue  # ZA Bank winning is expected — no override needed
+
+        detail = (entry.get('detail') or '')
+
+        if _CHARGES_COMMISSION_RE.search(detail):
+            print(
+                f'  🔄 Stock trading winner OVERRIDE [{cat}]: '
+                f'"{bank}" detail implies non-zero commission '
+                f'("{detail[:90]}"). '
+                f'ZA Bank offers $0 commission → overriding to ZA Bank.'
+            )
+            best_for[i] = {
+                **entry,
+                'bank':           'ZA Bank',
+                'detail':         _ZA_STOCK_DETAIL,
+                'is_bau':         True,
+                'similar_banks':  [bank] + [
+                    b for b in (entry.get('similar_banks') or [])
+                    if b.lower() not in _ZA_NAMES and b != bank
+                ],
+                'why_others_lose': (
+                    f'{bank} was not selected because it charges per-trade commission '
+                    f'({detail[:80].strip()}). '
+                    'ZA Bank charges $0 brokerage commission on both HK and US stocks '
+                    '(platform fee applies), making it the lower-cost option for '
+                    'commission-sensitive retail investors.'
+                ),
+            }
+            overrides += 1
+
+    if overrides:
+        print(f'  🔄 Stock trading commission override: {overrides} winner(s) corrected to ZA Bank')
+    return best_for
+
+
 def _cross_check_best_for_from_strengths(
     result: dict,
     promotions_by_bank: dict,
@@ -528,7 +602,6 @@ def _cross_check_best_for_from_strengths(
         if bank.lower() not in ('none', '', 'n/a'):
             continue
 
-        # Try exact category first, then fall back to generic 'Stock Trading'
         keywords = _CATEGORY_KEYWORDS.get(cat, [])
         if not keywords and cat in ('HK Stock Trading', 'US Stock Trading'):
             keywords = _CATEGORY_KEYWORDS.get('Stock Trading', [])
@@ -849,7 +922,6 @@ def _build_bank_summary_lines(promos: list) -> list[str]:
     return lines
 
 
-# ── UPDATED: Stock split into HK Stock Trading + US Stock Trading ─────────────
 _DIAGNOSTIC_CATEGORIES: list[tuple[str, list[str]]] = [
     ('HK Stock Trading',   ['投資', 'hk stock', 'hong kong stock', 'hkex', 'local stock',
                              'securities', 'brokerage', 'ipo', 'commission', 'trading fee']),
@@ -1145,22 +1217,56 @@ Before writing final JSON: verify that every "None" in best_for is NOT
 contradicted by a matching strength in bank_analysis for the same category.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 9 — VERIFIED FACTS ABOUT ZA BANK STOCK TRADING
+SECTION 9 — STOCK TRADING WINNER RULES (READ VERY CAREFULLY)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Use these verified facts when evaluating ZA Bank for stock trading categories:
 
-  ✅ ZA Bank (ZA Invest) charges $0 brokerage COMMISSION for BOTH HK stocks
-     AND US stocks — there is NO per-trade commission fee.
-  ⚠️  A platform fee (separate from commission) DOES apply at ZA Bank.
-  ❌ "StockBack" is a card cashback reward on card spending — it is NOT a
-     trading commission. Do NOT confuse StockBack with a trading fee.
-  ❌ NEVER state "ZA Bank charges trading commission" — this is factually
-     wrong. ZA Bank is commission-free; it only charges a platform fee.
+VERIFIED FACTS:
 
-  When comparing ZA Bank to competitors:
-  • Commission = $0 at ZA Bank → strong advantage vs banks that charge commission
-  • Platform fee = charged → potential disadvantage vs banks with zero platform fee
-  • Evaluate each sub-category (HK vs US) separately if data supports it.
+  ZA Bank (ZA Invest):
+    ✅ $0 brokerage COMMISSION for BOTH HK stocks AND US stocks
+    ⚠️  Platform fee applies (a separate, smaller ongoing fee)
+    ❌ "StockBack" = card cashback reward, NOT a trading fee — never confuse them
+    ❌ NEVER state "ZA Bank charges commission" — factually wrong
+
+  PAO Bank:
+    ❌ PAO Bank charges BROKERAGE COMMISSION for HK stock trades
+    ❌ PAO Bank charges USD 0.012/share COMMISSION for US stock trades
+    ✅ PAO Bank claims zero platform fee for HK stocks
+    → PAO Bank's "zero platform fee" does NOT overcome the fact that it
+      charges commission. Commission is the primary recurring cost.
+
+  Summary: ZA Bank = $0 commission + platform fee.
+           PAO Bank = commission + $0 platform fee.
+           ZA Bank wins on commission (the more important cost for retail investors).
+
+MANDATORY EVALUATION HIERARCHY FOR STOCK TRADING:
+
+  Priority 1: COMMISSION ($0 commission always beats any non-zero commission)
+  ─────────────────────────────────────────────────────────────────────────
+  → If Bank A charges $0 commission and Bank B charges any commission,
+    Bank A wins for the stock trading category, regardless of platform fee.
+  → $0 commission is the stronger advantage because commission is charged
+    on EVERY trade and compounds with trading frequency.
+
+  Priority 2: PLATFORM FEE (only matters when commission is tied)
+  ─────────────────────────────────────────────────────────────────
+  → If two banks BOTH charge $0 commission, then the one with lower
+    platform fee wins.
+  → "Zero platform fee but charges commission" is WEAKER than
+    "$0 commission but charges platform fee" for most retail investors.
+
+  CONSEQUENCE: ZA Bank is the DEFAULT winner for HK Stock Trading
+  and US Stock Trading UNLESS another bank can prove BOTH:
+    ① $0 brokerage commission (same as ZA), AND
+    ② lower or zero platform fee (better than ZA)
+
+  PAO Bank CANNOT win either stock trading category because:
+    → PAO charges commission; ZA charges $0 commission
+    → Commission-free ($0) > any commission charge
+    → Therefore ZA Bank wins over PAO Bank for stock trading
+
+  ⚠️  Never select a bank as stock trading winner if it charges per-trade
+      commission while ZA Bank (offering $0 commission) is an option.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 10 — FORBIDDEN COMPARISONS IN BANK ANALYSIS
@@ -1173,7 +1279,7 @@ in vs_za_pros, vs_za_cons, or bank strengths:
       "account opening in 3 min vs ZA's 2 min")
      REASON: ALL Hong Kong virtual banks offer digital account opening
      in minutes. This is a baseline UX feature — NOT a financial product
-     advantage. Including it as a "pro" is misleading and inaccurate.
+     advantage.
 
   ❌ Generic app speed / UI claims without a specific financial benefit
   ❌ "Quick sign-up" or "instant registration" as a competitive differentiator
@@ -1188,19 +1294,19 @@ Return this EXACT JSON structure (no markdown, no code fences):
   "best_for": [
     {{
       "category":       "HK Stock Trading",
-      "bank":           "BankName",
-      "detail":         "specific HK stock trading fee detail (commission and/or platform fee)",
-      "is_bau":         false,
-      "similar_banks":  ["BankA", "BankB"],
-      "why_others_lose":"BankA charges HKD X commission per trade; BankB has higher platform fee"
+      "bank":           "ZA Bank",
+      "detail":         "$0 brokerage commission for HK stocks via ZA Invest; platform fee applies (no per-trade commission)",
+      "is_bau":         true,
+      "similar_banks":  ["PAObank", "Airstar Bank"],
+      "why_others_lose":"PAObank charges brokerage commission for HK stock trades despite zero platform fee — $0 commission (ZA) beats any commission charge; Airstar also charges trading commission."
     }},
     {{
       "category":       "US Stock Trading",
-      "bank":           "BankName",
-      "detail":         "specific US stock trading fee detail (commission and/or platform fee)",
-      "is_bau":         false,
-      "similar_banks":  ["BankA"],
-      "why_others_lose":"BankA charges commission on US trades; winner offers $0 commission"
+      "bank":           "ZA Bank",
+      "detail":         "$0 brokerage commission for US stocks via ZA Invest; platform fee applies",
+      "is_bau":         true,
+      "similar_banks":  ["PAObank", "Airstar Bank"],
+      "why_others_lose":"PAObank charges USD 0.012/share commission for US trades — not zero. ZA Bank's $0 commission is structurally superior for retail investors."
     }},
     {{
       "category":       "Crypto Trading",
@@ -1295,7 +1401,14 @@ Return this EXACT JSON structure (no markdown, no code fences):
         print('❌ Strategic insights: JSON parse failed')
         return None
 
+    # ── Post-processing pipeline ──────────────────────────────────────────────
+    # Step 1: Evidence gate — reject vague/unverified winners
     result['best_for'] = _validate_best_for_evidence(result.get('best_for', []))
+
+    # Step 2: Stock trading commission override — ensure $0 commission wins
+    result['best_for'] = _validate_stock_trading_winners(result.get('best_for', []))
+
+    # Step 3: Cross-check None slots from bank_analysis strengths
     result = _cross_check_best_for_from_strengths(result, promotions_by_bank)
 
     name_lookup = {k.lower(): k for k in promotions_by_bank}

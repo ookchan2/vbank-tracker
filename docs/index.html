@@ -1,1403 +1,1445 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HK Virtual Bank Promotions Tracker</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-  .cat-tag { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px;
-             color:#fff; font-weight:700; margin:2px 3px 2px 0; white-space:nowrap; }
-  .bank-dot { display:inline-block; width:10px; height:10px; border-radius:50%;
-              vertical-align:middle; margin-right:6px; }
-  details > summary { list-style:none; cursor:pointer; }
-  details > summary::-webkit-details-marker { display:none; }
-  .chevron { transition: transform 0.2s; display:inline-block; }
-  details[open] .accordion-chevron { transform: rotate(180deg); }
-  tr:hover td { background:#f8fafc; }
-  #compTable td:first-child,
-  #compTable th:first-child { position:sticky; left:0; z-index:2; background:#fff; }
-  #compTable thead th:first-child { background:#f9fafb; }
-  .cat-filter-btn { cursor:pointer; transition:opacity 0.15s, box-shadow 0.15s, transform 0.15s; }
-  .new-promo-card {
-    border-radius:14px; overflow:hidden;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
-    border:1px solid #e5e7eb; background:#fff;
-    transition:box-shadow 0.2s;
-  }
-  .new-promo-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.13); }
-  #insightsTable td:nth-child(1) { min-width:160px; white-space:nowrap; }
-  #insightsTable td:nth-child(2) { min-width:130px; white-space:nowrap; }
-  #insightsTable td:nth-child(3) { min-width:200px; }
-  #insightsTable td:nth-child(4) { min-width:200px; }
-  #insightsTable td:nth-child(5) { min-width:150px; }
-  #insightsTable td:nth-child(6) { min-width:200px; }
-  .toggle-table-btn {
-    display:inline-flex; align-items:center; gap:6px;
-    padding:4px 14px; border-radius:20px; font-size:11px; font-weight:700;
-    background:rgba(255,255,255,0.18); color:inherit;
-    border:1px solid rgba(255,255,255,0.35); cursor:pointer;
-    transition:background 0.15s;
-  }
-  .toggle-table-btn:hover { background:rgba(255,255,255,0.30); }
-  .toggle-table-btn[data-hidden="true"]::before  { content:"👁 Show Table"; }
-  .toggle-table-btn[data-hidden="false"]::before { content:"🙈 Hide Table"; }
-  pre.schema-hint {
-    background:#1e293b; color:#94a3b8; font-size:11px; border-radius:10px;
-    padding:14px 16px; overflow-x:auto; line-height:1.7; margin-top:10px;
-  }
-  pre.schema-hint .key   { color:#7dd3fc; }
-  pre.schema-hint .str   { color:#86efac; }
-  pre.schema-hint .num   { color:#fbbf24; }
-  pre.schema-hint .bool  { color:#f87171; }
-</style>
-</head>
-<body class="bg-gray-50 min-h-screen">
+# scripts/ai_helper.py
 
-<!-- ── HEADER ──────────────────────────────────────────────────── -->
-<div class="bg-gradient-to-r from-gray-900 to-gray-700 text-white px-4 py-6 shadow-lg">
-  <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-      <h1 class="text-2xl font-extrabold tracking-tight">🏦 HK Virtual Bank Promotions</h1>
-      <p class="text-gray-300 text-sm mt-1">
-        香港虛擬銀行優惠追蹤 · <span id="bankCount">–</span> Banks · Real-time Filter
-      </p>
-    </div>
-    <div class="flex gap-3 flex-wrap">
-      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
-        <div class="text-2xl font-black" id="statTotal">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Total</div>
-      </div>
-      <div class="bg-green-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
-        <div class="text-2xl font-black text-green-300" id="statActive">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Active ✅</div>
-      </div>
-      <div class="bg-orange-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
-        <div class="text-2xl font-black text-orange-300" id="statExpiring">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Expiring ⚡</div>
-      </div>
-      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
-        <div class="text-2xl font-black" id="statExpired">–</div>
-        <div class="text-xs text-gray-300 uppercase tracking-wide">Expired ✗</div>
-      </div>
-    </div>
-  </div>
-  <div class="max-w-screen-2xl mx-auto mt-2">
-    <p class="text-gray-400 text-xs" id="lastUpdated">Loading…</p>
-  </div>
-</div>
+import asyncio
+import concurrent.futures
+import json
+import os
+import re
+import time
+from datetime import datetime
+from typing import Optional
 
-<!-- ── BANK FILTER TABS ───────────────────────────────────────── -->
-<div class="max-w-screen-2xl mx-auto px-4 pt-4">
-  <div class="flex gap-2 flex-wrap" id="bankTabs">
-    <button onclick="setBankTab('')" id="tab-all"
-      class="bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-indigo-600 text-white">
-      All Banks
-    </button>
-  </div>
-</div>
+_api_key     = None
+_bot_name    = "Claude-3-7-Sonnet"
+AI_AVAILABLE = False
 
-<!-- ── CONTROLS ───────────────────────────────────────────────── -->
-<div class="max-w-screen-2xl mx-auto px-4 py-3">
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-    <div class="flex flex-col md:flex-row gap-3 items-start md:items-center flex-wrap">
-      <div class="relative flex-1 min-w-48">
-        <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
-        <input id="searchInput" type="text"
-          placeholder="Search promotions… (e.g. cash reward, 0 fee, interest)"
-          class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm
-                 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-          oninput="applyFilters()">
-      </div>
-      <select id="statusFilter" onchange="applyFilters()"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm
-               focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
-        <option value="active+expiring" selected>✅⚡ Active + Expiring</option>
-        <option value="active">✅ Active Only</option>
-        <option value="expiring">⚡ Expiring Soon</option>
-        <option value="all">All (Active + Expired)</option>
-        <option value="expired">✗ Expired Only</option>
-      </select>
-      <select id="sortFilter" onchange="applyFilters()"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm
-               focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
-        <option value="default">Sort: Default</option>
-        <option value="bank">Sort: Bank</option>
-        <option value="enddate">Sort: End Date</option>
-        <option value="newest">Sort: Newest</option>
-      </select>
-      <button onclick="exportExcel()"
-        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white
-               px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-        📥 Export Excel
-      </button>
-    </div>
-    <div class="mt-3 flex flex-wrap gap-2 items-center" id="catTagFilter"></div>
-    <div class="mt-2 text-sm text-gray-500" id="resultCount"></div>
-  </div>
-</div>
+_ENV_BOT_NAME = os.environ.get('POE_BOT_NAME', '').strip()
 
-<!-- ══ NEW TODAY ════════════════════════════════════════════════ -->
-<div class="max-w-screen-2xl mx-auto px-4 pb-2" id="newTodaySection" style="display:none;">
-  <details open class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
-    <summary class="select-none">
-      <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4
-                  flex items-center justify-between cursor-pointer">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl">🆕</span>
-          <div>
-            <div class="font-extrabold text-white text-lg tracking-tight">New Promotions Today</div>
-            <div class="text-orange-100 text-xs mt-0.5">今日首次偵測到的優惠 · DB active · start date on or after today</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <span id="newTodayCount" class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
-          <span class="accordion-chevron chevron text-white text-base">▼</span>
-        </div>
-      </div>
-    </summary>
-    <div class="bg-amber-50 p-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newTodayCards"></div>
-    </div>
-    <div id="newTodayEmpty" class="hidden bg-amber-50 px-5 py-10 text-center text-gray-400 text-sm">
-      🔍 No new promotions detected today.
-    </div>
-  </details>
-</div>
-
-<!-- ══ NEW THIS WEEK ═════════════════════════════════════════════ -->
-<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newWeeklySection" style="display:none;">
-  <details class="rounded-2xl shadow-sm overflow-hidden border border-indigo-200">
-    <summary class="select-none">
-      <div class="bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-4
-                  flex items-center justify-between cursor-pointer">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl">📅</span>
-          <div>
-            <div class="font-extrabold text-white text-lg tracking-tight">New This Week</div>
-            <div class="text-indigo-100 text-xs mt-0.5">本週新推出優惠 · past 6 days (excluding today) · DB active only</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <span id="newWeeklyCount" class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
-          <span class="accordion-chevron chevron text-white text-base">▼</span>
-        </div>
-      </div>
-    </summary>
-    <div class="bg-indigo-50 p-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newWeeklyCards"></div>
-    </div>
-    <div id="newWeeklyEmpty" class="hidden bg-indigo-50 px-5 py-10 text-center text-gray-400 text-sm">
-      🔍 No new promotions in the past 6 days.
-    </div>
-  </details>
-</div>
-
-<!-- ══ STRATEGIC INSIGHTS ════════════════════════════════════════ -->
-<div class="max-w-screen-2xl mx-auto px-4 pb-4">
-  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" id="insightsDetails">
-    <summary class="select-none">
-      <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
-        <div class="flex items-center gap-3">
-          <span class="text-xl">🧠</span>
-          <div>
-            <div class="font-bold text-gray-800">Strategic Insights · Best in Category</div>
-            <div class="text-xs text-gray-400 mt-0.5">
-              AI-generated · daily · based on active promotions across all 8 banks
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <button class="toggle-table-btn" id="toggleInsightsBtn"
-                  data-hidden="false" onclick="toggleInsightsTable(event)"></button>
-          <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
-        </div>
-      </div>
-    </summary>
-    <div class="px-5 pb-6 border-t border-gray-100" id="insightsTableWrap">
-      <div class="mt-4 overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
-        <table class="w-full border-collapse text-sm" id="insightsTable">
-          <thead>
-            <tr class="bg-gray-50 border-b-2 border-gray-200">
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Category</th>
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">🏆 Winner</th>
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Why Winner</th>
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">How AI Defines Best</th>
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Similar Banks</th>
-              <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Why They Don't Win</th>
-            </tr>
-          </thead>
-          <tbody id="insightsTbody">
-            <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">⏳ Loading insights…</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="mt-3 text-xs text-gray-400 italic">
-        ⚙️ BAU = permanent feature (no end date) · still counted as a competitive advantage
-      </p>
-    </div>
-  </details>
-</div>
-
-<!-- ══ BANK-BY-BANK ANALYSIS ════════════════════════════════════ -->
-<div class="max-w-screen-2xl mx-auto px-4 pb-4">
-  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" id="analysisDetails">
-    <summary class="select-none">
-      <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
-        <div class="flex items-center gap-3">
-          <span class="text-xl">📋</span>
-          <div>
-            <div class="font-bold text-gray-800">Bank-by-Bank Analysis</div>
-            <div class="text-xs text-gray-400 mt-0.5">
-              Focus · Key strengths (5–6 pts) · Better than ZA · Worse than ZA
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <button class="toggle-table-btn" id="toggleAnalysisBtn"
-                  data-hidden="false" onclick="toggleAnalysisGrid(event)"></button>
-          <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
-        </div>
-      </div>
-    </summary>
-    <div class="px-5 pb-6 border-t border-gray-100">
-      <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4" id="bankAnalysisGrid">
-        <div class="col-span-full py-8 text-center text-gray-400">⏳ Loading analysis…</div>
-      </div>
-    </div>
-  </details>
-</div>
-
-<!-- ── COMPARISON TABLE ──────────────────────────────────────────── -->
-<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="comparisonSection" style="display:none">
-  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <summary class="px-5 py-4 flex items-center justify-between
-                    hover:bg-gray-50/80 select-none transition-colors">
-      <div class="flex items-center gap-3">
-        <span class="text-xl">📊</span>
-        <div>
-          <div class="font-bold text-gray-800">銀行比較 Bank Comparison</div>
-          <div class="text-xs text-gray-400 mt-0.5">
-            以 ZA Bank 為基準 · ▲ more than ZA · ▼ less than ZA · 🟢 category leader
-          </div>
-        </div>
-      </div>
-      <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
-    </summary>
-    <div class="px-5 pb-6 border-t border-gray-100">
-      <div class="overflow-x-auto rounded-xl border border-gray-100 mt-5 mb-5 shadow-sm">
-        <table class="w-full border-collapse text-sm" id="compTable">
-          <tbody>
-            <tr><td class="px-6 py-8 text-center text-gray-400">⏳ Loading...</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="grid gap-4 md:grid-cols-2" id="prosConsWrap"></div>
-    </div>
-  </details>
-</div>
-
-<!-- ── MAIN TABLE ────────────────────────────────────────────────── -->
-<div class="max-w-screen-2xl mx-auto px-4 pb-10">
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <div id="loadingState" class="p-16 text-center text-gray-400">
-      <div class="text-4xl mb-3">⏳</div>
-      <div class="text-lg font-medium">Loading promotions…</div>
-    </div>
-    <div id="errorState" class="p-16 text-center text-red-400 hidden">
-      <div class="text-4xl mb-3">⚠️</div>
-      <div class="text-lg font-medium">Failed to load data</div>
-      <div class="text-sm mt-2" id="errorMsg"></div>
-    </div>
-    <div id="tableWrapper" class="hidden overflow-x-auto">
-      <table class="w-full border-collapse text-sm" id="promoTable">
-        <thead>
-          <tr class="bg-gray-50 border-b border-gray-100">
-            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Bank</th>
-            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Promotion</th>
-            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Category</th>
-            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide whitespace-nowrap">Period</th>
-            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Status</th>
-            <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Details</th>
-          </tr>
-        </thead>
-        <tbody id="promoTbody"></tbody>
-      </table>
-    </div>
-    <div id="emptyState" class="p-16 text-center text-gray-400 hidden">
-      <div class="text-4xl mb-3">🔍</div>
-      <div class="text-lg font-medium">No promotions match your filters</div>
-    </div>
-  </div>
-</div>
-
-<script>
-// ── Category config ────────────────────────────────────────────────
-const CAT_META = {
-  "迎新 Welcome":      { bg:"#10b981", emoji:"🎉" },
-  "消費 Spending":     { bg:"#f59e0b", emoji:"💳" },
-  "投資 Investment":   { bg:"#6366f1", emoji:"📈" },
-  "旅遊 Travel":       { bg:"#06b6d4", emoji:"✈️" },
-  "保險 Insurance":    { bg:"#ef4444", emoji:"🛡️" },
-  "貸款 Loan":         { bg:"#dc2626", emoji:"💰" },
-  "活期存款 Savings":  { bg:"#3b82f6", emoji:"🏦" },
-  "定期存款 TDeposit": { bg:"#0369a1", emoji:"🏛️" },
-  "外匯 FX":           { bg:"#8b5cf6", emoji:"🌐" },
-  "推薦 Referral":     { bg:"#ec4899", emoji:"👥" },
-  "新資金 New Funds":  { bg:"#0ea5e9", emoji:"💵" },
-  "Others 其他":       { bg:"#6b7280", emoji:"📋" },
-};
-
-const BANK_COLORS = {
-  "ZA Bank":      "#25CD9C",
-  "Mox Bank":     "#ec4899",
-  "WeLab Bank":   "#7c3aed",
-  "livi bank":    "#f97316",
-  "PAObank":      "#0ea5e9",
-  "Airstar Bank": "#06b6d4",
-  "Fusion Bank":  "#14b8a6",
-  "Ant Bank":     "#1677ff",
-};
-
-const CAT_FILTER_LIST = [
-  { key:'__ALL__',            label:'All',           bg:'#4f46e5' },
-  { key:'BAU',                label:'⚙️ BAU',        bg:'#64748b' },
-  { key:'迎新 Welcome',       label:'🎉 迎新',       bg:'#10b981' },
-  { key:'消費 Spending',      label:'💳 消費',       bg:'#f59e0b' },
-  { key:'投資 Investment',    label:'📈 投資',       bg:'#6366f1' },
-  { key:'旅遊 Travel',        label:'✈️ 旅遊',      bg:'#06b6d4' },
-  { key:'保險 Insurance',     label:'🛡️ 保險',     bg:'#ef4444' },
-  { key:'貸款 Loan',          label:'💰 貸款',       bg:'#dc2626' },
-  { key:'活期存款 Savings',   label:'🏦 活期存款',   bg:'#3b82f6' },
-  { key:'定期存款 TDeposit',  label:'🏛️ 定期存款',  bg:'#0369a1' },
-  { key:'外匯 FX',            label:'🌐 外匯',       bg:'#8b5cf6' },
-  { key:'推薦 Referral',      label:'👥 推薦',       bg:'#ec4899' },
-  { key:'新資金 New Funds',   label:'💵 新資金',     bg:'#0ea5e9' },
-  { key:'Others 其他',        label:'📋 Others',     bg:'#6b7280' },
-];
-
-// ── HOW_DEFINED: split Stock into HK + US; add legacy fallbacks ───────────────
-const HOW_DEFINED = {
-  // ── New split categories ──────────────────────────────────────────────────
-  "HK Stock Trading":
-    "Zero or lowest brokerage commission for HKEX-listed (HK) stocks, best IPO cash/stock reward. " +
-    "Note: commission-free ≠ platform-fee-free — evaluate the full cost including platform fees.",
-  "US Stock Trading":
-    "Zero or lowest brokerage commission for NYSE/NASDAQ-listed (US) stocks, or most competitive " +
-    "platform fee structure. Note: commission-free ≠ platform-fee-free.",
-  // ── Legacy fallback: old data.json before HK/US split ────────────────────
-  "Stock Trading":
-    "Zero or lowest trading fee/commission for HK/US/A-share stocks, best IPO reward, or most " +
-    "comprehensive brokerage platform with no trade minimum.",
-  // ── Legacy fallback: even older merged Investment category ────────────────
-  "Investment (Stock/Crypto Trading)":
-    "HK/US Stock Trading: zero brokerage commission, best IPO reward. " +
-    "Crypto Trading: zero platform fee for virtual assets. Best bank leads in both sub-categories.",
-  "Crypto Trading":
-    "Zero or lowest crypto/virtual-asset trading or platform fee, widest digital-asset selection, " +
-    "or strongest permanent crypto incentive.",
-  "Fund Investment":
-    "Widest range of funds at $0 subscription fee, or permanent fee waiver with no expiry.",
-  "Spending/CashBack":
-    "Highest consistent % cashback rate or most versatile reward categories with no cap.",
-  "Welcome Bonus":
-    "Highest total guaranteed HKD cash reward for a new account holder completing standard onboarding.",
-  "Travel":
-    "Strongest travel ecosystem — named partners, lounge access, or highest dedicated travel cashback.",
-  "Loan APR":
-    "Lowest explicitly stated APR on a personal loan currently offered.",
-  "FX/Multi-Currency":
-    "Most competitive FX rates, lowest fees, or most feature-rich multi-currency wallet.",
-  "Referral Bonus":
-    "Highest guaranteed HKD reward per successful referral.",
-};
-
-const _BANK_COLOR_GENERIC = new Set(['bank','banking','digital','virtual']);
-
-function bankColor(name) {
-  if (!name) return "#6b7280";
-  const n = name.toLowerCase().trim();
-  if (_BANK_COLOR_GENERIC.has(n)) return "#6b7280";
-  for (const [k, v] of Object.entries(BANK_COLORS)) {
-    const kl = k.toLowerCase();
-    if (n.includes(kl) || kl.includes(n)) return v;
-  }
-  return "#6b7280";
-}
-
-function catMeta(cat) {
-  if (CAT_META[cat]) return CAT_META[cat];
-  for (const [k, v] of Object.entries(CAT_META)) {
-    if (cat && k.toLowerCase().includes(cat.toLowerCase())) return v;
-    if (cat && cat.toLowerCase().includes(k.split(' ')[0].toLowerCase())) return v;
-  }
-  return { bg:"#6b7280", emoji:"📋" };
-}
-
-function catTag(cat) {
-  if (cat && cat.includes('長期')) return '';
-  const m = catMeta(cat);
-  return `<span class="cat-tag" style="background:${m.bg}">${m.emoji} ${cat}</span>`;
-}
-
-function bauTag(p) {
-  if (!p.is_bau) return '';
-  return `<span class="cat-tag" style="background:#64748b">⚙️ BAU</span>`;
-}
-
-// ── getStatus: DB active flag first, then end_date ────────────────────────
-function getStatus(p) {
-  if (p.active === false) return 'expired';
-  if (p.end_date) {
-    const diff = (new Date(p.end_date) - new Date()) / 86400000;
-    if (diff < 0)   return 'expired';
-    if (diff <= 30) return 'expiring';
-    return 'active';
-  }
-  if (p.period === 'Ongoing' ||
-      (p.period && p.period.toLowerCase().includes('ongoing'))) return 'active';
-  return 'active';
-}
-
-function statusBadge(p) {
-  const s = getStatus(p);
-  if (s === 'active')
-    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                         text-xs font-bold bg-green-100 text-green-700">✅ Active</span>`;
-  if (s === 'expiring') {
-    const diff = Math.ceil((new Date(p.end_date) - new Date()) / 86400000);
-    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                         text-xs font-bold bg-orange-100 text-orange-600">⚡ ${diff}d left</span>`;
-  }
-  return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                       text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
-}
-
-function hktToday() {
-  return new Date(Date.now() + 8*3600000).toISOString().substring(0,10);
-}
-function hktDaysAgo(n) {
-  return new Date(Date.now() + 8*3600000 - n*86400000).toISOString().substring(0,10);
-}
-
-function isNewToday(p, today) {
-  if (p.is_bau) return false;
-  if (p.active === false) return false;
-  if (getStatus(p) === 'expired') return false;
-  const created = (p.created_at||'').substring(0,10);
-  if (created !== today) return false;
-  const start = (p.start_date||'').substring(0,10);
-  if (start && start < today) return false;
-  return true;
-}
-
-function isNewThisWeek(p, today) {
-  if (p.is_bau) return false;
-  if (p.active === false) return false;
-  if (getStatus(p) === 'expired') return false;
-  const created   = (p.created_at||'').substring(0,10);
-  const sixAgo    = hktDaysAgo(6);
-  const yesterday = hktDaysAgo(1);
-  if (created < sixAgo || created > yesterday) return false;
-  const start = (p.start_date||'').substring(0,10);
-  if (start && start < sixAgo) return false;
-  return true;
-}
-
-let allPromos         = [];
-let filtered          = [];
-let activeBankTab     = '';
-let selectedCats      = [];
-let strategicInsights = null;
-
-// ── No-data placeholder ───────────────────────────────────────────
-function insightsNoDataHtml() {
-  return `
-    <tr>
-      <td colspan="6" class="px-5 py-5">
-        <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
-          <div class="flex items-start gap-3">
-            <span class="text-2xl shrink-0">⚠️</span>
-            <div class="flex-1 min-w-0">
-              <div class="font-bold text-amber-800 text-sm mb-1">
-                No AI insights data found in <code class="bg-amber-100 px-1 rounded">data.json</code>
-              </div>
-              <div class="text-amber-700 text-xs mb-3">
-                Add a <code class="bg-amber-100 px-1 rounded">strategic_insights.best_for</code> array
-                to your <code class="bg-amber-100 px-1 rounded">data.json</code>. Each item must have
-                these fields:
-              </div>
-              <pre class="schema-hint">
-{
-  <span class="key">"strategic_insights"</span>: {
-    <span class="key">"best_for"</span>: [
-      {
-        <span class="key">"category"</span>:        <span class="str">"HK Stock Trading"</span>,
-        <span class="key">"bank"</span>:            <span class="str">"ZA Bank"</span>,
-        <span class="key">"detail"</span>:          <span class="str">"$0 brokerage commission for HK stocks; platform fee applies"</span>,
-        <span class="key">"is_bau"</span>:          <span class="bool">true</span>,
-        <span class="key">"similar_banks"</span>:   [<span class="str">"Mox Bank"</span>, <span class="str">"WeLab Bank"</span>],
-        <span class="key">"why_others_lose"</span>: <span class="str">"Mox charges commission per trade; WeLab platform fee is higher"</span>
-      },
-      {
-        <span class="key">"category"</span>:        <span class="str">"Crypto Trading"</span>,
-        <span class="key">"bank"</span>:            <span class="str">"ZA Bank"</span>,
-        <span class="key">"detail"</span>:          <span class="str">"Permanent 0% crypto platform fee for new crypto customers"</span>,
-        <span class="key">"is_bau"</span>:          <span class="bool">true</span>,
-        <span class="key">"similar_banks"</span>:   [<span class="str">"Ant Bank"</span>],
-        <span class="key">"why_others_lose"</span>: <span class="str">"Ant Bank crypto waiver has an expiry date; ZA Bank is permanent"</span>
-      }
+MODELS_TO_TRY = (
+    [_ENV_BOT_NAME] if _ENV_BOT_NAME else [
+        "Claude-3-7-Sonnet",
+        "Claude-3-5-Sonnet",
+        "GPT-4o",
+        "Perplexity-Pro-Search",
     ]
-  }
-}</pre>
-            </div>
-          </div>
-        </div>
-      </td>
-    </tr>`;
+)
+
+ALLOWED_CATEGORIES = [
+    "迎新", "消費", "投資", "旅遊", "保險",
+    "貸款", "存款", "外匯", "推薦", "新資金", "Others"
+]
+
+# ── BAU overrides ─────────────────────────────────────────────────────────────
+
+BAU_OVERRIDES: dict[str, list[str]] = {
+    "za": ["new crypto customer fee waiver"],
 }
 
-function analysisNoDataHtml() {
-  return `
-    <div class="col-span-full">
-      <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
-        <div class="flex items-start gap-3">
-          <span class="text-2xl shrink-0">⚠️</span>
-          <div class="flex-1 min-w-0">
-            <div class="font-bold text-amber-800 text-sm mb-1">
-              No bank analysis data found in <code class="bg-amber-100 px-1 rounded">data.json</code>
-            </div>
-            <div class="text-amber-700 text-xs mb-3">
-              Add a <code class="bg-amber-100 px-1 rounded">strategic_insights.bank_analysis</code>
-              object keyed by bank name.
-            </div>
-            <pre class="schema-hint">
-{
-  <span class="key">"strategic_insights"</span>: {
-    <span class="key">"bank_analysis"</span>: {
-      <span class="key">"ZA Bank"</span>: {
-        <span class="key">"count"</span>:          <span class="num">12</span>,
-        <span class="key">"bau_count"</span>:      <span class="num">3</span>,
-        <span class="key">"focus"</span>:          <span class="str">"All-round digital banking with cashback and investment"</span>,
-        <span class="key">"strengths"</span>: [
-          <span class="str">"$0 brokerage commission for HK and US stocks (platform fee applies)"</span>,
-          <span class="str">"Permanent 0% crypto platform fee for new crypto customers"</span>,
-          <span class="str">"2.5% StockBack cashback on card spending"</span>,
-          <span class="str">"Welcome bonus up to HKD 2,026"</span>,
-          <span class="str">"0% fund subscription fee until Jul 2026"</span>,
-          <span class="str">"Multi-currency wallet for 11 currencies"</span>
-        ],
-        <span class="key">"expiring_alert"</span>: <span class="str">""</span>,
-        <span class="key">"vs_za_pros"</span>:     <span class="bool">null</span>,
-        <span class="key">"vs_za_cons"</span>:     <span class="bool">null</span>
-      }
-    }
-  }
-}</pre>
-          </div>
-        </div>
-      </div>
-    </div>`;
+BAU_GLOBAL_OVERRIDES: list[str] = [
+    "account opening in 3 minutes",
+    "account opening in 5 minutes",
+    "quick account opening",
+    "mobile account opening",
+    "open account in minutes",
+    "open an account in minutes",
+    "sign up in the time it takes",
+    "open account in the time",
+    "24/7 mobile banking",
+    "24/7 digital banking",
+    "24×7 banking",
+]
+
+# ── Extraction prompt ─────────────────────────────────────────────────────────
+
+_PROMPT_TMPL = """\
+You are a specialist at extracting bank promotion data from website text.
+
+Bank: BANK_NAME_PLACEHOLDER
+Source URL: URL_PLACEHOLDER
+Today's Date: TODAY_DATE_PLACEHOLDER
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  CRITICAL RULES — read carefully before extracting                  ║
+║                                                                      ║
+║  1. Extract EVERY SINGLE promotion you can find.                    ║
+║     If you see 25 promotions → return exactly 25 objects.           ║
+║                                                                      ║
+║  2. Do NOT merge multiple promotions into one entry.                ║
+║                                                                      ║
+║  3. name and highlight must be in English.                          ║
+║                                                                      ║
+║  4. For start_date / end_date: look for any date mentioned near     ║
+║     the promotion. Always use YYYY-MM-DD format.                    ║
+║     Use null only if truly absent.                                  ║
+║                                                                      ║
+║  5. is_bau: set true ONLY for permanent product features with       ║
+║     NO end date and NO special eligibility condition, e.g.:         ║
+║       ✅ BAU: "Free Instant FPS Transfers" (always available)       ║
+║       ✅ BAU: "Multi-Currency Savings Account" (product feature)    ║
+║       ✅ BAU: "New Crypto Customer Fee Waiver" (ZA Bank, permanent) ║
+║       ✅ BAU: "$0 Fund Subscription Fee Mode" (WeLab, no end date)  ║
+║       ✅ BAU: "Account Opening in 3 Minutes" (any bank, UX claim)  ║
+║       ✅ BAU: "Quick Account Opening" (any bank, UX claim)         ║
+║       ✅ BAU: "Mobile Account Opening in 5 Minutes" (UX claim)     ║
+║       ✅ BAU: "24/7 Digital Banking Services" (always-on feature)  ║
+║       ❌ NOT BAU: "New Customer Bonus" (new customers only)         ║
+║       ❌ NOT BAU: "Limited-Time Fee Waiver" (has end date)          ║
+║       ❌ NOT BAU: Any promotion with a promo code                   ║
+║                                                                      ║
+║  6. CATEGORY TAGGING RULES:                                         ║
+║     • Any referral / invite-a-friend / 推薦 program → tag 推薦     ║
+║     • Any fund / 基金 / unit trust subscription fee promo → 投資   ║
+║     • Any stock / crypto / securities trading fee promo → 投資     ║
+║     • Any travel / flight / hotel / 旅遊 promo → tag 旅遊          ║
+║                                                                      ║
+║  7. ⚠️  FOOTNOTES ARE REAL PROMOTIONS — ALWAYS EXTRACT THEM        ║
+║     Lines starting with  *  †  #  ¹  ²  are often the most         ║
+║     important promotion terms, NOT just legal disclaimers.          ║
+║     REQUIRED: scan EVERY footnote line and ask yourself:            ║
+║       "Does this mention a fee waiver, discount, reward, or         ║
+║        eligibility period?" → If YES, extract it as a promotion.   ║
+║                                                                      ║
+║     REAL EXAMPLE you must not miss:                                 ║
+║       "*From now until 31 Jul 2026 ... retail banking users who    ║
+║        have activated investment fund trading services with ZA Bank ║
+║        can enjoy 0% fund subscription fee offer and redemption fee  ║
+║        waivers for all funds."                                      ║
+║       → Extract as: name="ZA Bank 0% Fund Subscription Fee Offer   ║
+║         until 31 Jul 2026", types=["投資"], is_bau=false,          ║
+║         end_date="2026-07-31"                                       ║
+║                                                                      ║
+║  8. ⛔ DO NOT EXTRACT THESE — they are NOT promotions:             ║
+║     • Navigation / menu items                                       ║
+║     • Section headings without a concrete benefit amount            ║
+║     • Pure risk disclaimers / legal boilerplate                     ║
+║     • Generic product feature names with no specific reward         ║
+║     • Footer links (Terms, Privacy Policy, Contact Us, etc.)       ║
+║                                                                      ║
+║     ❌ BAD extraction (nav item): "Travel with ZA Card"            ║
+║     ✅ GOOD extraction (real deal): "Trip.com 8% off + 2% CashBack"║
+║                                                                      ║
+║  9. ⚠️  START DATE GATE (today = TODAY_DATE_PLACEHOLDER):           ║
+║     If start_date is found AND start_date < TODAY_DATE_PLACEHOLDER  ║
+║     → this promotion launched BEFORE today; it is NOT new today.    ║
+║     A promotion that started 2026-04-01 found on 2026-04-17 is NOT ║
+║     a newly launched promotion — it has been running for 16 days.   ║
+║                                                                      ║
+║  10. ✅ EXPIRY VALIDATION (today = TODAY_DATE_PLACEHOLDER):         ║
+║      If end_date > TODAY_DATE_PLACEHOLDER the promotion is still    ║
+║      ACTIVE — it has NOT expired.                                   ║
+║      Example: end_date="2026-05-27", today="2026-04-17"            ║
+║      → This promo runs for 40 more days. Mark end_date accurately   ║
+║        and do NOT treat it as expired or past.                      ║
+║      Only set is_bau=false and include the end_date as-is.         ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+ALLOWED CATEGORY TAGS (Chinese, pick 1-3 per promotion):
+  迎新 / 消費 / 投資 / 旅遊 / 保險 / 貸款 / 存款 / 外匯 / 推薦 / 新資金 / Others
+
+REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
+
+Schema for each object:
+{{
+  "name":        "Full descriptive English name of the promotion",
+  "types":       ["category1", "category2"],
+  "is_bau":      false,
+  "start_date":  "YYYY-MM-DD or null",
+  "end_date":    "YYYY-MM-DD or null",
+  "period":      "Human-readable period, e.g. '1 Jan 2025 to 31 Mar 2025' or 'Ongoing'",
+  "highlight":   "One-line key benefit starting with an emoji",
+  "description": "2-3 sentences describing this specific promotion in detail.",
+  "quota":       "Eligibility or quota info (e.g. First 1000 customers / New customers only / No cap)",
+  "cost":        "Minimum spend or required cost, or Free",
+  "tc_link":     "URL_PLACEHOLDER"
+}}
+
+WEBSITE TEXT TO ANALYSE:
+────────────────────────────────────────────────────────────────────────
+TEXT_PLACEHOLDER
+────────────────────────────────────────────────────────────────────────
+Remember: return ONLY the JSON array starting with [ and ending with ]."""
+
+
+def _build_prompt(bank_name: str, url: str, text: str) -> str:
+    today = datetime.now().strftime('%Y-%m-%d')
+    return (
+        _PROMPT_TMPL
+        .replace('BANK_NAME_PLACEHOLDER',  bank_name)
+        .replace('URL_PLACEHOLDER',        url)
+        .replace('TODAY_DATE_PLACEHOLDER', today)
+        .replace('TEXT_PLACEHOLDER',       text)
+    )
+
+
+# ── Poe async core ────────────────────────────────────────────────────────────
+
+_executor = concurrent.futures.ThreadPoolExecutor(
+    max_workers=2,
+    thread_name_prefix='poe_ai',
+)
+
+
+async def _async_call(messages: list, bot_name: str) -> str:
+    try:
+        import fastapi_poe as fp
+        poe_messages = [
+            fp.ProtocolMessage(role=m['role'], content=m['content'])
+            for m in messages
+        ]
+        response_text = ''
+        async for partial in fp.get_bot_response(
+            messages=poe_messages,
+            bot_name=bot_name,
+            api_key=_api_key,
+        ):
+            response_text += partial.text
+        return response_text.strip()
+    except Exception as exc:
+        print(f'  ⚠️  Poe async call error ({bot_name}): {exc}')
+        return ''
+
+
+def _run_async(coro) -> str:
+    try:
+        asyncio.get_running_loop()
+        future = _executor.submit(asyncio.run, coro)
+        return future.result(timeout=180)
+    except RuntimeError:
+        return asyncio.run(coro)
+    except Exception as exc:
+        print(f'  ⚠️  _run_async error: {exc}')
+        return ''
+
+
+def _call(messages: list, label: str = '') -> str:
+    if not AI_AVAILABLE or _api_key is None:
+        return ''
+    t = time.monotonic()
+    try:
+        result  = _run_async(_async_call(messages, _bot_name))
+        elapsed = time.monotonic() - t
+        tag     = f' [{label}]' if label else ''
+        print(f'  [DEBUG] AI ({_bot_name}){tag} → {len(result)} chars in {elapsed:.1f}s')
+        if len(result) < 50:
+            print(f'  [DEBUG] Full response: {repr(result)}')
+        return result
+    except Exception as exc:
+        print(f'  ⚠️  Call error: {exc}')
+        return ''
+
+
+# ── Init ──────────────────────────────────────────────────────────────────────
+
+def init_ai() -> bool:
+    global _api_key, _bot_name, AI_AVAILABLE
+    try:
+        import fastapi_poe  # noqa
+        key = os.environ.get('POE_API_KEY', '').strip()
+        if not key:
+            print('⚠️  POE_API_KEY not set — AI disabled')
+            return False
+        _api_key = key
+        for model in MODELS_TO_TRY:
+            print(f'  🔍 Testing model: {model} ...')
+            try:
+                test = _run_async(
+                    _async_call([{'role': 'user', 'content': 'Reply OK only.'}], model)
+                )
+            except Exception as exc:
+                print(f'  ❌ {model} error: {exc}')
+                test = ''
+            if test:
+                _bot_name    = model
+                AI_AVAILABLE = True
+                print(f'✅ Poe ready: {_bot_name}')
+                return True
+            print(f'  ❌ {model} failed, trying next...')
+        print('❌ All models failed — AI disabled')
+        AI_AVAILABLE = False
+        return False
+    except ImportError:
+        print('❌ fastapi-poe not installed')
+        AI_AVAILABLE = False
+        return False
+    except Exception as exc:
+        print(f'❌ AI init failed: {exc}')
+        AI_AVAILABLE = False
+        return False
+
+
+# ── Parsing helpers ───────────────────────────────────────────────────────────
+
+def _parse_array(raw: str) -> list:
+    if not raw:
+        return []
+    raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+    raw = re.sub(r'\s*```$',          '', raw, flags=re.MULTILINE)
+    raw = raw.strip()
+    try:
+        data = json.loads(raw)
+        return data if isinstance(data, list) else [data]
+    except json.JSONDecodeError:
+        pass
+    m = re.search(r'(\[.*\])', raw, re.DOTALL)
+    if m:
+        try:
+            data = json.loads(m.group(1))
+            return data if isinstance(data, list) else [data]
+        except Exception:
+            pass
+    for suffix in ('}]', ']'):
+        try:
+            data = json.loads(raw + suffix)
+            return data if isinstance(data, list) else [data]
+        except Exception:
+            pass
+    print(f'  ⚠️  JSON parse failed. First 200 chars: {raw[:200]}')
+    return []
+
+
+def _parse_object(raw: str) -> Optional[dict]:
+    if not raw:
+        return None
+    raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+    raw = re.sub(r'\s*```$',          '', raw, flags=re.MULTILINE)
+    raw = raw.strip()
+    m = re.search(r'(\{.*\})', raw, re.DOTALL)
+    if m:
+        raw = m.group(1)
+    try:
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else None
+    except json.JSONDecodeError as exc:
+        print(f'  ⚠️  JSON object parse failed: {exc}. First 200 chars: {raw[:200]}')
+        return None
+
+
+def _trim_text(text: str, max_chars: int = 25_000) -> str:
+    if len(text) <= max_chars:
+        return text
+    keep = max_chars // 2
+    return (
+        text[:keep]
+        + f'\n\n…[{len(text) - max_chars:,} chars trimmed]…\n\n'
+        + text[-keep:]
+    )
+
+
+def _stamp(promos: list, bank_id: str, bank_name: str, default_url: str) -> list:
+    for p in promos:
+        p['bank']    = bank_id
+        p['bName']   = bank_name
+        p.setdefault('link',        default_url)
+        p.setdefault('tc_link',     default_url)
+        p.setdefault('types',       ['Others'])
+        p.setdefault('is_bau',      False)
+        p.setdefault('start_date',  None)
+        p.setdefault('end_date',    None)
+        p.setdefault('period',      'Ongoing')
+        p.setdefault('highlight',   '')
+        p.setdefault('description', '')
+        p.setdefault('quota',       'Check official website')
+        p.setdefault('cost',        'Check official website')
+        if not p.get('title') and p.get('name'):
+            p['title'] = p['name']
+    return promos
+
+
+def _apply_bau_overrides(promos: list, bank_id: str) -> list:
+    bank_specific = [o.lower() for o in BAU_OVERRIDES.get(bank_id.lower(), [])]
+    global_list   = [o.lower() for o in BAU_GLOBAL_OVERRIDES]
+    all_overrides = bank_specific + global_list
+    if not all_overrides:
+        return promos
+    for p in promos:
+        title = (p.get('name') or p.get('title') or '').lower()
+        if any(override in title for override in all_overrides):
+            if not p.get('is_bau'):
+                p['is_bau'] = True
+                print(f'    🔒 BAU override: {p.get("name") or p.get("title")}')
+    return promos
+
+
+# ── Evidence gate ─────────────────────────────────────────────────────────────
+
+_VAGUE_DETAIL_PATTERNS: list[str] = [
+    r'special\s+\w+[-\s]related\s+promotions?',
+    r'year[- ]round\s+\w+\s+offers?\s+with\s+special',
+    r'^\s*various\b',
+    r'competitive\s+features',
+    r'\bservices?\s+available\s*$',
+    r'no\s+\w+\s+promotions?\s+available',
+]
+
+_CONCRETE_EVIDENCE_RE = re.compile(
+    r'HKD\s*[\d,]+'
+    r'|\$\s*0\b'
+    r'|\d+\.?\d*\s*%'
+    r'|\d{1,2}\s+[A-Za-z]+\s+20\d\d'
+    r'|20\d\d-\d\d-\d\d'
+    r'|trip\.com'
+    r'|asia\s*miles'
+    r'|\bapr\b'
+    r'|subscription\s*fee'
+    r'|platform\s*fee'
+    r'|trading\s*fee'
+    r'|fee\s*waiver'
+    r'|zero[\s-]fee'
+    r'|free\s+stock'
+    r'|payment\s+connect'
+    r'|global\s+wallet'
+    r'|commission'
+    r'|cashback|cash\s*back'
+    r'|\bflight\b'
+    r'|\bhotel\b'
+    r'|\blounge\b'
+    r'|travel\s*insur'
+    r'|\bagoda\b'
+    r'|旅遊',
+    re.IGNORECASE,
+)
+
+# ── Stock trading commission pattern — used by the override validator ─────────
+# Matches phrases that indicate a bank CHARGES a non-zero per-trade commission
+_CHARGES_COMMISSION_RE = re.compile(
+    r'usd\s*[\d]+\.[\d]+\s*/\s*share'      # USD 0.012/share
+    r'|usd\s*[\d]+\.[\d]+\s*per\s*share'   # USD 0.012 per share
+    r'|hkd\s*[\d]+\.?[\d]*\s*(per|/)\s*(trade|lot|share|order)'  # HKD X per trade
+    r'|0\.\d+%\s*(brokerage|commission)'   # 0.03% commission
+    r'|competitive\s+(commission|brokerage)'  # "competitive commission"
+    r'|commission\s+(of|at|is|:)\s*[\d]'   # commission of X / commission at X
+    r'|[\d]+\.[\d]+\s*usd\s*per',          # 0.012 USD per ...
+    re.IGNORECASE,
+)
+
+_CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    'HK Stock Trading': [
+        'hk stock', 'hong kong stock', 'hkex', 'local stock',
+        'hk securities', 'hk shares', 'hong kong shares',
+        'hk brokerage', 'stock', 'securities', 'brokerage', 'ipo',
+        'trading fee', 'platform fee', '$0 commission', 'commission',
+        'powerdraw', 'free stock', 'equities', 'share trading',
+    ],
+    'US Stock Trading': [
+        'us stock', 'us equities', 'us securities', 'us shares',
+        'american stock', 'nyse', 'nasdaq', 'us market',
+        'us brokerage', '$0 commission', 'commission',
+        'trading fee', 'platform fee', 'stock', 'equities',
+    ],
+    'Stock Trading': [
+        'stock', 'securities', 'brokerage', 'ipo',
+        'trading fee', 'platform fee', '$0 commission', 'commission',
+        'powerdraw', 'free stock', 'hk stock', 'us stock',
+        'equities', 'share trading',
+    ],
+    'Crypto Trading': [
+        'crypto', 'bitcoin', 'virtual asset', 'digital asset',
+        'cryptocurrency', 'btc', 'eth', 'virtual currency',
+        'crypto platform fee', 'crypto trading fee',
+        'digital asset fee', 'crypto commission',
+    ],
+    'Fund Investment': [
+        'fund', '基金', 'mutual fund', 'unit trust',
+        'subscription fee', '$0認購費', '認購費', '轉換費',
+        'fund fee', 'zero-fee fund', '0% fund', '$0 fund',
+        'fund subscription', 'fund trading fee',
+    ],
+    'Referral Bonus': [
+        'referral', '推薦', 'invite', '多友多賞',
+        'refer a friend', 'referral code', '推薦碼',
+        'referral reward', 'invite a friend', 'invite bonus',
+    ],
+    'FX/Multi-Currency': [
+        'fx', 'forex', 'exchange rate', 'multi-currency',
+        'global wallet', 'payment connect', 'remittance',
+        'international transfer', 'swift', 'foreign currency',
+        'welab global', 'fps transfer',
+    ],
+    'Travel': [
+        'trip.com', 'asia miles', 'flight', 'hotel',
+        'travel insurance', 'lounge', 'agoda',
+        'booking.com', 'travel cashback', 'travel reward',
+        '旅遊', 'travel', 'airline', 'airport', 'airfare',
+    ],
+    'Spending/CashBack': [
+        'cashback', 'cash back', 'spending reward',
+        'merchant', 'card reward', 'rebate', 'card spending',
+    ],
+    'Welcome Bonus': [
+        'welcome', 'new customer', 'account opening',
+        'sign up', 'onboarding', 'welcome gift',
+        'hkd8,888', 'hkd888', 'join bonus',
+    ],
+    'Loan APR': [
+        'loan', 'apr', 'instant loan', 'personal loan',
+        'interest rate', '1.18%', 'tax loan', 'tax season',
+    ],
 }
 
-async function loadData() {
-  try {
-    const res  = await fetch('./data.json?_=' + Date.now());
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-
-    if (data.ai_unavailable) {
-      const notice = document.createElement('div');
-      notice.className = 'max-w-screen-2xl mx-auto px-4 pt-3';
-      notice.innerHTML = `
-        <div class="bg-amber-50 border border-amber-300 rounded-xl px-4 py-3
-                    flex items-start gap-3 text-sm">
-          <span class="text-xl shrink-0">⚠️</span>
-          <div>
-            <div class="font-bold text-amber-800">Cached Data — AI Unavailable During Last Run</div>
-            <div class="text-amber-700 mt-0.5">
-              Promotions shown are from the last successful AI extraction run.
-              Today's changes may not be reflected.
-            </div>
-          </div>
-        </div>`;
-      document.querySelector('.max-w-screen-2xl').after(notice);
-    }
-
-    allPromos = (data.promotions || []).map(p => ({
-      ...p,
-      types: (p.types || []).filter(t => !t.includes('長期')).map(remapCat),
-    }));
-
-    strategicInsights = data.strategic_insights || null;
-
-    // ── Count only DB-active, non-BAU, non-expired promos ──────────────────
-    const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false && getStatus(p) !== 'expired');
-    const activeN      = activeNonBau.filter(p => getStatus(p) === 'active').length;
-    const expiringN    = activeNonBau.filter(p => getStatus(p) === 'expiring').length;
-    const expiredN     = allPromos.filter(p => !p.is_bau && getStatus(p) === 'expired').length;
-    const totalN       = activeNonBau.length;   // active + expiring, NO past-ended
-    const banks        = [...new Set(allPromos.map(p => p.bank_name))];
-
-    document.getElementById('statTotal').textContent    = totalN;
-    document.getElementById('statActive').textContent   = activeN;
-    document.getElementById('statExpiring').textContent = expiringN;
-    document.getElementById('statExpired').textContent  = expiredN;
-    document.getElementById('bankCount').textContent    = banks.length;
-    document.getElementById('lastUpdated').textContent  =
-      `Last updated: ${data.updated || data.last_updated || 'Unknown'} HKT`;
-
-    buildBankTabs(banks);
-    buildNewSections();
-    buildStrategicInsights(strategicInsights);
-    buildBankAnalysis(strategicInsights);
-    buildComparisonTable();
-
-    document.getElementById('loadingState').classList.add('hidden');
-    document.getElementById('tableWrapper').classList.remove('hidden');
-    applyFilters();
-
-  } catch (e) {
-    document.getElementById('loadingState').classList.add('hidden');
-    document.getElementById('errorState').classList.remove('hidden');
-    document.getElementById('errorMsg').textContent = e.message;
-  }
-}
-
-function remapCat(t) {
-  const MAP = {
-    '迎新':'迎新 Welcome',       '消費':'消費 Spending',
-    '投資':'投資 Investment',     '旅遊':'旅遊 Travel',
-    '保險':'保險 Insurance',      '貸款':'貸款 Loan',
-    '存款':'活期存款 Savings',    '活期存款':'活期存款 Savings',
-    '定期存款':'定期存款 TDeposit',
-    '外匯':'外匯 FX',             '推薦':'推薦 Referral',
-    '新資金':'新資金 New Funds',  'Others':'Others 其他',
-  };
-  return MAP[t] || t;
-}
-
-function buildPromoCard(p) {
-  const color   = bankColor(p.bank_name);
-  const cats    = (p.types || ['Others 其他']).map(catTag).join('');
-  const badge   = statusBadge(p);
-  const tcLink  = p.tc_link || p.url || '';
-  const summary = p.description || p.highlight || '';
-
-  const quotaHtml = p.quota
-    ? `<div class="mt-2">
-         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">👥 Quota / Eligibility</div>
-         <div class="text-sm text-gray-700">${p.quota}</div>
-       </div>` : '';
-
-  const costHtml = p.cost
-    ? `<div class="mt-2">
-         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">💲 Cost / Min Spend</div>
-         <div class="text-sm text-gray-700">${p.cost}</div>
-       </div>` : '';
-
-  const sourceHtml = tcLink
-    ? `<div class="mt-3 pt-3 border-t border-gray-100">
-         <a href="${tcLink}" target="_blank" rel="noopener"
-            class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600
-                   hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors">
-           🔗 View Official Source ↗
-         </a>
-       </div>` : '';
-
-  return `
-    <div class="new-promo-card">
-      <div class="px-4 py-3 flex items-center justify-between" style="background:${color};">
-        <div class="flex items-center gap-2">
-          <span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span>
-          <span class="font-extrabold text-white text-base">${p.bank_name}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          ${badge}
-          <span class="text-white/75 text-xs">📅 ${p.period || '—'}</span>
-        </div>
-      </div>
-      <div class="p-4">
-        <div class="mb-2">${cats}</div>
-        <div class="font-bold text-gray-800 text-sm leading-snug mb-2">${p.title}</div>
-        ${summary
-          ? `<div class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg
-                         px-3 py-2 mb-1 border-l-2" style="border-color:${color}">${summary}</div>`
-          : ''}
-        ${quotaHtml}${costHtml}${sourceHtml}
-      </div>
-    </div>`;
-}
-
-function buildNewSections() {
-  const today = hktToday();
-
-  const newToday   = allPromos.filter(p => isNewToday(p, today));
-  const todaySec   = document.getElementById('newTodaySection');
-  const todayCards = document.getElementById('newTodayCards');
-  const todayCount = document.getElementById('newTodayCount');
-  const todayEmpty = document.getElementById('newTodayEmpty');
-  todaySec.style.display = 'block';
-  if (!newToday.length) {
-    todayCards.innerHTML = '';
-    todayEmpty.classList.remove('hidden');
-    todayCount.textContent = '0 new today';
-  } else {
-    todayEmpty.classList.add('hidden');
-    todayCount.textContent = `${newToday.length} new today`;
-    todayCards.innerHTML   = newToday.map(buildPromoCard).join('');
-  }
-
-  const newWeek   = allPromos.filter(p => isNewThisWeek(p, today));
-  const weekSec   = document.getElementById('newWeeklySection');
-  const weekCards = document.getElementById('newWeeklyCards');
-  const weekCount = document.getElementById('newWeeklyCount');
-  const weekEmpty = document.getElementById('newWeeklyEmpty');
-  weekSec.style.display = 'block';
-  if (!newWeek.length) {
-    weekCards.innerHTML = '';
-    weekEmpty.classList.remove('hidden');
-    weekCount.textContent = '0 this week';
-  } else {
-    weekEmpty.classList.add('hidden');
-    weekCount.textContent = `${newWeek.length} this week`;
-    weekCards.innerHTML   = newWeek.map(buildPromoCard).join('');
-  }
-}
-
-function buildBankTabs(banks) {
-  const container = document.getElementById('bankTabs');
-  banks.sort().forEach(b => {
-    const c      = bankColor(b);
-    const safeId = 'tab-' + b.replace(/\s+/g,'-');
-    const btn    = document.createElement('button');
-    btn.id             = safeId;
-    btn.dataset.bank   = b;
-    btn.className      = 'bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold '
-                       + 'border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
-    btn.style.borderColor = c;
-    btn.innerHTML      = `<span style="color:${c}">●</span> ${b}`;
-    btn.onclick        = () => setBankTab(b);
-    container.appendChild(btn);
-  });
-}
-
-function setBankTab(bank) {
-  activeBankTab = bank;
-  document.querySelectorAll('.bank-tab-btn').forEach(btn => {
-    btn.classList.remove('bg-indigo-600','text-white');
-    btn.classList.add('text-gray-600','bg-white');
-  });
-  const safeId    = bank ? 'tab-' + bank.replace(/\s+/g,'-') : 'tab-all';
-  const activeBtn = document.getElementById(safeId);
-  if (activeBtn) {
-    activeBtn.classList.remove('text-gray-600','bg-white');
-    activeBtn.classList.add('bg-indigo-600','text-white');
-  }
-  applyFilters();
-}
-
-function buildCatButtons() {
-  const container = document.getElementById('catTagFilter');
-  container.innerHTML =
-    `<span class="text-xs text-gray-400 font-semibold self-center mr-1 whitespace-nowrap">
-       Category:
-     </span>` +
-    CAT_FILTER_LIST.map(c => `
-      <button class="cat-filter-btn cat-tag" data-cat="${c.key}"
-        style="background:${c.bg}; opacity:${c.key==='__ALL__'?'1':'0.65'};
-               ${c.key==='__ALL__'?'box-shadow:0 0 0 3px rgba(0,0,0,0.28);':''}"
-        onclick="toggleCat('${c.key}')">
-        ${c.label}
-      </button>`
-    ).join('');
-}
-
-function toggleCat(cat) {
-  if (cat === '__ALL__') { selectedCats = []; }
-  else {
-    const idx = selectedCats.indexOf(cat);
-    if (idx === -1) selectedCats.push(cat);
-    else            selectedCats.splice(idx,1);
-  }
-  updateCatButtons();
-  applyFilters();
-}
-
-function updateCatButtons() {
-  document.querySelectorAll('.cat-filter-btn').forEach(btn => {
-    const cat = btn.dataset.cat, isAll = cat==='__ALL__', noneSelected = selectedCats.length===0;
-    if (isAll) {
-      btn.style.opacity   = noneSelected ? '1' : '0.45';
-      btn.style.boxShadow = noneSelected ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
-      btn.style.transform = 'scale(1)';
-    } else {
-      const sel = selectedCats.includes(cat);
-      btn.style.opacity   = sel ? '1' : (noneSelected ? '0.65' : '0.38');
-      btn.style.boxShadow = sel ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
-      btn.style.transform = sel ? 'scale(1.07)' : 'scale(1)';
-    }
-  });
-}
-
-function toggleInsightsTable(e) {
-  e.stopPropagation();
-  const wrap   = document.getElementById('insightsTableWrap');
-  const btn    = document.getElementById('toggleInsightsBtn');
-  const hidden = wrap.style.display === 'none';
-  wrap.style.display = hidden ? '' : 'none';
-  btn.dataset.hidden = hidden ? 'false' : 'true';
-}
-function toggleAnalysisGrid(e) {
-  e.stopPropagation();
-  const grid   = document.getElementById('bankAnalysisGrid');
-  const btn    = document.getElementById('toggleAnalysisBtn');
-  const hidden = grid.style.display === 'none';
-  grid.style.display = hidden ? '' : 'none';
-  btn.dataset.hidden = hidden ? 'false' : 'true';
-}
-
-function buildStrategicInsights(insights) {
-  const tbody = document.getElementById('insightsTbody');
-
-  if (!insights || !insights.best_for || !insights.best_for.length) {
-    tbody.innerHTML = insightsNoDataHtml();
-    return;
-  }
-
-  const rows = insights.best_for.map(item => {
-    const cat    = item.category      || '';
-    const bank   = item.bank          || 'None';
-    const detail = item.detail        || '—';
-
-    // HOW_DEFINED lookup with HK/US stock + legacy fallbacks
-    const standard = (item.standard && item.standard.trim())
-                     ? item.standard
-                     : (HOW_DEFINED[cat] || '—');
-
-    const similar  = (item.similar_banks || []).filter(b => b !== bank);
-    const whyLose  = item.why_others_lose || '—';
-    const isBau    = item.is_bau || false;
-    const isNone   = ['none','n/a',''].includes(bank.toLowerCase());
-    const color    = isNone ? '#6b7280' : bankColor(bank);
-
-    const bauPill = isBau
-      ? `<span class="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-semibold">⚙️ BAU</span>`
-      : '';
-
-    const winnerBadge = isNone
-      ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">No clear winner</span>`
-      : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-white"
-               style="background:${color}">${bank}</span>${bauPill}`;
-
-    const similarHtml = similar.length
-      ? similar.map(b => {
-          const bc = bankColor(b);
-          return `<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold text-white mr-1 mb-1"
-                         style="background:${bc};opacity:0.8">${b}</span>`;
-        }).join('')
-      : `<span class="text-gray-400 text-xs italic">—</span>`;
-
-    const whyLoseHtml = (whyLose && whyLose !== '—')
-      ? `<div class="text-xs text-red-700 leading-relaxed">${whyLose}</div>`
-      : `<span class="text-gray-400 text-xs italic">—</span>`;
-
-    return `
-      <tr class="border-b border-gray-100 hover:bg-indigo-50/20 align-top">
-        <td class="px-4 py-3 text-sm font-semibold text-gray-700">${cat}</td>
-        <td class="px-4 py-3">${winnerBadge}</td>
-        <td class="px-4 py-3 text-sm text-gray-600 leading-relaxed">${detail}</td>
-        <td class="px-4 py-3 text-xs text-gray-500 leading-relaxed italic">${standard}</td>
-        <td class="px-4 py-3">${similarHtml}</td>
-        <td class="px-4 py-3">${whyLoseHtml}</td>
-      </tr>`;
-  }).join('');
-
-  tbody.innerHTML = rows;
-}
-
-function buildBankAnalysis(insights) {
-  const grid = document.getElementById('bankAnalysisGrid');
-
-  if (!insights || !insights.bank_analysis) {
-    grid.innerHTML = analysisNoDataHtml();
-    return;
-  }
-
-  const bankAnalysis = insights.bank_analysis;
-  const zaEntry = Object.entries(bankAnalysis).find(([k]) => k.includes('ZA')) || [];
-  const zaData  = zaEntry[1] || {};
-  const zaCount = zaData.count || 0;
-
-  const sorted = Object.entries(bankAnalysis).sort(([a],[b]) => {
-    if (a.includes('ZA')) return -1;
-    if (b.includes('ZA')) return 1;
-    return a.localeCompare(b);
-  });
-
-  if (!sorted.length) {
-    grid.innerHTML = analysisNoDataHtml();
-    return;
-  }
-
-  const cards = sorted.map(([bName, data]) => {
-    const isZA      = bName.includes('ZA');
-    const color     = bankColor(bName);
-    const count     = data.count         || 0;
-    const bauCnt    = data.bau_count     || 0;
-    const focus     = data.focus         || '';
-    const strengths = (data.strengths    || []).slice(0, 6);
-    const expAlert  = data.expiring_alert || '';
-    const pros      = data.vs_za_pros    || '';
-    const cons      = data.vs_za_cons    || '';
-
-    const strengthsHtml = strengths.length
-      ? `<div class="space-y-1.5 mt-2">
-           ${strengths.map(s => `
-             <div class="flex items-start gap-2 text-sm">
-               <span class="text-indigo-400 shrink-0 mt-0.5 font-bold text-base leading-none">✓</span>
-               <span class="text-gray-700 leading-snug">${s}</span>
-             </div>`).join('')}
-         </div>`
-      : '<div class="text-sm text-gray-400 italic mt-1">No strengths data.</div>';
-
-    const expHtml = expAlert
-      ? `<div class="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2
-                    text-xs text-amber-800 font-semibold">⚡ ${expAlert}</div>`
-      : '';
-
-    let vsHtml = '';
-    if (isZA) {
-      vsHtml = `
-        <div class="mt-4 bg-indigo-50 border border-indigo-100 rounded-xl p-3">
-          <div class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">⭐ Base Comparison Bank</div>
-          <div class="text-xs text-indigo-700 leading-relaxed">
-            ZA Bank is the reference point for all competitor analysis.
-            Currently <strong>${count}</strong> active non-BAU promotion(s)
-            and <strong>${bauCnt}</strong> permanent BAU feature(s).
-          </div>
-        </div>`;
-    } else {
-      const diff      = count - zaCount;
-      const diffSign  = diff > 0 ? `+${diff}` : `${diff}`;
-      const diffColor = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-500' : 'text-gray-500';
-      const diffLabel = diff > 0
-        ? `${diffSign} more than ZA Bank`
-        : diff < 0
-          ? `${diffSign} fewer than ZA Bank`
-          : 'Same count as ZA Bank';
-
-      const betterHtml = pros
-        ? `<div class="rounded-lg border border-green-200 bg-green-50 p-3">
-             <div class="text-xs font-bold text-green-700 uppercase tracking-wide mb-1.5">
-               ✅ Better than ZA Bank
-             </div>
-             <div class="text-sm text-green-800 leading-relaxed">${pros}</div>
-           </div>`
-        : '';
-
-      const worseHtml = cons
-        ? `<div class="rounded-lg border border-red-200 bg-red-50 p-3">
-             <div class="text-xs font-bold text-red-600 uppercase tracking-wide mb-1.5">
-               ❌ Worse than ZA Bank
-             </div>
-             <div class="text-sm text-red-800 leading-relaxed">${cons}</div>
-           </div>`
-        : '';
-
-      vsHtml = `
-        <div class="mt-4 border border-gray-200 rounded-xl overflow-hidden">
-          <div class="bg-gray-50 px-3 py-2 border-b border-gray-200
-                      flex items-center justify-between">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">vs ZA Bank</span>
-            <span class="text-xs font-bold ${diffColor}">${diffLabel}</span>
-          </div>
-          <div class="p-3 space-y-2">
-            <div class="text-xs text-gray-400">
-              ${bName}: <strong class="text-gray-700">${count}</strong> active ·
-              ZA Bank: <strong class="text-gray-700">${zaCount}</strong> active
-            </div>
-            ${betterHtml}
-            ${worseHtml}
-          </div>
-        </div>`;
-    }
-
-    const headerBg   = isZA ? color : '#f9fafb';
-    const headerText = isZA ? '#fff' : '#1f2937';
-
-    return `
-      <div class="rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-        <div class="px-5 py-4" style="background:${headerBg};">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="bank-dot" style="background:${isZA?'rgba(255,255,255,0.5)':color}"></span>
-              <span class="font-extrabold text-lg" style="color:${headerText}">${bName}</span>
-              ${isZA
-                ? `<span class="text-xs px-2 py-0.5 rounded-full font-bold"
-                          style="background:rgba(255,255,255,0.2);color:#fff;">⭐ Base</span>`
-                : ''}
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs px-3 py-1 rounded-full font-bold text-white"
-                    style="background:${isZA?'rgba(255,255,255,0.2)':color}">
-                ${count} active
-              </span>
-              ${bauCnt > 0
-                ? `<span class="text-xs px-2 py-0.5 rounded-full font-semibold
-                               bg-slate-200 text-slate-600">${bauCnt} BAU</span>`
-                : ''}
-            </div>
-          </div>
-        </div>
-        <div class="p-5 bg-white">
-          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">🎯 Bank Focus</div>
-          <div class="text-sm text-gray-700 mb-4 leading-relaxed">${focus || '—'}</div>
-          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">💪 Key Strengths</div>
-          ${strengthsHtml}
-          ${expHtml}
-          ${vsHtml}
-        </div>
-      </div>`;
-  }).join('');
-
-  grid.innerHTML = cards;
-}
-
-function buildComparisonTable() {
-  document.getElementById('comparisonSection').style.display = 'block';
-
-  const livePromos = allPromos.filter(p => {
-    const s = getStatus(p);
-    return (s === 'active' || s === 'expiring') && !p.is_bau;
-  });
-  if (!livePromos.length) return;
-
-  const bankMap = {};
-  livePromos.forEach(p => {
-    if (!bankMap[p.bank_name]) bankMap[p.bank_name] = { name: p.bank_name, promos: [] };
-    bankMap[p.bank_name].promos.push(p);
-  });
-
-  const banks = Object.values(bankMap).sort((a, b) => {
-    if (a.name.includes('ZA')) return -1;
-    if (b.name.includes('ZA')) return 1;
-    return b.promos.length - a.promos.length;
-  });
-
-  const zaBank = banks.find(b => b.name.includes('ZA'));
-  if (!zaBank) return;
-
-  const typeCounts = {};
-  livePromos.forEach(p =>
-    (p.types||[]).forEach(t => {
-      if (!t.includes('長期') && !t.includes('Others'))
-        typeCounts[t] = (typeCounts[t]||0) + 1;
-    })
-  );
-  const topTypes = Object.entries(typeCounts)
-    .sort((a,b) => b[1]-a[1]).map(e => e[0]).slice(0,8);
-
-  let thead = `<tr class="bg-gray-50 border-b-2 border-gray-200">
-    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500
-               uppercase tracking-wide w-44 whitespace-nowrap">指標 / Metric</th>`;
-  banks.forEach(b => {
-    const isZA  = b.name.includes('ZA');
-    const color = bankColor(b.name);
-    thead += `
-      <th class="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide
-                 ${isZA?'bg-blue-50':''}" style="color:${color}; min-width:95px;">
-        <span class="bank-dot" style="background:${color}; margin-right:3px;"></span>${b.name}
-        ${isZA ? '<br><span class="text-blue-400 font-normal normal-case text-xs">⭐ Base</span>' : ''}
-      </th>`;
-  });
-  thead += '</tr>';
-
-  function makeRow(label, getVal, isBold=false) {
-    const zaVal  = getVal(zaBank);
-    const maxVal = Math.max(...banks.map(b => getVal(b)));
-    let r = `<tr class="border-b border-gray-100 hover:bg-indigo-50/20">
-      <td class="px-4 py-2.5 text-sm text-gray-700 whitespace-nowrap
-                 ${isBold?'font-bold':'font-medium'}">${label}</td>`;
-    banks.forEach(b => {
-      const isZA  = b.name.includes('ZA');
-      const val   = getVal(b);
-      const isTop = !isZA && val===maxVal && maxVal>0;
-      let ind = '';
-      if (!isZA) {
-        if      (val>zaVal)      ind = `<span class="ml-1 text-green-500 text-xs font-bold">▲</span>`;
-        else if (val<zaVal)      ind = `<span class="ml-1 text-red-400 text-xs font-bold">▼</span>`;
-        else if (val>0||zaVal>0) ind = `<span class="ml-1 text-gray-300 text-xs">—</span>`;
-      }
-      const disp = val>0
-        ? `<span class="${isTop?'text-green-600 font-bold':isZA?'text-blue-700 font-bold':'text-gray-700'}">${val}</span>`
-        : `<span class="text-gray-200">0</span>`;
-      r += `<td class="px-4 py-2.5 text-center ${isZA?'bg-blue-50/50':''}">${disp}${ind}</td>`;
-    });
-    return r + '</tr>';
-  }
-
-  function sectionRow(label) {
-    return `<tr class="bg-gray-50/80 border-b border-gray-100">
-      <td colspan="${banks.length+1}"
-          class="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">${label}</td></tr>`;
-  }
-
-  const rows = [];
-  rows.push(sectionRow('📋 總覽 Overview'));
-  rows.push(makeRow('✅ 有效優惠總數 Total Active', b => b.promos.length, true));
-  rows.push(makeRow('🔄 長期/無到期 Ongoing',
-    b => b.promos.filter(p => !p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length));
-  rows.push(makeRow('⚡ 即將到期 Expiring ≤30d',
-    b => b.promos.filter(p => getStatus(p)==='expiring').length));
-  rows.push(sectionRow('🏷️ 優惠類別 By Category'));
-  topTypes.forEach(type => {
-    const m = catMeta(type), short = type.split(' ')[0];
-    rows.push(makeRow(
-      `<span style="color:${m.bg}" class="mr-1">${m.emoji}</span>${short}`,
-      b => b.promos.filter(p => (p.types||[]).includes(type)).length
-    ));
-  });
-
-  document.getElementById('compTable').innerHTML =
-    `<thead>${thead}</thead><tbody>${rows.join('')}</tbody>`;
-
-  buildProsCons(zaBank, banks, topTypes);
-}
-
-function buildProsCons(zaBank, allBanks, topTypes) {
-  const others = allBanks.filter(b => b.name!==zaBank.name);
-  if (!others.length) return;
-  const avg  = arr => arr.length ? arr.reduce((s,n)=>s+n,0)/arr.length : 0;
-  const pros = [], cons = [];
-
-  const avgCount = avg(others.map(b=>b.promos.length));
-  if (zaBank.promos.length >= avgCount)
-    pros.push(`有效優惠總數 (${zaBank.promos.length}) 高於或持平其他銀行平均 (${avgCount.toFixed(1)})`);
-  else
-    cons.push(`有效優惠總數 (${zaBank.promos.length}) 低於其他銀行平均 (${avgCount.toFixed(1)})`);
-
-  const beatCount = others.filter(b=>zaBank.promos.length>b.promos.length).length;
-  if (beatCount===others.length&&others.length>1)
-    pros.push(`優惠總數領先全部 ${others.length} 間競爭銀行`);
-  else if (beatCount>others.length/2)
-    pros.push(`優惠總數超越 ${beatCount}/${others.length} 間競爭銀行`);
-
-  const leadCats=[], weakCats=[];
-  topTypes.forEach(type => {
-    const zaC  = zaBank.promos.filter(p=>(p.types||[]).includes(type)).length;
-    const avgC = avg(others.map(b=>b.promos.filter(p=>(p.types||[]).includes(type)).length));
-    const m    = catMeta(type);
-    const s    = `${m.emoji}${type.split(' ')[0]}`;
-    if (zaC>avgC+0.5) leadCats.push(s);
-    if (zaC<avgC-0.5) weakCats.push(`${s} (ZA: ${zaC} vs avg: ${avgC.toFixed(1)})`);
-  });
-  if (leadCats.length) pros.push(`在 ${leadCats.join('、')} 類別優惠數量領先市場`);
-  if (weakCats.length) cons.push(`以下類別優惠相對較少：${weakCats.join('、')}`);
-
-  const zaOngoing  = zaBank.promos.filter(p=>!p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length;
-  const avgOngoing = avg(others.map(b=>b.promos.filter(p=>!p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length));
-  if (zaOngoing>avgOngoing+0.5)
-    pros.push(`長期優惠比例高：${zaOngoing} 項長期有效 (其他平均 ${avgOngoing.toFixed(1)} 項)`);
-  else if (zaOngoing<avgOngoing-0.5)
-    cons.push(`長期優惠相對較少：${zaOngoing} 項 (其他平均 ${avgOngoing.toFixed(1)} 項)`);
-
-  const zaExpiring = zaBank.promos.filter(p=>getStatus(p)==='expiring').length;
-  if (zaExpiring>5)
-    cons.push(`有 ${zaExpiring} 項優惠將在30天內到期，部分優惠持續性有待觀察`);
-
-  document.getElementById('prosConsWrap').innerHTML = `
-    <div class="rounded-2xl border border-green-100 bg-gradient-to-br from-green-50 to-emerald-50 p-5">
-      <h3 class="font-bold text-green-700 mb-3 flex items-center gap-2">
-        <span>✅</span> ZA Bank 相對優勢 Strengths
-      </h3>
-      <ul class="space-y-2">
-        ${pros.length
-          ? pros.map(p=>`<li class="flex items-start gap-2 text-sm text-green-800">
-              <span class="text-green-500 shrink-0 mt-0.5">●</span><span>${p}</span></li>`).join('')
-          : '<li class="text-sm text-gray-400 italic">暫無突出優勢</li>'}
-      </ul>
-    </div>
-    <div class="rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-amber-50 p-5">
-      <h3 class="font-bold text-orange-700 mb-3 flex items-center gap-2">
-        <span>⚠️</span> ZA Bank 可改進空間 Areas to Improve
-      </h3>
-      <ul class="space-y-2">
-        ${cons.length
-          ? cons.map(c=>`<li class="flex items-start gap-2 text-sm text-orange-800">
-              <span class="text-orange-400 shrink-0 mt-0.5">●</span><span>${c}</span></li>`).join('')
-          : '<li class="text-sm text-gray-400 italic">暫無明顯不足</li>'}
-      </ul>
-    </div>`;
-}
-
-function applyFilters() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const status = document.getElementById('statusFilter').value;
-  const sort   = document.getElementById('sortFilter').value;
-
-  filtered = allPromos.filter(p => {
-    const s = getStatus(p);
-    if (status==='active'          && s!=='active')                   return false;
-    if (status==='expiring'        && s!=='expiring')                  return false;
-    if (status==='expired'         && s!=='expired')                   return false;
-    if (status==='active+expiring' && s!=='active' && s!=='expiring')  return false;
-    if (activeBankTab && p.bank_name!==activeBankTab)                  return false;
-
-    if (selectedCats.length>0) {
-      const hasBau    = selectedCats.includes('BAU');
-      const otherCats = selectedCats.filter(c=>c!=='BAU');
-      if (p.is_bau) {
-        if (!hasBau) return false;
-      } else {
-        if (otherCats.length===0) return false;
-        if (!otherCats.some(c=>(p.types||[]).includes(c))) return false;
-      }
-    } else {
-      if (p.is_bau) return false;
-    }
-
-    if (search) {
-      const hay = [p.bank_name,p.title,p.highlight,p.description,
-                   p.period,...(p.types||[])].join(' ').toLowerCase();
-      if (!hay.includes(search)) return false;
-    }
-    return true;
-  });
-
-  if (sort==='bank')    filtered.sort((a,b)=>a.bank_name.localeCompare(b.bank_name));
-  if (sort==='enddate') filtered.sort((a,b)=>(a.end_date||'9999')<(b.end_date||'9999')?-1:1);
-  if (sort==='newest')  filtered.sort((a,b)=>(b.created_at||'')>(a.created_at||'')?1:-1);
-
-  renderTable(filtered);
-
-  const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false && getStatus(p) !== 'expired');
-  const bauTotal     = allPromos.filter(p => p.is_bau).length;
-  document.getElementById('resultCount').textContent =
-    `Showing ${filtered.length} of ${activeNonBau.length} active promotions`
-    + (bauTotal>0 ? ` (+${bauTotal} BAU via ⚙️ filter)` : '');
-}
-
-function renderTable(promos) {
-  const tbody = document.getElementById('promoTbody');
-  const empty = document.getElementById('emptyState');
-  const wrap  = document.getElementById('tableWrapper');
-
-  if (!promos.length) {
-    tbody.innerHTML = '';
-    wrap.classList.add('hidden');
-    empty.classList.remove('hidden');
-    return;
-  }
-  empty.classList.add('hidden');
-  wrap.classList.remove('hidden');
-
-  tbody.innerHTML = promos.map((p,i) => {
-    const color     = bankColor(p.bank_name);
-    const bau       = bauTag(p);
-    const cats      = (p.types||['Others 其他']).map(catTag).join('') + bau;
-    const badge     = statusBadge(p);
-    const tcLink    = p.tc_link || p.url || '';
-    const isExpired = getStatus(p)==='expired';
-    const detailId  = `detail-${i}`;
-
-    const sourceHtml = (!isExpired && tcLink)
-      ? `<div class="md:col-span-3">
-           <a href="${tcLink}" target="_blank" rel="noopener"
-              class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800
-                     text-xs font-semibold underline">
-             🔗 View Official Source ↗
-           </a>
-         </div>` : '';
-
-    const detailHtml = `
-      <tr id="${detailId}" class="hidden bg-indigo-50/40">
-        <td colspan="6" class="px-6 py-4">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <div class="font-bold text-gray-400 uppercase text-xs mb-1">📅 Period</div>
-              <div class="text-gray-700">${p.period||'—'}</div>
-            </div>
-            <div>
-              <div class="font-bold text-gray-400 uppercase text-xs mb-1">👥 Quota / Eligibility</div>
-              <div class="text-gray-700">${p.quota||'—'}</div>
-            </div>
-            <div>
-              <div class="font-bold text-gray-400 uppercase text-xs mb-1">💲 Cost / Min Spend</div>
-              <div class="text-gray-700">${p.cost||'—'}</div>
-            </div>
-            <div class="md:col-span-3">
-              <div class="font-bold text-gray-400 uppercase text-xs mb-1">📝 Summary</div>
-              <div class="text-gray-700 leading-relaxed">${p.description||p.highlight||'—'}</div>
-            </div>
-            ${sourceHtml}
-          </div>
-        </td>
-      </tr>`;
-
-    return `
-      <tr class="border-b border-gray-50 cursor-pointer hover:bg-gray-50"
-          onclick="toggleDetail(${i})">
-        <td class="px-4 py-3 whitespace-nowrap">
-          <span class="bank-dot" style="background:${color}"></span>
-          <span class="font-semibold text-gray-700">${p.bank_name}</span>
-        </td>
-        <td class="px-4 py-3 max-w-xs">
-          <div class="font-semibold text-gray-800 leading-snug">${p.title}</div>
-          <div class="text-gray-400 text-xs mt-0.5">${p.highlight||''}</div>
-        </td>
-        <td class="px-4 py-3">${cats}</td>
-        <td class="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">${p.period||'—'}</td>
-        <td class="px-4 py-3">${badge}</td>
-        <td class="px-4 py-3 text-gray-400 text-xs">
-          <span class="chevron" id="chevron-${i}">▼</span>
-        </td>
-      </tr>
-      ${detailHtml}`;
-  }).join('');
-}
-
-function toggleDetail(i) {
-  const row  = document.getElementById(`detail-${i}`);
-  const chev = document.getElementById(`chevron-${i}`);
-  const open = !row.classList.contains('hidden');
-  row.classList.toggle('hidden', open);
-  chev.style.transform = open ? '' : 'rotate(180deg)';
-}
-
-function exportExcel() {
-  if (!filtered.length) return;
-  const rows = filtered.map(p => ({
-    'Bank':        p.bank_name,
-    'Title':       p.title,
-    'Categories':  (p.types||[]).join(', '),
-    'BAU':         p.is_bau?'Yes':'No',
-    'Status':      getStatus(p),
-    'Period':      p.period||'',
-    'Start Date':  p.start_date||'',
-    'End Date':    p.end_date||'',
-    'Quota':       p.quota||'',
-    'Cost':        p.cost||'',
-    'Highlight':   p.highlight||'',
-    'Description': p.description||'',
-    'Source Link': p.tc_link||p.url||'',
-    'Created':     p.created_at||'',
-    'Last Seen':   p.last_seen||'',
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [
-    {wch:15},{wch:50},{wch:30},{wch:6},{wch:10},{wch:25},{wch:12},{wch:12},
-    {wch:30},{wch:20},{wch:40},{wch:60},{wch:40},{wch:12},{wch:20},
-  ];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Promotions');
-  XLSX.writeFile(wb, `HK_VBank_Promotions_${new Date().toISOString().split('T')[0]}.xlsx`);
-}
-
-buildCatButtons();
-loadData();
-</script>
-</body>
-</html>
+
+def _validate_best_for_evidence(best_for: list) -> list:
+    validated    = []
+    reject_count = 0
+    for entry in best_for:
+        detail = (entry.get('detail')   or '').strip()
+        bank   = (entry.get('bank')     or '').strip()
+        cat    = (entry.get('category') or '').strip()
+
+        if bank.lower() in ('none', '', 'n/a'):
+            validated.append(entry)
+            continue
+
+        is_vague     = any(
+            re.search(pat, detail, re.IGNORECASE)
+            for pat in _VAGUE_DETAIL_PATTERNS
+        )
+        has_evidence = bool(_CONCRETE_EVIDENCE_RE.search(detail))
+
+        if is_vague:
+            print(
+                f'  ⚠️  Vague-pattern flag [{cat}] "{bank}" — '
+                f'evidence present={has_evidence}: "{detail[:70]}"'
+            )
+
+        if not has_evidence:
+            print(
+                f'  🚫 Evidence gate REJECTED [{cat}] winner "{bank}" '
+                f'(no concrete fact found) → detail: "{detail}"'
+            )
+            validated.append({
+                **entry,
+                'bank':   'None',
+                'detail': f'No verified {cat} promotion with concrete details found',
+                'is_bau': False,
+            })
+            reject_count += 1
+        else:
+            validated.append(entry)
+
+    if reject_count:
+        print(f'  🚫 Evidence gate total: {reject_count} vague winner(s) nullified')
+    return validated
+
+
+# ── ADDED: Stock trading commission override ──────────────────────────────────
+# If a non-ZA-Bank bank wins a stock trading category but its detail reveals
+# it charges per-trade commission, override to ZA Bank ($0 commission).
+# ZA Bank's permanent $0 commission is always the stronger stock trading offer
+# unless a competitor can prove BOTH $0 commission AND $0 platform fee.
+
+_STOCK_CATS = {'HK Stock Trading', 'US Stock Trading', 'Stock Trading'}
+_ZA_NAMES   = {'za bank', 'za', 'za invest'}
+
+_ZA_STOCK_DETAIL = (
+    '$0 brokerage commission for both HK stocks and US stocks via ZA Invest; '
+    'platform fee applies (no per-trade commission charged)'
+)
+
+
+def _validate_stock_trading_winners(best_for: list) -> list:
+    """
+    Post-process stock trading category winners.
+    Rule: $0 commission always beats any non-zero commission.
+    If the AI picked a bank that charges commission over ZA Bank ($0 commission),
+    override to ZA Bank and log the correction.
+    """
+    overrides = 0
+    for i, entry in enumerate(best_for):
+        cat  = (entry.get('category') or '').strip()
+        bank = (entry.get('bank')     or '').strip()
+
+        if cat not in _STOCK_CATS:
+            continue
+        if bank.lower() in _ZA_NAMES:
+            continue  # ZA Bank winning is expected — no override needed
+
+        detail = (entry.get('detail') or '')
+
+        if _CHARGES_COMMISSION_RE.search(detail):
+            print(
+                f'  🔄 Stock trading winner OVERRIDE [{cat}]: '
+                f'"{bank}" detail implies non-zero commission '
+                f'("{detail[:90]}"). '
+                f'ZA Bank offers $0 commission → overriding to ZA Bank.'
+            )
+            best_for[i] = {
+                **entry,
+                'bank':           'ZA Bank',
+                'detail':         _ZA_STOCK_DETAIL,
+                'is_bau':         True,
+                'similar_banks':  [bank] + [
+                    b for b in (entry.get('similar_banks') or [])
+                    if b.lower() not in _ZA_NAMES and b != bank
+                ],
+                'why_others_lose': (
+                    f'{bank} was not selected because it charges per-trade commission '
+                    f'({detail[:80].strip()}). '
+                    'ZA Bank charges $0 brokerage commission on both HK and US stocks '
+                    '(platform fee applies), making it the lower-cost option for '
+                    'commission-sensitive retail investors.'
+                ),
+            }
+            overrides += 1
+
+    if overrides:
+        print(f'  🔄 Stock trading commission override: {overrides} winner(s) corrected to ZA Bank')
+    return best_for
+
+
+def _cross_check_best_for_from_strengths(
+    result: dict,
+    promotions_by_bank: dict,
+) -> dict:
+    best_for      = result.get('best_for', [])
+    bank_analysis = result.get('bank_analysis', {})
+    if not bank_analysis:
+        return result
+
+    filled = 0
+    for i, entry in enumerate(best_for):
+        cat  = (entry.get('category') or '').strip()
+        bank = (entry.get('bank')     or '').strip()
+        if bank.lower() not in ('none', '', 'n/a'):
+            continue
+
+        keywords = _CATEGORY_KEYWORDS.get(cat, [])
+        if not keywords and cat in ('HK Stock Trading', 'US Stock Trading'):
+            keywords = _CATEGORY_KEYWORDS.get('Stock Trading', [])
+
+        candidates: list[tuple[str, str]] = []
+        for bname, bdata in bank_analysis.items():
+            for s in (bdata.get('strengths') or []):
+                if any(kw.lower() in s.lower() for kw in keywords):
+                    candidates.append((bname, s))
+
+        if not candidates:
+            continue
+
+        best = next(
+            (c for c in candidates if _CONCRETE_EVIDENCE_RE.search(c[1])),
+            candidates[0],
+        )
+        best_bank, best_detail = best
+
+        bank_promos  = promotions_by_bank.get(best_bank, [])
+        is_bau_guess = any(
+            p.get('is_bau') and
+            any(kw.lower() in (p.get('name') or p.get('title') or '').lower()
+                for kw in keywords)
+            for p in bank_promos
+        )
+
+        print(
+            f'  🔁 Strength cross-check FILLED [{cat}] → {best_bank}: '
+            f'"{best_detail[:80]}"'
+        )
+        best_for[i] = {**entry, 'bank': best_bank, 'detail': best_detail, 'is_bau': is_bau_guess}
+        filled += 1
+
+    if filled:
+        print(f'  🔁 Cross-check: {filled} slot(s) filled from bank_analysis.strengths')
+
+    result['best_for'] = best_for
+    return result
+
+
+# ── Public API ────────────────────────────────────────────────────────────────
+
+def analyze_promotions(
+    bank_id:     str,
+    bank_name:   str,
+    text:        str = '',
+    screenshot:  Optional[bytes] = None,
+    default_url: str = '',
+) -> list:
+
+    if not AI_AVAILABLE:
+        return []
+
+    clean   = _trim_text(text.strip() if text else '')
+    results = []
+
+    if len(clean) >= 200:
+        prompt = _build_prompt(bank_name=bank_name, url=default_url, text=clean)
+
+        for attempt in range(2):
+            raw    = _call([{'role': 'user', 'content': prompt}], label=bank_id)
+            parsed = _parse_array(raw)
+            if parsed:
+                results   = parsed
+                bau_count = sum(1 for p in parsed if p.get('is_bau'))
+                print(
+                    f'  📝 Text → {len(results)} promotions for {bank_name} '
+                    f'({bau_count} BAU)'
+                )
+                break
+            if attempt == 0:
+                print(f'  🔄 Retry AI for {bank_name}...')
+        else:
+            print(f'  ❌ Both attempts failed for {bank_name}')
+    else:
+        print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')
+
+    results = _stamp(results, bank_id, bank_name, default_url)
+    results = _apply_bau_overrides(results, bank_id)
+    print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
+    return results
+
+
+def ai_dedup_titles(titles: list[str], bank_name: str) -> dict[int, int]:
+    if not AI_AVAILABLE or len(titles) < 2:
+        return {}
+
+    numbered = "\n".join(f"{i}. {t}" for i, t in enumerate(titles))
+
+    prompt = f"""You are a strict deduplication assistant for a Hong Kong virtual bank promotions database.
+Bank: {bank_name}
+
+Your task: Find titles that describe THE SAME underlying product or promotion.
+When genuinely uncertain → mark as DUPLICATE. It is always better to merge than to leave duplicates.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SYNONYM RULES — these are ALWAYS the same promotion:
+
+Product synonyms:
+  "余額+"  =  "Deposit Plus"  =  "Balance+"
+  Any title with "余額+", "Deposit Plus", or "Balance+" → same product
+
+Fee synonyms:
+  "Zero Fee" = "0% Fee" = "Fee Waiver" = "No Fee" = "Commission-Free"
+
+Speed synonyms:
+  "Quick" = "Fast" = "Instant" = "Express" = "Immediate"
+
+Crypto synonyms:
+  "Crypto Trading Fee Waiver" = "0% Crypto Platform Fee" = "Zero Fee Cryptocurrency Trading"
+  = "Digital Asset Trading Fee Exemption"
+
+Fund subscription synonyms:
+  "Zero Subscription Fee on All Funds" = "Zero-Fee Fund Subscription & Switching"
+  = "Featured Funds with Zero Subscription Fees" = "Zero Fee Investment Funds"
+  = "$0 Fund Trading Fee Mode" = "$0基金買賣收費" = "Zero Fund Subscription Fee"
+  = "0% Fund Subscription Fee"
+
+Mox × csl:
+  "Best-in-Town Plan Offer" = "Best-in-Town Device Plans with Instalments" = anything + "Best-in-Town"
+
+Trip.com:
+  "Trip.com Annual Discount" = "Trip.com x Mox Credit Card Year-Round Promotion"
+  = "Trip.com Year-Round Exclusive Discount"
+
+Payroll:
+  "Payroll Switching Benefits" = "Payroll Switch Benefits" = "Payroll Deposit Benefit"
+
+SWIFT / Payment Connect:
+  "Zero Fee SWIFT Transfers" = "Zero-Fee Payment Connect" = "Payment Connect Zero Fee Transfers"
+
+WeLab Global Wallet FX:
+  "WeLab Global Wallet Exchange Rate Promotion" = "WeLab Global Wallet - Best Exchange Rates"
+  = "Global Remittance Service" = "WeLab Global Wallet Best FX Rates"
+
+Referral programs:
+  "Referral Bonus" = "Invite a Friend" = "多友多賞" = "推薦計劃" = "Friend Referral Program"
+  = "Refer a Friend" = any title with "推薦碼" or "referral code" + HKD amount
+
+Promo codes: if two titles share the same promo code (ignoring trailing year digits),
+  e.g. MOXBILL25 and MOXBILL26 → SAME campaign. MOXHKT25 in both titles → SAME.
+
+Account opening (all BAU — treat as same feature if they appear twice):
+  "Quick Account Opening" = "Account Opening in 3 Minutes" = "Mobile Account Opening in 5 Minutes"
+  = "Sign Up in Minutes" = "Open Account Instantly"
+
+24/7 banking:
+  "24/7 Mobile Banking Services" = "24/7 Digital Banking Services" = "24×7 Banking Services"
+
+Insurance with rate:
+  "3.6% Annualized Rate Promotion" = "Insurance Products with Annual Rate up to 3.6%"
+  = "Insurance Products with 3.6% Annual Rate" = "Insurance Products with Premium Rebate"
+
+GoSave:
+  "GoSave 2.0 High Interest Savings" = "GoSave 2.0 Enhanced Savings"
+
+liviSave:
+  "liviSave Preferential Interest Rate" = "liviSave Preferential Savings Rate"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Return ONLY valid compact JSON — no markdown, no code fences, no explanation:
+{{"groups":[{{"keep_index":0,"duplicate_indices":[1,2],"reason":"one sentence"}}]}}
+If there are NO duplicates, return exactly: {{"groups":[]}}
+
+Titles to evaluate (0-indexed):
+{numbered}"""
+
+    for attempt in range(2):
+        try:
+            raw = _call([{'role': 'user', 'content': prompt}], label=f'dedup/{bank_name}')
+            if not raw:
+                if attempt == 0:
+                    print(f'  🔄 Retry ai_dedup_titles for {bank_name}...')
+                    continue
+                return {}
+            raw  = re.sub(r'^```[a-z]*\n?', '', raw.strip())
+            raw  = re.sub(r'\n?```$',       '', raw.strip())
+            data = json.loads(raw)
+            dup_map = {
+                int(dup): int(g['keep_index'])
+                for g in data.get('groups', [])
+                for dup in g.get('duplicate_indices', [])
+            }
+            if dup_map:
+                print(f'  🤖 ai_dedup_titles [{bank_name}]: {len(dup_map)} duplicate(s)')
+            return dup_map
+        except Exception as exc:
+            if attempt == 0:
+                print(f'  ⚠️  ai_dedup_titles [{bank_name}] attempt 1 failed: {exc!r} — retrying')
+            else:
+                print(f'  ⚠️  ai_dedup_titles [{bank_name}]: {exc!r} — skipping')
+                return {}
+    return {}
+
+
+def ai_match_against_existing(
+    new_promos:      list[dict],
+    existing_promos: list[dict],
+    bank_name:       str,
+) -> dict[int, int]:
+    if not AI_AVAILABLE or not new_promos or not existing_promos:
+        return {}
+
+    new_lines = '\n'.join(
+        f'[NEW-{i}] {(p.get("name") or p.get("title") or "").strip()}'
+        for i, p in enumerate(new_promos)
+    )
+    ex_lines = '\n'.join(
+        f'[DB-{p["id"]}] {(p.get("title") or "").strip()}'
+        for p in existing_promos
+    )
+
+    prompt = f"""You are a strict deduplication assistant for a Hong Kong virtual bank promotions database.
+Bank: {bank_name}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MATCHING RULES — mark as MATCH in all these cases:
+
+1. Product name synonyms:
+   "余額+" = "Deposit Plus" = "Balance+" → always the same product
+
+2. Fee synonyms:
+   "Zero Fee" = "0% Fee" = "Fee Waiver" = "No Fee" = "Commission-Free"
+
+3. Promo codes:
+   Same code stem (ignoring trailing 2-digit year) → MATCH
+
+4. Crypto fee promotions:
+   Any title about crypto + fee waiver/removal → MATCH each other
+
+5. Best-in-Town:
+   Any title containing "Best-in-Town" for the same bank → MATCH
+
+6. Trip.com:
+   "Trip.com Annual Discount" ↔ "Trip.com x Mox Credit Card Year-Round Promotion" → MATCH
+
+7. SWIFT / Payment Connect:
+   "SWIFT Transfers" ↔ "Payment Connect" → MATCH
+
+8. WeLab Global Wallet FX:
+   Any WeLab Global Wallet + FX/exchange/remittance title → MATCH
+
+9. Payroll switch:
+   Any payroll + switch/deposit/benefit → MATCH
+
+10. Fund zero-fee:
+    "$0 Fund Trading Fee" ↔ "Zero Fund Subscription Fee" ↔ "0% Fund Subscription Fee" → MATCH
+
+11. Referral programs:
+    "多友多賞" ↔ "Mox Referral Programme" ↔ "Refer a Friend HKD300" → MATCH
+
+12. Account opening BAU:
+    "Account Opening in 3 Minutes" ↔ "Quick Account Opening" → MATCH
+
+13. When uncertain → declare MATCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NEWLY SCRAPED (this run):
+{new_lines}
+
+ALREADY IN DATABASE:
+{ex_lines}
+
+For each [NEW-N] that matches a [DB-ID], output that pair.
+Respond ONLY with compact JSON. Key = new index (string). Value = DB id (string).
+Example: {{"0": "47", "3": "112"}}
+If no matches: {{}}
+No explanation. No markdown. No code fences."""
+
+    for attempt in range(2):
+        try:
+            raw = _call(
+                [{'role': 'user', 'content': prompt}],
+                label=f'match/{bank_name}',
+            )
+            if not raw:
+                if attempt == 0:
+                    print(f'  🔄 Retry ai_match_against_existing for {bank_name}...')
+                    continue
+                return {}
+            raw  = re.sub(r'^```[a-z]*\n?', '', raw.strip())
+            raw  = re.sub(r'\n?```$',       '', raw.strip())
+            data = json.loads(raw)
+            result_map: dict[int, int] = {
+                int(k): int(v)
+                for k, v in data.items()
+                if str(k).isdigit() and str(v).isdigit()
+            }
+            msg = (
+                f'{len(result_map)} match(es)'
+                if result_map else
+                '0 matches — all appear genuinely new'
+            )
+            print(f'  🤖 ai_match_against_existing [{bank_name}]: {msg}')
+            return result_map
+        except Exception as exc:
+            if attempt == 0:
+                print(f'  ⚠️  ai_match_against_existing [{bank_name}] attempt 1: {exc!r} — retrying')
+            else:
+                print(f'  ⚠️  ai_match_against_existing [{bank_name}]: {exc!r} — skipping')
+                return {}
+    return {}
+
+
+# ── Strategic insights helpers ────────────────────────────────────────────────
+
+def _build_bank_summary_lines(promos: list) -> list[str]:
+    lines = []
+    for p in promos:
+        title     = (p.get('name') or p.get('title') or 'N/A')[:80]
+        highlight = (p.get('highlight') or p.get('description') or '')[:120]
+        period    = (p.get('period') or 'Ongoing')[:60]
+        raw_types = p.get('types') or ['General']
+        ptype     = (', '.join(raw_types) if isinstance(raw_types, list) else str(raw_types))[:40]
+        bau_tag   = ' [BAU - Permanent Feature]' if p.get('is_bau') else ''
+        lines.append(f'  [{ptype}]{bau_tag} {title}: {highlight} | {period}')
+    return lines
+
+
+_DIAGNOSTIC_CATEGORIES: list[tuple[str, list[str]]] = [
+    ('HK Stock Trading',   ['投資', 'hk stock', 'hong kong stock', 'hkex', 'local stock',
+                             'securities', 'brokerage', 'ipo', 'commission', 'trading fee']),
+    ('US Stock Trading',   ['投資', 'us stock', 'us equities', 'nasdaq', 'nyse',
+                             'american stock', 'commission', 'trading fee']),
+    ('Crypto Trading',     ['投資', 'crypto', 'bitcoin', 'virtual asset', 'digital asset', 'cryptocurrency']),
+    ('Fund Investment',    ['投資', 'fund', '基金', '$0認購費', 'subscription fee']),
+    ('Referral Bonus',     ['推薦', 'referral', '多友多賞', 'invite']),
+    ('Travel',             ['旅遊', 'trip', 'travel', 'asia miles', 'flight', 'hotel']),
+    ('Spending/CashBack',  ['消費', 'cashback', 'cash back', 'rebate']),
+    ('Welcome Bonus',      ['迎新', 'welcome', 'new customer']),
+    ('Loan APR',           ['貸款', 'loan', 'apr']),
+    ('FX/Multi-Currency',  ['外匯', 'fx', 'multi-currency', 'global wallet']),
+]
+
+_SPARSE_THRESHOLD = 3
+
+
+def _diagnose_input_data(promotions_by_bank: dict) -> dict[str, list[str]]:
+    print()
+    print('=' * 70)
+    print('📊  INSIGHTS INPUT DIAGNOSTIC')
+    print('=' * 70)
+
+    bank_tag_map: dict[str, list[str]] = {}
+
+    for bank, promos in sorted(promotions_by_bank.items()):
+        bau_promos     = [p for p in promos if p.get('is_bau')]
+        non_bau_promos = [p for p in promos if not p.get('is_bau')]
+
+        all_tags: set[str] = set()
+        for p in promos:
+            raw  = p.get('types') or []
+            tags = raw if isinstance(raw, list) else [str(raw)]
+            all_tags.update(tags)
+            for field in ('name', 'title', 'highlight', 'description'):
+                val = (p.get(field) or '').lower()
+                if val:
+                    all_tags.add(val[:40])
+
+        tag_display = ', '.join(
+            t for t in sorted(all_tags)
+            if 1 < len(t) <= 12 and t not in ('', 'others', 'general')
+        ) or '⚠️  NONE'
+
+        sparse_flag = (
+            '  ⚠️  SPARSE — may cause None slots'
+            if len(promos) < _SPARSE_THRESHOLD
+            else '  ✅'
+        )
+        print(
+            f'  📊 {bank:<20}: {len(non_bau_promos):>2} active'
+            f' + {len(bau_promos):>2} BAU'
+            f' = {len(promos):>2} total'
+            f'  | tags: {tag_display[:55]}'
+            f'{sparse_flag}'
+        )
+        bank_tag_map[bank] = list(all_tags)
+
+    print()
+    print('  CATEGORY COVERAGE CHECK:')
+    for cat_name, kw_list in _DIAGNOSTIC_CATEGORIES:
+        covered_by: list[str] = []
+        for bank, promos in promotions_by_bank.items():
+            for p in promos:
+                types_str = ' '.join(
+                    p.get('types') if isinstance(p.get('types'), list)
+                    else [str(p.get('types') or '')]
+                )
+                text = ' '.join([
+                    types_str,
+                    p.get('name', ''),
+                    p.get('title', ''),
+                    p.get('highlight', ''),
+                    p.get('description', ''),
+                ]).lower()
+                if any(kw.lower() in text for kw in kw_list):
+                    covered_by.append(bank)
+                    break
+
+        if covered_by:
+            print(f'    ✅ {cat_name:<42} → {", ".join(covered_by)}')
+        else:
+            print(f'    ❌ {cat_name:<42} → NO DATA — will output None')
+
+    print('=' * 70)
+    print()
+    return bank_tag_map
+
+
+def _check_sparse_banks(promotions_by_bank: dict) -> list[str]:
+    sparse = [
+        bank for bank, promos in promotions_by_bank.items()
+        if len(promos) < _SPARSE_THRESHOLD
+    ]
+    if sparse:
+        print(
+            f'  ⚠️  SPARSE BANKS: {sparse} (each has < {_SPARSE_THRESHOLD} promos)\n'
+            f'     Pass db_fetch_fn to generate_strategic_insights() to auto-supplement.'
+        )
+    return sparse
+
+
+def supplement_from_db(
+    promotions_by_bank:  dict,
+    db_fetch_fn,
+    min_promos_per_bank: int = _SPARSE_THRESHOLD,
+) -> dict:
+    supplemented_total = 0
+    for bank, promos in promotions_by_bank.items():
+        if len(promos) >= min_promos_per_bank:
+            continue
+        try:
+            db_promos = db_fetch_fn(bank)
+        except Exception as exc:
+            print(f'  ⚠️  supplement_from_db: DB fetch failed for "{bank}": {exc}')
+            continue
+        if not db_promos:
+            print(f'  ⚠️  supplement_from_db: no DB rows for "{bank}"')
+            continue
+
+        existing_titles = {
+            (p.get('name') or p.get('title') or '').strip().lower()
+            for p in promos
+        }
+        added = 0
+        for dp in db_promos:
+            dt = (dp.get('name') or dp.get('title') or '').strip().lower()
+            if dt and dt not in existing_titles:
+                promos.append(dp)
+                existing_titles.add(dt)
+                added += 1
+
+        promotions_by_bank[bank] = promos
+        supplemented_total += added
+        print(
+            f'  🔄 supplement_from_db: "{bank}" '
+            f'{"added " + str(added) + " from DB → now " + str(len(promos)) + " total" if added else "no new titles found in DB"}'
+        )
+
+    if supplemented_total:
+        print(f'  🔄 supplement_from_db: {supplemented_total} DB row(s) merged total')
+    return promotions_by_bank
+
+
+# ── Strategic insights — main entry point ────────────────────────────────────
+
+def generate_strategic_insights(
+    promotions_by_bank: dict,
+    db_fetch_fn=None,
+) -> Optional[dict]:
+    if not AI_AVAILABLE:
+        print('⚠️  AI not available — skipping strategic insights')
+        return None
+
+    _diagnose_input_data(promotions_by_bank)
+
+    sparse_banks = _check_sparse_banks(promotions_by_bank)
+    if sparse_banks:
+        if db_fetch_fn is not None:
+            promotions_by_bank = supplement_from_db(promotions_by_bank, db_fetch_fn)
+            print('  📊 POST-SUPPLEMENT DIAGNOSTIC:')
+            _diagnose_input_data(promotions_by_bank)
+        else:
+            print(
+                '  ⚠️  Sparse banks found but no db_fetch_fn provided.\n'
+                '     Pass db_fetch_fn=get_promotions_by_bank_name to auto-supplement.'
+            )
+
+    bank_summaries = []
+    for bank_name, promos in sorted(promotions_by_bank.items()):
+        if not promos:
+            continue
+        non_bau_count = sum(1 for p in promos if not p.get('is_bau'))
+        bau_count     = len(promos) - non_bau_count
+        lines         = _build_bank_summary_lines(promos)
+        bank_summaries.append(
+            f'## {bank_name} ({non_bau_count} time-limited promos'
+            f' + {bau_count} BAU permanent features)\n' + '\n'.join(lines)
+        )
+
+    if not bank_summaries:
+        print('⚠️  No promotions data — skipping strategic insights')
+        return None
+
+    promotions_text = '\n\n'.join(bank_summaries)
+    today           = datetime.now().strftime('%Y-%m-%d')
+
+    prompt = f"""You are a Hong Kong virtual bank analyst.
+Analyze these active promotions and return strategic insights as JSON.
+Today's date: {today}
+
+{promotions_text}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1 — BAU ITEMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Items tagged [BAU - Permanent Feature] are ALWAYS-AVAILABLE with no expiry.
+You MUST include BAU items when evaluating "best_for" category winners.
+A permanent zero-fee or zero-commission feature is often the strongest
+competitive advantage — do NOT skip it just because it has no end date.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2 — DATE VALIDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Today is {today}.
+⚠️  If a promotion has end_date > {today}, it is STILL ACTIVE — never
+treat it as expired.  Example: end_date="2026-05-27" on {today}
+means the promotion runs for another 35 days.  Do NOT exclude it from
+analysis or mark it as past.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3 — CHINESE TYPE TAG → ENGLISH CATEGORY MAPPING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [推薦]                              → "Referral Bonus"
+  [投資] + fund/基金                  → "Fund Investment"
+  [投資] + hk stock/hkex/local stock/
+          securities/brokerage/IPO    → "HK Stock Trading"
+  [投資] + us stock/nyse/nasdaq/
+          american stock/us equities  → "US Stock Trading"
+  [投資] + crypto/bitcoin/
+          virtual asset               → "Crypto Trading"
+  [消費]                              → "Spending/CashBack"
+  [迎新]                              → "Welcome Bonus"
+  [旅遊]                              → "Travel"
+  [貸款]                              → "Loan APR"
+  [外匯]                              → "FX/Multi-Currency"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4 — STRICT CATEGORY DEFINITIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• HK Stock Trading  → HKEX-listed stock trading fee waivers, zero brokerage
+                      commissions for HK shares, IPO cash/stock rewards.
+• US Stock Trading  → NYSE/NASDAQ stock trading fee waivers, zero brokerage
+                      commissions for US shares, platform fee for US equities.
+• Crypto Trading    → crypto/virtual asset trading fee waivers, platform fees,
+                      digital asset promotions.
+• Fund Investment   → fund subscription or switching fee promotions.
+• Spending/CashBack → card cashback or merchant spending rewards.
+• Welcome Bonus     → new customer account opening cash/gift rewards.
+• Travel            → travel insurance, flight/hotel, Asia Miles, Trip.com, lounge.
+• Loan APR          → personal loan with lowest specific APR quoted.
+• FX/Multi-Currency → FX rate promotions, global wallet, remittance.
+• Referral Bonus    → referral programs with a stated HKD reward amount.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5 — MANDATORY WINNER SELECTION RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Output "None" ONLY when there is absolutely zero evidence of any promotion
+across ALL banks that relates to that category.
+
+CHECKLIST — before writing "None" for any category, verify:
+  HK Stock Trading → ANY line with hk stock / hkex / securities /
+                     brokerage / commission / IPO
+  US Stock Trading → ANY line with us stock / us equities / nyse /
+                     nasdaq / american stock
+  Crypto Trading   → ANY line with crypto / bitcoin / virtual asset / digital asset
+  Fund Investment  → ANY line with fund / 基金 / $0認購費 / zero subscription
+  Referral Bonus   → ANY line tagged [推薦] OR with referral / 推薦 / 多友多賞
+  Travel           → ANY line tagged [旅遊] OR with trip.com / travel / flight /
+                     hotel / asia miles / lounge / agoda
+                     ⚠️  If ANY [旅遊] line exists → Travel winner MUST NOT be None
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6 — EVIDENCE GATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The "detail" field MUST contain at least ONE concrete verifiable fact:
+  • Specific HKD/USD amount, percentage, $0/zero-fee, specific date,
+    named concrete product (Trip.com, Asia Miles, Agoda…),
+    or trading/commission/fee/cashback keyword.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7 — SIMILAR BANKS & WHY THEY DON'T WIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+For EVERY best_for entry you MUST populate:
+
+• similar_banks: List ALL other banks that ALSO offer a similar promotion
+  in the same category (even if their offer is weaker or limited).
+  Example: ["Mox Bank", "WeLab Bank", "livi bank"]
+
+• why_others_lose: One or two sentences explaining WHY the winner beats
+  each similar bank. Be specific — use fees, caps, expiry dates, scope.
+  Example: "Mox only waives commission for the first 3 months;
+           WeLab requires 10+ trades/month to qualify."
+
+  If similar_banks is empty (winner is the ONLY bank with this category),
+  set why_others_lose to "Only bank currently offering this promotion."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8 — SELF-CONSISTENCY CHECK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Before writing final JSON: verify that every "None" in best_for is NOT
+contradicted by a matching strength in bank_analysis for the same category.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9 — STOCK TRADING WINNER RULES (READ VERY CAREFULLY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VERIFIED FACTS:
+
+  ZA Bank (ZA Invest):
+    ✅ $0 brokerage COMMISSION for BOTH HK stocks AND US stocks
+    ⚠️  Platform fee applies (a separate, smaller ongoing fee)
+    ❌ "StockBack" = card cashback reward, NOT a trading fee — never confuse them
+    ❌ NEVER state "ZA Bank charges commission" — factually wrong
+
+  PAO Bank:
+    ❌ PAO Bank charges BROKERAGE COMMISSION for HK stock trades
+    ❌ PAO Bank charges USD 0.012/share COMMISSION for US stock trades
+    ✅ PAO Bank claims zero platform fee for HK stocks
+    → PAO Bank's "zero platform fee" does NOT overcome the fact that it
+      charges commission. Commission is the primary recurring cost.
+
+  Summary: ZA Bank = $0 commission + platform fee.
+           PAO Bank = commission + $0 platform fee.
+           ZA Bank wins on commission (the more important cost for retail investors).
+
+MANDATORY EVALUATION HIERARCHY FOR STOCK TRADING:
+
+  Priority 1: COMMISSION ($0 commission always beats any non-zero commission)
+  ─────────────────────────────────────────────────────────────────────────
+  → If Bank A charges $0 commission and Bank B charges any commission,
+    Bank A wins for the stock trading category, regardless of platform fee.
+  → $0 commission is the stronger advantage because commission is charged
+    on EVERY trade and compounds with trading frequency.
+
+  Priority 2: PLATFORM FEE (only matters when commission is tied)
+  ─────────────────────────────────────────────────────────────────
+  → If two banks BOTH charge $0 commission, then the one with lower
+    platform fee wins.
+  → "Zero platform fee but charges commission" is WEAKER than
+    "$0 commission but charges platform fee" for most retail investors.
+
+  CONSEQUENCE: ZA Bank is the DEFAULT winner for HK Stock Trading
+  and US Stock Trading UNLESS another bank can prove BOTH:
+    ① $0 brokerage commission (same as ZA), AND
+    ② lower or zero platform fee (better than ZA)
+
+  PAO Bank CANNOT win either stock trading category because:
+    → PAO charges commission; ZA charges $0 commission
+    → Commission-free ($0) > any commission charge
+    → Therefore ZA Bank wins over PAO Bank for stock trading
+
+  ⚠️  Never select a bank as stock trading winner if it charges per-trade
+      commission while ZA Bank (offering $0 commission) is an option.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 10 — FORBIDDEN COMPARISONS IN BANK ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The following are NOT valid competitive advantages and must NOT appear
+in vs_za_pros, vs_za_cons, or bank strengths:
+
+  ❌ Account opening speed comparisons
+     (e.g. "5-minute account opening", "faster onboarding than ZA",
+      "account opening in 3 min vs ZA's 2 min")
+     REASON: ALL Hong Kong virtual banks offer digital account opening
+     in minutes. This is a baseline UX feature — NOT a financial product
+     advantage.
+
+  ❌ Generic app speed / UI claims without a specific financial benefit
+  ❌ "Quick sign-up" or "instant registration" as a competitive differentiator
+
+  ✅ VALID advantages: specific fee savings (in HKD or %), named product
+     features with concrete benefit amounts, higher cashback %, lower APR,
+     more fund choices, longer promotion periods, higher referral payouts.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Return this EXACT JSON structure (no markdown, no code fences):
+{{
+  "best_for": [
+    {{
+      "category":       "HK Stock Trading",
+      "bank":           "ZA Bank",
+      "detail":         "$0 brokerage commission for HK stocks via ZA Invest; platform fee applies (no per-trade commission)",
+      "is_bau":         true,
+      "similar_banks":  ["PAObank", "Airstar Bank"],
+      "why_others_lose":"PAObank charges brokerage commission for HK stock trades despite zero platform fee — $0 commission (ZA) beats any commission charge; Airstar also charges trading commission."
+    }},
+    {{
+      "category":       "US Stock Trading",
+      "bank":           "ZA Bank",
+      "detail":         "$0 brokerage commission for US stocks via ZA Invest; platform fee applies",
+      "is_bau":         true,
+      "similar_banks":  ["PAObank", "Airstar Bank"],
+      "why_others_lose":"PAObank charges USD 0.012/share commission for US trades — not zero. ZA Bank's $0 commission is structurally superior for retail investors."
+    }},
+    {{
+      "category":       "Crypto Trading",
+      "bank":           "BankName",
+      "detail":         "specific crypto fee/platform detail",
+      "is_bau":         false,
+      "similar_banks":  ["BankA"],
+      "why_others_lose":"BankA's crypto waiver expired; BankB has higher platform fee"
+    }},
+    {{
+      "category":       "Spending/CashBack",
+      "bank":           "BankName",
+      "detail":         "specific % or HKD amount",
+      "is_bau":         false,
+      "similar_banks":  [],
+      "why_others_lose":"Only bank currently offering this promotion."
+    }},
+    {{
+      "category":       "Welcome Bonus",
+      "bank":           "BankName",
+      "detail":         "HKD amount",
+      "is_bau":         false,
+      "similar_banks":  ["BankA", "BankB"],
+      "why_others_lose":"specific comparative reason"
+    }},
+    {{
+      "category":       "Travel",
+      "bank":           "BankName",
+      "detail":         "specific benefit with named partner or %",
+      "is_bau":         false,
+      "similar_banks":  [],
+      "why_others_lose":"Only bank currently offering this promotion."
+    }},
+    {{
+      "category":       "Loan APR",
+      "bank":           "BankName",
+      "detail":         "X.XX% APR",
+      "is_bau":         false,
+      "similar_banks":  ["BankA"],
+      "why_others_lose":"BankA's APR is higher at X.XX%"
+    }},
+    {{
+      "category":       "FX/Multi-Currency",
+      "bank":           "BankName",
+      "detail":         "specific detail with named product or %",
+      "is_bau":         false,
+      "similar_banks":  [],
+      "why_others_lose":"Only bank currently offering this promotion."
+    }},
+    {{
+      "category":       "Fund Investment",
+      "bank":           "BankName",
+      "detail":         "specific fund subscription detail with 0% or $0",
+      "is_bau":         false,
+      "similar_banks":  ["BankA"],
+      "why_others_lose":"BankA limits zero-fee to selected funds only"
+    }},
+    {{
+      "category":       "Referral Bonus",
+      "bank":           "BankName",
+      "detail":         "HKD amount per referral",
+      "is_bau":         false,
+      "similar_banks":  ["BankA", "BankB"],
+      "why_others_lose":"BankA pays HKD 100 less per referral; BankB has a cap of 3 referrals"
+    }}
+  ],
+  "bank_analysis": {{
+    "ZA Bank": {{
+      "focus": "short keywords",
+      "strengths": ["s1", "s2", "s3"],
+      "expiring_alert": "",
+      "vs_za_pros": null,
+      "vs_za_cons": null
+    }},
+    "OtherBank": {{
+      "focus": "keywords",
+      "strengths": ["s1", "s2", "s3"],
+      "expiring_alert": "",
+      "vs_za_pros": "pros vs ZA Bank (NO account opening speed comparisons)",
+      "vs_za_cons": "cons vs ZA Bank"
+    }}
+  }}
+}}"""
+
+    raw = _call([{'role': 'user', 'content': prompt}], label='insights')
+    if not raw:
+        print('❌ Strategic insights: empty response from AI')
+        return None
+
+    result = _parse_object(raw)
+    if result is None:
+        print('❌ Strategic insights: JSON parse failed')
+        return None
+
+    # ── Post-processing pipeline ──────────────────────────────────────────────
+    # Step 1: Evidence gate — reject vague/unverified winners
+    result['best_for'] = _validate_best_for_evidence(result.get('best_for', []))
+
+    # Step 2: Stock trading commission override — ensure $0 commission wins
+    result['best_for'] = _validate_stock_trading_winners(result.get('best_for', []))
+
+    # Step 3: Cross-check None slots from bank_analysis strengths
+    result = _cross_check_best_for_from_strengths(result, promotions_by_bank)
+
+    name_lookup = {k.lower(): k for k in promotions_by_bank}
+    for bname in result.get('bank_analysis', {}):
+        matched_key = name_lookup.get(bname.lower())
+        if matched_key:
+            all_p      = promotions_by_bank[matched_key]
+            non_bau    = [p for p in all_p if not p.get('is_bau')]
+            result['bank_analysis'][bname]['count']     = len(non_bau)
+            result['bank_analysis'][bname]['bau_count'] = len(all_p) - len(non_bau)
+        else:
+            result['bank_analysis'][bname]['count']     = 0
+            result['bank_analysis'][bname]['bau_count'] = 0
+
+    bau_wins  = sum(1 for b in result.get('best_for', []) if b.get('is_bau'))
+    none_wins = sum(
+        1 for b in result.get('best_for', [])
+        if (b.get('bank') or '').lower() in ('none', '', 'n/a')
+    )
+    if none_wins:
+        none_cats = [
+            b['category'] for b in result.get('best_for', [])
+            if (b.get('bank') or '').lower() in ('none', '', 'n/a')
+        ]
+        print(
+            f'  ⚠️  {none_wins} best_for slot(s) still None after all fixes: {none_cats}\n'
+            f'     ↳ Check diagnostic above — these categories had no input data.'
+        )
+
+    print(
+        f'✅ Strategic insights generated via {_bot_name} '
+        f'({bau_wins} BAU winner(s), {none_wins} None slot(s))'
+    )
+    return result
