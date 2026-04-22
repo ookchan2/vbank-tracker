@@ -1,5 +1,5 @@
 {
-  "updated": "2026-04-22 08:00",
+  "updated": "2026-04-22 09:12",
   "promotions": [
     {
       "id": 74,
@@ -1678,14 +1678,14 @@
       "bank_id": "livi",
       "bank_name": "livi bank",
       "title": "liviSave Preferential Interest Rate",
-      "highlight": "💰 Earn preferential savings rate with no minimum deposit",
-      "description": "Grow your money with liviSave by earning a preferential savings rate. No minimum deposit required to qualify for the special rate, making saving accessible to everyone.",
+      "highlight": "💰 Earn preferential savings rates with no minimum deposit",
+      "description": "Customers can enjoy a preferential savings rate when adding funds to their liviSave account. No minimum deposit required to qualify for the special interest rate. Account opening is 100% online and accessible from anywhere.",
       "category": "",
       "start_date": null,
       "end_date": null,
-      "period": "Ongoing with terms and conditions",
-      "quota": "No eligibility restrictions mentioned",
-      "cost": "Free, no minimum deposit required",
+      "period": "Ongoing",
+      "quota": "No restriction mentioned",
+      "cost": "Free",
       "types": [
         "存款"
       ],
@@ -1723,14 +1723,14 @@
       "id": 104,
       "bank_id": "livi",
       "bank_name": "livi bank",
-      "title": "Fast and Free FPS Transfers",
-      "highlight": "⚡ Fast and free transfers to anyone at any time with FPS",
-      "description": "Send money instantly to anyone through the Faster Payment System (FPS). Transfers are completely free of charge and can be made at any time.",
+      "title": "livi Free Instant FPS Transfers",
+      "highlight": "💸 Fast and free transfers with FPS anytime",
+      "description": "Send money instantly to anyone at any time using the Faster Payment System (FPS). The transfers are fast and free, making it convenient for daily transactions.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
-      "quota": "Available to all customers",
+      "quota": "No restriction mentioned",
       "cost": "Free",
       "types": [
         "Others"
@@ -1747,13 +1747,13 @@
       "bank_id": "livi",
       "bank_name": "livi bank",
       "title": "QR Payment at Hong Kong Merchants",
-      "highlight": "🛒 Fast and secure QR payments accepted across Hong Kong",
-      "description": "Make quick, secure payments using QR codes at participating merchants throughout Hong Kong. This contactless payment method offers a convenient shopping experience.",
+      "highlight": "📱 Fast and secure QR payments at merchants across Hong Kong",
+      "description": "Make payments using QR codes at merchant locations all across Hong Kong. The service provides a secure and convenient payment experience for everyday purchases.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
-      "quota": "Available to all customers",
+      "quota": "No restriction mentioned",
       "cost": "Free",
       "types": [
         "消費"
@@ -1770,13 +1770,13 @@
       "bank_id": "livi",
       "bank_name": "livi bank",
       "title": "livi Account Opening - 100% Online Process",
-      "highlight": "📱 Open account 100% online, quick and easy with no complicated documents",
-      "description": "Open a liviSave account completely online through the app without complicated documentation. The process is quick and easy, allowing customers to start saving immediately from anywhere.",
+      "highlight": "⚡ Quick and easy 100% online account opening",
+      "description": "Open a liviSave account completely online without complicated documents. The process is quick and easy, allowing customers to join anytime and anywhere using the mobile app.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
-      "quota": "Available to all eligible customers",
+      "quota": "No restriction mentioned",
       "cost": "Free",
       "types": [
         "Others"
@@ -1794,15 +1794,16 @@
       "bank_name": "livi bank",
       "title": "livi Rewards Universe Program",
       "highlight": "🎁 Exclusive rewards for livi customers",
-      "description": "livi Rewards offers special benefits and exclusive deals to customers. The 'livi Rewards is here' promotion provides various perks to enhance the customer experience.",
+      "description": "livi offers a rewards program called 'livi Rewards' that provides various benefits to customers. The program appears to be recently launched as indicated by 'livi Rewards is here' on the website.",
       "category": "",
       "start_date": null,
       "end_date": null,
       "period": "Ongoing",
-      "quota": "No cap",
+      "quota": "No restriction mentioned",
       "cost": "Free",
       "types": [
-        "消費"
+        "消費",
+        "Others"
       ],
       "url": "",
       "tc_link": "https://www.livibank.com/",
@@ -5836,237 +5837,6 @@
       "last_seen": "2026-04-09"
     }
   ],
-  "last_updated": "2026-04-22 08:00",
-  "strategic_insights": {
-    "best_for": [
-      {
-        "category": "HK Stock Trading",
-        "bank": "ZA Bank",
-        "detail": "$0 brokerage commission for HK stocks via ZA Invest; platform fee applies (no per-trade commission)",
-        "is_bau": true,
-        "similar_banks": [
-          "PAObank",
-          "Airstar Bank"
-        ],
-        "why_others_lose": "PAObank charges brokerage commission for HK stock trades despite zero platform fee — $0 commission (ZA) beats any commission charge; Airstar also charges trading commission."
-      },
-      {
-        "category": "US Stock Trading",
-        "bank": "ZA Bank",
-        "detail": "$0 brokerage commission for US stocks via ZA Invest; platform fee applies",
-        "is_bau": true,
-        "similar_banks": [
-          "PAObank",
-          "Airstar Bank"
-        ],
-        "why_others_lose": "PAObank charges USD 0.012/share commission for US trades — not zero. ZA Bank's $0 commission is structurally superior for retail investors."
-      },
-      {
-        "category": "Crypto Trading",
-        "bank": "ZA Bank",
-        "detail": "0% platform fee on crypto trading for new customers' first 90 days until June 30, 2026",
-        "is_bau": false,
-        "similar_banks": [],
-        "why_others_lose": "Only bank currently offering this promotion."
-      },
-      {
-        "category": "Spending/CashBack",
-        "bank": "ZA Bank",
-        "detail": "Earn up to 2.5% StockBack on eligible spending with ZA Card for new customers until May 27, 2026",
-        "is_bau": false,
-        "similar_banks": [
-          "Mox Bank"
-        ],
-        "why_others_lose": "Mox offers 2% unlimited cashback or miles conversion which is slightly lower than ZA's 2.5% StockBack rate for new customers."
-      },
-      {
-        "category": "Welcome Bonus",
-        "bank": "ZA Bank",
-        "detail": "New customers get HKD 2,026 reward package including cash rewards, fund position rebates, and stock cash rebates until May 27, 2026",
-        "is_bau": false,
-        "similar_banks": [
-          "Mox Bank",
-          "WeLab Bank"
-        ],
-        "why_others_lose": "Mox Bank offers up to HKD 1,500 cash reward which is lower than ZA's HKD 2,026 total package; WeLab Bank's investment fund cash reward maxes at HKD 1,500 for eligible investments."
-      },
-      {
-        "category": "Travel",
-        "bank": "Mox Bank",
-        "detail": "Up to HKD 1,700 rewards plus up to 2% CashBack on Trip.com bookings until June 30, 2026",
-        "is_bau": false,
-        "similar_banks": [
-          "ZA Bank",
-          "Airstar Bank"
-        ],
-        "why_others_lose": "ZA Bank's travel offers don't specify reward amounts as high as Mox's HKD 1,700; Airstar offers up to $800 cash rebate on selected airlines which is less than Mox's combined rewards."
-      },
-      {
-        "category": "Loan APR",
-        "bank": "Mox Bank",
-        "detail": "Instant loan rates as low as 1.18% APR with cash reward up to HKD 10,888 until April 30, 2026",
-        "is_bau": false,
-        "similar_banks": [
-          "WeLab Bank"
-        ],
-        "why_others_lose": "WeLab Bank's personal loan offers cash rebate up to HKD 23,888 but doesn't specify an APR as low as Mox's 1.18%."
-      },
-      {
-        "category": "FX/Multi-Currency",
-        "bank": "WeLab Bank",
-        "detail": "WeLab Global Wallet Best Exchange Rates Guarantee for foreign currency transactions with $0 foreign currency transaction fee",
-        "is_bau": true,
-        "similar_banks": [
-          "ZA Bank",
-          "Airstar Bank",
-          "Ant Bank"
-        ],
-        "why_others_lose": "WeLab offers best exchange rates guarantee plus $0 foreign transaction fees; ZA Bank charges fees for some transfers; Airstar Bank's first remittance fee waiver is time-limited."
-      },
-      {
-        "category": "Fund Investment",
-        "bank": "ZA Bank",
-        "detail": "0% subscription fees on ALL funds with no cap until July 31, 2026",
-        "is_bau": false,
-        "similar_banks": [
-          "Ant Bank",
-          "Mox Bank",
-          "PAObank"
-        ],
-        "why_others_lose": "Ant Bank's zero fee is only for fund transactions; Mox's 0% fund subscription fee ends June 30, 2026 (earlier than ZA's); PAObank's zero fee applies only to money market funds."
-      },
-      {
-        "category": "Referral Bonus",
-        "bank": "ZA Bank",
-        "detail": "Earn up to HKD 90,000 rewards by referring friends until May 27, 2026",
-        "is_bau": false,
-        "similar_banks": [
-          "WeLab Bank"
-        ],
-        "why_others_lose": "WeLab Bank offers HKD 800 per successful personal loan referral which has a lower maximum potential than ZA Bank's up to HKD 90,000 referral program."
-      }
-    ],
-    "bank_analysis": {
-      "ZA Bank": {
-        "focus": "Investments, StockBack rewards, high interest",
-        "strengths": [
-          "Zero-fee fund subscriptions until July 2026",
-          "$0 brokerage commission on HK and US stocks",
-          "20% p.a. time deposit for new customers",
-          "2.5% StockBack on card spending",
-          "HKD 2,026 welcome reward package"
-        ],
-        "expiring_alert": "20% p.a. time deposit offer and HKD 2,026 reward package expire on May 27, 2026",
-        "vs_za_pros": null,
-        "vs_za_cons": null,
-        "count": 17,
-        "bau_count": 11
-      },
-      "Mox Bank": {
-        "focus": "Travel rewards, installment loans, cashback",
-        "strengths": [
-          "Up to HKD 1,700 Trip.com rewards",
-          "Loan rates as low as 1.18% APR",
-          "2% unlimited cashback or miles conversion",
-          "Multiple merchant-specific promotions",
-          "0% fund subscription fee until June 2026"
-        ],
-        "expiring_alert": "Tax payment promotion with up to HKD 500 cash reward expires on April 30, 2026",
-        "vs_za_pros": "More travel partnerships and merchant-specific promotions; lower loan APR at 1.18%; more credit card installment options",
-        "vs_za_cons": "Lower welcome bonus (HKD 1,500 vs ZA's HKD 2,026); shorter fund subscription fee waiver period; lower cashback rate (2% vs ZA's 2.5% StockBack)",
-        "count": 22,
-        "bau_count": 1
-      },
-      "WeLab Bank": {
-        "focus": "FX rates, global payments, loan referrals",
-        "strengths": [
-          "Best exchange rates guarantee",
-          "$0 foreign currency transaction fees",
-          "Up to HKD 23,888 loan cash rebate",
-          "HKD 800 per loan referral",
-          "$0 fund subscription and switching fees"
-        ],
-        "expiring_alert": "Personal loan cash rebate up to HKD 23,888 expires on June 30, 2026",
-        "vs_za_pros": "Best FX rates guarantee with $0 foreign transaction fees; higher loan cash rebate (up to HKD 23,888); permanent $0 fund subscription fees (vs. ZA's time-limited offer)",
-        "vs_za_cons": "Lower referral rewards potential (HKD 800 per referral vs ZA's up to HKD 90,000 total); no equivalent to ZA's 20% p.a. time deposit; no StockBack equivalent",
-        "count": 4,
-        "bau_count": 11
-      },
-      "Airstar Bank": {
-        "focus": "Stock trading, zero fees, instant transfers",
-        "strengths": [
-          "Zero commission trading on HK stocks forever (for account openers)",
-          "Low-cost US stock trading at US$1.99 per order",
-          "24/7 instant securities transfer",
-          "Up to $800 flight booking cash rebate",
-          "No account fees or minimum balance"
-        ],
-        "expiring_alert": "Zero commission on HK stocks promotion is time-limited for new account openers",
-        "vs_za_pros": "US$1.99 flat fee for US stock trading (vs. ZA's platform fee model); 24/7 instant securities transfers; permanent zero fees on HK stocks for new account openers",
-        "vs_za_cons": "Lower travel cash rebate (up to $800 vs Mox's HKD 1,700); no crypto trading platform; lower welcome bonus offer; zero commission only for new account openers (not for all customers like ZA)",
-        "count": 4,
-        "bau_count": 12
-      },
-      "Ant Bank": {
-        "focus": "High yield savings, fund investments, SME loans",
-        "strengths": [
-          "Up to 2.0% p.a. eM+ high yield account",
-          "Fund subscriptions from HKD 1 minimum",
-          "Zero fees for fund transactions",
-          "Up to HKD 100,000 SME loan cash rebate",
-          "Time deposit early withdrawal without penalty"
-        ],
-        "expiring_alert": "SME loan cash rebate and fund transaction fee waiver are limited time offers",
-        "vs_za_pros": "Higher ongoing savings rate at 2.0% p.a. (vs. ZA's non-promotional rates); SME loan focus with up to HKD 100,000 cash rebate; lower minimum fund subscription amount of HKD 1",
-        "vs_za_cons": "No crypto trading platform; no equivalent to ZA's 20% p.a. time deposit; no commission-free stock trading options; no StockBack rewards program",
-        "count": 3,
-        "bau_count": 12
-      },
-      "Fusion Bank": {
-        "focus": "Time deposits, savings, remittance",
-        "strengths": [
-          "Monday-only flash HKD time deposit promotion",
-          "Enhanced savings interest rates",
-          "Foreign exchange time deposit rewards",
-          "Global remittance services",
-          "No minimum balance requirement"
-        ],
-        "expiring_alert": "Monday flash time deposit promotion is recurring but only available on Mondays",
-        "vs_za_pros": "Special Monday-only time deposit rates that may be competitive; foreign exchange time deposit interest rewards",
-        "vs_za_cons": "Fewer promotional offers overall; no stock trading platform; no fund investment options; no stated welcome bonus; no cashback program; time deposit promotion limited to Mondays only",
-        "count": 3,
-        "bau_count": 5
-      },
-      "PAObank": {
-        "focus": "Investment tools, extended trading hours, market data",
-        "strengths": [
-          "Zero platform fee for HK and US stocks",
-          "US stocks extended 16-hour trading window",
-          "Free real-time Level 1 market data for HK stocks",
-          "Zero subscription fee for money market funds",
-          "Same-day redemption for money market funds"
-        ],
-        "expiring_alert": "",
-        "vs_za_pros": "Zero platform fee for stocks (vs. ZA's platform fee); extended 16-hour US stock trading window; free real-time Level 1 market data; same-day fund redemptions",
-        "vs_za_cons": "Charges brokerage commissions for stock trading (vs. ZA's $0 commission); limited zero-fee funds (only money market funds vs. ZA's all funds); no crypto trading platform; no welcome bonuses or cashback programs",
-        "count": 0,
-        "bau_count": 14
-      },
-      "livi bank": {
-        "focus": "Savings, insurance products, SME services",
-        "strengths": [
-          "Preferential interest rate on liviSave",
-          "Free FPS transfers",
-          "Comprehensive insurance options (travel, home, pet)",
-          "QR payments across Hong Kong",
-          "SME financing solutions"
-        ],
-        "expiring_alert": "",
-        "vs_za_pros": "More diverse insurance products including pet care and home insurance; dedicated SME business account and financing options",
-        "vs_za_cons": "No commission-free stock trading platform; no fund investment platform; no crypto trading options; fewer promotional offers overall; no specific welcome bonus amount stated; no cashback program comparable to StockBack",
-        "count": 3,
-        "bau_count": 14
-      }
-    }
-  }
+  "last_updated": "2026-04-22 09:12",
+  "strategic_insights": null
 }
