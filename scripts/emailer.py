@@ -15,7 +15,18 @@ import smtplib
 import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone     # ← timezone added
+
+# ── HKT timezone ──────────────────────────────────────────────────────────────
+# Hong Kong does NOT observe DST, so UTC+8 is always correct.
+# The website always computes "today" in HKT:
+#   new Date(Date.now() + 8*3600_000).toISOString().slice(0,10)
+# Python must use the same calendar date; datetime.now() uses server local
+# time which differs from HKT on any non-HKT server (e.g. UTC, US zones).
+# ROOT CAUSE of active/expiring mismatch: if server local date ≠ HKT date,
+# the 30-day threshold boundary shifts by 1 day, flipping promotions near
+# the boundary between 'active' and 'expiring' while leaving totals unchanged.
+_HKT = timezone(timedelta(hours=8))
 
 # ── Category metadata ─────────────────────────────────────────────────────────
 
@@ -135,31 +146,28 @@ def _types_to_list(types_raw) -> list:
     return []
 
 
-# ── Shared expiry helper ──────────────────────────────────────────────────────
+# ── Shared classification helper ──────────────────────────────────────────────
 
 def _classify_promo(p: dict, today_d, threshold_d) -> str:
     """
     Returns 'past' | 'expiring' | 'active'.
 
-    'past'     → active=False/0  OR  end_date already passed
-                 NOT counted in total or active
-    'expiring' → end_date within 30 days
-                 counted in total + expiring
-    'active'   → no end_date or far future
-                 counted in total + active
+    Mirrors website getStatus() exactly:
+      1. active === false  →  'expired'  →  'past'
+      2. end_date < today  →  'expired'  →  'past'
+      3. end_date within 30 days (diffDays <= 30)  →  'expiring'
+      4. everything else   →  'active'
 
-    FIX: mirrors website getStatus() which returns 'expired' for active===false.
-    Without this check, a promo with active=False but no past end_date was
-    classified 'active' in Python while the website excluded it — causing the
-    total non-BAU count to differ between the email and the website.
+    today_d and threshold_d MUST be derived from HKT (UTC+8) to match
+    the website's _PAGE_TODAY_STR computation.  Pass values from
+    _hkt_today() / _hkt_threshold() — never from datetime.now().date()
+    directly, which uses server-local time.
     """
-    # ── Mirror JS: getStatus() returns 'expired' when p.active === false ──────
-    # Covers both Python False (from JSON) and integer 0 (from SQLite).
+    # Mirror JS: getStatus() returns 'expired' when p.active === false
     active = p.get('active')
     if active is not None and not active:   # False or 0, but NOT None
         return 'past'
 
-    # ── Date-based expiry (unchanged logic) ───────────────────────────────────
     ed = p.get('end_date')
     if ed:
         try:
@@ -173,17 +181,25 @@ def _classify_promo(p: dict, today_d, threshold_d) -> str:
     return 'active'
 
 
+def _hkt_now() -> datetime:
+    """Current datetime in HKT (UTC+8) — matches the website's date arithmetic."""
+    return datetime.now(_HKT)
+
+
+def _hkt_today_and_threshold() -> tuple:
+    """
+    Return (today_date, threshold_date) both in HKT.
+
+    today_date    = HKT calendar date  (matches JS _PAGE_TODAY_STR)
+    threshold_date = today + 30 days   (matches JS diffDays <= 30)
+    """
+    now = _hkt_now()
+    return now.date(), (now + timedelta(days=30)).date()
+
+
 # ── Multiple recipients helper ────────────────────────────────────────────────
 
 def _collect_recipients(override: str = None) -> list[str]:
-    """
-    Gather all configured recipient emails from:
-      - override argument (comma-separated)
-      - RECIPIENT_EMAIL  env var (comma-separated, primary)
-      - RECIPIENT_EMAIL_2 env var (second recipient)
-      - RECIPIENT_EMAIL_3 env var (third recipient)
-      - Legacy fallbacks: EMAIL_RECIPIENT, EMAIL_TO
-    """
     raw_emails: list[str] = []
 
     if override:
@@ -300,21 +316,16 @@ def _new_promo_card(promo: dict) -> str:
 
 
 def _new_section_html(
-    promos:       list,
-    heading:      str,
-    sub_heading:  str,
-    icon:         str,
-    header_color: str,
-    header_dark:  str,
-    empty_msg:    str,
-    count_label:  str,
+    promos:        list,
+    heading:       str,
+    sub_heading:   str,
+    icon:          str,
+    header_color:  str,
+    header_dark:   str,
+    empty_msg:     str,
+    count_label:   str,
     skip_if_empty: bool = False,
 ) -> str:
-    """
-    Build a promotions section.
-    If skip_if_empty=True and promos is empty, return '' (section omitted entirely).
-    Otherwise show an empty-state placeholder.
-    """
     if not promos:
         if skip_if_empty:
             return ''
@@ -372,9 +383,15 @@ def _build_plain_text(
     now:             str,
     ai_unavailable:  bool = False,
 ) -> str:
-    non_bau   = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
-    today_d   = datetime.now().date()
-    threshold = (datetime.now() + timedelta(days=30)).date()
+    non_bau = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
+
+    # FIX: use _hkt_today_and_threshold() so today_d is the HKT calendar date,
+    # matching the website's _PAGE_TODAY_STR = new Date(Date.now()+8h).toISOString()[:10].
+    # Previously datetime.now().date() used server-local time; on a non-HKT server
+    # (e.g. UTC, US timezones) the date can differ from HKT, shifting the 30-day
+    # threshold boundary and causing the active/expiring split to diverge from the
+    # website while both totals remain equal.
+    today_d, threshold = _hkt_today_and_threshold()
 
     exp_count  = 0
     past_count = 0
@@ -388,7 +405,8 @@ def _build_plain_text(
     total_shown  = len(non_bau) - past_count
     active_count = total_shown - exp_count
 
-    date_only = datetime.now().strftime('%d %b %Y')
+    # FIX: display date also uses HKT so the report header date matches HKT reality
+    date_only = _hkt_now().strftime('%d %b %Y')
 
     lines = [
         f'VBank Tracker Daily Report — {date_only}',
@@ -436,7 +454,7 @@ def _build_plain_text(
     lines += [
         f'TOTAL PROMOTIONS : {total_shown}',
         f'ACTIVE           : {active_count}',
-        f'EXPIRING SOON    : {exp_count}',
+        f'EXPIRING SOON    : {exp_count}  (within 30 days)',
         '',
     ]
 
@@ -473,22 +491,19 @@ def build_html_email(
     """
     Build the full HTML email.
 
-    Caller should supply:
-      new_promos      ← database.get_new_promotions_today()
-      new_promos_week ← database.get_new_promotions_last_n_days(days=6)
-
-    Both functions use COALESCE(first_seen_at, created_at) and HKT (UTC+8) dates.
-    The website mirrors this exactly via first_seen_at with fallback to created_at,
-    so the email and website always show the same promotions in both sections.
-
-    Total non-BAU count now matches the website exactly:
-      _classify_promo returns 'past' for active=False/0, mirroring JS getStatus()
-      which returns 'expired' for p.active === false.
+    Active / expiring counts now always match the website because:
+      _hkt_now() pins datetime to UTC+8 (HKT), matching the website's
+      new Date(Date.now() + 8*3600_000) computation.  Previously
+      datetime.now() used server-local time; on a non-HKT server the
+      30-day boundary shifted by the UTC offset, flipping promotions
+      near the boundary between active and expiring while leaving totals
+      unchanged (since neither side changed whether a promo was counted).
     """
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
 
-    date_only = datetime.now().strftime('%d %b %Y')
+    # FIX: use HKT for display date so the email header shows the correct HKT date
+    date_only = _hkt_now().strftime('%d %b %Y')
 
     non_bau_data       = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
     new_promos_show    = [p for p in new_promos      if not p.get('is_bau', False)]
@@ -499,9 +514,11 @@ def build_html_email(
         bank = p.get('bName') or p.get('bank_name') or p.get('bank') or 'Unknown'
         banks.setdefault(bank, []).append(p)
 
-    _now       = datetime.now()
-    _today_d   = _now.date()
-    _threshold = (_now + timedelta(days=30)).date()
+    # FIX: _hkt_today_and_threshold() — both today_d and threshold_d are in HKT.
+    # This is the single source of truth for all active/expiring classification
+    # in this function; changing it here fixes both the header stats and the
+    # per-bank breakdown table simultaneously.
+    _today_d, _threshold = _hkt_today_and_threshold()
 
     expiring_count = 0
     past_end_count = 0
@@ -797,11 +814,13 @@ def send_email(
         return False
 
     if not subject:
-        date_str = datetime.now().strftime('%d %b %Y')
+        # FIX: use HKT date for the email subject line
+        date_str = _hkt_now().strftime('%d %b %Y')
         base     = f'🏦 VBank Daily Report — {date_str}'
         subject  = f'{base} [Cached Data — AI Unavailable]' if ai_unavailable else base
 
-    now_str    = datetime.now().strftime('%d %b %Y, %H:%M HKT')
+    # FIX: use HKT timestamp in plain-text header
+    now_str    = _hkt_now().strftime('%d %b %Y, %H:%M HKT')
     plain_text = _build_plain_text(
         promotions_data or [],
         new_promos      or [],
