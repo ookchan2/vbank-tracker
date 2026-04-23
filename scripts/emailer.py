@@ -1,4 +1,13 @@
 # scripts/emailer.py
+#
+# IMPORTANT — caller contract for "New Today" / "New This Week" data:
+#
+#   new_promos      → pass output of database.get_new_promotions_today()
+#                     (NOT get_new_promotions_for_run — that uses run-ID, not date)
+#   new_promos_week → pass output of database.get_new_promotions_last_n_days(days=6)
+#
+# Using the date-based functions ensures the email and the website show
+# identical promotion sets (the website uses created_at date logic in JS).
 
 import os
 import smtplib
@@ -157,17 +166,12 @@ def _collect_recipients(override: str = None) -> list[str]:
       - RECIPIENT_EMAIL_2 env var (second recipient)
       - RECIPIENT_EMAIL_3 env var (third recipient)
       - Legacy fallbacks: EMAIL_RECIPIENT, EMAIL_TO
-
-    To add a new recipient, set RECIPIENT_EMAIL_2 (or _3) in your
-    GitHub Actions secrets — no code changes needed.
     """
     raw_emails: list[str] = []
 
-    # Override argument
     if override:
         raw_emails.extend(override.split(','))
 
-    # Env vars in priority order
     for env_var in (
         'RECIPIENT_EMAIL',
         'RECIPIENT_EMAIL_2',
@@ -179,7 +183,6 @@ def _collect_recipients(override: str = None) -> list[str]:
         if val:
             raw_emails.extend(val.split(','))
 
-    # Deduplicate, preserve order, strip whitespace
     seen:   set[str]  = set()
     result: list[str] = []
     for e in raw_emails:
@@ -297,7 +300,7 @@ def _new_section_html(
     """
     if not promos:
         if skip_if_empty:
-            return ''  # ← section completely omitted (requirement d)
+            return ''
         return f"""
 <tr><td style="height:16px;"></td></tr>
 <tr><td style="background:#f9fafb;border-radius:14px;padding:22px 20px;
@@ -368,7 +371,6 @@ def _build_plain_text(
     total_shown  = len(non_bau) - past_count
     active_count = total_shown - exp_count
 
-    # Date only for plain text header (no time)
     date_only = datetime.now().strftime('%d %b %Y')
 
     lines = [
@@ -383,7 +385,7 @@ def _build_plain_text(
             '    Promotions may not reflect today\'s latest changes.',
         ]
 
-    # ── Order: Today new → This week new → Totals (matching email order) ──────
+    # ── Order: Today new → This week new → Totals ─────────────────────────────
 
     new_show = [p for p in (new_promos or []) if not p.get('is_bau', False)]
     if new_show:
@@ -404,7 +406,7 @@ def _build_plain_text(
     week_show = [p for p in (new_promos_week or []) if not p.get('is_bau', False)]
     if week_show:
         lines += [
-            f'NEW THIS WEEK — PAST 6 DAYS ({len(week_show)}):',
+            f'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK — PAST 6 DAYS ({len(week_show)}):',
         ]
         for p in week_show:
             bank  = p.get('bName') or p.get('bank_name') or '?'
@@ -414,7 +416,7 @@ def _build_plain_text(
             if tc: lines.append(f'    Source : {tc}')
         lines.append('')
     elif not new_show:
-        lines += ['', 'NEW THIS WEEK — PAST 6 DAYS: None', '']
+        lines += ['', 'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK — PAST 6 DAYS: None', '']
 
     lines += [
         f'TOTAL PROMOTIONS : {total_shown}',
@@ -453,11 +455,20 @@ def build_html_email(
     new_promos_week:    list = None,
     ai_unavailable:     bool = False,
 ) -> str:
+    """
+    Build the full HTML email.
+
+    Caller should supply:
+      new_promos      ← database.get_new_promotions_today()
+      new_promos_week ← database.get_new_promotions_last_n_days(days=6)
+
+    Both functions use HKT (UTC+8) dates, matching the website's JavaScript
+    logic exactly so the email and website always show the same promotions.
+    """
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
 
-    # ── Date only (no time) for email header ──────────────────────────────────
-    date_only = datetime.now().strftime('%d %b %Y')          # e.g. "22 Apr 2026"
+    date_only = datetime.now().strftime('%d %b %Y')
 
     non_bau_data       = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
     new_promos_show    = [p for p in new_promos      if not p.get('is_bau', False)]
@@ -560,35 +571,34 @@ def build_html_email(
   </td>
 </tr>"""
 
-    # ── Section: Newly Launched Today ─────────────────────────────────────────
-    # Requirement (d): skip_if_empty=True → section omitted entirely if no promos today
+    # ── Section 1: Newly Launched Today ───────────────────────────────────────
+    # skip_if_empty=True → section omitted entirely when no new promos today
     today_section = _new_section_html(
         promos        = new_promos_show,
         heading       = 'Newly Launched Today',
-        sub_heading   = '今日新推出優惠 · start date on or after today · active only',
+        sub_heading   = '今日新推出優惠 · created_at = today (HKT) · start date on or after today · active only',
         icon          = '🆕',
         header_color  = 'linear-gradient(135deg,#ff6b35 0%,#f7931e 100%)',
         header_dark   = '#f97316',
         empty_msg     = 'No new promotions today',
         count_label   = '{count} new promotion{s}',
-        skip_if_empty = True,   # ← omit section when there are no new promos today
+        skip_if_empty = True,
     )
 
-    # ── Section: New This Week ────────────────────────────────────────────────
+    # ── Section 2: Promotion newly launched within this week ──────────────────
+    # Previously labelled "New This Week" — renamed per requirement.
+    # skip_if_empty=False → always show this section (even when empty)
     week_section = _new_section_html(
         promos        = new_promos_wk_show,
-        heading       = 'New This Week',
-        sub_heading   = '本週新推出優惠 · past 6 days (excluding today) · active only',
+        heading       = 'Promotion newly launched within this week',
+        sub_heading   = '本週新推出優惠 · past 6 days (excluding today, HKT) · active only',
         icon          = '📅',
         header_color  = 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)',
         header_dark   = '#6366f1',
         empty_msg     = 'No new promotions in the past 6 days',
-        count_label   = '{count} new this week',
-        skip_if_empty = False,  # ← always show "New This Week" (even if empty)
+        count_label   = '{count} newly launched this week',
+        skip_if_empty = False,
     )
-
-    # ── Build final HTML ──────────────────────────────────────────────────────
-    # Order: Header → AI notice → Today new (if any) → This week new → Stats → Bank breakdown → Footer
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -603,60 +613,38 @@ def build_html_email(
 <tr><td align="center" style="padding:28px 12px;">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;">
 
-  <!-- ══════════════════════════════════════════════
-       HEADER — white background, BLACK title text
-       Date only, no time (requirement a + b)
-       ══════════════════════════════════════════════ -->
+  <!-- HEADER -->
   <tr><td style="background:#ffffff;border-radius:18px;padding:32px 28px;
                  text-align:center;border:2px solid #e5e7eb;
                  box-shadow:0 4px 16px rgba(0,0,0,0.08);">
-
-    <!-- Bank icon -->
     <div style="font-size:44px;margin-bottom:12px;">🏦</div>
-
-    <!-- Title: BLACK text for easy vision (requirement a) -->
     <div style="font-size:26px;font-weight:900;color:#111827;
                 letter-spacing:-.5px;line-height:1.2;">
       VBank Tracker
     </div>
-
-    <!-- Subtitle -->
     <div style="font-size:12px;font-weight:700;color:#6b7280;
                 margin-top:6px;letter-spacing:1.2px;text-transform:uppercase;">
       Daily Promotions Report
     </div>
-
-    <!-- Date only — no time (requirement b) -->
     <div style="display:inline-block;margin-top:14px;padding:6px 20px;
                 background:#f3f4f6;border-radius:20px;
                 font-size:13px;color:#374151;font-weight:700;
                 border:1px solid #e5e7eb;">
       📅 {date_only}
     </div>
-
   </td></tr>
   <tr><td style="height:20px;"></td></tr>
 
-  <!-- AI UNAVAILABLE NOTICE (shows only when AI failed) -->
+  <!-- AI UNAVAILABLE NOTICE -->
   {ai_notice_html}
 
-  <!-- ══════════════════════════════════════════════════════
-       SECTION 1: NEWLY LAUNCHED TODAY
-       (requirement c — first section after title)
-       (requirement d — omitted entirely if no promos today)
-       ══════════════════════════════════════════════════════ -->
+  <!-- SECTION 1: NEWLY LAUNCHED TODAY (omitted when empty) -->
   {today_section}
 
-  <!-- ══════════════════════════════════════════════════════
-       SECTION 2: NEW THIS WEEK
-       (requirement c — second section)
-       ══════════════════════════════════════════════════════ -->
+  <!-- SECTION 2: PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK (always shown) -->
   {week_section}
 
-  <!-- ══════════════════════════════════════════════════════
-       SECTION 3: OVERALL STATS + BANK BREAKDOWN
-       (requirement c — final section)
-       ══════════════════════════════════════════════════════ -->
+  <!-- SECTION 3: OVERALL STATS + BANK BREAKDOWN -->
   <tr><td style="height:20px;"></td></tr>
 
   <!-- Overall stats -->
@@ -774,7 +762,6 @@ def send_email(
         os.getenv('EMAIL_PASS')
     )
 
-    # ── Collect all recipients (supports RECIPIENT_EMAIL_2, _3, comma-sep) ───
     all_recipients = _collect_recipients(override=recipient)
 
     if not all([smtp_user, smtp_pass]):
@@ -797,7 +784,6 @@ def send_email(
         base     = f'🏦 VBank Daily Report — {date_str}'
         subject  = f'{base} [Cached Data — AI Unavailable]' if ai_unavailable else base
 
-    # Plain text uses date + time (for audit/logging purposes only)
     now_str    = datetime.now().strftime('%d %b %Y, %H:%M HKT')
     plain_text = _build_plain_text(
         promotions_data or [],
@@ -807,7 +793,6 @@ def send_email(
         ai_unavailable = ai_unavailable,
     )
 
-    # ── Send individually to each recipient (privacy: no one sees others) ────
     success_count = 0
     for email_to in all_recipients:
         msg            = MIMEMultipart('alternative')

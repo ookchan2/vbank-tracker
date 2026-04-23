@@ -33,6 +33,7 @@ from database  import (
     get_active_promos_for_bank,
     get_active_promotions,
     get_promotions_by_bank_name,
+    get_new_promotions_today,        # ← CHANGED: added (date-based, matches website)
     get_new_promotions_last_n_days,
     get_db_stats,
 )
@@ -124,11 +125,6 @@ def main() -> int:
     ai_ok = init_ai()
 
     # ── Step 2b: Pre-run DB recovery when AI is unavailable ───────
-    # If the AI key is missing AND the DB has already gone fully
-    # inactive (e.g. from a prior staleness sweep), restore the most
-    # recently-seen batch NOW so every subsequent step has data to
-    # work with.  The recovery is idempotent and safe: if active
-    # promotions already exist, nothing is changed.
     _pre_run_recovered = 0
     if not ai_ok:
         _pre_stats  = get_db_stats()
@@ -324,8 +320,6 @@ def main() -> int:
             )
             reactivate_most_recently_seen(window_days=7)
     elif not _active_after_stale and not banks_ai_saved:
-        # AI was unavailable — the Step 2b recovery should already have
-        # restored data.  If still empty, log it but do not overwrite.
         print(
             '  ⚠️  Still 0 active promotions after Step 2b recovery attempt'
         )
@@ -343,7 +337,6 @@ def main() -> int:
         export_to_json(DATA_JSON_PATH)
 
         _run_ts = datetime.now().strftime('%Y-%m-%d %H:%M')
-        # Flag AI unavailability in data.json so the frontend can surface it
         _extra_patch = {'updated': _run_ts, 'last_updated': _run_ts}
         if not ai_ok:
             _extra_patch['ai_unavailable'] = True
@@ -363,7 +356,8 @@ def main() -> int:
     # ── Step 7: Daily report ──────────────────────────────────────
     print('\nStep 7 ── Generate daily report')
     report         = generate_daily_report(current_run_id)
-    new_promos     = report['new']
+    # NOTE: generate_daily_report now calls get_new_promotions_today() internally
+    # so report['new'] is already HKT date-based (matches the website).
     active_promos  = report['active']
     expired_promos = report['expired']
     summary        = report['summary']
@@ -391,16 +385,25 @@ def main() -> int:
         promos_by_name.setdefault(bname, []).append(p)
 
     all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
-    new_promos_email = [p for p in new_promos          if not p.get('is_bau', False)]
 
+    # ── CHANGED: use get_new_promotions_today() so the email "New Today"
+    # section is identical to what the website shows (both use HKT created_at
+    # date, not scrape-run ID).  Previously this was derived from
+    # report['new'] which came from get_new_promotions_for_run() and could
+    # diverge from the website when multiple runs happened in one day.
+    new_promos_email = get_new_promotions_today(include_bau=False)
+
+    # ── CHANGED: removed exclude_run_id — get_new_promotions_last_n_days()
+    # already excludes today via DATE(created_at) < today (HKT), so there is
+    # no risk of double-counting today's promos regardless of run ID.
     new_promos_week_raw   = get_new_promotions_last_n_days(
-        days           = 6,
-        include_bau    = False,
-        exclude_run_id = current_run_id,
+        days        = 6,
+        include_bau = False,
     )
     new_promos_week_email = [
         p for p in new_promos_week_raw if not p.get('is_bau', False)
     ]
+
     print(f'  [INFO] Non-BAU new (today):        {len(new_promos_email)}')
     print(f'  [INFO] Non-BAU new (past 6 days):  {len(new_promos_week_email)}')
     print(f'  [INFO] Non-BAU active (all):       {len(all_promos_email)}')
@@ -425,10 +428,6 @@ def main() -> int:
     # ── Step 9: Build & send email ────────────────────────────────
     print('\nStep 9 ── Build & send email')
 
-    # When AI was unavailable we still want a useful email — the
-    # recovery in Step 2b ensures all_promos_email is populated from
-    # the last known good state.  Pass ai_unavailable=True so the
-    # email body shows a clear "cached data" notice.
     html = build_html_email(
         promotions_data    = all_promos_email,
         scraped_data       = scraped_by_name,
@@ -447,7 +446,6 @@ def main() -> int:
 
     smtp_ready = all([addr, pwd, to])
 
-    # Use a modified subject when showing cached data
     email_subject = (
         f'🏦 VBank Daily Report — {datetime.now().strftime("%d %b %Y")} '
         f'{"[Cached Data — AI Unavailable]" if not ai_ok else ""}'
@@ -468,12 +466,17 @@ def main() -> int:
         print(f'  📄 HTML preview → {output_path}')
     else:
         try:
+            # ── CHANGED: added new_promos_week so the plain-text email
+            # includes the "Promotion newly launched within this week"
+            # section (previously it was always missing from the text part).
             success = send_email(
                 html_content    = html,
                 subject         = email_subject,
                 recipient       = to,
                 new_promos      = new_promos_email,
+                new_promos_week = new_promos_week_email,   # ← CHANGED: was missing
                 promotions_data = all_promos_email,
+                ai_unavailable  = not ai_ok,
             )
             if success:
                 print(f'  ✅ Email sent → {to}')

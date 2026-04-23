@@ -32,7 +32,89 @@ def _db_connection():
         conn.close()
 
 
-# ── 0. Schema rebuild helper ──────────────────────────────────────────────────
+# ── 0-a. HKT date helpers ─────────────────────────────────────────────────────
+# Always use HKT (UTC+8) for date comparisons so the Python backend matches the
+# JavaScript frontend (which also computes HKT via Date.now() + 8*3600000).
+
+def _hkt_today() -> str:
+    """Return today's date string YYYY-MM-DD in Hong Kong Time (UTC+8)."""
+    return (datetime.utcnow() + timedelta(hours=8)).strftime('%Y-%m-%d')
+
+
+def _hkt_n_days_ago(n: int) -> str:
+    """Return the date string N days before today in HKT."""
+    return (datetime.utcnow() + timedelta(hours=8) - timedelta(days=n)).strftime('%Y-%m-%d')
+
+
+# ── 0-b. Non-bank content guard ───────────────────────────────────────────────
+# Promotions matching any of these patterns are government / charity content,
+# not actual virtual-bank offers.  They are rejected at save time so they never
+# enter the DB.  Run cleanup_reset.py --purge-nonbank to remove any that were
+# inserted before this guard was added.
+
+_NON_BANK_PATTERNS: List[str] = [
+    # Wang Fuk Court / Tai Po support fund
+    'wang fuk court',
+    'support fund for wang fuk',
+    'wangfukcourt',
+    'wangfuk',
+    '宏福苑',
+    '大埔宏福苑',
+    '大埔',          # overly broad — kept scoped by the combined-text check below
+    # Disaster / relief
+    'tai po fire',
+    'taipofire',
+    'relief fund',
+    'disaster relief',
+    # Government / IRD
+    'inland revenue ordinance',
+    'inland revenue department',
+    'ird.gov.hk',
+    'cefs.gov.hk',
+    'hab033',
+    # Generic charity / donation
+    'approved charitable donation',
+    'donation acknowledgement',
+    'donation receipt',
+    'charity donation',
+    'tax deduction for donation',
+    'tax deduction arrangement',
+    '援助基金',
+    '捐款收據',
+    '慈善捐款',
+]
+
+# Patterns that must appear TOGETHER in the same record for it to be blocked.
+# (avoids over-blocking single broad terms like "大埔")
+_NON_BANK_COMPOUND: List[tuple] = [
+    ('大埔', '捐款'),
+    ('大埔', 'donation'),
+    ('大埔', 'relief'),
+    ('大埔', '援助'),
+]
+
+
+def _is_non_bank_content(title: str, highlight: str = '') -> bool:
+    """
+    Returns True if the combined title+highlight text matches any known
+    non-bank / government / charity content pattern.
+    """
+    combined = ' '.join([title or '', highlight or '']).lower()
+    # Single-pattern match (case-insensitive)
+    for pat in _NON_BANK_PATTERNS:
+        # Skip the overly-broad "大埔" as a standalone check
+        if pat == '大埔':
+            continue
+        if pat.lower() in combined:
+            return True
+    # Compound-pattern match (both sub-strings must appear)
+    for p1, p2 in _NON_BANK_COMPOUND:
+        if p1.lower() in combined and p2.lower() in combined:
+            return True
+    return False
+
+
+# ── 0-c. Schema rebuild helper ────────────────────────────────────────────────
 
 def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
     existing = {
@@ -520,8 +602,9 @@ def save_promotions(
     current_run_id: int = 0,
     today_str: str = None,
 ) -> Dict:
-    today = today_str or datetime.now().strftime('%Y-%m-%d')
-    stats = {'new': 0, 'updated': 0, 'skipped': 0}
+    # Use HKT today if caller does not supply an explicit date string.
+    today = today_str or _hkt_today()
+    stats = {'new': 0, 'updated': 0, 'skipped': 0, 'blocked': 0}
 
     with _db_connection() as conn:
         try:
@@ -537,6 +620,17 @@ def save_promotions(
                     print(
                         f'  ⚠️  [{bank_id}] skipped promo with empty title '
                         f'— keys: {list(p.keys())}'
+                    )
+                    continue
+
+                # ── Non-bank content guard ────────────────────────────────────
+                # Rejects government / charity content (e.g. Wang Fuk Court
+                # support fund) before it can enter the database.
+                if _is_non_bank_content(title, highlight):
+                    stats['blocked'] += 1
+                    print(
+                        f'  🚫 [{bank_id}] blocked non-bank content: '
+                        f'"{title[:70]}"'
                     )
                     continue
 
@@ -621,10 +715,11 @@ def save_promotions(
                     stats['new'] += 1
 
             conn.commit()
+            blocked_tag = f'  blocked:{stats["blocked"]}' if stats['blocked'] else ''
             print(
                 f"  [{bank_id}] saved → "
                 f"new:{stats['new']}  updated:{stats['updated']}  "
-                f"skipped:{stats['skipped']}"
+                f"skipped:{stats['skipped']}{blocked_tag}"
             )
             return stats
 
@@ -644,13 +739,12 @@ def mark_stale_as_inactive(
     Mark promotions as inactive only when BOTH conditions are true:
       1. last_seen < today  (wasn't found in today's scrape)
       2. end_date is NULL/empty OR end_date < today
-         (do NOT deactivate a promotion whose end_date is still in the future —
-          a future end_date means the promotion is officially still running even
-          if the scraper missed it today)
+         (do NOT deactivate a promotion whose end_date is still in the future)
+    Uses HKT for today if today_str not supplied.
     """
     if not bank_ids_scraped:
         return 0
-    today_str = today_str or datetime.now().strftime('%Y-%m-%d')
+    today_str = today_str or _hkt_today()
     total = 0
     with _db_connection() as conn:
         try:
@@ -762,10 +856,54 @@ def _to_dicts(rows) -> List[Dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
+def get_new_promotions_today(
+    include_bau: bool = False,
+) -> List[Dict[str, Any]]:
+    """
+    Returns promotions first seen TODAY (HKT) that are active and not expired.
+
+    This is the canonical "New Today" source — use this for BOTH the email and
+    the website so they always show identical promotions.  It matches the
+    website's isNewToday() logic exactly:
+      • created_at date == today (HKT)
+      • active = 1
+      • start_date is NULL OR start_date >= today  (no retroactive promos)
+      • end_date   is NULL OR end_date   >= today  (not already expired)
+      • is_bau = 0  (unless include_bau=True)
+
+    Previously the email used get_new_promotions_for_run() which was keyed on
+    the scrape-run ID; if more than one run happened in a day, or if the run ID
+    didn't align with created_at dates, the two views diverged.
+    """
+    today = _hkt_today()
+    with _db_connection() as conn:
+        try:
+            bau_clause = '' if include_bau else 'AND is_bau = 0'
+            return _to_dicts(conn.execute(f'''
+                SELECT * FROM promotions
+                WHERE active           = 1
+                  AND DATE(created_at) = ?
+                  AND (start_date IS NULL OR start_date = '' OR DATE(start_date) >= ?)
+                  AND (end_date   IS NULL OR end_date   = '' OR DATE(end_date)   >= ?)
+                  {bau_clause}
+                ORDER BY bank_id ASC, id ASC
+            ''', (today, today, today)).fetchall())
+        except Exception as exc:
+            print(f'  ❌ get_new_promotions_today error: {exc}')
+            return []
+
+
 def get_new_promotions_for_run(
     current_run_id: int,
     include_bau: bool = False,
 ) -> List[Dict[str, Any]]:
+    """
+    Returns promotions whose first_run_id matches current_run_id.
+
+    NOTE: prefer get_new_promotions_today() for the email "New Today" section
+    so it stays in sync with the website (which uses created_at date, not run ID).
+    This function is kept for backward-compatibility and audit purposes.
+    """
     with _db_connection() as conn:
         try:
             bau_clause = '' if include_bau else 'AND is_bau = 0'
@@ -787,16 +925,20 @@ def get_new_promotions_last_n_days(
     exclude_run_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """
-    Returns promotions created within the past N days that are:
+    Returns promotions created within the past N days EXCLUDING today that are:
     - active = 1
     - not BAU (unless include_bau=True)
+    - created_at in [today-N days, yesterday] inclusive  — matches the website's
+      isNewThisWeek() window (hktDaysAgo(6) to hktDaysAgo(1))
     - start_date gate: start_date must be NULL or >= `since` date
-      (a promo that started 2 weeks ago is NOT "new this week")
     - end_date gate: only include if end_date is NULL or still in the future
-      (don't return already-expired promos in the "new this week" list)
+
+    Uses HKT (UTC+8) for date calculations to match the website's JavaScript.
+    This is the canonical "Promotion newly launched within this week" source for
+    both the email and the website.
     """
-    since = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = _hkt_today()
+    since = _hkt_n_days_ago(days)   # e.g. today-6 when days=6
 
     with _db_connection() as conn:
         try:
@@ -900,7 +1042,7 @@ def get_db_stats() -> Dict[str, Any]:
 
 
 def generate_daily_report(current_run_id: int) -> Dict[str, Any]:
-    new_promos     = get_new_promotions_for_run(current_run_id, include_bau=False)
+    new_promos     = get_new_promotions_today(include_bau=False)
     expired_promos = get_expired_promotions()
     all_active     = get_active_promotions(include_bau=False)
 
