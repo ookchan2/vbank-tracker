@@ -50,22 +50,12 @@ BAU_GLOBAL_OVERRIDES: list[str] = [
 ]
 
 # ── Non-bank content patterns ─────────────────────────────────────────────────
-# If ANY of these phrases appear in a promotion's title/description/tc_link,
-# the promotion is NOT a bank product and must be filtered out.
-#
-# This is the SECOND layer of defence (scraper.py is the first).
-# It catches anything the AI mistakenly extracted despite the scrubber.
-#
-# To block a new non-bank source: add its URL fragment or a key phrase here
-# AND to scraper.py's BLOCKED_CONTENT_STRINGS list.
 
 _NON_BANK_CONTENT_PATTERNS: list[str] = [
-    # ── Specific blocked URLs (exact fragments) ────────────────────────────────
-    'taipofire.gov.hk',              # https://www.taipofire.gov.hk/eng/taxdeduction.html
-    'taxdeduction.html',             # any path ending in taxdeduction.html
-    'hab033',                        # eform.cefs.gov.hk/form/hab033
+    'taipofire.gov.hk',
+    'taxdeduction.html',
+    'hab033',
     'cefs.gov.hk',
-    # ── Wang Fuk Court / disaster-relief ──────────────────────────────────────
     'wang fuk court',
     'wangfuk',
     '宏福苑',
@@ -74,7 +64,6 @@ _NON_BANK_CONTENT_PATTERNS: list[str] = [
     '大埔宏福苑',
     '援助基金',
     'tai po fire',
-    # ── Government / tax authority pages ──────────────────────────────────────
     'inland revenue',
     'ird.gov.hk',
     'gov.hk/taxdeduction',
@@ -87,7 +76,6 @@ _NON_BANK_CONTENT_PATTERNS: list[str] = [
     '政府衷心感謝',
     '捐款致謝',
     '稅務扣除安排',
-    # ── Charity / relief funds ─────────────────────────────────────────────────
     'charity donation',
     'relief fund',
     'disaster relief',
@@ -99,7 +87,6 @@ _NON_BANK_CONTENT_PATTERNS: list[str] = [
     'bank of china (hong kong) account number 012-875',
 ]
 
-# Domains that are NOT bank domains — used to flag mismatched tc_links
 _NON_BANK_DOMAINS: list[str] = [
     'gov.hk',
     'ird.gov.hk',
@@ -114,15 +101,6 @@ _NON_BANK_DOMAINS: list[str] = [
 
 
 def _filter_bank_relevant_promotions(promos: list, bank_name: str) -> list:
-    """
-    Remove promotions that clearly do NOT belong to the bank:
-      - Government programs (tax deduction notices, relief funds)
-      - Charity / third-party donation drives
-      - Any entry whose tc_link resolves to a non-bank domain
-
-    This is the second-layer filter. The first layer is scraper.py's
-    _scrub_blocked_content() which strips blocked sentences before AI sees them.
-    """
     filtered = []
     removed  = 0
 
@@ -134,13 +112,10 @@ def _filter_bank_relevant_promotions(promos: list, bank_name: str) -> list:
 
         combined = f'{title} {description} {highlight} {tc_link}'
 
-        # Check non-bank content patterns
         offending = next(
             (pat for pat in _NON_BANK_CONTENT_PATTERNS if pat in combined),
             None,
         )
-
-        # Check if tc_link points to a clearly non-bank domain
         bad_domain = next(
             (d for d in _NON_BANK_DOMAINS if d in tc_link),
             None,
@@ -534,18 +509,21 @@ _CATEGORY_KEYWORDS: dict[str, list[str]] = {
         'hk brokerage', 'stock', 'securities', 'brokerage', 'ipo',
         'trading fee', 'platform fee', '$0 commission', 'commission',
         'powerdraw', 'free stock', 'equities', 'share trading',
+        'airstar',                               # ← NEW
     ],
     'US Stock Trading': [
         'us stock', 'us equities', 'us securities', 'us shares',
         'american stock', 'nyse', 'nasdaq', 'us market',
         'us brokerage', '$0 commission', 'commission',
         'trading fee', 'platform fee', 'stock', 'equities',
+        'airstar',                               # ← NEW
     ],
     'Stock Trading': [
         'stock', 'securities', 'brokerage', 'ipo',
         'trading fee', 'platform fee', '$0 commission', 'commission',
         'powerdraw', 'free stock', 'hk stock', 'us stock',
         'equities', 'share trading',
+        'airstar',                               # ← NEW
     ],
     'Crypto Trading': [
         'crypto', 'bitcoin', 'virtual asset', 'digital asset',
@@ -641,6 +619,13 @@ def _validate_best_for_evidence(best_for: list) -> list:
 _STOCK_CATS  = {'HK Stock Trading', 'US Stock Trading', 'Stock Trading'}
 _ZA_NAMES    = {'za bank', 'za', 'za invest'}
 
+# ← NEW: Airstar Bank is a strong competitor for stock trading.
+# HK stocks: $0 commission + $0 platform fee → total cost HKD 0 per trade,
+# which beats ZA Bank's HKD 18 platform fee.
+# US stocks: competitive fee — determined from scraped promotion data.
+_AIRSTAR_NAMES            = {'airstar bank', 'airstar', 'airstar invest'}   # ← NEW
+_AIRSTAR_HK_TOTAL_COST    = 0.0   # $0 commission + $0 platform fee         # ← NEW
+
 _CHARGES_COMMISSION_RE = re.compile(
     r'usd\s*[\d]+\.[\d]+\s*/\s*share'
     r'|usd\s*[\d]+\.[\d]+\s*per\s*share'
@@ -680,6 +665,8 @@ def _validate_stock_trading_winners(best_for: list) -> list:
 
         if cat not in _STOCK_CATS:
             continue
+
+        # ── ZA Bank path ──────────────────────────────────────────────────────
         if bank.lower() in _ZA_NAMES:
             detail = (entry.get('detail') or '')
             if 'platform fee' not in detail.lower():
@@ -687,10 +674,87 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                     **entry,
                     'detail': (
                         detail.rstrip('. ') +
-                        '; platform fee applies (HK: HKD 18/trade, US: USD 1.99/trade minimum)'
+                        '; platform fee applies '
+                        '(HK: HKD 18/trade, US: USD 1.99/trade minimum)'
+                    ),
+                }
+            # ← NEW: Airstar also competes in stock trading — always list it
+            # as a similar bank so readers know to compare both options.
+            existing_similar = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
+            if not any(n in existing_similar for n in _AIRSTAR_NAMES):
+                best_for[i] = {
+                    **best_for[i],
+                    'similar_banks': (
+                        ['Airstar Bank'] + list(best_for[i].get('similar_banks') or [])
                     ),
                 }
             continue
+
+        # ← NEW: Airstar Bank path ─────────────────────────────────────────────
+        # Airstar offers $0 commission + $0 platform fee for HK-listed stocks,
+        # giving a total cost of HKD 0/trade — lower than ZA Bank's HKD 18
+        # platform fee.  When the AI correctly selects Airstar as winner,
+        # accept that result unconditionally; just annotate the detail if it
+        # doesn't already mention the $0 total cost, and ensure ZA Bank and
+        # PAObank appear in similar_banks for context.
+        if bank.lower() in _AIRSTAR_NAMES:
+            detail = (entry.get('detail') or '')
+
+            if cat == 'HK Stock Trading':
+                if (
+                    '$0' not in detail
+                    and 'zero' not in detail.lower()
+                    and 'no fee' not in detail.lower()
+                    and 'hkd 0' not in detail.lower()
+                ):
+                    best_for[i] = {
+                        **entry,
+                        'detail': (
+                            detail.rstrip('. ') +
+                            f'; total cost HKD {_AIRSTAR_HK_TOTAL_COST:.0f}/trade '
+                            f'($0 commission + $0 platform fee). '
+                            f'Beats ZA Bank (HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f} platform fee/trade) '
+                            f'and PAObank (charges brokerage commission per trade).'
+                        ),
+                    }
+                print(
+                    f'  ✅ HK stock: Airstar Bank total cost $0/trade — '
+                    f'lower than ZA Bank HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f}. Accepted.'
+                )
+                # Ensure ZA Bank and PAObank appear as similar banks for comparison
+                existing_similar  = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
+                added_similar     = list(best_for[i].get('similar_banks') or [])
+                if not any(n in existing_similar for n in _ZA_NAMES):
+                    added_similar = ['ZA Bank'] + added_similar
+                if 'paobank' not in existing_similar and 'pao bank' not in existing_similar:
+                    added_similar = added_similar + ['PAObank']
+                best_for[i] = {**best_for[i], 'similar_banks': added_similar}
+
+            elif cat in ('US Stock Trading', 'Stock Trading'):
+                if 'total cost' not in detail.lower():
+                    best_for[i] = {
+                        **entry,
+                        'detail': (
+                            detail.rstrip('. ') +
+                            f'; verify Airstar US stock total cost vs '
+                            f'ZA Bank (min USD {_ZA_US_PLATFORM_FEE_USD}) '
+                            f'and PAObank (USD 0.012/share commission).'
+                        ),
+                    }
+                print(
+                    f'  ✅ US stock: Airstar Bank selected as winner — '
+                    f'confirm fee vs ZA Bank USD {_ZA_US_PLATFORM_FEE_USD} min.'
+                )
+                existing_similar = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
+                added_similar    = list(best_for[i].get('similar_banks') or [])
+                if not any(n in existing_similar for n in _ZA_NAMES):
+                    added_similar = ['ZA Bank'] + added_similar
+                if 'paobank' not in existing_similar and 'pao bank' not in existing_similar:
+                    added_similar = added_similar + ['PAObank']
+                best_for[i] = {**best_for[i], 'similar_banks': added_similar}
+
+            continue
+        # ↑ END Airstar Bank path
 
         detail             = (entry.get('detail') or '')
         charges_commission = bool(_CHARGES_COMMISSION_RE.search(detail))
@@ -726,15 +790,22 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                             f'ZA Bank is cheaper for trades above {breakeven:.0f} shares.'
                         ),
                         'is_bau':  True,
-                        'similar_banks': [bank] + [
-                            b for b in (entry.get('similar_banks') or [])
-                            if b.lower() not in _ZA_NAMES and b != bank
-                        ],
+                        # ← CHANGED: include Airstar Bank in similar_banks
+                        'similar_banks': (
+                            [bank, 'Airstar Bank'] + [
+                                b for b in (entry.get('similar_banks') or [])
+                                if b.lower() not in _ZA_NAMES
+                                and b != bank
+                                and b.lower() not in _AIRSTAR_NAMES
+                            ]
+                        ),
                         'why_others_lose': (
                             f'{bank} charges USD {per_share}/share commission (no platform fee). '
                             f'ZA Bank charges $0 commission + USD 1.99 flat platform fee. '
                             f'For trades of {breakeven:.0f}+ shares, ZA Bank total cost is lower. '
-                            f'Most retail investors trade 200+ shares, making ZA Bank cheaper overall.'
+                            f'Most retail investors trade 200+ shares, making ZA Bank cheaper overall. '
+                            f'Airstar Bank also offers competitive stock trading fees — '
+                            f'compare from current Airstar promotions data.'  # ← NEW
                         ),
                     }
                     overrides += 1
@@ -755,6 +826,15 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                                 f'(break-even: {breakeven:.0f} shares)'
                             ),
                         }
+                    # ← NEW: add Airstar to similar_banks here too
+                    existing_similar = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
+                    if not any(n in existing_similar for n in _AIRSTAR_NAMES):
+                        best_for[i] = {
+                            **best_for[i],
+                            'similar_banks': (
+                                list(best_for[i].get('similar_banks') or []) + ['Airstar Bank']
+                            ),
+                        }
             else:
                 print(
                     f'  🔄 Stock trading OVERRIDE [{cat}]: '
@@ -770,33 +850,51 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                         f'{bank} charges commission (exact rate unspecified).'
                     ),
                     'is_bau':  True,
-                    'similar_banks': [bank] + [
-                        b for b in (entry.get('similar_banks') or [])
-                        if b.lower() not in _ZA_NAMES and b != bank
-                    ],
+                    # ← CHANGED: include Airstar Bank in similar_banks
+                    'similar_banks': (
+                        [bank, 'Airstar Bank'] + [
+                            b for b in (entry.get('similar_banks') or [])
+                            if b.lower() not in _ZA_NAMES
+                            and b != bank
+                            and b.lower() not in _AIRSTAR_NAMES
+                        ]
+                    ),
                     'why_others_lose': (
                         f'{bank} charges per-trade commission; ZA Bank is $0 commission. '
-                        'Total cost = commission + platform fee; ZA Bank eliminates commission entirely.'
+                        'Total cost = commission + platform fee; ZA Bank eliminates commission entirely. '
+                        'Airstar Bank also offers competitive stock trading fees — '
+                        'compare from current Airstar promotions data.'  # ← NEW
                     ),
                 }
                 overrides += 1
 
         elif cat == 'HK Stock Trading' and charges_commission:
+            # ← CHANGED: note Airstar's $0/$0 total cost advantage alongside ZA Bank
             if 'platform fee' not in detail.lower() and 'total cost' not in detail.lower():
                 best_for[i] = {
                     **entry,
                     'detail': (
                         detail.rstrip('. ') +
                         '; zero platform fee. '
-                        'Compare total cost: commission + $0 platform vs ZA Bank '
-                        '$0 commission + HKD 18 platform fee.'
+                        'Compare total cost: commission + $0 platform vs '
+                        'Airstar Bank $0 total ($0 commission + $0 platform fee) and '
+                        'ZA Bank $0 commission + HKD 18 platform fee.'
                     ),
                 }
             print(
                 f'  ℹ️  HK stock winner kept [{cat}]: '
                 f'"{bank}" charges commission + $0 platform. '
-                f'Full cost comparison depends on commission rate vs ZA\'s HKD 18 platform fee.'
+                f'Airstar Bank ($0 total) and ZA Bank ($0 commission + HKD 18) '
+                f'offer lower total cost for most trades.'
             )
+            # ← NEW: ensure Airstar appears in similar_banks for HK Stock Trading
+            existing_similar = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
+            added_similar    = list(best_for[i].get('similar_banks') or [])
+            if not any(n in existing_similar for n in _AIRSTAR_NAMES):
+                added_similar = ['Airstar Bank'] + added_similar
+            if not any(n in existing_similar for n in _ZA_NAMES):
+                added_similar = ['ZA Bank'] + added_similar
+            best_for[i] = {**best_for[i], 'similar_banks': added_similar}
 
     if overrides:
         print(f'  🔄 Stock trading total-cost override: {overrides} winner(s) updated')
@@ -899,9 +997,6 @@ def analyze_promotions(
 
     results = _stamp(results, bank_id, bank_name, default_url)
     results = _apply_bau_overrides(results, bank_id)
-
-    # ── Second-layer filter: remove non-bank / government content ─────────────
-    # (First layer is scraper.py's _scrub_blocked_content)
     results = _filter_bank_relevant_promotions(results, bank_name)
 
     print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
@@ -1146,9 +1241,11 @@ def _build_bank_summary_lines(promos: list) -> list[str]:
 
 _DIAGNOSTIC_CATEGORIES: list[tuple[str, list[str]]] = [
     ('HK Stock Trading',   ['投資', 'hk stock', 'hong kong stock', 'hkex', 'local stock',
-                             'securities', 'brokerage', 'ipo', 'commission', 'trading fee']),
+                             'securities', 'brokerage', 'ipo', 'commission', 'trading fee',
+                             'airstar']),                          # ← NEW: added 'airstar'
     ('US Stock Trading',   ['投資', 'us stock', 'us equities', 'nasdaq', 'nyse',
-                             'american stock', 'commission', 'trading fee']),
+                             'american stock', 'commission', 'trading fee',
+                             'airstar']),                          # ← NEW: added 'airstar'
     ('Crypto Trading',     ['投資', 'crypto', 'bitcoin', 'virtual asset', 'digital asset', 'cryptocurrency']),
     ('Fund Investment',    ['投資', 'fund', '基金', '$0認購費', 'subscription fee']),
     ('Referral Bonus',     ['推薦', 'referral', '多友多賞', 'invite']),
@@ -1398,8 +1495,11 @@ The "detail" field MUST contain at least ONE concrete verifiable fact:
 SECTION 7 — SIMILAR BANKS & WHY THEY DON'T WIN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 For EVERY best_for entry populate:
-• similar_banks: ALL other banks offering a similar promotion in this category
-• why_others_lose: specific comparative reason using fees, caps, expiry dates
+• similar_banks: ALL other banks offering a similar promotion in this category.
+  ⚠️  For HK Stock Trading and US Stock Trading you MUST include BOTH
+      "ZA Bank" and "Airstar Bank" in similar_banks (whichever one did not win),
+      because both offer highly competitive stock trading fees.
+• why_others_lose: specific comparative reason using fees, caps, expiry dates.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 8 — SELF-CONSISTENCY CHECK
@@ -1415,19 +1515,38 @@ SECTION 9 — STOCK TRADING: TOTAL COST ANALYSIS (CRITICAL)
 
   Total cost per trade = Commission fee + Platform fee
 
+  Airstar Bank:
+    • HK stocks: $0 commission + $0 platform fee → total cost HKD 0/trade
+    • US stocks: evaluate fee structure from the scraped promotions data above
+    ✅ For HK stocks Airstar total HKD 0 < ZA Bank HKD 18 platform fee.
+       Pick Airstar as HK Stock Trading winner whenever its HK stock trading
+       promotion appears in the scraped data.
+    ❌ NEVER say "Airstar charges commission" without evidence from the data.
+
   ZA Bank (via ZA Invest):
     • Commission:    $0 (zero brokerage commission for ALL stocks)
     • Platform fee:  HKD 18/trade minimum (HK stocks)
                      USD 0.0099/share, min USD 1.99/trade (US stocks)
-    ❌ NEVER say "ZA Bank charges commission" — factually incorrect
+    ✅ Pick ZA Bank as HK Stock Trading winner only when Airstar HK stock
+       data is absent from the input above.
+    ❌ NEVER say "ZA Bank charges commission" — factually incorrect.
 
   PAO Bank (PAObank):
-    • HK stocks: commission charged + $0 platform fee
+    • HK stocks: brokerage commission charged + $0 platform fee
     • US stocks: USD 0.012/share commission + $0 platform fee
 
-WINNER DETERMINATION — compare TOTAL COST:
-  US stocks break-even: 166 shares (PAO cheaper below, ZA cheaper above)
-  At 200-share benchmark: ZA Bank USD 1.99 vs PAO USD 2.40 → ZA wins
+WINNER PRIORITY — HK Stock Trading:
+  1st choice: Airstar Bank  ($0 commission + $0 platform = HKD 0 total)
+  2nd choice: ZA Bank       ($0 commission + HKD 18 platform fee)
+  3rd: PAObank/others       (commission-based, total cost varies)
+  → Always list the other two in similar_banks.
+
+WINNER PRIORITY — US Stock Trading:
+  Compare total cost at a 200-share benchmark:
+    ZA Bank:  USD 0.0099 × 200 = USD 1.98, floored at min USD 1.99
+    PAObank:  USD 0.012  × 200 = USD 2.40  → ZA Bank wins at ≥166 shares
+    Airstar:  evaluate from scraped data; include in similar_banks regardless
+  → Always list Airstar Bank in similar_banks for US Stock Trading.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 10 — FORBIDDEN COMPARISONS IN BANK ANALYSIS
@@ -1442,19 +1561,19 @@ Return this EXACT JSON structure (no markdown, no code fences):
   "best_for": [
     {{
       "category":       "HK Stock Trading",
-      "bank":           "ZA Bank",
-      "detail":         "$0 commission + HKD 18 platform fee/trade. Total cost HKD 18 vs PAO Bank (commission + $0 platform). ZA wins unless PAO's commission < HKD 18/trade.",
+      "bank":           "Airstar Bank",
+      "detail":         "$0 commission + $0 platform fee → total cost HKD 0/trade. Beats ZA Bank (HKD 18 platform fee/trade despite $0 commission) and PAObank (charges brokerage commission + $0 platform).",
       "is_bau":         true,
-      "similar_banks":  ["PAObank"],
-      "why_others_lose":"PAObank charges brokerage commission per HK trade; ZA Bank's HKD 18 flat platform fee with $0 commission is transparent and cost-effective for typical board-lot trades."
+      "similar_banks":  ["ZA Bank", "PAObank"],
+      "why_others_lose":"ZA Bank charges HKD 18 platform fee per trade (despite $0 commission), making total cost HKD 18/trade. PAObank charges brokerage commission per HK trade. Airstar's HKD 0 total cost is the lowest."
     }},
     {{
       "category":       "US Stock Trading",
       "bank":           "ZA Bank",
-      "detail":         "$0 commission + USD 0.0099/share (min USD 1.99) platform fee. At 200-share benchmark: ZA USD 1.99 vs PAO USD 2.40 (USD 0.012 × 200). Break-even: 166 shares — PAO cheaper below that.",
+      "detail":         "$0 brokerage commission for US stocks via ZA Invest; platform fee USD 0.0099/share (min USD 1.99/trade). Total cost at 200 shares: USD 1.99. PAObank charges USD 0.012/share commission + $0 platform = USD 2.40 at 200 shares — ZA Bank is cheaper for trades above 166 shares.",
       "is_bau":         true,
-      "similar_banks":  ["PAObank"],
-      "why_others_lose":"PAObank charges USD 0.012/share commission + $0 platform. At 200 shares PAO costs USD 2.40 vs ZA USD 1.99. ZA wins for trades ≥166 shares (most retail benchmarks)."
+      "similar_banks":  ["PAObank", "Airstar Bank"],
+      "why_others_lose":"PAObank charges USD 0.012/share commission + $0 platform. At 200 shares PAO costs USD 2.40 vs ZA USD 1.99. ZA wins for trades ≥166 shares (most retail benchmarks). Airstar Bank also offers competitive US stock fees — compare from current promotions data."
     }},
     {{
       "category":       "Crypto Trading",
@@ -1528,6 +1647,13 @@ Return this EXACT JSON structure (no markdown, no code fences):
       "expiring_alert": "",
       "vs_za_pros": null,
       "vs_za_cons": null
+    }},
+    "Airstar Bank": {{
+      "focus": "short keywords",
+      "strengths": ["$0 commission + $0 platform fee for HK stocks", "s2", "s3"],
+      "expiring_alert": "",
+      "vs_za_pros": "$0 total cost for HK stock trades vs ZA Bank HKD 18 platform fee",
+      "vs_za_cons": "cons vs ZA Bank"
     }},
     "OtherBank": {{
       "focus": "keywords",

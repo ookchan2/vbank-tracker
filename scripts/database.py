@@ -115,9 +115,6 @@ def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
     def _nullable(name: str) -> str:
         return name if name in existing else 'NULL'
 
-    # ← NEW: preserve first_seen_at during rebuild; fall back to created_at
-    # so historical rows keep their original discovery date even after a
-    # table rebuild triggered by a schema migration.
     first_seen_expr = (
         f"COALESCE({_nullable('first_seen_at')}, {_col('created_at')})"
         if 'first_seen_at' in existing
@@ -152,7 +149,6 @@ def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
             active        INTEGER NOT NULL DEFAULT 1
         )
     ''')
-    # ↑ CHANGED: first_seen_at column added to rebuilt schema
 
     conn.execute(f'''
         INSERT INTO _promotions_rebuild
@@ -186,7 +182,6 @@ def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
             {_col('active', '1')}
         FROM promotions
     ''')
-    # ↑ CHANGED: first_seen_at added to INSERT SELECT with fallback expression
 
     conn.execute('DROP TABLE promotions')
     conn.execute('ALTER TABLE _promotions_rebuild RENAME TO promotions')
@@ -231,7 +226,6 @@ def init_db():
                 banks_scraped TEXT    DEFAULT ''
             );
         ''')
-        # ↑ CHANGED: first_seen_at column added to CREATE TABLE IF NOT EXISTS
 
         existing_cols = {
             row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
@@ -244,10 +238,11 @@ def init_db():
             }
             print('  🔧 DB migration: rebuilt table (legacy "bank" → "bank_id")')
 
-        # ← NEW: snapshot whether first_seen_at was absent before migrations
-        # so we know to back-fill it after ALTER TABLE adds the column.
-        _first_seen_was_missing = 'first_seen_at' not in existing_cols
-
+        # ── Migrations ────────────────────────────────────────────────────────
+        # NOTE: _first_seen_was_missing flag removed entirely.
+        # The NULL back-fill below now runs unconditionally on every startup
+        # so partial failures, imports, or manual edits never leave orphaned
+        # NULL values that would make COALESCE fall through to created_at.
         migrations = [
             ('bank_id',       "ALTER TABLE promotions ADD COLUMN bank_id       TEXT NOT NULL DEFAULT ''"),
             ('bank_name',     "ALTER TABLE promotions ADD COLUMN bank_name     TEXT NOT NULL DEFAULT ''"),
@@ -265,24 +260,32 @@ def init_db():
             ('promo_type',    "ALTER TABLE promotions ADD COLUMN promo_type    TEXT DEFAULT ''"),
             ('is_bau',        "ALTER TABLE promotions ADD COLUMN is_bau        INTEGER DEFAULT 0"),
             ('first_run_id',  "ALTER TABLE promotions ADD COLUMN first_run_id  INTEGER DEFAULT NULL"),
-            ('first_seen_at', "ALTER TABLE promotions ADD COLUMN first_seen_at TEXT DEFAULT NULL"),  # ← NEW
+            ('first_seen_at', "ALTER TABLE promotions ADD COLUMN first_seen_at TEXT DEFAULT NULL"),
         ]
         for col, sql in migrations:
             if col not in existing_cols:
                 conn.execute(sql)
                 print(f'  🔧 DB migration: added column "{col}"')
 
-        # ← NEW: back-fill first_seen_at from created_at for every pre-existing
-        # row so they are never surfaced as "new today" / "new this week".
-        # This runs exactly once on the first DB upgrade; after that all new
-        # rows are written with first_seen_at set explicitly on INSERT.
-        if _first_seen_was_missing:
+        # ── Unconditional NULL back-fill ───────────────────────────────────
+        # Runs every startup. If any row has first_seen_at IS NULL (first-ever
+        # migration, partial failure, manual import, etc.) it is back-filled
+        # from created_at so COALESCE(first_seen_at, created_at) always
+        # resolves to a genuine historical date and never causes an old promo
+        # to surface as "new today".
+        null_row = conn.execute(
+            'SELECT COUNT(*) FROM promotions WHERE first_seen_at IS NULL'
+        ).fetchone()
+        if null_row and null_row[0] > 0:
             conn.execute(
                 'UPDATE promotions SET first_seen_at = created_at '
                 'WHERE first_seen_at IS NULL'
             )
             conn.commit()
-            print('  🔧 DB migration: first_seen_at back-filled from created_at')
+            print(
+                f'  🔧 DB migration: first_seen_at back-filled '
+                f'for {null_row[0]} NULL row(s) from created_at'
+            )
 
         conn.executescript('''
             CREATE INDEX IF NOT EXISTS idx_bank_id       ON promotions(bank_id);
@@ -295,7 +298,6 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_bank_name     ON promotions(bank_name);
             CREATE INDEX IF NOT EXISTS idx_end_date      ON promotions(end_date);
         ''')
-        # ↑ CHANGED: idx_first_seen_at index added
 
         conn.commit()
         print('  ✅ Database ready')
@@ -343,9 +345,9 @@ def get_previous_run_id(current_run_id: int) -> Optional[int]:
 # ── 3. Dedup helpers ──────────────────────────────────────────────────────────
 
 _JACCARD_THRESHOLD          = 0.50
-_JACCARD_THRESHOLD_INACTIVE = 0.42   # ← NEW: softer match for rows that were deactivated
+_JACCARD_THRESHOLD_INACTIVE = 0.42
 _LCP_THRESHOLD              = 0.72
-_LCP_THRESHOLD_INACTIVE     = 0.65   # ← NEW: softer LCP match for inactive rows
+_LCP_THRESHOLD_INACTIVE     = 0.65
 _MIN_NORM_LEN               = 10
 _MIN_TOKENS                 = 2
 
@@ -555,8 +557,6 @@ def _find_duplicate_id(
     title: str,
     highlight: str,
 ) -> Optional[int]:
-    # ← CHANGED: added `active` to SELECT so we can apply softer thresholds
-    # for rows that are currently inactive (previously deactivated).
     rows = conn.execute(
         "SELECT id, title, highlight, active FROM promotions WHERE bank_id = ?",
         (bank_id,)
@@ -568,11 +568,6 @@ def _find_duplicate_id(
     toks_new      = _tokenize_for_jaccard(title)
 
     for row in rows:
-        # ← NEW: when matching against an inactive row use softer thresholds.
-        # A promo that was deactivated may come back with an AI-reformulated
-        # title that scores slightly below the standard threshold; the looser
-        # values prevent a false re-insertion that would make it appear as
-        # "New Today" even though it has been in the DB before.
         is_inactive = not row['active']
         j_thr = _JACCARD_THRESHOLD_INACTIVE if is_inactive else _JACCARD_THRESHOLD
         l_thr = _LCP_THRESHOLD_INACTIVE     if is_inactive else _LCP_THRESHOLD
@@ -604,14 +599,14 @@ def _find_duplicate_id(
                 len(toks_new) >= _MIN_TOKENS
                 and len(toks_old) >= _MIN_TOKENS
                 and len(toks_new & toks_old) >= _MIN_TOKENS
-                and _jaccard_similarity(title, row['title']) >= j_thr   # ← CHANGED: active-aware
+                and _jaccard_similarity(title, row['title']) >= j_thr
             ):
                 return row['id']
 
             if (
                 len_new >= _MIN_NORM_LEN
                 and len_old >= _MIN_NORM_LEN
-                and _common_prefix_ratio(norm_new, norm_old) >= l_thr   # ← CHANGED: active-aware
+                and _common_prefix_ratio(norm_new, norm_old) >= l_thr
             ):
                 return row['id']
 
@@ -690,8 +685,8 @@ def save_promotions(
                         if (existing and len(title) >= len(existing['title']))
                         else (existing['title'] if existing else title)
                     )
-                    # ← NOTE: first_seen_at is intentionally absent from this
-                    # UPDATE — it is written once on INSERT and must never change,
+                    # first_seen_at is intentionally absent from UPDATE —
+                    # it is written once on INSERT and must never change,
                     # even when the row is reactivated after a stale-mark cycle.
                     conn.execute("""
                         UPDATE promotions SET
@@ -722,12 +717,11 @@ def save_promotions(
                     ))
                     stats['updated'] += 1
                 else:
-                    # ← CHANGED: first_seen_at added to INSERT — set to today
-                    # and NEVER updated thereafter.  This is the canonical
-                    # "when did our tracker first record this promotion" date
-                    # used by get_new_promotions_today() and
-                    # get_new_promotions_last_n_days() so "New Today / This
-                    # Week" reflects genuine first discoveries, not re-inserts.
+                    # first_seen_at set to today on INSERT and NEVER updated
+                    # thereafter. This is the canonical "when did our tracker
+                    # first record this promotion" date used by
+                    # get_new_promotions_today() and the website "New Today"
+                    # badge so only genuinely first-seen rows are highlighted.
                     conn.execute("""
                         INSERT INTO promotions
                             (bank_id, bank_name, title, highlight, description,
@@ -876,6 +870,160 @@ def reactivate_most_recently_seen(window_days: int = 7) -> int:
             return 0
 
 
+# ── 5-b. Repair re-inserted promotions ───────────────────────────────────────
+
+def repair_reinserted_promotions(dry_run: bool = False) -> int:
+    """
+    Fix promotions that were re-inserted today because the dedup engine missed
+    a match against an older row (title reformulated by AI, punctuation change,
+    word-order swap, etc.).
+
+    Algorithm
+    ---------
+    For every active row where first_seen_at = today:
+      1. Search ALL rows in the same bank (active or inactive) that are older
+         than today for a fuzzy title match using promo-code stem, exact
+         normalised title, substring, Jaccard similarity, or identical
+         highlight snippet.
+      2. When the best older match is found:
+         • Overwrite the today row's first_seen_at with the older row's
+           first_seen_at (or created_at) so it no longer surfaces as
+           "new today".
+         • Deactivate the older duplicate so only the current (freshest)
+           row remains active.
+
+    Call this immediately after save_promotions() + mark_stale_as_inactive()
+    in your main scrape pipeline so that generate_daily_report() and the
+    website both see corrected first_seen_at values.
+
+    Parameters
+    ----------
+    dry_run : bool
+        When True prints what would change but makes no DB writes.
+
+    Returns
+    -------
+    int  Number of rows whose first_seen_at was corrected.
+    """
+    today = _hkt_today()
+    fixed = 0
+
+    with _db_connection() as conn:
+        try:
+            # Every active row that was (re-)inserted today
+            today_rows = conn.execute(
+                "SELECT id, bank_id, title, highlight "
+                "FROM promotions "
+                "WHERE DATE(COALESCE(first_seen_at, created_at)) = ? AND active = 1",
+                (today,),
+            ).fetchall()
+
+            if not today_rows:
+                print('  🔧 repair_reinserted_promotions: nothing to repair')
+                return 0
+
+            for row in today_rows:
+                bank_id = row['bank_id']
+                title   = row['title']
+                row_id  = row['id']
+                hi_new  = (row['highlight'] or '').strip()[:120]
+
+                # All rows for the same bank that are older than today
+                older_rows = conn.execute(
+                    "SELECT id, title, highlight, first_seen_at, created_at "
+                    "FROM promotions "
+                    "WHERE bank_id = ? "
+                    "  AND id != ? "
+                    "  AND DATE(COALESCE(first_seen_at, created_at)) < ?",
+                    (bank_id, row_id, today),
+                ).fetchall()
+
+                best_match_id   = None
+                best_older_date = None
+                best_reason     = ''
+
+                code_new = _extract_promo_code_stem(title)
+                norm_new = _normalize_title(title)
+
+                for older in older_rows:
+                    hi_old   = (older['highlight'] or '').strip()[:120]
+                    norm_old = _normalize_title(older['title'])
+                    code_old = _extract_promo_code_stem(older['title'])
+
+                    is_match = False
+                    reason   = ''
+
+                    # Promo-code stem (strongest signal)
+                    if code_new and code_old and code_new == code_old:
+                        is_match, reason = True, f'code-stem={code_new}'
+
+                    # Exact normalised title
+                    elif norm_new and norm_old and norm_new == norm_old:
+                        is_match, reason = True, 'exact-norm'
+
+                    # Substring / near-duplicate normalised title
+                    elif norm_new and norm_old:
+                        min_l = min(len(norm_new), len(norm_old))
+                        max_l = max(len(norm_new), len(norm_old))
+                        if (
+                            min_l >= _MIN_NORM_LEN
+                            and min_l >= max_l * 0.35
+                            and (norm_new in norm_old or norm_old in norm_new)
+                        ):
+                            is_match, reason = True, 'substring-norm'
+
+                    # Jaccard with the inactive threshold (more forgiving)
+                    if not is_match:
+                        j = _jaccard_similarity(title, older['title'])
+                        if j >= _JACCARD_THRESHOLD_INACTIVE:
+                            is_match, reason = True, f'jaccard={j:.2f}'
+
+                    # Identical highlight snippet
+                    if not is_match and hi_new and hi_old and hi_new == hi_old:
+                        is_match, reason = True, 'same-highlight'
+
+                    if is_match:
+                        older_date = older['first_seen_at'] or older['created_at']
+                        if older_date and older_date < today:
+                            # Keep the earliest matching date across all matches
+                            if best_older_date is None or older_date < best_older_date:
+                                best_match_id   = older['id']
+                                best_older_date = older_date
+                                best_reason     = reason
+
+                if best_match_id and best_older_date:
+                    tag = '[DRY RUN] ' if dry_run else ''
+                    print(
+                        f'  🔧 {tag}repair [{bank_id}] '
+                        f'"{title[:55]}" '
+                        f'first_seen_at {today} → {best_older_date} '
+                        f'(reason: {best_reason}, old_id={best_match_id})'
+                    )
+                    if not dry_run:
+                        conn.execute(
+                            'UPDATE promotions SET first_seen_at = ? WHERE id = ?',
+                            (best_older_date, row_id),
+                        )
+                        # Deactivate the stale duplicate
+                        conn.execute(
+                            'UPDATE promotions SET active = 0 WHERE id = ?',
+                            (best_match_id,),
+                        )
+                    fixed += 1
+
+            if not dry_run and fixed:
+                conn.commit()
+
+            tag = '[DRY RUN] ' if dry_run else ''
+            print(f'  🔧 {tag}repair_reinserted_promotions: {fixed} row(s) corrected')
+            return fixed
+
+        except Exception as exc:
+            conn.rollback()
+            print(f'  ❌ repair_reinserted_promotions error: {exc}')
+            return 0
+
+
 # ── 6. Queries ────────────────────────────────────────────────────────────────
 
 def _to_dicts(rows) -> List[Dict[str, Any]]:
@@ -889,8 +1037,7 @@ def get_new_promotions_today(
     Returns promotions first seen TODAY (HKT) that are active and not expired.
 
     Uses COALESCE(first_seen_at, created_at) for safety so rows that existed
-    before first_seen_at was added (back-filled in init_db) are still handled
-    correctly.
+    before first_seen_at was added are still handled correctly.
 
     Key guarantee: first_seen_at is written ONCE on INSERT and never touched
     again.  When _find_duplicate_id matches a previously-deactivated promo and
@@ -898,16 +1045,14 @@ def get_new_promotions_today(
     This means a long-running promo that went stale and was re-activated will
     NOT appear here as "new today" — only genuinely new (first-ever) rows will.
 
-    This is the canonical "New Today" source for both the email and the website.
+    repair_reinserted_promotions() is called by generate_daily_report() before
+    this function is used for reporting, so any dedup misses are corrected
+    before the "New Today" list is compiled.
     """
     today = _hkt_today()
     with _db_connection() as conn:
         try:
             bau_clause = '' if include_bau else 'AND is_bau = 0'
-            # ← CHANGED: DATE(created_at) replaced by
-            # COALESCE(DATE(first_seen_at), DATE(created_at)).
-            # first_seen_at is set once on INSERT; created_at is the fallback
-            # for rows that pre-date this column (all back-filled in init_db).
             return _to_dicts(conn.execute(f'''
                 SELECT * FROM promotions
                 WHERE active = 1
@@ -954,18 +1099,14 @@ def get_new_promotions_last_n_days(
     exclude_run_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """
-    Returns promotions first seen within the past N days EXCLUDING today that are:
-    - active = 1
-    - not BAU (unless include_bau=True)
-    - first_seen_at in [today-N days, yesterday] inclusive — matches the
-      website's isNewThisWeek() window (hktDaysAgo(6) to hktDaysAgo(1))
-    - end_date gate: only include if end_date is NULL or still in the future
+    Returns promotions first seen within the past N days EXCLUDING today that
+    are active, not BAU (unless include_bau=True), and not yet expired.
 
-    Uses COALESCE(first_seen_at, created_at) for rows that pre-date the
-    first_seen_at column (all back-filled in init_db so COALESCE always
-    resolves to a real date).
+    The window is [today-N days, yesterday] inclusive — matching the website's
+    isNewThisWeek() window (hktDaysAgo(6) to hktDaysAgo(1)).
 
-    Uses HKT (UTC+8) for date calculations to match the website's JavaScript.
+    Uses COALESCE(first_seen_at, created_at) and HKT dates to stay in sync
+    with the website's JavaScript date calculations.
     """
     today = _hkt_today()
     since = _hkt_n_days_ago(days)
@@ -977,10 +1118,6 @@ def get_new_promotions_last_n_days(
                 f'AND (first_run_id IS NULL OR first_run_id != {int(exclude_run_id)})'
                 if exclude_run_id is not None else ''
             )
-            # ← CHANGED: DATE(created_at) replaced by
-            # COALESCE(DATE(first_seen_at), DATE(created_at)) throughout,
-            # including the ORDER BY, so the window is based on genuine
-            # first-discovery date rather than row-creation date.
             return _to_dicts(conn.execute(f'''
                 SELECT * FROM promotions
                 WHERE active = 1
@@ -1075,6 +1212,12 @@ def get_db_stats() -> Dict[str, Any]:
 
 
 def generate_daily_report(current_run_id: int) -> Dict[str, Any]:
+    # Repair any re-inserted promotions before building the report so that
+    # "New Today" counts are accurate on both the email and the website.
+    # This catches dedup misses caused by AI-reformulated titles, punctuation
+    # changes, or word-order swaps that slipped past _find_duplicate_id.
+    repair_reinserted_promotions(dry_run=False)
+
     new_promos     = get_new_promotions_today(include_bau=False)
     expired_promos = get_expired_promotions()
     all_active     = get_active_promotions(include_bau=False)
@@ -1260,7 +1403,7 @@ def export_to_json(
             'is_bau':        bool(p.get('is_bau', 0)),
             'active':        bool(p.get('active', 1)),
             'created_at':    p.get('created_at')    or '',
-            'first_seen_at': p.get('first_seen_at') or '',   # ← NEW
+            'first_seen_at': p.get('first_seen_at') or '',
             'last_seen':     p.get('last_seen')     or '',
         })
 
