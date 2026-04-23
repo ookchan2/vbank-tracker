@@ -7,7 +7,8 @@
 #   new_promos_week → pass output of database.get_new_promotions_last_n_days(days=6)
 #
 # Using the date-based functions ensures the email and the website show
-# identical promotion sets (the website uses created_at date logic in JS).
+# identical promotion sets (the website uses first_seen_at date logic in JS,
+# mirroring COALESCE(first_seen_at, created_at) in the Python queries).
 
 import os
 import smtplib
@@ -139,10 +140,26 @@ def _types_to_list(types_raw) -> list:
 def _classify_promo(p: dict, today_d, threshold_d) -> str:
     """
     Returns 'past' | 'expiring' | 'active'.
-    'past'     = end_date already passed   → NOT counted in total or active
-    'expiring' = end_date within 30 days   → counted in total + expiring
-    'active'   = no end_date or far future → counted in total + active
+
+    'past'     → active=False/0  OR  end_date already passed
+                 NOT counted in total or active
+    'expiring' → end_date within 30 days
+                 counted in total + expiring
+    'active'   → no end_date or far future
+                 counted in total + active
+
+    FIX: mirrors website getStatus() which returns 'expired' for active===false.
+    Without this check, a promo with active=False but no past end_date was
+    classified 'active' in Python while the website excluded it — causing the
+    total non-BAU count to differ between the email and the website.
     """
+    # ── Mirror JS: getStatus() returns 'expired' when p.active === false ──────
+    # Covers both Python False (from JSON) and integer 0 (from SQLite).
+    active = p.get('active')
+    if active is not None and not active:   # False or 0, but NOT None
+        return 'past'
+
+    # ── Date-based expiry (unchanged logic) ───────────────────────────────────
     ed = p.get('end_date')
     if ed:
         try:
@@ -385,8 +402,6 @@ def _build_plain_text(
             '    Promotions may not reflect today\'s latest changes.',
         ]
 
-    # ── Order: Today new → This week new → Totals ─────────────────────────────
-
     new_show = [p for p in (new_promos or []) if not p.get('is_bau', False)]
     if new_show:
         lines += [
@@ -462,8 +477,13 @@ def build_html_email(
       new_promos      ← database.get_new_promotions_today()
       new_promos_week ← database.get_new_promotions_last_n_days(days=6)
 
-    Both functions use HKT (UTC+8) dates, matching the website's JavaScript
-    logic exactly so the email and website always show the same promotions.
+    Both functions use COALESCE(first_seen_at, created_at) and HKT (UTC+8) dates.
+    The website mirrors this exactly via first_seen_at with fallback to created_at,
+    so the email and website always show the same promotions in both sections.
+
+    Total non-BAU count now matches the website exactly:
+      _classify_promo returns 'past' for active=False/0, mirroring JS getStatus()
+      which returns 'expired' for p.active === false.
     """
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
@@ -572,11 +592,10 @@ def build_html_email(
 </tr>"""
 
     # ── Section 1: Newly Launched Today ───────────────────────────────────────
-    # skip_if_empty=True → section omitted entirely when no new promos today
     today_section = _new_section_html(
         promos        = new_promos_show,
         heading       = 'Newly Launched Today',
-        sub_heading   = '今日新推出優惠 · created_at = today (HKT) · start date on or after today · active only',
+        sub_heading   = '今日新推出優惠 · first_seen_at = today (HKT) · active only',
         icon          = '🆕',
         header_color  = 'linear-gradient(135deg,#ff6b35 0%,#f7931e 100%)',
         header_dark   = '#f97316',
@@ -586,12 +605,10 @@ def build_html_email(
     )
 
     # ── Section 2: Promotion newly launched within this week ──────────────────
-    # Previously labelled "New This Week" — renamed per requirement.
-    # skip_if_empty=False → always show this section (even when empty)
     week_section = _new_section_html(
         promos        = new_promos_wk_show,
         heading       = 'Promotion newly launched within this week',
-        sub_heading   = '本週新推出優惠 · past 6 days (excluding today, HKT) · active only',
+        sub_heading   = '本週新推出優惠 · first_seen_at in past 6 days (excl. today, HKT) · active only',
         icon          = '📅',
         header_color  = 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)',
         header_dark   = '#6366f1',
