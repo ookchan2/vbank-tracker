@@ -149,7 +149,7 @@
           <span class="text-2xl">🆕</span>
           <div>
             <div class="font-extrabold text-white text-lg tracking-tight">New Promotions Today</div>
-            <div class="text-orange-100 text-xs mt-0.5">今日首次偵測到的優惠 · created_at = today (HKT) · start date on or after today</div>
+            <div class="text-orange-100 text-xs mt-0.5">今日首次偵測到的優惠 · first_seen_at = today (HKT) · active only</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -177,7 +177,7 @@
           <span class="text-2xl">📅</span>
           <div>
             <div class="font-extrabold text-white text-lg tracking-tight">Promotion newly launched within this week</div>
-            <div class="text-indigo-100 text-xs mt-0.5">本週新推出優惠 · past 6 days (excluding today, HKT) · DB active only</div>
+            <div class="text-indigo-100 text-xs mt-0.5">本週新推出優惠 · first_seen_at in past 6 days (excl. today, HKT) · active only</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -446,22 +446,12 @@ function bauTag(p) {
 }
 
 // ── Stable "today" string computed ONCE at page load (HKT) ────────────────
-// Using a page-load constant prevents the count from changing on every render
-// within the same browsing session.
-//
-// Root cause of the old flicker bug:
-//   new Date(p.end_date) parses "2026-04-22" as midnight UTC = 08:00 HKT.
-//   After 08:00 HKT on Apr 22, (new Date("2026-04-22") − new Date()) < 0
-//   → promo incorrectly shows "expired" for the rest of the day.
-//
-// Fix: compare YYYY-MM-DD strings only; use noon-UTC for diff calculation.
 const _PAGE_TODAY_STR = new Date(Date.now() + 8 * 3600000)
                           .toISOString().substring(0, 10);   // YYYY-MM-DD in HKT
 const _MS_PER_DAY     = 86400000;
 const _PAGE_TODAY_NOON_MS = Date.parse(_PAGE_TODAY_STR + 'T12:00:00Z');
 
 function _endDateDiffDays(endDateStr) {
-  // Positive = future, 0 = today, negative = past
   const endNoonMs = Date.parse(endDateStr.substring(0, 10) + 'T12:00:00Z');
   return Math.round((endNoonMs - _PAGE_TODAY_NOON_MS) / _MS_PER_DAY);
 }
@@ -502,35 +492,43 @@ function hktDaysAgo(n) {
   return new Date(Date.now() + 8 * 3600000 - n * _MS_PER_DAY).toISOString().substring(0, 10);
 }
 
-// ── isNewToday ─────────────────────────────────────────────────────────────
+// ── ★ FIX 1: isNewToday ────────────────────────────────────────────────────
 // Mirrors database.get_new_promotions_today():
-//   created_at == today (HKT)  AND  start_date is NULL or >= today
+//   COALESCE(first_seen_at, created_at) == today (HKT)
+//   AND active = 1
+//   AND (end_date IS NULL OR end_date >= today)
+//
+// Previously used created_at only, which diverged from Python when
+// first_seen_at differed from created_at (e.g. after a repair pass or
+// re-scrape of a previously stale row).
+// The start_date guard has been removed — Python does not apply it.
 function isNewToday(p, today) {
   if (p.is_bau) return false;
   if (p.active === false) return false;
   if (getStatus(p) === 'expired') return false;
-  const created = (p.created_at || '').substring(0, 10);
-  if (created !== today) return false;
-  const start = (p.start_date || '').substring(0, 10);
-  if (start && start < today) return false;
-  return true;
+  // ★ Use first_seen_at with fallback to created_at — matches Python COALESCE
+  const firstSeen = (p.first_seen_at || p.created_at || '').substring(0, 10);
+  return firstSeen === today;
 }
 
-// ── isNewThisWeek ──────────────────────────────────────────────────────────
+// ── ★ FIX 2: isNewThisWeek ─────────────────────────────────────────────────
 // Mirrors database.get_new_promotions_last_n_days(days=6):
-//   created_at in [today-6, yesterday]  AND  start_date >= today-6
-// "Promotion newly launched within this week" excludes today (shown above).
+//   COALESCE(first_seen_at, created_at) in [today-6, yesterday]
+//   AND active = 1
+//   AND (end_date IS NULL OR end_date >= today)
+//
+// Previously used created_at only, causing the website and email to show
+// different promotion sets whenever first_seen_at != created_at.
+// The start_date guard has been removed — Python does not apply it.
 function isNewThisWeek(p, today) {
   if (p.is_bau) return false;
   if (p.active === false) return false;
   if (getStatus(p) === 'expired') return false;
-  const created   = (p.created_at || '').substring(0, 10);
+  // ★ Use first_seen_at with fallback to created_at — matches Python COALESCE
+  const firstSeen = (p.first_seen_at || p.created_at || '').substring(0, 10);
   const sixAgo    = hktDaysAgo(6);
   const yesterday = hktDaysAgo(1);
-  if (created < sixAgo || created > yesterday) return false;
-  const start = (p.start_date || '').substring(0, 10);
-  if (start && start < sixAgo) return false;
-  return true;
+  return firstSeen >= sixAgo && firstSeen <= yesterday;
 }
 
 let allPromos         = [];
@@ -1283,7 +1281,12 @@ function applyFilters() {
 
   if (sort==='bank')    filtered.sort((a,b)=>a.bank_name.localeCompare(b.bank_name));
   if (sort==='enddate') filtered.sort((a,b)=>(a.end_date||'9999')<(b.end_date||'9999')?-1:1);
-  if (sort==='newest')  filtered.sort((a,b)=>(b.created_at||'')>(a.created_at||'')?1:-1);
+  // ★ FIX 3: use first_seen_at with fallback to created_at — matches Python ordering
+  if (sort==='newest')  filtered.sort((a,b)=>{
+    const da = (b.first_seen_at || b.created_at || '');
+    const db = (a.first_seen_at || a.created_at || '');
+    return da > db ? 1 : da < db ? -1 : 0;
+  });
 
   renderTable(filtered);
 
@@ -1397,7 +1400,7 @@ function exportExcel() {
     'Highlight':   p.highlight||'',
     'Description': p.description||'',
     'Source Link': p.tc_link||p.url||'',
-    'Created':     p.created_at||'',
+    'First Seen':  p.first_seen_at||p.created_at||'',
     'Last Seen':   p.last_seen||'',
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
