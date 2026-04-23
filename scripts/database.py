@@ -239,10 +239,6 @@ def init_db():
             print('  🔧 DB migration: rebuilt table (legacy "bank" → "bank_id")')
 
         # ── Migrations ────────────────────────────────────────────────────────
-        # NOTE: _first_seen_was_missing flag removed entirely.
-        # The NULL back-fill below now runs unconditionally on every startup
-        # so partial failures, imports, or manual edits never leave orphaned
-        # NULL values that would make COALESCE fall through to created_at.
         migrations = [
             ('bank_id',       "ALTER TABLE promotions ADD COLUMN bank_id       TEXT NOT NULL DEFAULT ''"),
             ('bank_name',     "ALTER TABLE promotions ADD COLUMN bank_name     TEXT NOT NULL DEFAULT ''"),
@@ -268,11 +264,6 @@ def init_db():
                 print(f'  🔧 DB migration: added column "{col}"')
 
         # ── Unconditional NULL back-fill ───────────────────────────────────
-        # Runs every startup. If any row has first_seen_at IS NULL (first-ever
-        # migration, partial failure, manual import, etc.) it is back-filled
-        # from created_at so COALESCE(first_seen_at, created_at) always
-        # resolves to a genuine historical date and never causes an old promo
-        # to surface as "new today".
         null_row = conn.execute(
             'SELECT COUNT(*) FROM promotions WHERE first_seen_at IS NULL'
         ).fetchone()
@@ -892,9 +883,13 @@ def repair_reinserted_promotions(dry_run: bool = False) -> int:
          • Deactivate the older duplicate so only the current (freshest)
            row remains active.
 
-    Call this immediately after save_promotions() + mark_stale_as_inactive()
-    in your main scrape pipeline so that generate_daily_report() and the
-    website both see corrected first_seen_at values.
+    IMPORTANT — call order:
+      This function MUST be called from main.py BEFORE export_to_json() so
+      that data.json is written with the already-corrected first_seen_at
+      values.  Calling it after export would leave data.json stale (website
+      shows "new today") while the DB has the corrected older date (email
+      shows "new this week"), which is the exact split-brain bug this
+      function is meant to prevent.
 
     Parameters
     ----------
@@ -1040,14 +1035,9 @@ def get_new_promotions_today(
     before first_seen_at was added are still handled correctly.
 
     Key guarantee: first_seen_at is written ONCE on INSERT and never touched
-    again.  When _find_duplicate_id matches a previously-deactivated promo and
-    takes the UPDATE path, that row's original first_seen_at is preserved.
-    This means a long-running promo that went stale and was re-activated will
-    NOT appear here as "new today" — only genuinely new (first-ever) rows will.
-
-    repair_reinserted_promotions() is called by generate_daily_report() before
-    this function is used for reporting, so any dedup misses are corrected
-    before the "New Today" list is compiled.
+    again by save_promotions().  repair_reinserted_promotions() may correct it
+    for dedup misses, but that correction runs in main.py Step 5c BEFORE this
+    function is called, ensuring the value is always accurate by query time.
     """
     today = _hkt_today()
     with _db_connection() as conn:
@@ -1212,11 +1202,13 @@ def get_db_stats() -> Dict[str, Any]:
 
 
 def generate_daily_report(current_run_id: int) -> Dict[str, Any]:
-    # Repair any re-inserted promotions before building the report so that
-    # "New Today" counts are accurate on both the email and the website.
-    # This catches dedup misses caused by AI-reformulated titles, punctuation
-    # changes, or word-order swaps that slipped past _find_duplicate_id.
-    repair_reinserted_promotions(dry_run=False)
+    # ★ NOTE: repair_reinserted_promotions() has been moved to main.py Step 5c,
+    # which runs BEFORE export_to_json() (Step 6).  This ensures data.json and
+    # the DB always share the same corrected first_seen_at values.
+    #
+    # Do NOT call repair_reinserted_promotions() here — it would be a double
+    # execution after the repair has already run, and could incorrectly
+    # re-repair rows that were legitimately inserted today.
 
     new_promos     = get_new_promotions_today(include_bau=False)
     expired_promos = get_expired_promotions()
