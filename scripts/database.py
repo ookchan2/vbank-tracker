@@ -33,8 +33,6 @@ def _db_connection():
 
 
 # ── 0-a. HKT date helpers ─────────────────────────────────────────────────────
-# Always use HKT (UTC+8) for date comparisons so the Python backend matches the
-# JavaScript frontend (which also computes HKT via Date.now() + 8*3600000).
 
 def _hkt_today() -> str:
     """Return today's date string YYYY-MM-DD in Hong Kong Time (UTC+8)."""
@@ -47,32 +45,24 @@ def _hkt_n_days_ago(n: int) -> str:
 
 
 # ── 0-b. Non-bank content guard ───────────────────────────────────────────────
-# Promotions matching any of these patterns are government / charity content,
-# not actual virtual-bank offers.  They are rejected at save time so they never
-# enter the DB.  Run cleanup_reset.py --purge-nonbank to remove any that were
-# inserted before this guard was added.
 
 _NON_BANK_PATTERNS: List[str] = [
-    # Wang Fuk Court / Tai Po support fund
     'wang fuk court',
     'support fund for wang fuk',
     'wangfukcourt',
     'wangfuk',
     '宏福苑',
     '大埔宏福苑',
-    '大埔',          # overly broad — kept scoped by the combined-text check below
-    # Disaster / relief
+    '大埔',
     'tai po fire',
     'taipofire',
     'relief fund',
     'disaster relief',
-    # Government / IRD
     'inland revenue ordinance',
     'inland revenue department',
     'ird.gov.hk',
     'cefs.gov.hk',
     'hab033',
-    # Generic charity / donation
     'approved charitable donation',
     'donation acknowledgement',
     'donation receipt',
@@ -84,8 +74,6 @@ _NON_BANK_PATTERNS: List[str] = [
     '慈善捐款',
 ]
 
-# Patterns that must appear TOGETHER in the same record for it to be blocked.
-# (avoids over-blocking single broad terms like "大埔")
 _NON_BANK_COMPOUND: List[tuple] = [
     ('大埔', '捐款'),
     ('大埔', 'donation'),
@@ -95,19 +83,12 @@ _NON_BANK_COMPOUND: List[tuple] = [
 
 
 def _is_non_bank_content(title: str, highlight: str = '') -> bool:
-    """
-    Returns True if the combined title+highlight text matches any known
-    non-bank / government / charity content pattern.
-    """
     combined = ' '.join([title or '', highlight or '']).lower()
-    # Single-pattern match (case-insensitive)
     for pat in _NON_BANK_PATTERNS:
-        # Skip the overly-broad "大埔" as a standalone check
         if pat == '大埔':
             continue
         if pat.lower() in combined:
             return True
-    # Compound-pattern match (both sub-strings must appear)
     for p1, p2 in _NON_BANK_COMPOUND:
         if p1.lower() in combined and p2.lower() in combined:
             return True
@@ -134,6 +115,15 @@ def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
     def _nullable(name: str) -> str:
         return name if name in existing else 'NULL'
 
+    # ← NEW: preserve first_seen_at during rebuild; fall back to created_at
+    # so historical rows keep their original discovery date even after a
+    # table rebuild triggered by a schema migration.
+    first_seen_expr = (
+        f"COALESCE({_nullable('first_seen_at')}, {_col('created_at')})"
+        if 'first_seen_at' in existing
+        else _col('created_at')
+    )
+
     conn.execute('DROP TABLE IF EXISTS _promotions_rebuild')
     conn.execute('''
         CREATE TABLE _promotions_rebuild (
@@ -157,17 +147,19 @@ def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
             is_bau        INTEGER DEFAULT 0,
             first_run_id  INTEGER DEFAULT NULL,
             created_at    TEXT    NOT NULL DEFAULT '',
+            first_seen_at TEXT    DEFAULT NULL,
             last_seen     TEXT    NOT NULL DEFAULT '',
             active        INTEGER NOT NULL DEFAULT 1
         )
     ''')
+    # ↑ CHANGED: first_seen_at column added to rebuilt schema
 
     conn.execute(f'''
         INSERT INTO _promotions_rebuild
             (id, bank_id, bank_name, title, description, highlight, category,
              url, tc_link, start_date, period, end_date, quota, cost,
              interest_rate, min_deposit, promo_type, is_bau, first_run_id,
-             created_at, last_seen, active)
+             created_at, first_seen_at, last_seen, active)
         SELECT
             id,
             {bank_id_expr},
@@ -189,10 +181,12 @@ def _rebuild_promotions_table(conn: sqlite3.Connection) -> None:
             {_col('is_bau', '0')},
             {_nullable('first_run_id')},
             {_col('created_at')},
+            {first_seen_expr},
             {_col('last_seen')},
             {_col('active', '1')}
         FROM promotions
     ''')
+    # ↑ CHANGED: first_seen_at added to INSERT SELECT with fallback expression
 
     conn.execute('DROP TABLE promotions')
     conn.execute('ALTER TABLE _promotions_rebuild RENAME TO promotions')
@@ -226,6 +220,7 @@ def init_db():
                 is_bau        INTEGER DEFAULT 0,
                 first_run_id  INTEGER DEFAULT NULL,
                 created_at    TEXT    NOT NULL,
+                first_seen_at TEXT    DEFAULT NULL,
                 last_seen     TEXT    NOT NULL,
                 active        INTEGER NOT NULL DEFAULT 1
             );
@@ -236,6 +231,7 @@ def init_db():
                 banks_scraped TEXT    DEFAULT ''
             );
         ''')
+        # ↑ CHANGED: first_seen_at column added to CREATE TABLE IF NOT EXISTS
 
         existing_cols = {
             row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
@@ -247,6 +243,10 @@ def init_db():
                 row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
             }
             print('  🔧 DB migration: rebuilt table (legacy "bank" → "bank_id")')
+
+        # ← NEW: snapshot whether first_seen_at was absent before migrations
+        # so we know to back-fill it after ALTER TABLE adds the column.
+        _first_seen_was_missing = 'first_seen_at' not in existing_cols
 
         migrations = [
             ('bank_id',       "ALTER TABLE promotions ADD COLUMN bank_id       TEXT NOT NULL DEFAULT ''"),
@@ -265,22 +265,37 @@ def init_db():
             ('promo_type',    "ALTER TABLE promotions ADD COLUMN promo_type    TEXT DEFAULT ''"),
             ('is_bau',        "ALTER TABLE promotions ADD COLUMN is_bau        INTEGER DEFAULT 0"),
             ('first_run_id',  "ALTER TABLE promotions ADD COLUMN first_run_id  INTEGER DEFAULT NULL"),
+            ('first_seen_at', "ALTER TABLE promotions ADD COLUMN first_seen_at TEXT DEFAULT NULL"),  # ← NEW
         ]
         for col, sql in migrations:
             if col not in existing_cols:
                 conn.execute(sql)
                 print(f'  🔧 DB migration: added column "{col}"')
 
+        # ← NEW: back-fill first_seen_at from created_at for every pre-existing
+        # row so they are never surfaced as "new today" / "new this week".
+        # This runs exactly once on the first DB upgrade; after that all new
+        # rows are written with first_seen_at set explicitly on INSERT.
+        if _first_seen_was_missing:
+            conn.execute(
+                'UPDATE promotions SET first_seen_at = created_at '
+                'WHERE first_seen_at IS NULL'
+            )
+            conn.commit()
+            print('  🔧 DB migration: first_seen_at back-filled from created_at')
+
         conn.executescript('''
-            CREATE INDEX IF NOT EXISTS idx_bank_id    ON promotions(bank_id);
-            CREATE INDEX IF NOT EXISTS idx_active     ON promotions(active);
-            CREATE INDEX IF NOT EXISTS idx_last_seen  ON promotions(last_seen);
-            CREATE INDEX IF NOT EXISTS idx_created_at ON promotions(created_at);
-            CREATE INDEX IF NOT EXISTS idx_first_run  ON promotions(first_run_id);
-            CREATE INDEX IF NOT EXISTS idx_is_bau     ON promotions(is_bau);
-            CREATE INDEX IF NOT EXISTS idx_bank_name  ON promotions(bank_name);
-            CREATE INDEX IF NOT EXISTS idx_end_date   ON promotions(end_date);
+            CREATE INDEX IF NOT EXISTS idx_bank_id       ON promotions(bank_id);
+            CREATE INDEX IF NOT EXISTS idx_active        ON promotions(active);
+            CREATE INDEX IF NOT EXISTS idx_last_seen     ON promotions(last_seen);
+            CREATE INDEX IF NOT EXISTS idx_created_at    ON promotions(created_at);
+            CREATE INDEX IF NOT EXISTS idx_first_seen_at ON promotions(first_seen_at);
+            CREATE INDEX IF NOT EXISTS idx_first_run     ON promotions(first_run_id);
+            CREATE INDEX IF NOT EXISTS idx_is_bau        ON promotions(is_bau);
+            CREATE INDEX IF NOT EXISTS idx_bank_name     ON promotions(bank_name);
+            CREATE INDEX IF NOT EXISTS idx_end_date      ON promotions(end_date);
         ''')
+        # ↑ CHANGED: idx_first_seen_at index added
 
         conn.commit()
         print('  ✅ Database ready')
@@ -327,10 +342,12 @@ def get_previous_run_id(current_run_id: int) -> Optional[int]:
 
 # ── 3. Dedup helpers ──────────────────────────────────────────────────────────
 
-_JACCARD_THRESHOLD = 0.50
-_LCP_THRESHOLD     = 0.72
-_MIN_NORM_LEN      = 10
-_MIN_TOKENS        = 2
+_JACCARD_THRESHOLD          = 0.50
+_JACCARD_THRESHOLD_INACTIVE = 0.42   # ← NEW: softer match for rows that were deactivated
+_LCP_THRESHOLD              = 0.72
+_LCP_THRESHOLD_INACTIVE     = 0.65   # ← NEW: softer LCP match for inactive rows
+_MIN_NORM_LEN               = 10
+_MIN_TOKENS                 = 2
 
 _RE_NONALNUM   = re.compile(r'[\s\W]+')
 _RE_INSTALMENT = re.compile(r'installment', re.IGNORECASE)
@@ -538,8 +555,10 @@ def _find_duplicate_id(
     title: str,
     highlight: str,
 ) -> Optional[int]:
+    # ← CHANGED: added `active` to SELECT so we can apply softer thresholds
+    # for rows that are currently inactive (previously deactivated).
     rows = conn.execute(
-        "SELECT id, title, highlight FROM promotions WHERE bank_id = ?",
+        "SELECT id, title, highlight, active FROM promotions WHERE bank_id = ?",
         (bank_id,)
     ).fetchall()
 
@@ -549,6 +568,15 @@ def _find_duplicate_id(
     toks_new      = _tokenize_for_jaccard(title)
 
     for row in rows:
+        # ← NEW: when matching against an inactive row use softer thresholds.
+        # A promo that was deactivated may come back with an AI-reformulated
+        # title that scores slightly below the standard threshold; the looser
+        # values prevent a false re-insertion that would make it appear as
+        # "New Today" even though it has been in the DB before.
+        is_inactive = not row['active']
+        j_thr = _JACCARD_THRESHOLD_INACTIVE if is_inactive else _JACCARD_THRESHOLD
+        l_thr = _LCP_THRESHOLD_INACTIVE     if is_inactive else _LCP_THRESHOLD
+
         if new_code_stem:
             old_code_stem = _extract_promo_code_stem(row['title'])
             if old_code_stem and new_code_stem == old_code_stem:
@@ -576,14 +604,14 @@ def _find_duplicate_id(
                 len(toks_new) >= _MIN_TOKENS
                 and len(toks_old) >= _MIN_TOKENS
                 and len(toks_new & toks_old) >= _MIN_TOKENS
-                and _jaccard_similarity(title, row['title']) >= _JACCARD_THRESHOLD
+                and _jaccard_similarity(title, row['title']) >= j_thr   # ← CHANGED: active-aware
             ):
                 return row['id']
 
             if (
                 len_new >= _MIN_NORM_LEN
                 and len_old >= _MIN_NORM_LEN
-                and _common_prefix_ratio(norm_new, norm_old) >= _LCP_THRESHOLD
+                and _common_prefix_ratio(norm_new, norm_old) >= l_thr   # ← CHANGED: active-aware
             ):
                 return row['id']
 
@@ -602,7 +630,6 @@ def save_promotions(
     current_run_id: int = 0,
     today_str: str = None,
 ) -> Dict:
-    # Use HKT today if caller does not supply an explicit date string.
     today = today_str or _hkt_today()
     stats = {'new': 0, 'updated': 0, 'skipped': 0, 'blocked': 0}
 
@@ -623,9 +650,6 @@ def save_promotions(
                     )
                     continue
 
-                # ── Non-bank content guard ────────────────────────────────────
-                # Rejects government / charity content (e.g. Wang Fuk Court
-                # support fund) before it can enter the database.
                 if _is_non_bank_content(title, highlight):
                     stats['blocked'] += 1
                     print(
@@ -666,6 +690,9 @@ def save_promotions(
                         if (existing and len(title) >= len(existing['title']))
                         else (existing['title'] if existing else title)
                     )
+                    # ← NOTE: first_seen_at is intentionally absent from this
+                    # UPDATE — it is written once on INSERT and must never change,
+                    # even when the row is reactivated after a stale-mark cycle.
                     conn.execute("""
                         UPDATE promotions SET
                             title       = ?,
@@ -695,13 +722,19 @@ def save_promotions(
                     ))
                     stats['updated'] += 1
                 else:
+                    # ← CHANGED: first_seen_at added to INSERT — set to today
+                    # and NEVER updated thereafter.  This is the canonical
+                    # "when did our tracker first record this promotion" date
+                    # used by get_new_promotions_today() and
+                    # get_new_promotions_last_n_days() so "New Today / This
+                    # Week" reflects genuine first discoveries, not re-inserts.
                     conn.execute("""
                         INSERT INTO promotions
                             (bank_id, bank_name, title, highlight, description,
                              category, start_date, period, end_date, quota, cost,
                              promo_type, url, tc_link, is_bau,
-                             first_run_id, active, created_at, last_seen)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                             first_run_id, active, created_at, first_seen_at, last_seen)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
                     """, (
                         bank_id, bank_name, title, highlight,
                         p.get('description', ''), p.get('category', ''),
@@ -710,7 +743,7 @@ def save_promotions(
                         promo_type, p.get('url', ''), p.get('tc_link', ''),
                         is_bau,
                         current_run_id if current_run_id else None,
-                        today, today,
+                        today, today, today,  # created_at, first_seen_at, last_seen
                     ))
                     stats['new'] += 1
 
@@ -735,13 +768,6 @@ def mark_stale_as_inactive(
     bank_ids_scraped: List[str],
     today_str: str = None,
 ) -> int:
-    """
-    Mark promotions as inactive only when BOTH conditions are true:
-      1. last_seen < today  (wasn't found in today's scrape)
-      2. end_date is NULL/empty OR end_date < today
-         (do NOT deactivate a promotion whose end_date is still in the future)
-    Uses HKT for today if today_str not supplied.
-    """
     if not bank_ids_scraped:
         return 0
     today_str = today_str or _hkt_today()
@@ -862,32 +888,34 @@ def get_new_promotions_today(
     """
     Returns promotions first seen TODAY (HKT) that are active and not expired.
 
-    This is the canonical "New Today" source — use this for BOTH the email and
-    the website so they always show identical promotions.  It matches the
-    website's isNewToday() logic exactly:
-      • created_at date == today (HKT)
-      • active = 1
-      • start_date is NULL OR start_date >= today  (no retroactive promos)
-      • end_date   is NULL OR end_date   >= today  (not already expired)
-      • is_bau = 0  (unless include_bau=True)
+    Uses COALESCE(first_seen_at, created_at) for safety so rows that existed
+    before first_seen_at was added (back-filled in init_db) are still handled
+    correctly.
 
-    Previously the email used get_new_promotions_for_run() which was keyed on
-    the scrape-run ID; if more than one run happened in a day, or if the run ID
-    didn't align with created_at dates, the two views diverged.
+    Key guarantee: first_seen_at is written ONCE on INSERT and never touched
+    again.  When _find_duplicate_id matches a previously-deactivated promo and
+    takes the UPDATE path, that row's original first_seen_at is preserved.
+    This means a long-running promo that went stale and was re-activated will
+    NOT appear here as "new today" — only genuinely new (first-ever) rows will.
+
+    This is the canonical "New Today" source for both the email and the website.
     """
     today = _hkt_today()
     with _db_connection() as conn:
         try:
             bau_clause = '' if include_bau else 'AND is_bau = 0'
+            # ← CHANGED: DATE(created_at) replaced by
+            # COALESCE(DATE(first_seen_at), DATE(created_at)).
+            # first_seen_at is set once on INSERT; created_at is the fallback
+            # for rows that pre-date this column (all back-filled in init_db).
             return _to_dicts(conn.execute(f'''
                 SELECT * FROM promotions
-                WHERE active           = 1
-                  AND DATE(created_at) = ?
-                  AND (start_date IS NULL OR start_date = '' OR DATE(start_date) >= ?)
-                  AND (end_date   IS NULL OR end_date   = '' OR DATE(end_date)   >= ?)
+                WHERE active = 1
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) = ?
+                  AND (end_date IS NULL OR end_date = '' OR DATE(end_date) >= ?)
                   {bau_clause}
                 ORDER BY bank_id ASC, id ASC
-            ''', (today, today, today)).fetchall())
+            ''', (today, today)).fetchall())
         except Exception as exc:
             print(f'  ❌ get_new_promotions_today error: {exc}')
             return []
@@ -901,8 +929,9 @@ def get_new_promotions_for_run(
     Returns promotions whose first_run_id matches current_run_id.
 
     NOTE: prefer get_new_promotions_today() for the email "New Today" section
-    so it stays in sync with the website (which uses created_at date, not run ID).
-    This function is kept for backward-compatibility and audit purposes.
+    so it stays in sync with the website (which uses first_seen_at date, not
+    run ID).  This function is kept for backward-compatibility and audit
+    purposes only.
     """
     with _db_connection() as conn:
         try:
@@ -925,20 +954,21 @@ def get_new_promotions_last_n_days(
     exclude_run_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """
-    Returns promotions created within the past N days EXCLUDING today that are:
+    Returns promotions first seen within the past N days EXCLUDING today that are:
     - active = 1
     - not BAU (unless include_bau=True)
-    - created_at in [today-N days, yesterday] inclusive  — matches the website's
-      isNewThisWeek() window (hktDaysAgo(6) to hktDaysAgo(1))
-    - start_date gate: start_date must be NULL or >= `since` date
+    - first_seen_at in [today-N days, yesterday] inclusive — matches the
+      website's isNewThisWeek() window (hktDaysAgo(6) to hktDaysAgo(1))
     - end_date gate: only include if end_date is NULL or still in the future
 
+    Uses COALESCE(first_seen_at, created_at) for rows that pre-date the
+    first_seen_at column (all back-filled in init_db so COALESCE always
+    resolves to a real date).
+
     Uses HKT (UTC+8) for date calculations to match the website's JavaScript.
-    This is the canonical "Promotion newly launched within this week" source for
-    both the email and the website.
     """
     today = _hkt_today()
-    since = _hkt_n_days_ago(days)   # e.g. today-6 when days=6
+    since = _hkt_n_days_ago(days)
 
     with _db_connection() as conn:
         try:
@@ -947,17 +977,20 @@ def get_new_promotions_last_n_days(
                 f'AND (first_run_id IS NULL OR first_run_id != {int(exclude_run_id)})'
                 if exclude_run_id is not None else ''
             )
+            # ← CHANGED: DATE(created_at) replaced by
+            # COALESCE(DATE(first_seen_at), DATE(created_at)) throughout,
+            # including the ORDER BY, so the window is based on genuine
+            # first-discovery date rather than row-creation date.
             return _to_dicts(conn.execute(f'''
                 SELECT * FROM promotions
-                WHERE active           = 1
-                  AND DATE(created_at) >= ?
-                  AND DATE(created_at) <  ?
-                  AND (start_date IS NULL OR start_date = '' OR DATE(start_date) >= ?)
-                  AND (end_date   IS NULL OR end_date   = '' OR DATE(end_date)   >= ?)
+                WHERE active = 1
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) >= ?
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) <  ?
+                  AND (end_date IS NULL OR end_date = '' OR DATE(end_date) >= ?)
                   {bau_clause}
                   {run_clause}
-                ORDER BY created_at DESC, bank_id ASC
-            ''', (since, today, since, today)).fetchall())
+                ORDER BY COALESCE(first_seen_at, created_at) DESC, bank_id ASC
+            ''', (since, today, today)).fetchall())
         except Exception as exc:
             print(f'  ❌ get_new_promotions_last_n_days error: {exc}')
             return []
@@ -1209,25 +1242,26 @@ def export_to_json(
             types_list = ['Others']
 
         records.append({
-            'id':          p.get('id'),
-            'bank_id':     p.get('bank_id',     ''),
-            'bank_name':   p.get('bank_name',   ''),
-            'title':       p.get('title')       or '',
-            'highlight':   p.get('highlight')   or '',
-            'description': p.get('description') or '',
-            'category':    p.get('category')    or '',
-            'start_date':  p.get('start_date'),
-            'end_date':    p.get('end_date'),
-            'period':      p.get('period')      or 'Ongoing',
-            'quota':       p.get('quota')       or '',
-            'cost':        p.get('cost')        or '',
-            'types':       types_list,
-            'url':         p.get('url')         or '',
-            'tc_link':     p.get('tc_link')     or p.get('url') or '',
-            'is_bau':      bool(p.get('is_bau', 0)),
-            'active':      bool(p.get('active', 1)),
-            'created_at':  p.get('created_at')  or '',
-            'last_seen':   p.get('last_seen')   or '',
+            'id':            p.get('id'),
+            'bank_id':       p.get('bank_id',     ''),
+            'bank_name':     p.get('bank_name',   ''),
+            'title':         p.get('title')       or '',
+            'highlight':     p.get('highlight')   or '',
+            'description':   p.get('description') or '',
+            'category':      p.get('category')    or '',
+            'start_date':    p.get('start_date'),
+            'end_date':      p.get('end_date'),
+            'period':        p.get('period')      or 'Ongoing',
+            'quota':         p.get('quota')       or '',
+            'cost':          p.get('cost')        or '',
+            'types':         types_list,
+            'url':           p.get('url')         or '',
+            'tc_link':       p.get('tc_link')     or p.get('url') or '',
+            'is_bau':        bool(p.get('is_bau', 0)),
+            'active':        bool(p.get('active', 1)),
+            'created_at':    p.get('created_at')    or '',
+            'first_seen_at': p.get('first_seen_at') or '',   # ← NEW
+            'last_seen':     p.get('last_seen')     or '',
         })
 
     output: Dict[str, Any] = {
