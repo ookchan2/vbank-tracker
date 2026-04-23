@@ -1,31 +1,36 @@
 # scripts/emailer.py
 #
-# IMPORTANT — caller contract for "New Today" / "New This Week" data:
+# DATA SOURCE CONTRACT — read this before modifying stats logic:
 #
-#   new_promos      → pass output of database.get_new_promotions_today()
-#                     (NOT get_new_promotions_for_run — that uses run-ID, not date)
-#   new_promos_week → pass output of database.get_new_promotions_last_n_days(days=6)
+#   new_promos      → database.get_new_promotions_today()
+#   new_promos_week → database.get_new_promotions_last_n_days(days=6)
+#   scraped_data    → the full data.json dict  ← ★ REQUIRED for correct stats
 #
-# Using the date-based functions ensures the email and the website show
-# identical promotion sets (the website uses first_seen_at date logic in JS,
-# mirroring COALESCE(first_seen_at, created_at) in the Python queries).
+# ROOT CAUSE of email 52/45/7 vs website 47/41/6:
+#   promotions_data (raw DB) contains stale rows whose active flag was never
+#   set to False by the database writer even though the AI extraction removed
+#   or expired them in data.json.  _classify_promo correctly handles active=False
+#   but cannot expire rows that have active=True and no end_date in the DB.
+#
+# FIX: build_html_email and _build_plain_text now use
+#   scraped_data['promotions']  (= data.json content, same source as the website)
+#   as the canonical list for ALL stat computation.
+#   promotions_data is kept for backward-compatibility but is only used as a
+#   fallback when scraped_data has no 'promotions' key.
+#
+# CALLER UPDATE REQUIRED:
+#   Pass scraped_data=<full data.json dict> to both build_html_email() and
+#   send_email().  If scraped_data is omitted the code falls back to
+#   promotions_data, which may reproduce the over-count.
 
 import os
 import smtplib
 import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from datetime import datetime, timedelta, timezone     # ← timezone added
+from datetime import datetime, timedelta, timezone
 
-# ── HKT timezone ──────────────────────────────────────────────────────────────
-# Hong Kong does NOT observe DST, so UTC+8 is always correct.
-# The website always computes "today" in HKT:
-#   new Date(Date.now() + 8*3600_000).toISOString().slice(0,10)
-# Python must use the same calendar date; datetime.now() uses server local
-# time which differs from HKT on any non-HKT server (e.g. UTC, US zones).
-# ROOT CAUSE of active/expiring mismatch: if server local date ≠ HKT date,
-# the 30-day threshold boundary shifts by 1 day, flipping promotions near
-# the boundary between 'active' and 'expiring' while leaving totals unchanged.
+# ── HKT timezone (UTC+8, no DST) ─────────────────────────────────────────────
 _HKT = timezone(timedelta(hours=8))
 
 # ── Category metadata ─────────────────────────────────────────────────────────
@@ -155,15 +160,11 @@ def _classify_promo(p: dict, today_d, threshold_d) -> str:
     Mirrors website getStatus() exactly:
       1. active === false  →  'expired'  →  'past'
       2. end_date < today  →  'expired'  →  'past'
-      3. end_date within 30 days (diffDays <= 30)  →  'expiring'
-      4. everything else   →  'active'
+      3. end_date within 30 days          →  'expiring'
+      4. everything else                  →  'active'
 
-    today_d and threshold_d MUST be derived from HKT (UTC+8) to match
-    the website's _PAGE_TODAY_STR computation.  Pass values from
-    _hkt_today() / _hkt_threshold() — never from datetime.now().date()
-    directly, which uses server-local time.
+    today_d and threshold_d MUST be HKT dates from _hkt_today_and_threshold().
     """
-    # Mirror JS: getStatus() returns 'expired' when p.active === false
     active = p.get('active')
     if active is not None and not active:   # False or 0, but NOT None
         return 'past'
@@ -182,19 +183,41 @@ def _classify_promo(p: dict, today_d, threshold_d) -> str:
 
 
 def _hkt_now() -> datetime:
-    """Current datetime in HKT (UTC+8) — matches the website's date arithmetic."""
+    """Current datetime in HKT (UTC+8)."""
     return datetime.now(_HKT)
 
 
 def _hkt_today_and_threshold() -> tuple:
-    """
-    Return (today_date, threshold_date) both in HKT.
-
-    today_date    = HKT calendar date  (matches JS _PAGE_TODAY_STR)
-    threshold_date = today + 30 days   (matches JS diffDays <= 30)
-    """
+    """Return (today_date, threshold_date) both in HKT."""
     now = _hkt_now()
     return now.date(), (now + timedelta(days=30)).date()
+
+
+# ── ★ FIX 1: canonical count-source resolver ─────────────────────────────────
+# The website reads from data.json for ALL stats.
+# The emailer's promotions_data (raw DB) may contain stale rows that the AI
+# already expired in data.json, causing email > website.
+#
+# _resolve_count_source() picks scraped_data['promotions'] (= data.json) when
+# available, falling back to promotions_data.  Every stats-computing path in
+# this module calls this function so the fix applies uniformly.
+
+def _resolve_count_source(
+    promotions_data: list,
+    scraped_data:    dict | None,
+) -> list:
+    """
+    Return the list that should be used for stats (total / active / expiring).
+
+    Priority:
+      1. scraped_data['promotions']  — identical to data.json, matches website
+      2. promotions_data             — raw DB rows, may over-count (fallback only)
+    """
+    if scraped_data and isinstance(scraped_data, dict):
+        json_promos = scraped_data.get('promotions')
+        if json_promos and isinstance(json_promos, list):
+            return json_promos
+    return promotions_data or []
 
 
 # ── Multiple recipients helper ────────────────────────────────────────────────
@@ -376,21 +399,24 @@ def _new_section_html(
 
 # ── Plain-text builder ────────────────────────────────────────────────────────
 
+# ★ FIX 2: Added count_source parameter.
+# When build_html_email passes scraped_data['promotions'] as count_source,
+# the plain-text stats use the same data.json content as the website.
+# send_email also receives scraped_data and pipes it through.
+
 def _build_plain_text(
     promotions_data: list,
     new_promos:      list,
     new_promos_week: list,
     now:             str,
     ai_unavailable:  bool = False,
+    count_source:    list = None,   # ★ NEW — data.json promotions list when available
 ) -> str:
-    non_bau = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
+    # ★ Use count_source (data.json) when provided; fall back to promotions_data (DB).
+    # This ensures plain-text stats match the website (data.json) exactly.
+    _src    = count_source if (count_source is not None) else (promotions_data or [])
+    non_bau = [p for p in _src if not p.get('is_bau', False)]
 
-    # FIX: use _hkt_today_and_threshold() so today_d is the HKT calendar date,
-    # matching the website's _PAGE_TODAY_STR = new Date(Date.now()+8h).toISOString()[:10].
-    # Previously datetime.now().date() used server-local time; on a non-HKT server
-    # (e.g. UTC, US timezones) the date can differ from HKT, shifting the 30-day
-    # threshold boundary and causing the active/expiring split to diverge from the
-    # website while both totals remain equal.
     today_d, threshold = _hkt_today_and_threshold()
 
     exp_count  = 0
@@ -405,7 +431,6 @@ def _build_plain_text(
     total_shown  = len(non_bau) - past_count
     active_count = total_shown - exp_count
 
-    # FIX: display date also uses HKT so the report header date matches HKT reality
     date_only = _hkt_now().strftime('%d %b %Y')
 
     lines = [
@@ -458,6 +483,7 @@ def _build_plain_text(
         '',
     ]
 
+    # Per-bank breakdown also uses count_source
     banks: dict = {}
     for p in non_bau:
         bn = p.get('bName') or p.get('bank_name') or 'Unknown'
@@ -491,33 +517,35 @@ def build_html_email(
     """
     Build the full HTML email.
 
-    Active / expiring counts now always match the website because:
-      _hkt_now() pins datetime to UTC+8 (HKT), matching the website's
-      new Date(Date.now() + 8*3600_000) computation.  Previously
-      datetime.now() used server-local time; on a non-HKT server the
-      30-day boundary shifted by the UTC offset, flipping promotions
-      near the boundary between active and expiring while leaving totals
-      unchanged (since neither side changed whether a promo was counted).
+    ★ FIX 3 (data-source alignment):
+      Uses _resolve_count_source() to prefer scraped_data['promotions']
+      (= data.json, the website's source of truth) over promotions_data
+      (raw DB rows).  This eliminates the email 52/45/7 vs website 47/41/6
+      discrepancy that arose because the DB contained stale rows whose
+      active flag was never updated after the AI expired them in data.json.
+
+    Caller contract:
+      scraped_data    ← the full data.json dict  (REQUIRED for correct counts)
+      new_promos      ← database.get_new_promotions_today()
+      new_promos_week ← database.get_new_promotions_last_n_days(days=6)
     """
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
 
-    # FIX: use HKT for display date so the email header shows the correct HKT date
     date_only = _hkt_now().strftime('%d %b %Y')
 
-    non_bau_data       = [p for p in (promotions_data or []) if not p.get('is_bau', False)]
-    new_promos_show    = [p for p in new_promos      if not p.get('is_bau', False)]
-    new_promos_wk_show = [p for p in new_promos_week if not p.get('is_bau', False)]
+    # ★ FIX 3: use scraped_data['promotions'] (data.json) as the count source
+    count_list = _resolve_count_source(promotions_data, scraped_data)
+
+    non_bau_data       = [p for p in count_list       if not p.get('is_bau', False)]
+    new_promos_show    = [p for p in new_promos        if not p.get('is_bau', False)]
+    new_promos_wk_show = [p for p in new_promos_week   if not p.get('is_bau', False)]
 
     banks: dict = {}
     for p in non_bau_data:
         bank = p.get('bName') or p.get('bank_name') or p.get('bank') or 'Unknown'
         banks.setdefault(bank, []).append(p)
 
-    # FIX: _hkt_today_and_threshold() — both today_d and threshold_d are in HKT.
-    # This is the single source of truth for all active/expiring classification
-    # in this function; changing it here fixes both the header stats and the
-    # per-bank breakdown table simultaneously.
     _today_d, _threshold = _hkt_today_and_threshold()
 
     expiring_count = 0
@@ -781,7 +809,16 @@ def send_email(
     new_promos_week: list = None,
     promotions_data: list = None,
     ai_unavailable:  bool = False,
+    scraped_data:    dict = None,   # ★ NEW — pass full data.json dict for correct plain-text stats
 ) -> bool:
+    """
+    Send the HTML email to all configured recipients.
+
+    ★ Pass scraped_data=<full data.json dict> so that the plain-text stats
+      in the email body match the website (data.json) counts exactly.
+      Without it, plain-text stats fall back to promotions_data (raw DB)
+      which may over-count by including stale rows.
+    """
     smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.getenv('SMTP_PORT', '587'))
 
@@ -814,19 +851,22 @@ def send_email(
         return False
 
     if not subject:
-        # FIX: use HKT date for the email subject line
         date_str = _hkt_now().strftime('%d %b %Y')
         base     = f'🏦 VBank Daily Report — {date_str}'
         subject  = f'{base} [Cached Data — AI Unavailable]' if ai_unavailable else base
 
-    # FIX: use HKT timestamp in plain-text header
-    now_str    = _hkt_now().strftime('%d %b %Y, %H:%M HKT')
+    now_str = _hkt_now().strftime('%d %b %Y, %H:%M HKT')
+
+    # ★ FIX 2 (plain-text): resolve count_source so plain-text stats match website
+    _count_source = _resolve_count_source(promotions_data or [], scraped_data)
+
     plain_text = _build_plain_text(
-        promotions_data or [],
-        new_promos      or [],
-        new_promos_week or [],
-        now_str,
-        ai_unavailable = ai_unavailable,
+        promotions_data = promotions_data or [],
+        new_promos      = new_promos      or [],
+        new_promos_week = new_promos_week or [],
+        now             = now_str,
+        ai_unavailable  = ai_unavailable,
+        count_source    = _count_source,   # ★ data.json promotions list
     )
 
     success_count = 0

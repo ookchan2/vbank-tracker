@@ -33,7 +33,7 @@ from database  import (
     get_active_promos_for_bank,
     get_active_promotions,
     get_promotions_by_bank_name,
-    get_new_promotions_today,        # ← CHANGED: added (date-based, matches website)
+    get_new_promotions_today,
     get_new_promotions_last_n_days,
     get_db_stats,
 )
@@ -91,6 +91,41 @@ def _patch_data_json(path: str, extra: dict) -> None:
         print(f'  ✅ data.json patched with key(s): {keys}')
     except Exception as exc:
         print(f'  ⚠️  data.json patch failed ({keys}): {exc}')
+
+
+# ── ★ NEW: load data.json from disk as canonical email count source ───────────
+# Called after Step 6 (export) so we always read the file that the website
+# serves — whether freshly written this run or preserved from a prior run.
+#
+# ROOT CAUSE of email 52/45/7 vs website 47/41/6:
+#   main.py previously passed scraped_by_name (raw scrape dict, no 'promotions'
+#   key) to build_html_email(scraped_data=…).  emailer._resolve_count_source()
+#   fell back to promotions_data (raw DB rows) which contained stale rows the
+#   AI had already expired in data.json, inflating the email count by +5.
+#
+# FIX: load data.json here and pass it as scraped_data to both
+#   build_html_email() and send_email() so emailer._resolve_count_source()
+#   picks data.json['promotions'] — identical to what the website reads.
+
+def _load_data_json(path: str) -> dict | None:
+    """
+    Read data.json from disk and return its parsed content.
+
+    Returns None (with a warning) if the file is missing or unparseable;
+    the emailer gracefully falls back to promotions_data (DB rows) in that case.
+    """
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            content = _json.load(f)
+        n = len(content.get('promotions', []))
+        print(f'  ✅ data.json loaded for email stats ({n} promotions in file)')
+        return content
+    except FileNotFoundError:
+        print(f'  ⚠️  data.json not found at {path} — email will use DB rows for stats')
+        return None
+    except Exception as exc:
+        print(f'  ⚠️  data.json load failed: {exc} — email will use DB rows for stats')
+        return None
 
 
 # ── Main pipeline ─────────────────────────────────────────────────────────────
@@ -182,7 +217,12 @@ def main() -> int:
         return 1
 
     bank_ids_ok: list[str] = [bid for bid, r in scraped.items() if r.get('success')]
-    scraped_by_name: dict  = {
+
+    # NOTE: scraped_by_name is the raw scrape-result dict keyed by bank name.
+    # It is NOT the data.json content and must NOT be passed as scraped_data
+    # to build_html_email / send_email (that was the original bug).
+    # It is retained here only in case other pipeline steps need it.
+    scraped_by_name: dict = {
         r.get('bank_name', bid): r
         for bid, r in scraped.items()
     }
@@ -336,7 +376,7 @@ def main() -> int:
     else:
         export_to_json(DATA_JSON_PATH)
 
-        _run_ts = datetime.now().strftime('%Y-%m-%d %H:%M')
+        _run_ts      = datetime.now().strftime('%Y-%m-%d %H:%M')
         _extra_patch = {'updated': _run_ts, 'last_updated': _run_ts}
         if not ai_ok:
             _extra_patch['ai_unavailable'] = True
@@ -353,11 +393,28 @@ def main() -> int:
         except Exception as exc:
             print(f'  ⚠️  data.json timestamp patch failed: {exc}')
 
+    # ── Step 6b: Load data.json as canonical count source for email ───────────
+    # ★ FIX: this is the key change that aligns email stats with the website.
+    #
+    # The website reads data.json['promotions'] directly.
+    # The emailer must use the same list — not the raw DB rows — so that the
+    # header numbers (total / active / expiring) are identical in both places.
+    #
+    # We load data.json here (after it has been written / patched above) and
+    # pass it as scraped_data to build_html_email() and send_email().
+    # emailer._resolve_count_source() will detect the 'promotions' key and
+    # use it instead of falling back to the DB-derived promotions_data list.
+    #
+    # This works correctly in both cases:
+    #   • AI ran     → data.json was just exported and patched above
+    #   • AI skipped → data.json is the preserved file from the last good run
+    #     (same file the website is serving right now)
+    print('\nStep 6b ── Load data.json for email count source')
+    data_json_content = _load_data_json(DATA_JSON_PATH)
+
     # ── Step 7: Daily report ──────────────────────────────────────
     print('\nStep 7 ── Generate daily report')
     report         = generate_daily_report(current_run_id)
-    # NOTE: generate_daily_report now calls get_new_promotions_today() internally
-    # so report['new'] is already HKT date-based (matches the website).
     active_promos  = report['active']
     expired_promos = report['expired']
     summary        = report['summary']
@@ -384,18 +441,16 @@ def main() -> int:
         bname = p.get('bank_name') or p.get('bName') or p.get('bank') or 'Unknown'
         promos_by_name.setdefault(bname, []).append(p)
 
+    # Non-BAU active list used for the email body (promo cards, bank breakdown).
+    # This comes from the DB and is used as promotions_data (card content only).
+    # Stats (total / active / expiring counters) are derived from data_json_content
+    # inside the emailer via _resolve_count_source() — NOT from this list.
     all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
 
-    # ── CHANGED: use get_new_promotions_today() so the email "New Today"
-    # section is identical to what the website shows (both use HKT created_at
-    # date, not scrape-run ID).  Previously this was derived from
-    # report['new'] which came from get_new_promotions_for_run() and could
-    # diverge from the website when multiple runs happened in one day.
+    # New today (HKT date-based — matches website isNewToday())
     new_promos_email = get_new_promotions_today(include_bau=False)
 
-    # ── CHANGED: removed exclude_run_id — get_new_promotions_last_n_days()
-    # already excludes today via DATE(created_at) < today (HKT), so there is
-    # no risk of double-counting today's promos regardless of run ID.
+    # New in the past 6 days excluding today (matches website isNewThisWeek())
     new_promos_week_raw   = get_new_promotions_last_n_days(
         days        = 6,
         include_bau = False,
@@ -425,12 +480,31 @@ def main() -> int:
         _patch_data_json(DATA_JSON_PATH, {'strategic_insights': None})
         print('  ⚠️  Insights unavailable — continuing without it')
 
+    # ── Step 8b: Reload data.json after insights patch ────────────────────────
+    # The insights patch may have changed data.json.  Reload so that the
+    # data_json_content passed to the emailer includes the latest strategic_insights
+    # field (used only for display; does not affect the stats count).
+    if strategic_insights:
+        print('\nStep 8b ── Reload data.json after insights patch')
+        _reloaded = _load_data_json(DATA_JSON_PATH)
+        if _reloaded is not None:
+            data_json_content = _reloaded
+
     # ── Step 9: Build & send email ────────────────────────────────
     print('\nStep 9 ── Build & send email')
 
+    # ★ FIX: pass data_json_content (the actual data.json dict) as scraped_data.
+    #
+    # Previously scraped_by_name was passed here.  scraped_by_name is keyed by
+    # bank name and contains raw scrape results — it has no 'promotions' key, so
+    # emailer._resolve_count_source() fell back to promotions_data (DB rows) and
+    # produced inflated counts (email showed 52/45/7 instead of website's 47/41/6).
+    #
+    # With data_json_content, _resolve_count_source() finds 'promotions' and uses
+    # data.json as the single source of truth for all stats, identical to the website.
     html = build_html_email(
         promotions_data    = all_promos_email,
-        scraped_data       = scraped_by_name,
+        scraped_data       = data_json_content,    # ★ CHANGED: was scraped_by_name
         strategic_insights = strategic_insights,
         new_promos         = new_promos_email,
         new_promos_week    = new_promos_week_email,
@@ -466,17 +540,19 @@ def main() -> int:
         print(f'  📄 HTML preview → {output_path}')
     else:
         try:
-            # ── CHANGED: added new_promos_week so the plain-text email
-            # includes the "Promotion newly launched within this week"
-            # section (previously it was always missing from the text part).
+            # ★ FIX: pass scraped_data=data_json_content so the plain-text
+            # part of the email (MIMEText 'plain') also uses data.json for its
+            # stats, not the DB rows.  Without this the plain-text body would
+            # still show the old inflated numbers.
             success = send_email(
                 html_content    = html,
                 subject         = email_subject,
                 recipient       = to,
                 new_promos      = new_promos_email,
-                new_promos_week = new_promos_week_email,   # ← CHANGED: was missing
+                new_promos_week = new_promos_week_email,
                 promotions_data = all_promos_email,
                 ai_unavailable  = not ai_ok,
+                scraped_data    = data_json_content,   # ★ NEW parameter
             )
             if success:
                 print(f'  ✅ Email sent → {to}')
@@ -491,12 +567,27 @@ def main() -> int:
     elapsed  = time.monotonic() - t_start
     db_stats = get_db_stats()
 
+    # ── Done summary: report what the email actually showed ───────
+    # Use data_json_content for the summary counts so the console output
+    # matches the email (47/41/6) rather than the raw DB counts (52/45/7).
+    _summary_promos  = (
+        data_json_content.get('promotions', [])
+        if data_json_content else all_promos_email
+    )
+    _summary_non_bau = [p for p in _summary_promos if not p.get('is_bau', False)]
+    _summary_total   = sum(
+        1 for p in _summary_non_bau
+        if p.get('active') is not False
+        and (not p.get('end_date') or str(p['end_date'])[:10] >= today)
+    )
+
     print(f'\n{"═"*60}')
     print(
         f'  Done in {elapsed:.1f}s  |  '
         f'🆕 {len(new_promos_email)} new today  |  '
         f'📅 {len(new_promos_week_email)} new this week  |  '
-        f'✅ {len(all_promos_email)} active  |  '
+        f'✅ {len(all_promos_email)} active (DB)  |  '
+        f'📄 {_summary_total} active (data.json)  |  '
         f'❌ {summary["expired_count"]} expired  |  '
         f'🤖 deduped:{total_deduped} matched:{total_db_matched}  |  '
         f'⚙️  {bau_count_insights} BAU  |  '
