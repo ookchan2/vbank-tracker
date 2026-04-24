@@ -350,13 +350,18 @@ const CAT_META = {
   "Others 其他":       { bg:"#6b7280", emoji:"📋" },
 };
 
+// ★ CHANGED:
+//   "Airstar Bank" → "EleBank"  (+ backward-compat alias kept)
+//   "PAObank"      → "PADB"     (+ backward-compat alias kept)
 const BANK_COLORS = {
   "ZA Bank":      "#25CD9C",
   "Mox Bank":     "#ec4899",
   "WeLab Bank":   "#7c3aed",
   "livi bank":    "#f97316",
-  "PAObank":      "#0ea5e9",
-  "Airstar Bank": "#06b6d4",
+  "PADB":         "#0ea5e9",   // ★ was PAObank
+  "PAObank":      "#0ea5e9",   // backward-compat alias
+  "EleBank":      "#06b6d4",   // ★ was Airstar Bank
+  "Airstar Bank": "#06b6d4",   // backward-compat alias
   "Fusion Bank":  "#14b8a6",
   "Ant Bank":     "#1677ff",
 };
@@ -380,13 +385,17 @@ const CAT_FILTER_LIST = [
 
 const HOW_DEFINED = {
   "HK Stock Trading":
-    "Zero or lowest brokerage commission for HKEX-listed (HK) stocks. " +
-    "Priority: $0 commission > any commission. If tied on commission, lower platform fee wins. " +
-    "Note: $0 commission + platform fee beats commission + $0 platform fee for most retail investors.",
+    "Zero or lowest total cost per order for HKEX-listed (HK) stocks. " +
+    "Total cost = commission + platform fee. " +
+    "EleBank: $0 commission + HKD 15 platform fee = HKD 15/order. " +
+    "ZA Bank: $0 commission + HKD 18 platform fee = HKD 18/order. " +
+    "EleBank wins (HKD 15 < HKD 18).",
   "US Stock Trading":
-    "Zero or lowest brokerage commission for NYSE/NASDAQ-listed (US) stocks. " +
-    "Priority: $0 commission > any commission. Platform fee is secondary. " +
-    "Note: commission-free ≠ platform-fee-free — evaluate total cost.",
+    "Zero or lowest total cost per order for NYSE/NASDAQ-listed (US) stocks. " +
+    "ZA Bank: $0 commission + USD 0.0099/share platform fee (min USD 1.99/order). " +
+    "EleBank: USD 0.0049/share commission (min $0.99) + USD 0.005/share platform (min $1.00) " +
+    "= USD 0.0099/share total, min USD 1.99/order — same as ZA Bank. " +
+    "ZA Bank selected by default when tied (simpler $0-commission structure).",
   "Stock Trading":
     "Zero or lowest trading fee/commission for HK/US/A-share stocks, best IPO reward, or most " +
     "comprehensive brokerage platform with no trade minimum.",
@@ -447,7 +456,7 @@ function bauTag(p) {
 
 // ── Stable "today" string computed ONCE at page load (HKT) ────────────────
 const _PAGE_TODAY_STR = new Date(Date.now() + 8 * 3600000)
-                          .toISOString().substring(0, 10);   // YYYY-MM-DD in HKT
+                          .toISOString().substring(0, 10);
 const _MS_PER_DAY     = 86400000;
 const _PAGE_TODAY_NOON_MS = Date.parse(_PAGE_TODAY_STR + 'T12:00:00Z');
 
@@ -484,7 +493,6 @@ function statusBadge(p) {
                        text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
 }
 
-// ── HKT helpers — mirror database.py's _hkt_today() / _hkt_n_days_ago() ──
 function hktToday() {
   return new Date(Date.now() + 8 * 3600000).toISOString().substring(0, 10);
 }
@@ -492,39 +500,18 @@ function hktDaysAgo(n) {
   return new Date(Date.now() + 8 * 3600000 - n * _MS_PER_DAY).toISOString().substring(0, 10);
 }
 
-// ── ★ FIX 1: isNewToday ────────────────────────────────────────────────────
-// Mirrors database.get_new_promotions_today():
-//   COALESCE(first_seen_at, created_at) == today (HKT)
-//   AND active = 1
-//   AND (end_date IS NULL OR end_date >= today)
-//
-// Previously used created_at only, which diverged from Python when
-// first_seen_at differed from created_at (e.g. after a repair pass or
-// re-scrape of a previously stale row).
-// The start_date guard has been removed — Python does not apply it.
 function isNewToday(p, today) {
   if (p.is_bau) return false;
   if (p.active === false) return false;
   if (getStatus(p) === 'expired') return false;
-  // ★ Use first_seen_at with fallback to created_at — matches Python COALESCE
   const firstSeen = (p.first_seen_at || p.created_at || '').substring(0, 10);
   return firstSeen === today;
 }
 
-// ── ★ FIX 2: isNewThisWeek ─────────────────────────────────────────────────
-// Mirrors database.get_new_promotions_last_n_days(days=6):
-//   COALESCE(first_seen_at, created_at) in [today-6, yesterday]
-//   AND active = 1
-//   AND (end_date IS NULL OR end_date >= today)
-//
-// Previously used created_at only, causing the website and email to show
-// different promotion sets whenever first_seen_at != created_at.
-// The start_date guard has been removed — Python does not apply it.
 function isNewThisWeek(p, today) {
   if (p.is_bau) return false;
   if (p.active === false) return false;
   if (getStatus(p) === 'expired') return false;
-  // ★ Use first_seen_at with fallback to created_at — matches Python COALESCE
   const firstSeen = (p.first_seen_at || p.created_at || '').substring(0, 10);
   const sixAgo    = hktDaysAgo(6);
   const yesterday = hktDaysAgo(1);
@@ -560,11 +547,11 @@ function insightsNoDataHtml() {
     <span class="key">"best_for"</span>: [
       {
         <span class="key">"category"</span>:        <span class="str">"HK Stock Trading"</span>,
-        <span class="key">"bank"</span>:            <span class="str">"ZA Bank"</span>,
-        <span class="key">"detail"</span>:          <span class="str">"$0 brokerage commission for HK stocks via ZA Invest; platform fee applies"</span>,
+        <span class="key">"bank"</span>:            <span class="str">"EleBank"</span>,
+        <span class="key">"detail"</span>:          <span class="str">"$0 commission + HKD 15 platform fee per order → total HKD 15/order. Beats ZA Bank (HKD 18) and PADB (charges commission)."</span>,
         <span class="key">"is_bau"</span>:          <span class="bool">true</span>,
-        <span class="key">"similar_banks"</span>:   [<span class="str">"PAObank"</span>, <span class="str">"Airstar Bank"</span>],
-        <span class="key">"why_others_lose"</span>: <span class="str">"PAObank charges brokerage commission; $0 commission (ZA) beats commission + zero platform fee"</span>
+        <span class="key">"similar_banks"</span>:   [<span class="str">"ZA Bank"</span>, <span class="str">"PADB"</span>],
+        <span class="key">"why_others_lose"</span>: <span class="str">"ZA Bank charges HKD 18 platform fee/order; PADB charges brokerage commission per trade; EleBank HKD 15 total is lowest."</span>
       }
     ]
   }
@@ -743,9 +730,8 @@ function buildPromoCard(p) {
 }
 
 function buildNewSections() {
-  const today = hktToday();  // live HKT date (matches Python's _hkt_today())
+  const today = hktToday();
 
-  // ── New Today ──────────────────────────────────────────────────────────────
   const newToday   = allPromos.filter(p => isNewToday(p, today));
   const todaySec   = document.getElementById('newTodaySection');
   const todayCards = document.getElementById('newTodayCards');
@@ -762,7 +748,6 @@ function buildNewSections() {
     todayCards.innerHTML   = newToday.map(buildPromoCard).join('');
   }
 
-  // ── Promotion newly launched within this week ──────────────────────────────
   const newWeek   = allPromos.filter(p => isNewThisWeek(p, today));
   const weekSec   = document.getElementById('newWeeklySection');
   const weekCards = document.getElementById('newWeeklyCards');
@@ -900,521 +885,4 @@ function buildStrategicInsights(insights) {
       : '';
 
     const winnerBadge = isNone
-      ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">No clear winner</span>`
-      : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-white"
-               style="background:${color}">${bank}</span>${bauPill}`;
-
-    const similarHtml = similar.length
-      ? similar.map(b => {
-          const bc = bankColor(b);
-          return `<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold text-white mr-1 mb-1"
-                         style="background:${bc};opacity:0.8">${b}</span>`;
-        }).join('')
-      : `<span class="text-gray-400 text-xs italic">—</span>`;
-
-    const whyLoseHtml = (whyLose && whyLose !== '—')
-      ? `<div class="text-xs text-red-700 leading-relaxed">${whyLose}</div>`
-      : `<span class="text-gray-400 text-xs italic">—</span>`;
-
-    return `
-      <tr class="border-b border-gray-100 hover:bg-indigo-50/20 align-top">
-        <td class="px-4 py-3 text-sm font-semibold text-gray-700">${cat}</td>
-        <td class="px-4 py-3">${winnerBadge}</td>
-        <td class="px-4 py-3 text-sm text-gray-600 leading-relaxed">${detail}</td>
-        <td class="px-4 py-3 text-xs text-gray-500 leading-relaxed italic">${standard}</td>
-        <td class="px-4 py-3">${similarHtml}</td>
-        <td class="px-4 py-3">${whyLoseHtml}</td>
-      </tr>`;
-  }).join('');
-
-  tbody.innerHTML = rows;
-}
-
-function buildBankAnalysis(insights) {
-  const grid = document.getElementById('bankAnalysisGrid');
-
-  if (!insights || !insights.bank_analysis) {
-    grid.innerHTML = analysisNoDataHtml();
-    return;
-  }
-
-  const bankAnalysis = insights.bank_analysis;
-  const zaEntry = Object.entries(bankAnalysis).find(([k]) => k.includes('ZA')) || [];
-  const zaData  = zaEntry[1] || {};
-  const zaCount = zaData.count || 0;
-
-  const sorted = Object.entries(bankAnalysis).sort(([a],[b]) => {
-    if (a.includes('ZA')) return -1;
-    if (b.includes('ZA')) return 1;
-    return a.localeCompare(b);
-  });
-
-  if (!sorted.length) {
-    grid.innerHTML = analysisNoDataHtml();
-    return;
-  }
-
-  const cards = sorted.map(([bName, data]) => {
-    const isZA      = bName.includes('ZA');
-    const color     = bankColor(bName);
-    const count     = data.count         || 0;
-    const bauCnt    = data.bau_count     || 0;
-    const focus     = data.focus         || '';
-    const strengths = (data.strengths    || []).slice(0, 6);
-    const expAlert  = data.expiring_alert || '';
-    const pros      = data.vs_za_pros    || '';
-    const cons      = data.vs_za_cons    || '';
-
-    const strengthsHtml = strengths.length
-      ? `<div class="space-y-1.5 mt-2">
-           ${strengths.map(s => `
-             <div class="flex items-start gap-2 text-sm">
-               <span class="text-indigo-400 shrink-0 mt-0.5 font-bold text-base leading-none">✓</span>
-               <span class="text-gray-700 leading-snug">${s}</span>
-             </div>`).join('')}
-         </div>`
-      : '<div class="text-sm text-gray-400 italic mt-1">No strengths data.</div>';
-
-    const expHtml = expAlert
-      ? `<div class="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2
-                    text-xs text-amber-800 font-semibold">⚡ ${expAlert}</div>`
-      : '';
-
-    let vsHtml = '';
-    if (isZA) {
-      vsHtml = `
-        <div class="mt-4 bg-indigo-50 border border-indigo-100 rounded-xl p-3">
-          <div class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">⭐ Base Comparison Bank</div>
-          <div class="text-xs text-indigo-700 leading-relaxed">
-            ZA Bank is the reference point for all competitor analysis.
-            Currently <strong>${count}</strong> active non-BAU promotion(s)
-            and <strong>${bauCnt}</strong> permanent BAU feature(s).
-          </div>
-        </div>`;
-    } else {
-      const diff      = count - zaCount;
-      const diffSign  = diff > 0 ? `+${diff}` : `${diff}`;
-      const diffColor = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-500' : 'text-gray-500';
-      const diffLabel = diff > 0
-        ? `${diffSign} more than ZA Bank`
-        : diff < 0
-          ? `${diffSign} fewer than ZA Bank`
-          : 'Same count as ZA Bank';
-
-      const betterHtml = pros
-        ? `<div class="rounded-lg border border-green-200 bg-green-50 p-3">
-             <div class="text-xs font-bold text-green-700 uppercase tracking-wide mb-1.5">
-               ✅ Better than ZA Bank
-             </div>
-             <div class="text-sm text-green-800 leading-relaxed">${pros}</div>
-           </div>`
-        : '';
-
-      const worseHtml = cons
-        ? `<div class="rounded-lg border border-red-200 bg-red-50 p-3">
-             <div class="text-xs font-bold text-red-600 uppercase tracking-wide mb-1.5">
-               ❌ Worse than ZA Bank
-             </div>
-             <div class="text-sm text-red-800 leading-relaxed">${cons}</div>
-           </div>`
-        : '';
-
-      vsHtml = `
-        <div class="mt-4 border border-gray-200 rounded-xl overflow-hidden">
-          <div class="bg-gray-50 px-3 py-2 border-b border-gray-200
-                      flex items-center justify-between">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">vs ZA Bank</span>
-            <span class="text-xs font-bold ${diffColor}">${diffLabel}</span>
-          </div>
-          <div class="p-3 space-y-2">
-            <div class="text-xs text-gray-400">
-              ${bName}: <strong class="text-gray-700">${count}</strong> active ·
-              ZA Bank: <strong class="text-gray-700">${zaCount}</strong> active
-            </div>
-            ${betterHtml}
-            ${worseHtml}
-          </div>
-        </div>`;
-    }
-
-    const headerBg   = isZA ? color : '#f9fafb';
-    const headerText = isZA ? '#fff' : '#1f2937';
-
-    return `
-      <div class="rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-        <div class="px-5 py-4" style="background:${headerBg};">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="bank-dot" style="background:${isZA?'rgba(255,255,255,0.5)':color}"></span>
-              <span class="font-extrabold text-lg" style="color:${headerText}">${bName}</span>
-              ${isZA
-                ? `<span class="text-xs px-2 py-0.5 rounded-full font-bold"
-                          style="background:rgba(255,255,255,0.2);color:#fff;">⭐ Base</span>`
-                : ''}
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs px-3 py-1 rounded-full font-bold text-white"
-                    style="background:${isZA?'rgba(255,255,255,0.2)':color}">
-                ${count} active
-              </span>
-              ${bauCnt > 0
-                ? `<span class="text-xs px-2 py-0.5 rounded-full font-semibold
-                               bg-slate-200 text-slate-600">${bauCnt} BAU</span>`
-                : ''}
-            </div>
-          </div>
-        </div>
-        <div class="p-5 bg-white">
-          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">🎯 Bank Focus</div>
-          <div class="text-sm text-gray-700 mb-4 leading-relaxed">${focus || '—'}</div>
-          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">💪 Key Strengths</div>
-          ${strengthsHtml}
-          ${expHtml}
-          ${vsHtml}
-        </div>
-      </div>`;
-  }).join('');
-
-  grid.innerHTML = cards;
-}
-
-function buildComparisonTable() {
-  document.getElementById('comparisonSection').style.display = 'block';
-
-  const livePromos = allPromos.filter(p => {
-    const s = getStatus(p);
-    return (s === 'active' || s === 'expiring') && !p.is_bau;
-  });
-  if (!livePromos.length) return;
-
-  const bankMap = {};
-  livePromos.forEach(p => {
-    if (!bankMap[p.bank_name]) bankMap[p.bank_name] = { name: p.bank_name, promos: [] };
-    bankMap[p.bank_name].promos.push(p);
-  });
-
-  const banks = Object.values(bankMap).sort((a, b) => {
-    if (a.name.includes('ZA')) return -1;
-    if (b.name.includes('ZA')) return 1;
-    return b.promos.length - a.promos.length;
-  });
-
-  const zaBank = banks.find(b => b.name.includes('ZA'));
-  if (!zaBank) return;
-
-  const typeCounts = {};
-  livePromos.forEach(p =>
-    (p.types||[]).forEach(t => {
-      if (!t.includes('長期') && !t.includes('Others'))
-        typeCounts[t] = (typeCounts[t]||0) + 1;
-    })
-  );
-  const topTypes = Object.entries(typeCounts)
-    .sort((a,b) => b[1]-a[1]).map(e => e[0]).slice(0,8);
-
-  let thead = `<tr class="bg-gray-50 border-b-2 border-gray-200">
-    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500
-               uppercase tracking-wide w-44 whitespace-nowrap">指標 / Metric</th>`;
-  banks.forEach(b => {
-    const isZA  = b.name.includes('ZA');
-    const color = bankColor(b.name);
-    thead += `
-      <th class="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide
-                 ${isZA?'bg-blue-50':''}" style="color:${color}; min-width:95px;">
-        <span class="bank-dot" style="background:${color}; margin-right:3px;"></span>${b.name}
-        ${isZA ? '<br><span class="text-blue-400 font-normal normal-case text-xs">⭐ Base</span>' : ''}
-      </th>`;
-  });
-  thead += '</tr>';
-
-  function makeRow(label, getVal, isBold=false) {
-    const zaVal  = getVal(zaBank);
-    const maxVal = Math.max(...banks.map(b => getVal(b)));
-    let r = `<tr class="border-b border-gray-100 hover:bg-indigo-50/20">
-      <td class="px-4 py-2.5 text-sm text-gray-700 whitespace-nowrap
-                 ${isBold?'font-bold':'font-medium'}">${label}</td>`;
-    banks.forEach(b => {
-      const isZA  = b.name.includes('ZA');
-      const val   = getVal(b);
-      const isTop = !isZA && val===maxVal && maxVal>0;
-      let ind = '';
-      if (!isZA) {
-        if      (val>zaVal)      ind = `<span class="ml-1 text-green-500 text-xs font-bold">▲</span>`;
-        else if (val<zaVal)      ind = `<span class="ml-1 text-red-400 text-xs font-bold">▼</span>`;
-        else if (val>0||zaVal>0) ind = `<span class="ml-1 text-gray-300 text-xs">—</span>`;
-      }
-      const disp = val>0
-        ? `<span class="${isTop?'text-green-600 font-bold':isZA?'text-blue-700 font-bold':'text-gray-700'}">${val}</span>`
-        : `<span class="text-gray-200">0</span>`;
-      r += `<td class="px-4 py-2.5 text-center ${isZA?'bg-blue-50/50':''}">${disp}${ind}</td>`;
-    });
-    return r + '</tr>';
-  }
-
-  function sectionRow(label) {
-    return `<tr class="bg-gray-50/80 border-b border-gray-100">
-      <td colspan="${banks.length+1}"
-          class="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">${label}</td></tr>`;
-  }
-
-  const rows = [];
-  rows.push(sectionRow('📋 總覽 Overview'));
-  rows.push(makeRow('✅ 有效優惠總數 Total Active', b => b.promos.length, true));
-  rows.push(makeRow('🔄 長期/無到期 Ongoing',
-    b => b.promos.filter(p => !p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length));
-  rows.push(makeRow('⚡ 即將到期 Expiring ≤30d',
-    b => b.promos.filter(p => getStatus(p)==='expiring').length));
-  rows.push(sectionRow('🏷️ 優惠類別 By Category'));
-  topTypes.forEach(type => {
-    const m = catMeta(type), short = type.split(' ')[0];
-    rows.push(makeRow(
-      `<span style="color:${m.bg}" class="mr-1">${m.emoji}</span>${short}`,
-      b => b.promos.filter(p => (p.types||[]).includes(type)).length
-    ));
-  });
-
-  document.getElementById('compTable').innerHTML =
-    `<thead>${thead}</thead><tbody>${rows.join('')}</tbody>`;
-
-  buildProsCons(zaBank, banks, topTypes);
-}
-
-function buildProsCons(zaBank, allBanks, topTypes) {
-  const others = allBanks.filter(b => b.name!==zaBank.name);
-  if (!others.length) return;
-  const avg  = arr => arr.length ? arr.reduce((s,n)=>s+n,0)/arr.length : 0;
-  const pros = [], cons = [];
-
-  const avgCount = avg(others.map(b=>b.promos.length));
-  if (zaBank.promos.length >= avgCount)
-    pros.push(`有效優惠總數 (${zaBank.promos.length}) 高於或持平其他銀行平均 (${avgCount.toFixed(1)})`);
-  else
-    cons.push(`有效優惠總數 (${zaBank.promos.length}) 低於其他銀行平均 (${avgCount.toFixed(1)})`);
-
-  const beatCount = others.filter(b=>zaBank.promos.length>b.promos.length).length;
-  if (beatCount===others.length&&others.length>1)
-    pros.push(`優惠總數領先全部 ${others.length} 間競爭銀行`);
-  else if (beatCount>others.length/2)
-    pros.push(`優惠總數超越 ${beatCount}/${others.length} 間競爭銀行`);
-
-  const leadCats=[], weakCats=[];
-  topTypes.forEach(type => {
-    const zaC  = zaBank.promos.filter(p=>(p.types||[]).includes(type)).length;
-    const avgC = avg(others.map(b=>b.promos.filter(p=>(p.types||[]).includes(type)).length));
-    const m    = catMeta(type);
-    const s    = `${m.emoji}${type.split(' ')[0]}`;
-    if (zaC>avgC+0.5) leadCats.push(s);
-    if (zaC<avgC-0.5) weakCats.push(`${s} (ZA: ${zaC} vs avg: ${avgC.toFixed(1)})`);
-  });
-  if (leadCats.length) pros.push(`在 ${leadCats.join('、')} 類別優惠數量領先市場`);
-  if (weakCats.length) cons.push(`以下類別優惠相對較少：${weakCats.join('、')}`);
-
-  const zaOngoing  = zaBank.promos.filter(p=>!p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length;
-  const avgOngoing = avg(others.map(b=>b.promos.filter(p=>!p.end_date||(p.period&&p.period.toLowerCase().includes('ongoing'))).length));
-  if (zaOngoing>avgOngoing+0.5)
-    pros.push(`長期優惠比例高：${zaOngoing} 項長期有效 (其他平均 ${avgOngoing.toFixed(1)} 項)`);
-  else if (zaOngoing<avgOngoing-0.5)
-    cons.push(`長期優惠相對較少：${zaOngoing} 項 (其他平均 ${avgOngoing.toFixed(1)} 項)`);
-
-  const zaExpiring = zaBank.promos.filter(p=>getStatus(p)==='expiring').length;
-  if (zaExpiring>5)
-    cons.push(`有 ${zaExpiring} 項優惠將在30天內到期，部分優惠持續性有待觀察`);
-
-  document.getElementById('prosConsWrap').innerHTML = `
-    <div class="rounded-2xl border border-green-100 bg-gradient-to-br from-green-50 to-emerald-50 p-5">
-      <h3 class="font-bold text-green-700 mb-3 flex items-center gap-2">
-        <span>✅</span> ZA Bank 相對優勢 Strengths
-      </h3>
-      <ul class="space-y-2">
-        ${pros.length
-          ? pros.map(p=>`<li class="flex items-start gap-2 text-sm text-green-800">
-              <span class="text-green-500 shrink-0 mt-0.5">●</span><span>${p}</span></li>`).join('')
-          : '<li class="text-sm text-gray-400 italic">暫無突出優勢</li>'}
-      </ul>
-    </div>
-    <div class="rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-amber-50 p-5">
-      <h3 class="font-bold text-orange-700 mb-3 flex items-center gap-2">
-        <span>⚠️</span> ZA Bank 可改進空間 Areas to Improve
-      </h3>
-      <ul class="space-y-2">
-        ${cons.length
-          ? cons.map(c=>`<li class="flex items-start gap-2 text-sm text-orange-800">
-              <span class="text-orange-400 shrink-0 mt-0.5">●</span><span>${c}</span></li>`).join('')
-          : '<li class="text-sm text-gray-400 italic">暫無明顯不足</li>'}
-      </ul>
-    </div>`;
-}
-
-function applyFilters() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const status = document.getElementById('statusFilter').value;
-  const sort   = document.getElementById('sortFilter').value;
-
-  filtered = allPromos.filter(p => {
-    const s = getStatus(p);
-    if (status==='active'          && s!=='active')                   return false;
-    if (status==='expiring'        && s!=='expiring')                  return false;
-    if (status==='expired'         && s!=='expired')                   return false;
-    if (status==='active+expiring' && s!=='active' && s!=='expiring')  return false;
-    if (activeBankTab && p.bank_name!==activeBankTab)                  return false;
-
-    if (selectedCats.length>0) {
-      const hasBau    = selectedCats.includes('BAU');
-      const otherCats = selectedCats.filter(c=>c!=='BAU');
-      if (p.is_bau) {
-        if (!hasBau) return false;
-      } else {
-        if (otherCats.length===0) return false;
-        if (!otherCats.some(c=>(p.types||[]).includes(c))) return false;
-      }
-    } else {
-      if (p.is_bau) return false;
-    }
-
-    if (search) {
-      const hay = [p.bank_name,p.title,p.highlight,p.description,
-                   p.period,...(p.types||[])].join(' ').toLowerCase();
-      if (!hay.includes(search)) return false;
-    }
-    return true;
-  });
-
-  if (sort==='bank')    filtered.sort((a,b)=>a.bank_name.localeCompare(b.bank_name));
-  if (sort==='enddate') filtered.sort((a,b)=>(a.end_date||'9999')<(b.end_date||'9999')?-1:1);
-  // ★ FIX 3: use first_seen_at with fallback to created_at — matches Python ordering
-  if (sort==='newest')  filtered.sort((a,b)=>{
-    const da = (b.first_seen_at || b.created_at || '');
-    const db = (a.first_seen_at || a.created_at || '');
-    return da > db ? 1 : da < db ? -1 : 0;
-  });
-
-  renderTable(filtered);
-
-  const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false && getStatus(p) !== 'expired');
-  const bauTotal     = allPromos.filter(p => p.is_bau).length;
-  document.getElementById('resultCount').textContent =
-    `Showing ${filtered.length} of ${activeNonBau.length} active promotions`
-    + (bauTotal>0 ? ` (+${bauTotal} BAU via ⚙️ filter)` : '');
-}
-
-function renderTable(promos) {
-  const tbody = document.getElementById('promoTbody');
-  const empty = document.getElementById('emptyState');
-  const wrap  = document.getElementById('tableWrapper');
-
-  if (!promos.length) {
-    tbody.innerHTML = '';
-    wrap.classList.add('hidden');
-    empty.classList.remove('hidden');
-    return;
-  }
-  empty.classList.add('hidden');
-  wrap.classList.remove('hidden');
-
-  tbody.innerHTML = promos.map((p,i) => {
-    const color     = bankColor(p.bank_name);
-    const bau       = bauTag(p);
-    const cats      = (p.types||['Others 其他']).map(catTag).join('') + bau;
-    const badge     = statusBadge(p);
-    const tcLink    = p.tc_link || p.url || '';
-    const isExpired = getStatus(p)==='expired';
-    const detailId  = `detail-${i}`;
-
-    const sourceHtml = (!isExpired && tcLink)
-      ? `<div class="md:col-span-3">
-           <a href="${tcLink}" target="_blank" rel="noopener"
-              class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800
-                     text-xs font-semibold underline">
-             🔗 View Official Source ↗
-           </a>
-         </div>` : '';
-
-    const detailHtml = `
-      <tr id="${detailId}" class="hidden bg-indigo-50/40">
-        <td colspan="6" class="px-6 py-4">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <div class="font-bold text-gray-400 uppercase text-xs mb-1">📅 Period</div>
-              <div class="text-gray-700">${p.period||'—'}</div>
-            </div>
-            <div>
-              <div class="font-bold text-gray-400 uppercase text-xs mb-1">👥 Quota / Eligibility</div>
-              <div class="text-gray-700">${p.quota||'—'}</div>
-            </div>
-            <div>
-              <div class="font-bold text-gray-400 uppercase text-xs mb-1">💲 Cost / Min Spend</div>
-              <div class="text-gray-700">${p.cost||'—'}</div>
-            </div>
-            <div class="md:col-span-3">
-              <div class="font-bold text-gray-400 uppercase text-xs mb-1">📝 Summary</div>
-              <div class="text-gray-700 leading-relaxed">${p.description||p.highlight||'—'}</div>
-            </div>
-            ${sourceHtml}
-          </div>
-        </td>
-      </tr>`;
-
-    return `
-      <tr class="border-b border-gray-50 cursor-pointer hover:bg-gray-50"
-          onclick="toggleDetail(${i})">
-        <td class="px-4 py-3 whitespace-nowrap">
-          <span class="bank-dot" style="background:${color}"></span>
-          <span class="font-semibold text-gray-700">${p.bank_name}</span>
-        </td>
-        <td class="px-4 py-3 max-w-xs">
-          <div class="font-semibold text-gray-800 leading-snug">${p.title}</div>
-          <div class="text-gray-400 text-xs mt-0.5">${p.highlight||''}</div>
-        </td>
-        <td class="px-4 py-3">${cats}</td>
-        <td class="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">${p.period||'—'}</td>
-        <td class="px-4 py-3">${badge}</td>
-        <td class="px-4 py-3 text-gray-400 text-xs">
-          <span class="chevron" id="chevron-${i}">▼</span>
-        </td>
-      </tr>
-      ${detailHtml}`;
-  }).join('');
-}
-
-function toggleDetail(i) {
-  const row  = document.getElementById(`detail-${i}`);
-  const chev = document.getElementById(`chevron-${i}`);
-  const open = !row.classList.contains('hidden');
-  row.classList.toggle('hidden', open);
-  chev.style.transform = open ? '' : 'rotate(180deg)';
-}
-
-function exportExcel() {
-  if (!filtered.length) return;
-  const rows = filtered.map(p => ({
-    'Bank':        p.bank_name,
-    'Title':       p.title,
-    'Categories':  (p.types||[]).join(', '),
-    'BAU':         p.is_bau?'Yes':'No',
-    'Status':      getStatus(p),
-    'Period':      p.period||'',
-    'Start Date':  p.start_date||'',
-    'End Date':    p.end_date||'',
-    'Quota':       p.quota||'',
-    'Cost':        p.cost||'',
-    'Highlight':   p.highlight||'',
-    'Description': p.description||'',
-    'Source Link': p.tc_link||p.url||'',
-    'First Seen':  p.first_seen_at||p.created_at||'',
-    'Last Seen':   p.last_seen||'',
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [
-    {wch:15},{wch:50},{wch:30},{wch:6},{wch:10},{wch:25},{wch:12},{wch:12},
-    {wch:30},{wch:20},{wch:40},{wch:60},{wch:40},{wch:12},{wch:20},
-  ];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Promotions');
-  XLSX.writeFile(wb, `HK_VBank_Promotions_${new Date().toISOString().split('T')[0]}.xlsx`);
-}
-
-buildCatButtons();
-loadData();
-</script>
-</body>
-</html>
+      ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs...

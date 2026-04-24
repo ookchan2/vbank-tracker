@@ -49,24 +49,32 @@ CATEGORY_META = {
     "Others": {"bg": "#6b7280", "emoji": "📋"},
 }
 
+# ★ CHANGED:
+#   "Airstar Bank" → "EleBank"  (bank renamed; backward-compat alias kept)
+#   "PAObank"      → "PADB"     (bank renamed; backward-compat alias kept)
+
 BANK_COLORS = {
     "ZA Bank":      "#25CD9C",
     "Mox Bank":     "#ec4899",
     "WeLab Bank":   "#7c3aed",
     "livi bank":    "#f97316",
-    "PAObank":      "#0ea5e9",
-    "Airstar Bank": "#06b6d4",
+    "PADB":         "#0ea5e9",   # ★ was PAObank
+    "PAObank":      "#0ea5e9",   # backward-compat alias (existing DB rows)
+    "EleBank":      "#06b6d4",   # ★ was Airstar Bank
+    "Airstar Bank": "#06b6d4",   # backward-compat alias (existing DB rows)
     "Fusion Bank":  "#14b8a6",
     "Ant Bank":     "#1677ff",
 }
 
 BANK_DISPLAY_NAMES = {
     "ZA Bank":      "ZA",
-    "Airstar Bank": "Airstar",
+    "EleBank":      "EleBank",   # ★ was Airstar Bank → Airstar
+    "Airstar Bank": "EleBank",   # backward-compat alias
     "Ant Bank":     "Ant",
     "Fusion Bank":  "Fusion",
     "Mox Bank":     "Mox",
-    "PAObank":      "PAO",
+    "PADB":         "PADB",      # ★ was PAObank → PAO
+    "PAObank":      "PADB",      # backward-compat alias
     "WeLab Bank":   "WeLab",
     "livi bank":    "Livi",
 }
@@ -162,11 +170,9 @@ def _classify_promo(p: dict, today_d, threshold_d) -> str:
       2. end_date < today  →  'expired'  →  'past'
       3. end_date within 30 days          →  'expiring'
       4. everything else                  →  'active'
-
-    today_d and threshold_d MUST be HKT dates from _hkt_today_and_threshold().
     """
     active = p.get('active')
-    if active is not None and not active:   # False or 0, but NOT None
+    if active is not None and not active:
         return 'past'
 
     ed = p.get('end_date')
@@ -193,19 +199,12 @@ def _hkt_today_and_threshold() -> tuple:
     return now.date(), (now + timedelta(days=30)).date()
 
 
-# ── ★ FIX 1: canonical count-source resolver ─────────────────────────────────
+# ── ★ Canonical count-source resolver ────────────────────────────────────────
 
 def _resolve_count_source(
     promotions_data: list,
     scraped_data:    dict | None,
 ) -> list:
-    """
-    Return the list that should be used for stats (total / active / expiring).
-
-    Priority:
-      1. scraped_data['promotions']  — identical to data.json, matches website
-      2. promotions_data             — raw DB rows, may over-count (fallback only)
-    """
     if scraped_data and isinstance(scraped_data, dict):
         json_promos = scraped_data.get('promotions')
         if json_promos and isinstance(json_promos, list):
@@ -216,30 +215,13 @@ def _resolve_count_source(
 # ── Multiple recipients helper ────────────────────────────────────────────────
 
 def _collect_recipients(override: str | list[str] | None = None) -> list[str]:
-    """
-    Build a deduplicated list of recipient email addresses.
-
-    `override` can be:
-      - a list[str]  already split by main.py's _read_env()   ← preferred
-      - a plain str  comma-separated (legacy / direct callers)
-      - None         (fall back entirely to env vars)
-
-    After processing `override`, the function also reads the following env
-    vars so that RECIPIENT_EMAIL_2 / _3 extras still work even when the
-    caller passes an override:
-        RECIPIENT_EMAIL, RECIPIENT_EMAIL_2, RECIPIENT_EMAIL_3,
-        EMAIL_RECIPIENT, EMAIL_TO
-    """
     raw_emails: list[str] = []
 
     if override:
         if isinstance(override, list):
-            # main.py now passes a pre-split list — handle each item, which
-            # may still contain a comma if the caller built the list differently.
             for item in override:
                 raw_emails.extend(str(item).split(','))
         else:
-            # Legacy: plain comma-separated string
             raw_emails.extend(str(override).split(','))
 
     for env_var in (
@@ -684,16 +666,10 @@ def build_html_email(
   </td></tr>
   <tr><td style="height:20px;"></td></tr>
 
-  <!-- AI UNAVAILABLE NOTICE -->
   {ai_notice_html}
-
-  <!-- SECTION 1: NEWLY LAUNCHED TODAY (omitted when empty) -->
   {today_section}
-
-  <!-- SECTION 2: PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK (always shown) -->
   {week_section}
 
-  <!-- SECTION 3: OVERALL STATS + BANK BREAKDOWN -->
   <tr><td style="height:20px;"></td></tr>
 
   <!-- Overall stats -->
@@ -791,24 +767,13 @@ def build_html_email(
 def send_email(
     html_content:    str,
     subject:         str                    = None,
-    recipient:       str | list[str] | None = None,  # ← accepts str or list[str]
+    recipient:       str | list[str] | None = None,
     new_promos:      list                   = None,
     new_promos_week: list                   = None,
     promotions_data: list                   = None,
     ai_unavailable:  bool                   = False,
     scraped_data:    dict                   = None,
 ) -> bool:
-    """
-    Send the HTML email to all configured recipients.
-
-    `recipient` can be:
-      - list[str]  — pre-split list from main.py's _read_env()  ← preferred
-      - str        — comma-separated string (legacy callers)
-      - None       — rely entirely on env vars
-
-    ★ Pass scraped_data=<full data.json dict> so that the plain-text stats
-      match the website (data.json) counts exactly.
-    """
     smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.getenv('SMTP_PORT', '587'))
 
@@ -823,7 +788,6 @@ def send_email(
         os.getenv('EMAIL_PASS')
     )
 
-    # _collect_recipients handles list, str, or None for `override`
     all_recipients = _collect_recipients(override=recipient)
 
     if not all([smtp_user, smtp_pass]):

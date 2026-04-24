@@ -14,8 +14,15 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from database import _get_conn, _normalize_title
 
-# ── Ground-truth BAU titles from promotions.xlsx (column B = "BAU") ──────────
-# Key = bank_id, value = list of canonical BAU title substrings (normalised match)
+# ── Ground-truth BAU titles ───────────────────────────────────────────────────
+# Key = bank_id (internal ID — unchanged even after bank rebranding)
+# Value = list of canonical BAU title substrings (normalised fuzzy match)
+#
+# ★ CHANGED:
+#   'airstar' → EleBank (formerly Airstar Bank); bank_id stays 'airstar' for DB compat
+#              Fee facts updated: HK stock $0 commission + HKD 15 platform fee;
+#              US stock USD 0.0049/share commission + USD 0.005/share platform fee
+#   'pao'     → PADB (formerly PAObank); bank_id stays 'pao'; titles unchanged
 
 BAU_BY_BANK: dict[str, list[str]] = {
     'za': [
@@ -32,6 +39,10 @@ BAU_BY_BANK: dict[str, list[str]] = {
         'Group Lai See Feature',
         'Express Wise Remittance',
     ],
+    # ★ EleBank (formerly Airstar Bank) — bank_id = 'airstar'
+    # HK stock trading: $0 commission + HKD 15 platform fee per order (non-fractional)
+    # US stock trading: USD 0.0049/share commission (min USD 0.99)
+    #                   + USD 0.005/share platform fee (min USD 1.00) (non-fractional)
     'airstar': [
         'Savings Deposit with No Minimum Balance',
         'Bank Securities Transfer Support',
@@ -39,11 +50,19 @@ BAU_BY_BANK: dict[str, list[str]] = {
         'Quick Mobile Account Opening',
         'Personal Loan with Personalized Stellar APR',
         'Free Multi-Currency Transfers',
+        # ★ Updated: reflects actual fee structure ($0 commission, HKD 15 platform fee)
+        'HK Stock Trading with $0 Commission',
+        'HK Stock $0 Commission per Order',
+        # Legacy title kept for existing DB rows
+        'Lifetime $0 Commissions on HK Stocks',
+        # ★ Updated: reflects actual US stock fee structure
+        'US Stock Trading with Competitive Commission Rates',
+        'US Stock USD 0.0049 Commission per Share',
+        # Legacy title kept for existing DB rows
         'Low-Cost US Stock Trading',
         'Fractional Shares Investment',
         'High-Interest Savings Deposit',
         '24/7 Foreign Exchange Service',
-        'Lifetime $0 Commissions on HK Stocks',
         'Flexible Time Deposit',
     ],
     'ant': [
@@ -78,6 +97,7 @@ BAU_BY_BANK: dict[str, list[str]] = {
         'Instant Clear 0% Interest Credit Card Bill Payment',
         'Year-round Mox Credit Card Offers',
     ],
+    # ★ PADB (formerly PAObank) — bank_id = 'pao'; titles unchanged (no bank name in titles)
     'pao': [
         '24/7 Mobile Banking Services',
         'Services for Hong Kong Residents and Visitors',

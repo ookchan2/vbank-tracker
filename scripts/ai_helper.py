@@ -1,4 +1,14 @@
 # scripts/ai_helper.py
+#
+# ★ BANK NAME CHANGES:
+#   Airstar Bank → EleBank  (bank_id 'airstar' unchanged for DB compat)
+#   PAObank      → PADB     (bank_id 'pao' unchanged)
+#
+# ★ ELEBANK STOCK TRADING FEES (non-fractional, injected into AI prompts):
+#   HK stocks: $0 commission + HKD 15 platform fee per order
+#   US stocks: USD 0.0049/share commission (min USD 0.99/order)
+#              + USD 0.005/share platform fee (min USD 1.00/order)
+#              = USD 0.0099/share total, min USD 1.99/order (tied with ZA Bank)
 
 import asyncio
 import concurrent.futures
@@ -262,16 +272,35 @@ If the text is entirely from a government or charity website, return [].
 If you see any mention of taipofire.gov.hk, wang fuk court, hab033,
 cefs.gov.hk, or tax deduction for donation — skip that content entirely."""
 
+# ★ EleBank-specific fee context injected into the extraction prompt when
+#   processing EleBank pages.  The AI uses these exact figures in its
+#   'highlight' and 'description' fields and for correct is_bau tagging.
+_ELEBANK_FEE_CONTEXT = """
+[EleBank Stock Trading Fee Reference — factual, use for exact descriptions]
+Non-fractional stock trading standard fee schedule (BAU — always available):
+  HK-listed stocks: $0 commission per order + HKD 15 platform fee per order
+  US-listed stocks: Commission USD 0.0049 per share (min USD 0.99 per order)
+                   + Platform fee USD 0.005 per share (min USD 1.00 per order)
+                   = Total USD 0.0099 per share, minimum USD 1.99 per order
+These are the standard BAU rates — NOT a limited-time promotional discount.
+Extract any TIME-LIMITED fee waivers or discounts on top of these rates as
+separate non-BAU promotions with the relevant end_date.
+"""
+
 
 def _build_prompt(bank_name: str, url: str, text: str) -> str:
     today = datetime.now().strftime('%Y-%m-%d')
-    return (
+    prompt = (
         _PROMPT_TMPL
         .replace('BANK_NAME_PLACEHOLDER',  bank_name)
         .replace('URL_PLACEHOLDER',        url)
         .replace('TODAY_DATE_PLACEHOLDER', today)
         .replace('TEXT_PLACEHOLDER',       text)
     )
+    # ★ Inject EleBank fee context (covers both new name and legacy 'Airstar' rows)
+    if any(n in bank_name.lower() for n in ('elebank', 'ele bank', 'airstar')):
+        prompt = prompt + '\n' + _ELEBANK_FEE_CONTEXT
+    return prompt
 
 
 # ── Poe async core ────────────────────────────────────────────────────────────
@@ -502,6 +531,7 @@ _CONCRETE_EVIDENCE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# ★ CHANGED: 'airstar' → 'elebank' (+ kept 'airstar' for legacy data compat)
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
     'HK Stock Trading': [
         'hk stock', 'hong kong stock', 'hkex', 'local stock',
@@ -509,21 +539,21 @@ _CATEGORY_KEYWORDS: dict[str, list[str]] = {
         'hk brokerage', 'stock', 'securities', 'brokerage', 'ipo',
         'trading fee', 'platform fee', '$0 commission', 'commission',
         'powerdraw', 'free stock', 'equities', 'share trading',
-        'airstar',                               # ← NEW
+        'elebank', 'airstar',
     ],
     'US Stock Trading': [
         'us stock', 'us equities', 'us securities', 'us shares',
         'american stock', 'nyse', 'nasdaq', 'us market',
         'us brokerage', '$0 commission', 'commission',
         'trading fee', 'platform fee', 'stock', 'equities',
-        'airstar',                               # ← NEW
+        'elebank', 'airstar',
     ],
     'Stock Trading': [
         'stock', 'securities', 'brokerage', 'ipo',
         'trading fee', 'platform fee', '$0 commission', 'commission',
         'powerdraw', 'free stock', 'hk stock', 'us stock',
         'equities', 'share trading',
-        'airstar',                               # ← NEW
+        'elebank', 'airstar',
     ],
     'Crypto Trading': [
         'crypto', 'bitcoin', 'virtual asset', 'digital asset',
@@ -616,15 +646,36 @@ def _validate_best_for_evidence(best_for: list) -> list:
 
 # ── Stock trading total-cost validator ────────────────────────────────────────
 
-_STOCK_CATS  = {'HK Stock Trading', 'US Stock Trading', 'Stock Trading'}
-_ZA_NAMES    = {'za bank', 'za', 'za invest'}
+_STOCK_CATS = {'HK Stock Trading', 'US Stock Trading', 'Stock Trading'}
+_ZA_NAMES   = {'za bank', 'za', 'za invest'}
 
-# ← NEW: Airstar Bank is a strong competitor for stock trading.
-# HK stocks: $0 commission + $0 platform fee → total cost HKD 0 per trade,
-# which beats ZA Bank's HKD 18 platform fee.
-# US stocks: competitive fee — determined from scraped promotion data.
-_AIRSTAR_NAMES            = {'airstar bank', 'airstar', 'airstar invest'}   # ← NEW
-_AIRSTAR_HK_TOTAL_COST    = 0.0   # $0 commission + $0 platform fee         # ← NEW
+# ★ EleBank (formerly Airstar Bank) — includes legacy names for backward compat
+_ELEBANK_NAMES = {
+    'elebank', 'ele bank', 'elebank bank',
+    'airstar bank', 'airstar', 'airstar invest',   # legacy names
+}
+_AIRSTAR_NAMES = _ELEBANK_NAMES  # legacy alias
+
+# ★ PADB (formerly PAObank)
+_PADB_NAMES = {'padb', 'paobank', 'pao bank', 'pao'}
+
+# ── EleBank stock fee constants ───────────────────────────────────────────────
+# HK stocks: $0 commission + HKD 15 platform fee per order
+# US stocks: USD 0.0049/share comm (min USD 0.99) + USD 0.005/share platform (min USD 1.00)
+#            = USD 0.0099/share total, min USD 1.99/order  ← same as ZA Bank US
+_ELEBANK_HK_COMMISSION        = 0.0
+_ELEBANK_HK_PLATFORM_FEE      = 15.0   # HKD per order
+_ELEBANK_HK_TOTAL_COST        = 15.0   # HKD per order
+_ELEBANK_US_COMM_PER_SHARE    = 0.0049 # USD
+_ELEBANK_US_COMM_MIN          = 0.99   # USD per order
+_ELEBANK_US_PLAT_PER_SHARE    = 0.005  # USD
+_ELEBANK_US_PLAT_MIN          = 1.00   # USD per order
+_ELEBANK_US_TOTAL_PER_SHARE   = 0.0099 # USD (= comm + platform, same as ZA Bank)
+_ELEBANK_US_MIN_TOTAL         = 1.99   # USD per order (0.99 + 1.00 = same as ZA Bank)
+
+# ── ZA Bank fee constants ─────────────────────────────────────────────────────
+_ZA_HK_PLATFORM_FEE_HKD  = 18.0   # HKD per order
+_ZA_US_PLATFORM_FEE_USD   = 1.99   # USD minimum per order
 
 _CHARGES_COMMISSION_RE = re.compile(
     r'usd\s*[\d]+\.[\d]+\s*/\s*share'
@@ -646,9 +697,6 @@ _ZERO_PLATFORM_FEE_RE = re.compile(
 )
 
 _USD_PER_SHARE_RE = re.compile(r'usd\s*([\d]+\.[\d]+)\s*(?:/|per)\s*share', re.IGNORECASE)
-
-_ZA_HK_PLATFORM_FEE_HKD = 18.0
-_ZA_US_PLATFORM_FEE_USD  = 1.99
 
 
 def _us_breakeven_shares(per_share_usd: float) -> float:
@@ -675,86 +723,88 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                     'detail': (
                         detail.rstrip('. ') +
                         '; platform fee applies '
-                        '(HK: HKD 18/trade, US: USD 1.99/trade minimum)'
+                        f'(HK: HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f}/order, '
+                        f'US: USD {_ZA_US_PLATFORM_FEE_USD:.2f}/order minimum)'
                     ),
                 }
-            # ← NEW: Airstar also competes in stock trading — always list it
-            # as a similar bank so readers know to compare both options.
+            # Ensure EleBank appears in similar_banks for stock trading
             existing_similar = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
-            if not any(n in existing_similar for n in _AIRSTAR_NAMES):
+            if not any(n in existing_similar for n in _ELEBANK_NAMES):
                 best_for[i] = {
                     **best_for[i],
                     'similar_banks': (
-                        ['Airstar Bank'] + list(best_for[i].get('similar_banks') or [])
+                        ['EleBank'] + list(best_for[i].get('similar_banks') or [])
                     ),
                 }
             continue
 
-        # ← NEW: Airstar Bank path ─────────────────────────────────────────────
-        # Airstar offers $0 commission + $0 platform fee for HK-listed stocks,
-        # giving a total cost of HKD 0/trade — lower than ZA Bank's HKD 18
-        # platform fee.  When the AI correctly selects Airstar as winner,
-        # accept that result unconditionally; just annotate the detail if it
-        # doesn't already mention the $0 total cost, and ensure ZA Bank and
-        # PAObank appear in similar_banks for context.
-        if bank.lower() in _AIRSTAR_NAMES:
+        # ── EleBank path ──────────────────────────────────────────────────────
+        # HK stocks: EleBank total HKD 15 < ZA Bank HKD 18 → accept win
+        # US stocks: EleBank total USD 1.99 min = ZA Bank USD 1.99 → accept win (tied)
+        if bank.lower() in _ELEBANK_NAMES:
             detail = (entry.get('detail') or '')
 
             if cat == 'HK Stock Trading':
+                # Annotate detail with exact HKD 15 total cost if missing
                 if (
-                    '$0' not in detail
-                    and 'zero' not in detail.lower()
-                    and 'no fee' not in detail.lower()
-                    and 'hkd 0' not in detail.lower()
+                    'hkd 15' not in detail.lower()
+                    and 'hkd15' not in detail.lower()
+                    and 'platform fee' not in detail.lower()
                 ):
                     best_for[i] = {
                         **entry,
                         'detail': (
                             detail.rstrip('. ') +
-                            f'; total cost HKD {_AIRSTAR_HK_TOTAL_COST:.0f}/trade '
-                            f'($0 commission + $0 platform fee). '
-                            f'Beats ZA Bank (HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f} platform fee/trade) '
-                            f'and PAObank (charges brokerage commission per trade).'
+                            f'; total cost HKD {_ELEBANK_HK_TOTAL_COST:.0f}/order '
+                            f'($0 commission + HKD {_ELEBANK_HK_PLATFORM_FEE:.0f} platform fee). '
+                            f'Beats ZA Bank (HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f} platform fee/order '
+                            f'despite $0 commission) and PADB (charges brokerage commission per trade).'
                         ),
                     }
                 print(
-                    f'  ✅ HK stock: Airstar Bank total cost $0/trade — '
+                    f'  ✅ HK stock: EleBank total cost HKD {_ELEBANK_HK_TOTAL_COST:.0f}/order — '
                     f'lower than ZA Bank HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f}. Accepted.'
                 )
-                # Ensure ZA Bank and PAObank appear as similar banks for comparison
-                existing_similar  = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
-                added_similar     = list(best_for[i].get('similar_banks') or [])
+                # Ensure ZA Bank and PADB appear as similar banks
+                existing_similar = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
+                added_similar    = list(best_for[i].get('similar_banks') or [])
                 if not any(n in existing_similar for n in _ZA_NAMES):
                     added_similar = ['ZA Bank'] + added_similar
-                if 'paobank' not in existing_similar and 'pao bank' not in existing_similar:
-                    added_similar = added_similar + ['PAObank']
+                if not any(n in existing_similar for n in _PADB_NAMES):
+                    added_similar = added_similar + ['PADB']
                 best_for[i] = {**best_for[i], 'similar_banks': added_similar}
 
             elif cat in ('US Stock Trading', 'Stock Trading'):
-                if 'total cost' not in detail.lower():
+                # EleBank US total = ZA Bank US total (both USD 0.0099/share, min USD 1.99)
+                if 'total cost' not in detail.lower() and 'usd 1.99' not in detail.lower():
                     best_for[i] = {
                         **entry,
                         'detail': (
                             detail.rstrip('. ') +
-                            f'; verify Airstar US stock total cost vs '
-                            f'ZA Bank (min USD {_ZA_US_PLATFORM_FEE_USD}) '
-                            f'and PAObank (USD 0.012/share commission).'
+                            f'; EleBank US stock: '
+                            f'USD {_ELEBANK_US_COMM_PER_SHARE}/share commission '
+                            f'(min USD {_ELEBANK_US_COMM_MIN}) + '
+                            f'USD {_ELEBANK_US_PLAT_PER_SHARE}/share platform fee '
+                            f'(min USD {_ELEBANK_US_PLAT_MIN:.2f}) '
+                            f'= USD {_ELEBANK_US_TOTAL_PER_SHARE}/share total, '
+                            f'min USD {_ELEBANK_US_MIN_TOTAL:.2f}/order '
+                            f'(same effective minimum as ZA Bank).'
                         ),
                     }
                 print(
-                    f'  ✅ US stock: Airstar Bank selected as winner — '
-                    f'confirm fee vs ZA Bank USD {_ZA_US_PLATFORM_FEE_USD} min.'
+                    f'  ✅ US stock: EleBank selected — total cost matches ZA Bank '
+                    f'(both min USD {_ELEBANK_US_MIN_TOTAL:.2f}/order). Accepted.'
                 )
                 existing_similar = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
                 added_similar    = list(best_for[i].get('similar_banks') or [])
                 if not any(n in existing_similar for n in _ZA_NAMES):
                     added_similar = ['ZA Bank'] + added_similar
-                if 'paobank' not in existing_similar and 'pao bank' not in existing_similar:
-                    added_similar = added_similar + ['PAObank']
+                if not any(n in existing_similar for n in _PADB_NAMES):
+                    added_similar = added_similar + ['PADB']
                 best_for[i] = {**best_for[i], 'similar_banks': added_similar}
 
             continue
-        # ↑ END Airstar Bank path
+        # ↑ END EleBank path
 
         detail             = (entry.get('detail') or '')
         charges_commission = bool(_CHARGES_COMMISSION_RE.search(detail))
@@ -769,13 +819,13 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                 per_share           = float(m.group(1))
                 breakeven           = _us_breakeven_shares(per_share)
                 competitor_cost_200 = 200 * per_share
-                za_cost_200         = _ZA_US_PLATFORM_FEE_USD
+                za_cost_200         = _ZA_US_PLATFORM_FEE_USD  # USD 1.99
 
                 if competitor_cost_200 > za_cost_200:
                     print(
                         f'  🔄 US stock total-cost OVERRIDE [{cat}]: '
                         f'"{bank}" @ USD {per_share}/share × 200 = USD {competitor_cost_200:.2f} '
-                        f'vs ZA Bank USD {za_cost_200:.2f} platform fee. '
+                        f'vs ZA Bank/EleBank USD {za_cost_200:.2f} platform fee. '
                         f'ZA Bank is cheaper above {breakeven:.0f} shares → overriding.'
                     )
                     best_for[i] = {
@@ -783,29 +833,33 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                         'bank':   'ZA Bank',
                         'detail': (
                             f'$0 brokerage commission for US stocks via ZA Invest; '
-                            f'platform fee USD 0.0099/share (min USD 1.99/trade). '
+                            f'platform fee USD 0.0099/share (min USD {_ZA_US_PLATFORM_FEE_USD:.2f}/order). '
                             f'Total cost at 200 shares: USD {za_cost_200:.2f}. '
                             f'{bank} charges USD {per_share}/share commission + $0 platform = '
                             f'USD {competitor_cost_200:.2f} at 200 shares — '
-                            f'ZA Bank is cheaper for trades above {breakeven:.0f} shares.'
+                            f'ZA Bank is cheaper for trades above {breakeven:.0f} shares. '
+                            f'EleBank also offers USD {_ELEBANK_US_TOTAL_PER_SHARE}/share total '
+                            f'(min USD {_ELEBANK_US_MIN_TOTAL:.2f}/order) — same as ZA Bank minimum.'
                         ),
                         'is_bau':  True,
-                        # ← CHANGED: include Airstar Bank in similar_banks
                         'similar_banks': (
-                            [bank, 'Airstar Bank'] + [
+                            [bank, 'EleBank'] + [
                                 b for b in (entry.get('similar_banks') or [])
                                 if b.lower() not in _ZA_NAMES
                                 and b != bank
-                                and b.lower() not in _AIRSTAR_NAMES
+                                and b.lower() not in _ELEBANK_NAMES
                             ]
                         ),
                         'why_others_lose': (
                             f'{bank} charges USD {per_share}/share commission (no platform fee). '
-                            f'ZA Bank charges $0 commission + USD 1.99 flat platform fee. '
-                            f'For trades of {breakeven:.0f}+ shares, ZA Bank total cost is lower. '
-                            f'Most retail investors trade 200+ shares, making ZA Bank cheaper overall. '
-                            f'Airstar Bank also offers competitive stock trading fees — '
-                            f'compare from current Airstar promotions data.'  # ← NEW
+                            f'ZA Bank charges $0 commission + USD {_ZA_US_PLATFORM_FEE_USD:.2f} flat '
+                            f'platform fee (minimum). '
+                            f'EleBank: USD {_ELEBANK_US_COMM_PER_SHARE}/share commission '
+                            f'(min USD {_ELEBANK_US_COMM_MIN}) + '
+                            f'USD {_ELEBANK_US_PLAT_PER_SHARE}/share platform fee '
+                            f'(min USD {_ELEBANK_US_PLAT_MIN:.2f}) = same USD {_ELEBANK_US_MIN_TOTAL:.2f} minimum. '
+                            f'For trades of {breakeven:.0f}+ shares, ZA Bank/EleBank total cost is lower. '
+                            f'Most retail investors trade 200+ shares, making ZA Bank/EleBank cheaper overall.'
                         ),
                     }
                     overrides += 1
@@ -813,7 +867,7 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                     print(
                         f'  ✅ US stock total-cost KEPT [{cat}]: '
                         f'"{bank}" @ USD {per_share}/share × 200 = USD {competitor_cost_200:.2f} '
-                        f'< ZA Bank USD {za_cost_200:.2f} for 200-share benchmark. '
+                        f'< ZA Bank/EleBank USD {za_cost_200:.2f} for 200-share benchmark. '
                         f'Break-even: {breakeven:.0f} shares.'
                     )
                     if 'total cost' not in detail.lower() and 'vs za' not in detail.lower():
@@ -822,17 +876,17 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                             'detail': (
                                 detail.rstrip('. ') +
                                 f'; total cost at 200 shares: USD {competitor_cost_200:.2f} '
-                                f'vs ZA Bank USD {za_cost_200:.2f} '
+                                f'vs ZA Bank/EleBank USD {za_cost_200:.2f} '
                                 f'(break-even: {breakeven:.0f} shares)'
                             ),
                         }
-                    # ← NEW: add Airstar to similar_banks here too
+                    # Ensure EleBank in similar_banks
                     existing_similar = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
-                    if not any(n in existing_similar for n in _AIRSTAR_NAMES):
+                    if not any(n in existing_similar for n in _ELEBANK_NAMES):
                         best_for[i] = {
                             **best_for[i],
                             'similar_banks': (
-                                list(best_for[i].get('similar_banks') or []) + ['Airstar Bank']
+                                list(best_for[i].get('similar_banks') or []) + ['EleBank']
                             ),
                         }
             else:
@@ -846,52 +900,57 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                     'bank':   'ZA Bank',
                     'detail': (
                         '$0 brokerage commission for US stocks via ZA Invest; '
-                        'platform fee USD 0.0099/share (min USD 1.99/trade). '
-                        f'{bank} charges commission (exact rate unspecified).'
+                        f'platform fee USD 0.0099/share (min USD {_ZA_US_PLATFORM_FEE_USD:.2f}/order). '
+                        f'{bank} charges commission (exact rate unspecified). '
+                        f'EleBank also ties ZA Bank: USD {_ELEBANK_US_TOTAL_PER_SHARE}/share total, '
+                        f'min USD {_ELEBANK_US_MIN_TOTAL:.2f}/order.'
                     ),
                     'is_bau':  True,
-                    # ← CHANGED: include Airstar Bank in similar_banks
                     'similar_banks': (
-                        [bank, 'Airstar Bank'] + [
+                        [bank, 'EleBank'] + [
                             b for b in (entry.get('similar_banks') or [])
                             if b.lower() not in _ZA_NAMES
                             and b != bank
-                            and b.lower() not in _AIRSTAR_NAMES
+                            and b.lower() not in _ELEBANK_NAMES
                         ]
                     ),
                     'why_others_lose': (
                         f'{bank} charges per-trade commission; ZA Bank is $0 commission. '
-                        'Total cost = commission + platform fee; ZA Bank eliminates commission entirely. '
-                        'Airstar Bank also offers competitive stock trading fees — '
-                        'compare from current Airstar promotions data.'  # ← NEW
+                        f'EleBank: USD {_ELEBANK_US_COMM_PER_SHARE}/share commission + '
+                        f'USD {_ELEBANK_US_PLAT_PER_SHARE}/share platform = '
+                        f'USD {_ELEBANK_US_TOTAL_PER_SHARE}/share total (min USD {_ELEBANK_US_MIN_TOTAL:.2f}) '
+                        f'— same minimum as ZA Bank.'
                     ),
                 }
                 overrides += 1
 
         elif cat == 'HK Stock Trading' and charges_commission:
-            # ← CHANGED: note Airstar's $0/$0 total cost advantage alongside ZA Bank
+            # Other bank charges commission for HK stocks
+            # Annotate for comparison against EleBank (HKD 15) and ZA Bank (HKD 18)
             if 'platform fee' not in detail.lower() and 'total cost' not in detail.lower():
                 best_for[i] = {
                     **entry,
                     'detail': (
                         detail.rstrip('. ') +
                         '; zero platform fee. '
-                        'Compare total cost: commission + $0 platform vs '
-                        'Airstar Bank $0 total ($0 commission + $0 platform fee) and '
-                        'ZA Bank $0 commission + HKD 18 platform fee.'
+                        f'Compare total cost: commission + $0 platform vs '
+                        f'EleBank HKD {_ELEBANK_HK_TOTAL_COST:.0f} total ($0 commission + '
+                        f'HKD {_ELEBANK_HK_PLATFORM_FEE:.0f} platform fee) and '
+                        f'ZA Bank HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f} total ($0 commission + '
+                        f'HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f} platform fee).'
                     ),
                 }
             print(
                 f'  ℹ️  HK stock winner kept [{cat}]: '
                 f'"{bank}" charges commission + $0 platform. '
-                f'Airstar Bank ($0 total) and ZA Bank ($0 commission + HKD 18) '
-                f'offer lower total cost for most trades.'
+                f'EleBank (HKD {_ELEBANK_HK_TOTAL_COST:.0f}) and '
+                f'ZA Bank (HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f}) offer lower total cost.'
             )
-            # ← NEW: ensure Airstar appears in similar_banks for HK Stock Trading
+            # Ensure EleBank and ZA Bank both in similar_banks
             existing_similar = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
             added_similar    = list(best_for[i].get('similar_banks') or [])
-            if not any(n in existing_similar for n in _AIRSTAR_NAMES):
-                added_similar = ['Airstar Bank'] + added_similar
+            if not any(n in existing_similar for n in _ELEBANK_NAMES):
+                added_similar = ['EleBank'] + added_similar
             if not any(n in existing_similar for n in _ZA_NAMES):
                 added_similar = ['ZA Bank'] + added_similar
             best_for[i] = {**best_for[i], 'similar_banks': added_similar}
@@ -1073,6 +1132,10 @@ Insurance with rate:
   "3.6% Annualized Rate Promotion" = "Insurance Products with Annual Rate up to 3.6%"
   = "Insurance Products with 3.6% Annual Rate" = "Insurance Products with Premium Rebate"
 
+EleBank HK stock trading (all refer to same BAU fee schedule):
+  "HK Stock Trading with $0 Commission" = "Lifetime $0 Commissions on HK Stocks"
+  = "HK Stock $0 Commission per Order" = "HK Stock $0 Commission + HKD 15 Platform Fee"
+
 GoSave:
   "GoSave 2.0 High Interest Savings" = "GoSave 2.0 Enhanced Savings"
 
@@ -1174,7 +1237,11 @@ MATCHING RULES — mark as MATCH in all these cases:
 12. Account opening BAU:
     "Account Opening in 3 Minutes" ↔ "Quick Account Opening" → MATCH
 
-13. When uncertain → declare MATCH
+13. EleBank HK stock BAU (formerly Airstar Bank):
+    "Lifetime $0 Commissions on HK Stocks" ↔ "HK Stock Trading with $0 Commission"
+    ↔ "HK Stock $0 Commission per Order" → MATCH
+
+14. When uncertain → declare MATCH
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 NEWLY SCRAPED (this run):
@@ -1239,13 +1306,14 @@ def _build_bank_summary_lines(promos: list) -> list[str]:
     return lines
 
 
+# ★ CHANGED: 'airstar' → 'elebank' (+ legacy 'airstar' kept for existing DB data)
 _DIAGNOSTIC_CATEGORIES: list[tuple[str, list[str]]] = [
     ('HK Stock Trading',   ['投資', 'hk stock', 'hong kong stock', 'hkex', 'local stock',
                              'securities', 'brokerage', 'ipo', 'commission', 'trading fee',
-                             'airstar']),                          # ← NEW: added 'airstar'
+                             'elebank', 'airstar']),
     ('US Stock Trading',   ['投資', 'us stock', 'us equities', 'nasdaq', 'nyse',
                              'american stock', 'commission', 'trading fee',
-                             'airstar']),                          # ← NEW: added 'airstar'
+                             'elebank', 'airstar']),
     ('Crypto Trading',     ['投資', 'crypto', 'bitcoin', 'virtual asset', 'digital asset', 'cryptocurrency']),
     ('Fund Investment',    ['投資', 'fund', '基金', '$0認購費', 'subscription fee']),
     ('Referral Bonus',     ['推薦', 'referral', '多友多賞', 'invite']),
@@ -1497,7 +1565,7 @@ SECTION 7 — SIMILAR BANKS & WHY THEY DON'T WIN
 For EVERY best_for entry populate:
 • similar_banks: ALL other banks offering a similar promotion in this category.
   ⚠️  For HK Stock Trading and US Stock Trading you MUST include BOTH
-      "ZA Bank" and "Airstar Bank" in similar_banks (whichever one did not win),
+      "ZA Bank" and "EleBank" in similar_banks (whichever one did not win),
       because both offer highly competitive stock trading fees.
 • why_others_lose: specific comparative reason using fees, caps, expiry dates.
 
@@ -1513,40 +1581,50 @@ SECTION 9 — STOCK TRADING: TOTAL COST ANALYSIS (CRITICAL)
 
 ⚠️  THE ONLY CORRECT WAY TO COMPARE STOCK TRADING COSTS:
 
-  Total cost per trade = Commission fee + Platform fee
+  Total cost per order = Commission fee + Platform fee
 
-  Airstar Bank:
-    • HK stocks: $0 commission + $0 platform fee → total cost HKD 0/trade
-    • US stocks: evaluate fee structure from the scraped promotions data above
-    ✅ For HK stocks Airstar total HKD 0 < ZA Bank HKD 18 platform fee.
-       Pick Airstar as HK Stock Trading winner whenever its HK stock trading
-       promotion appears in the scraped data.
-    ❌ NEVER say "Airstar charges commission" without evidence from the data.
+  EleBank (formerly Airstar Bank):
+    • HK stocks: $0 commission + HKD 15 platform fee per order
+                 → total cost HKD 15/order
+    • US stocks: USD 0.0049/share commission (min USD 0.99/order)
+                 + USD 0.005/share platform fee (min USD 1.00/order)
+                 = USD 0.0099/share total, min USD 1.99/order
+    ✅ EleBank wins HK Stock Trading:
+       HKD 15/order < ZA Bank HKD 18/order.
+       Pick EleBank as HK Stock Trading winner whenever EleBank HK stock
+       trading data appears in the scraped promotions above.
+    ℹ️  EleBank ties ZA Bank for US Stock Trading:
+       both cost USD 0.0099/share total with min USD 1.99/order.
+    ❌ NEVER say "EleBank charges no platform fee" — HK stocks cost HKD 15/order.
 
   ZA Bank (via ZA Invest):
-    • Commission:    $0 (zero brokerage commission for ALL stocks)
-    • Platform fee:  HKD 18/trade minimum (HK stocks)
-                     USD 0.0099/share, min USD 1.99/trade (US stocks)
-    ✅ Pick ZA Bank as HK Stock Trading winner only when Airstar HK stock
-       data is absent from the input above.
+    • Commission:   $0 (zero brokerage commission for ALL stocks)
+    • Platform fee: HKD 18/order (HK stocks)
+                    USD 0.0099/share, min USD 1.99/order (US stocks)
+    ✅ Pick ZA Bank as HK Stock Trading winner ONLY when EleBank HK stock
+       data is absent from the input above (EleBank is cheaper at HKD 15).
+    ✅ Pick ZA Bank as US Stock Trading winner by default when EleBank
+       ties (simpler $0-commission fee structure).
     ❌ NEVER say "ZA Bank charges commission" — factually incorrect.
 
-  PAO Bank (PAObank):
+  PADB (formerly PAObank):
     • HK stocks: brokerage commission charged + $0 platform fee
     • US stocks: USD 0.012/share commission + $0 platform fee
 
 WINNER PRIORITY — HK Stock Trading:
-  1st choice: Airstar Bank  ($0 commission + $0 platform = HKD 0 total)
-  2nd choice: ZA Bank       ($0 commission + HKD 18 platform fee)
-  3rd: PAObank/others       (commission-based, total cost varies)
-  → Always list the other two in similar_banks.
+  1st choice: EleBank  ($0 commission + HKD 15 platform fee = HKD 15 total)
+  2nd choice: ZA Bank  ($0 commission + HKD 18 platform fee = HKD 18 total)
+  3rd: PADB/others     (commission-based, total cost varies)
+  → Always list both non-winners in similar_banks.
 
 WINNER PRIORITY — US Stock Trading:
-  Compare total cost at a 200-share benchmark:
-    ZA Bank:  USD 0.0099 × 200 = USD 1.98, floored at min USD 1.99
-    PAObank:  USD 0.012  × 200 = USD 2.40  → ZA Bank wins at ≥166 shares
-    Airstar:  evaluate from scraped data; include in similar_banks regardless
-  → Always list Airstar Bank in similar_banks for US Stock Trading.
+  EleBank and ZA Bank are effectively tied (both USD 0.0099/share, min USD 1.99/order):
+    ZA Bank:  $0 commission + USD 0.0099/share platform fee, min USD 1.99/order
+    EleBank:  USD 0.0049/share comm (min $0.99) + USD 0.005/share platform (min $1.00)
+              = USD 0.0099/share total, min USD 1.99/order
+  → Default to ZA Bank as winner when tied (simpler $0-commission structure).
+  → PADB costs more: USD 0.012/share + $0 platform = USD 2.40 at 200 shares.
+  → Always list EleBank in similar_banks for US Stock Trading.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 10 — FORBIDDEN COMPARISONS IN BANK ANALYSIS
@@ -1561,19 +1639,19 @@ Return this EXACT JSON structure (no markdown, no code fences):
   "best_for": [
     {{
       "category":       "HK Stock Trading",
-      "bank":           "Airstar Bank",
-      "detail":         "$0 commission + $0 platform fee → total cost HKD 0/trade. Beats ZA Bank (HKD 18 platform fee/trade despite $0 commission) and PAObank (charges brokerage commission + $0 platform).",
+      "bank":           "EleBank",
+      "detail":         "$0 commission + HKD 15 platform fee per order → total HKD 15/order. Beats ZA Bank (HKD 18 platform fee/order despite $0 commission) and PADB (charges brokerage commission per trade).",
       "is_bau":         true,
-      "similar_banks":  ["ZA Bank", "PAObank"],
-      "why_others_lose":"ZA Bank charges HKD 18 platform fee per trade (despite $0 commission), making total cost HKD 18/trade. PAObank charges brokerage commission per HK trade. Airstar's HKD 0 total cost is the lowest."
+      "similar_banks":  ["ZA Bank", "PADB"],
+      "why_others_lose":"ZA Bank charges HKD 18 platform fee per order (despite $0 commission), making total cost HKD 18/order. PADB charges brokerage commission per HK trade. EleBank's HKD 15 total cost is the lowest among all 8 banks."
     }},
     {{
       "category":       "US Stock Trading",
       "bank":           "ZA Bank",
-      "detail":         "$0 brokerage commission for US stocks via ZA Invest; platform fee USD 0.0099/share (min USD 1.99/trade). Total cost at 200 shares: USD 1.99. PAObank charges USD 0.012/share commission + $0 platform = USD 2.40 at 200 shares — ZA Bank is cheaper for trades above 166 shares.",
+      "detail":         "$0 brokerage commission + USD 0.0099/share platform fee (min USD 1.99/order). EleBank ties: USD 0.0049/share commission (min $0.99) + USD 0.005/share platform (min $1.00) = USD 0.0099/share, min USD 1.99/order. PADB charges USD 0.012/share = USD 2.40 at 200 shares.",
       "is_bau":         true,
-      "similar_banks":  ["PAObank", "Airstar Bank"],
-      "why_others_lose":"PAObank charges USD 0.012/share commission + $0 platform. At 200 shares PAO costs USD 2.40 vs ZA USD 1.99. ZA wins for trades ≥166 shares (most retail benchmarks). Airstar Bank also offers competitive US stock fees — compare from current promotions data."
+      "similar_banks":  ["EleBank", "PADB"],
+      "why_others_lose":"EleBank effectively ties ZA Bank for US stocks (both min USD 1.99/order; USD 0.0099/share total). ZA Bank chosen as default winner for simpler $0-commission structure. PADB charges USD 0.012/share commission + $0 platform = USD 2.40 at 200 shares — more expensive than ZA Bank/EleBank."
     }},
     {{
       "category":       "Crypto Trading",
@@ -1648,11 +1726,11 @@ Return this EXACT JSON structure (no markdown, no code fences):
       "vs_za_pros": null,
       "vs_za_cons": null
     }},
-    "Airstar Bank": {{
+    "EleBank": {{
       "focus": "short keywords",
-      "strengths": ["$0 commission + $0 platform fee for HK stocks", "s2", "s3"],
+      "strengths": ["$0 commission + HKD 15 platform fee for HK stocks (total HKD 15/order — lowest among all banks)", "s2", "s3"],
       "expiring_alert": "",
-      "vs_za_pros": "$0 total cost for HK stock trades vs ZA Bank HKD 18 platform fee",
+      "vs_za_pros": "HK stock total cost HKD 15/order vs ZA Bank HKD 18/order — EleBank saves HKD 3 per HK trade. US stock cost tied with ZA Bank (both USD 0.0099/share, min USD 1.99).",
       "vs_za_cons": "cons vs ZA Bank"
     }},
     "OtherBank": {{
