@@ -343,7 +343,6 @@ _RE_INSTALMENT = re.compile(r'installment', re.IGNORECASE)
 _RE_AMOUNT     = re.compile(r'(?:hkd|usd|rmb|sgd|cny)\s*[\d,]+(?:\.\d+)?', re.IGNORECASE)
 _RE_PCT        = re.compile(r'\d+(?:\.\d+)?\s*%')
 
-# ★ CHANGED: added 'ELEBANK', 'PADB'; kept legacy 'AIRSTAR', 'PAO' for existing DB rows
 _PROMO_CODE_SKIP = frozenset({
     'SWIFT', 'VISA', 'FPS', 'ATM', 'HKD', 'USD', 'APR', 'ETF', 'IPO',
     'HKT', 'CSL', 'USA', 'UFO', 'VIP', 'APP', 'SMS', 'PIN', 'QR',
@@ -469,7 +468,6 @@ _NOISE_PATTERNS: list[re.Pattern] = [
     for w in _NOISE_WORDS
 ]
 
-# ★ CHANGED: added 'elebank', 'padb'; kept 'airstar', 'pao' for existing DB row compat
 _JACCARD_STOPWORDS = frozenset({
     'for', 'with', 'and', 'or', 'the', 'a', 'an', 'of', 'on', 'in',
     'at', 'to', 'by', 'from', 'all', 'via',
@@ -676,8 +674,12 @@ def save_promotions(
                         if (existing and len(title) >= len(existing['title']))
                         else (existing['title'] if existing else title)
                     )
+                    # ★ FIX: bank_name is now always synced on every UPDATE.
+                    #   Previously missing → stale names like "Airstar Bank" / "PAObank"
+                    #   persisted forever in the DB even after the bank was renamed.
                     conn.execute("""
                         UPDATE promotions SET
+                            bank_name   = ?,
                             title       = ?,
                             highlight   = COALESCE(NULLIF(?, ''), highlight),
                             description = COALESCE(NULLIF(?, ''), description),
@@ -695,6 +697,7 @@ def save_promotions(
                             last_seen   = ?
                         WHERE id = ?
                     """, (
+                        bank_name,          # ★ always overwrite with current canonical name
                         keep_title,
                         highlight,
                         p.get('description', ''), p.get('category', ''),

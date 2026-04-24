@@ -50,6 +50,56 @@ _NO_EMAIL    = '--no-email'    in sys.argv or '--dry-run' in sys.argv
 _SKIP_SCRAPE = '--skip-scrape' in sys.argv
 
 
+# ── Bank-name canonical map ───────────────────────────────────────────────────
+# Guards against stale bank_name values still in the DB from before the rename.
+# Keys are lowercase; values are the current canonical display names.
+# ★ Keep legacy aliases here whenever a bank is renamed in future.
+_BANK_NAME_CANONICAL: dict[str, str] = {
+    'airstar bank': 'EleBank',
+    'paobank':      'PADB',
+    'pao bank':     'PADB',
+    'paob':         'PADB',
+}
+
+# Maps canonical name → all legacy aliases stored in DB for the same bank.
+# Used by the db_fetch_fn fallback wrapper below.
+_BANK_NAME_LEGACY_ALIASES: dict[str, list[str]] = {
+    'EleBank': ['Airstar Bank'],
+    'PADB':    ['PAObank', 'PAO Bank', 'PAOB'],
+}
+
+
+def _canonical_bank_name(raw: str) -> str:
+    """Return canonical display name; pass unknowns through unchanged."""
+    if not raw:
+        return raw
+    return _BANK_NAME_CANONICAL.get(raw.strip().lower(), raw.strip())
+
+
+def _make_db_fetch_fn():
+    """
+    Wrap get_promotions_by_bank_name with a legacy-alias fallback.
+
+    If the canonical name returns no rows (because DB still has the old name),
+    try each legacy alias in order and return the first non-empty result.
+    This matters for generate_strategic_insights supplement queries.
+    """
+    def _fetch(bank_name: str):
+        rows = get_promotions_by_bank_name(bank_name)
+        if rows:
+            return rows
+        for alias in _BANK_NAME_LEGACY_ALIASES.get(bank_name, []):
+            rows = get_promotions_by_bank_name(alias)
+            if rows:
+                print(
+                    f'  ℹ️  db_fetch_fn: "{bank_name}" returned 0 rows; '
+                    f'fell back to legacy alias "{alias}" ({len(rows)} rows)'
+                )
+                return rows
+        return []
+    return _fetch
+
+
 # ── Env helpers ───────────────────────────────────────────────────────────────
 
 def _read_env() -> tuple[str, str, list[str]]:
@@ -60,7 +110,6 @@ def _read_env() -> tuple[str, str, list[str]]:
         os.environ.get('EMAIL_RECIPIENT') or
         os.environ.get('EMAIL_TO')        or ''
     ).strip()
-    # Split comma-separated addresses into a clean list, strip whitespace, drop blanks
     to = [e.strip() for e in raw.split(',') if e.strip()]
     return addr, pwd, to
 
@@ -100,12 +149,6 @@ def _patch_data_json(path: str, extra: dict) -> None:
 # ── Load data.json from disk as canonical email count source ──────────────────
 
 def _load_data_json(path: str) -> dict | None:
-    """
-    Read data.json from disk and return its parsed content.
-
-    Returns None (with a warning) if the file is missing or unparseable;
-    the emailer gracefully falls back to promotions_data (DB rows) in that case.
-    """
     try:
         with open(path, 'r', encoding='utf-8') as f:
             content = _json.load(f)
@@ -419,10 +462,23 @@ def main() -> int:
         f'{len(all_active_with_bau) - bau_count_insights} time-limited)'
     )
 
+    # ★ BUILD promos_by_name with canonical name normalisation.
+    #   Without this, stale DB bank_name values ("Airstar Bank", "PAObank") cause
+    #   the AI to receive fragmented / mislabelled bank groups.
     promos_by_name: dict = {}
     for p in all_active_with_bau:
         bname = p.get('bank_name') or p.get('bName') or p.get('bank') or 'Unknown'
+        bname = _canonical_bank_name(bname)   # ★ normalise legacy/stale DB names
         promos_by_name.setdefault(bname, []).append(p)
+
+    # Diagnostic: warn if any legacy names slipped through normalisation
+    _legacy_names = {'Airstar Bank', 'PAObank', 'PAO Bank', 'PAOB'}
+    _found_legacy = _legacy_names & set(promos_by_name.keys())
+    if _found_legacy:
+        print(
+            f'  ⚠️  Legacy bank name(s) still in promos_by_name after normalisation: '
+            f'{_found_legacy} — run migrate_bank_names.py to fix DB rows'
+        )
 
     all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
 
@@ -440,13 +496,16 @@ def main() -> int:
     print(f'  [INFO] Non-BAU new (past 6 days):  {len(new_promos_week_email)}')
     print(f'  [INFO] Non-BAU active (all):       {len(all_promos_email)}')
     print(f'  [INFO] BAU (insights input):       {bau_count_insights}')
+    print(f'  [INFO] Banks in promos_by_name:    {sorted(promos_by_name.keys())}')
 
     strategic_insights = None
     if ai_ok and promos_by_name:
         try:
+            # ★ Pass legacy-alias-aware db_fetch_fn so supplement queries
+            #   still work when DB has stale bank_name values.
             strategic_insights = generate_strategic_insights(
                 promos_by_name,
-                db_fetch_fn=get_promotions_by_bank_name,
+                db_fetch_fn=_make_db_fetch_fn(),
             )
         except Exception as exc:
             print(f'  ⚠️  Insights error: {exc}')
@@ -483,7 +542,6 @@ def main() -> int:
     )
     _save_html_fallback(html, output_path)
 
-    # 'to' is now a list[str] — empty list is falsy, populated list is truthy
     smtp_ready = all([addr, pwd, to])
 
     email_subject = (
@@ -499,7 +557,7 @@ def main() -> int:
             name for name, val in [
                 ('GMAIL_ADDRESS',      addr),
                 ('GMAIL_APP_PASSWORD', pwd),
-                ('RECIPIENT_EMAIL',    to),   # empty list is falsy → flagged correctly
+                ('RECIPIENT_EMAIL',    to),
             ] if not val
         ]
         print(f'  ❌ Missing {" / ".join(missing)} — email skipped')
@@ -509,7 +567,7 @@ def main() -> int:
             success = send_email(
                 html_content    = html,
                 subject         = email_subject,
-                recipient       = to,             # now passes list[str]
+                recipient       = to,
                 new_promos      = new_promos_email,
                 new_promos_week = new_promos_week_email,
                 promotions_data = all_promos_email,

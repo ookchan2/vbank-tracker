@@ -1,0 +1,54 @@
+# .github/workflows/run_migration_once.yml
+# ──────────────────────────────────────────────────────────────────
+# ONE-TIME migration: rename stale bank_name values in the DB.
+# Trigger manually from GitHub → Actions → Run workflow.
+# DELETE this file (or disable it) after it runs successfully.
+# ──────────────────────────────────────────────────────────────────
+name: 🔧 One-Time DB Migration
+
+on:
+  workflow_dispatch:      # only runs when YOU click "Run workflow"
+    inputs:
+      dry_run:
+        description: 'Dry run only? (true = preview, false = apply)'
+        required: true
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore DB cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/promotions.db
+          key: promotions-db-${{ runner.os }}
+          restore-keys: promotions-db-
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run migration
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            python scripts/migrate_bank_names.py --dry-run
+          else
+            python scripts/migrate_bank_names.py
+          fi
+
+      - name: Save DB cache (only on real run)
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/promotions.db
+          key: promotions-db-${{ runner.os }}-migrated-${{ github.run_id }}
