@@ -194,13 +194,6 @@ def _hkt_today_and_threshold() -> tuple:
 
 
 # ── ★ FIX 1: canonical count-source resolver ─────────────────────────────────
-# The website reads from data.json for ALL stats.
-# The emailer's promotions_data (raw DB) may contain stale rows that the AI
-# already expired in data.json, causing email > website.
-#
-# _resolve_count_source() picks scraped_data['promotions'] (= data.json) when
-# available, falling back to promotions_data.  Every stats-computing path in
-# this module calls this function so the fix applies uniformly.
 
 def _resolve_count_source(
     promotions_data: list,
@@ -222,11 +215,32 @@ def _resolve_count_source(
 
 # ── Multiple recipients helper ────────────────────────────────────────────────
 
-def _collect_recipients(override: str = None) -> list[str]:
+def _collect_recipients(override: str | list[str] | None = None) -> list[str]:
+    """
+    Build a deduplicated list of recipient email addresses.
+
+    `override` can be:
+      - a list[str]  already split by main.py's _read_env()   ← preferred
+      - a plain str  comma-separated (legacy / direct callers)
+      - None         (fall back entirely to env vars)
+
+    After processing `override`, the function also reads the following env
+    vars so that RECIPIENT_EMAIL_2 / _3 extras still work even when the
+    caller passes an override:
+        RECIPIENT_EMAIL, RECIPIENT_EMAIL_2, RECIPIENT_EMAIL_3,
+        EMAIL_RECIPIENT, EMAIL_TO
+    """
     raw_emails: list[str] = []
 
     if override:
-        raw_emails.extend(override.split(','))
+        if isinstance(override, list):
+            # main.py now passes a pre-split list — handle each item, which
+            # may still contain a comma if the caller built the list differently.
+            for item in override:
+                raw_emails.extend(str(item).split(','))
+        else:
+            # Legacy: plain comma-separated string
+            raw_emails.extend(str(override).split(','))
 
     for env_var in (
         'RECIPIENT_EMAIL',
@@ -399,21 +413,14 @@ def _new_section_html(
 
 # ── Plain-text builder ────────────────────────────────────────────────────────
 
-# ★ FIX 2: Added count_source parameter.
-# When build_html_email passes scraped_data['promotions'] as count_source,
-# the plain-text stats use the same data.json content as the website.
-# send_email also receives scraped_data and pipes it through.
-
 def _build_plain_text(
     promotions_data: list,
     new_promos:      list,
     new_promos_week: list,
     now:             str,
     ai_unavailable:  bool = False,
-    count_source:    list = None,   # ★ NEW — data.json promotions list when available
+    count_source:    list = None,
 ) -> str:
-    # ★ Use count_source (data.json) when provided; fall back to promotions_data (DB).
-    # This ensures plain-text stats match the website (data.json) exactly.
     _src    = count_source if (count_source is not None) else (promotions_data or [])
     non_bau = [p for p in _src if not p.get('is_bau', False)]
 
@@ -483,7 +490,6 @@ def _build_plain_text(
         '',
     ]
 
-    # Per-bank breakdown also uses count_source
     banks: dict = {}
     for p in non_bau:
         bn = p.get('bName') or p.get('bank_name') or 'Unknown'
@@ -514,27 +520,11 @@ def build_html_email(
     new_promos_week:    list = None,
     ai_unavailable:     bool = False,
 ) -> str:
-    """
-    Build the full HTML email.
-
-    ★ FIX 3 (data-source alignment):
-      Uses _resolve_count_source() to prefer scraped_data['promotions']
-      (= data.json, the website's source of truth) over promotions_data
-      (raw DB rows).  This eliminates the email 52/45/7 vs website 47/41/6
-      discrepancy that arose because the DB contained stale rows whose
-      active flag was never updated after the AI expired them in data.json.
-
-    Caller contract:
-      scraped_data    ← the full data.json dict  (REQUIRED for correct counts)
-      new_promos      ← database.get_new_promotions_today()
-      new_promos_week ← database.get_new_promotions_last_n_days(days=6)
-    """
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
 
     date_only = _hkt_now().strftime('%d %b %Y')
 
-    # ★ FIX 3: use scraped_data['promotions'] (data.json) as the count source
     count_list = _resolve_count_source(promotions_data, scraped_data)
 
     non_bau_data       = [p for p in count_list       if not p.get('is_bau', False)]
@@ -612,7 +602,6 @@ def build_html_email(
   </td>
 </tr>"""
 
-    # ── AI unavailable notice banner ──────────────────────────────────────────
     ai_notice_html = ''
     if ai_unavailable:
         ai_notice_html = """
@@ -636,7 +625,6 @@ def build_html_email(
   </td>
 </tr>"""
 
-    # ── Section 1: Newly Launched Today ───────────────────────────────────────
     today_section = _new_section_html(
         promos        = new_promos_show,
         heading       = 'Newly Launched Today',
@@ -649,7 +637,6 @@ def build_html_email(
         skip_if_empty = True,
     )
 
-    # ── Section 2: Promotion newly launched within this week ──────────────────
     week_section = _new_section_html(
         promos        = new_promos_wk_show,
         heading       = 'Promotion newly launched within this week',
@@ -803,21 +790,24 @@ def build_html_email(
 
 def send_email(
     html_content:    str,
-    subject:         str  = None,
-    recipient:       str  = None,
-    new_promos:      list = None,
-    new_promos_week: list = None,
-    promotions_data: list = None,
-    ai_unavailable:  bool = False,
-    scraped_data:    dict = None,   # ★ NEW — pass full data.json dict for correct plain-text stats
+    subject:         str                    = None,
+    recipient:       str | list[str] | None = None,  # ← accepts str or list[str]
+    new_promos:      list                   = None,
+    new_promos_week: list                   = None,
+    promotions_data: list                   = None,
+    ai_unavailable:  bool                   = False,
+    scraped_data:    dict                   = None,
 ) -> bool:
     """
     Send the HTML email to all configured recipients.
 
+    `recipient` can be:
+      - list[str]  — pre-split list from main.py's _read_env()  ← preferred
+      - str        — comma-separated string (legacy callers)
+      - None       — rely entirely on env vars
+
     ★ Pass scraped_data=<full data.json dict> so that the plain-text stats
-      in the email body match the website (data.json) counts exactly.
-      Without it, plain-text stats fall back to promotions_data (raw DB)
-      which may over-count by including stale rows.
+      match the website (data.json) counts exactly.
     """
     smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.getenv('SMTP_PORT', '587'))
@@ -833,6 +823,7 @@ def send_email(
         os.getenv('EMAIL_PASS')
     )
 
+    # _collect_recipients handles list, str, or None for `override`
     all_recipients = _collect_recipients(override=recipient)
 
     if not all([smtp_user, smtp_pass]):
@@ -857,7 +848,6 @@ def send_email(
 
     now_str = _hkt_now().strftime('%d %b %Y, %H:%M HKT')
 
-    # ★ FIX 2 (plain-text): resolve count_source so plain-text stats match website
     _count_source = _resolve_count_source(promotions_data or [], scraped_data)
 
     plain_text = _build_plain_text(
@@ -866,7 +856,7 @@ def send_email(
         new_promos_week = new_promos_week or [],
         now             = now_str,
         ai_unavailable  = ai_unavailable,
-        count_source    = _count_source,   # ★ data.json promotions list
+        count_source    = _count_source,
     )
 
     success_count = 0
@@ -903,7 +893,8 @@ def send_email(
                 break
 
     if success_count == len(all_recipients):
-        print(f'✅ Email sent → {len(all_recipients)} recipient(s)')
+        print(f'✅ All emails sent → {len(all_recipients)} recipient(s): '
+              f'{", ".join(all_recipients)}')
         return True
     elif success_count > 0:
         print(f'⚠️  Email partial: {success_count}/{len(all_recipients)} recipients received it')

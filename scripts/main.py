@@ -36,7 +36,7 @@ from database  import (
     get_new_promotions_today,
     get_new_promotions_last_n_days,
     get_db_stats,
-    repair_reinserted_promotions,   # ★ NEW: called in Step 5c, before export
+    repair_reinserted_promotions,
 )
 from emailer   import build_html_email, send_email
 
@@ -52,22 +52,25 @@ _SKIP_SCRAPE = '--skip-scrape' in sys.argv
 
 # ── Env helpers ───────────────────────────────────────────────────────────────
 
-def _read_env() -> tuple[str, str, str]:
+def _read_env() -> tuple[str, str, list[str]]:
     addr = os.environ.get('GMAIL_ADDRESS',      '').strip()
     pwd  = os.environ.get('GMAIL_APP_PASSWORD', '').strip()
-    to   = (
+    raw  = (
         os.environ.get('RECIPIENT_EMAIL') or
         os.environ.get('EMAIL_RECIPIENT') or
         os.environ.get('EMAIL_TO')        or ''
     ).strip()
+    # Split comma-separated addresses into a clean list, strip whitespace, drop blanks
+    to = [e.strip() for e in raw.split(',') if e.strip()]
     return addr, pwd, to
 
 
-def _print_env_check(addr: str, pwd: str, to: str) -> None:
+def _print_env_check(addr: str, pwd: str, to: list[str]) -> None:
+    to_display = ', '.join(to) if to else ''
     print('  Env check:')
     print(f'    GMAIL_ADDRESS     : {"✅ set" if addr else "❌ MISSING"}')
     print(f'    GMAIL_APP_PASSWORD: {"✅ set (hidden)" if pwd else "❌ MISSING"}')
-    print(f'    RECIPIENT_EMAIL   : {"✅ " + to if to else "❌ MISSING"}')
+    print(f'    RECIPIENT_EMAIL   : {"✅ " + to_display if to else "❌ MISSING"}')
     if _NO_EMAIL:
         print('    📴 --no-email flag — SMTP step will be skipped')
 
@@ -207,10 +210,6 @@ def main() -> int:
 
     bank_ids_ok: list[str] = [bid for bid, r in scraped.items() if r.get('success')]
 
-    # NOTE: scraped_by_name is the raw scrape-result dict keyed by bank name.
-    # It is NOT the data.json content and must NOT be passed as scraped_data
-    # to build_html_email / send_email (that was the original bug).
-    # It is retained here only in case other pipeline steps need it.
     scraped_by_name: dict = {
         r.get('bank_name', bid): r
         for bid, r in scraped.items()
@@ -354,28 +353,6 @@ def main() -> int:
         )
 
     # ── Step 5c: Repair re-inserted promotions ────────────────────
-    # ★ FIX: Must run BEFORE export_to_json() (Step 6) so that data.json
-    # and the DB share the same corrected first_seen_at values.
-    #
-    # ROOT CAUSE of "new today" on website vs "new this week" in email:
-    #   Previously, repair_reinserted_promotions() was called inside
-    #   generate_daily_report() (Step 7), AFTER export_to_json() (Step 6).
-    #   This created a split-brain state:
-    #     • data.json  had first_seen_at = TODAY  (pre-repair, exported at Step 6)
-    #     • DB         had first_seen_at = OLDER  (post-repair, updated at Step 7)
-    #   Result:
-    #     website (data.json)  → showed the promo as "new today"
-    #     email   (DB queries) → showed the promo as "new this week"
-    #
-    # FIX: calling repair_reinserted_promotions() HERE ensures the corrected
-    #   first_seen_at is already written to the DB before export_to_json()
-    #   serialises it into data.json.  Both the website and the DB queries
-    #   therefore see the same (older) first_seen_at, so classification is
-    #   identical in both places.
-    #
-    # The call inside generate_daily_report() has been removed to prevent
-    # double execution (which could incorrectly re-repair rows that were
-    # legitimately inserted today).
     print('\nStep 5c ── Repair re-inserted promotions')
     if ai_ok:
         try:
@@ -415,17 +392,12 @@ def main() -> int:
             print(f'  ⚠️  data.json timestamp patch failed: {exc}')
 
     # ── Step 6b: Load data.json as canonical count source for email ───────────
-    # The website reads data.json['promotions'] directly.
-    # The emailer must use the same list — not the raw DB rows — so that the
-    # header numbers (total / active / expiring) are identical in both places.
     print('\nStep 6b ── Load data.json for email count source')
     data_json_content = _load_data_json(DATA_JSON_PATH)
 
     # ── Step 7: Daily report ──────────────────────────────────────
     print('\nStep 7 ── Generate daily report')
     report         = generate_daily_report(current_run_id)
-    # NOTE: generate_daily_report() no longer calls repair_reinserted_promotions()
-    # internally — that was moved to Step 5c above.
     active_promos  = report['active']
     expired_promos = report['expired']
     summary        = report['summary']
@@ -452,17 +424,10 @@ def main() -> int:
         bname = p.get('bank_name') or p.get('bName') or p.get('bank') or 'Unknown'
         promos_by_name.setdefault(bname, []).append(p)
 
-    # Non-BAU active list used for the email body (promo cards, bank breakdown).
-    # Stats (total / active / expiring counters) are derived from data_json_content
-    # inside the emailer via _resolve_count_source() — NOT from this list.
     all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
 
-    # New today (HKT date-based — matches website isNewToday())
-    # repair_reinserted_promotions() has already run (Step 5c), so
-    # first_seen_at values in the DB are correct and this query is accurate.
     new_promos_email = get_new_promotions_today(include_bau=False)
 
-    # New in the past 6 days excluding today (matches website isNewThisWeek())
     new_promos_week_raw   = get_new_promotions_last_n_days(
         days        = 6,
         include_bau = False,
@@ -493,9 +458,6 @@ def main() -> int:
         print('  ⚠️  Insights unavailable — continuing without it')
 
     # ── Step 8b: Reload data.json after insights patch ────────────────────────
-    # The insights patch may have changed data.json.  Reload so that the
-    # data_json_content passed to the emailer includes the latest strategic_insights
-    # field (used only for display; does not affect the stats count).
     if strategic_insights:
         print('\nStep 8b ── Reload data.json after insights patch')
         _reloaded = _load_data_json(DATA_JSON_PATH)
@@ -507,7 +469,7 @@ def main() -> int:
 
     html = build_html_email(
         promotions_data    = all_promos_email,
-        scraped_data       = data_json_content,    # data.json dict — canonical count source
+        scraped_data       = data_json_content,
         strategic_insights = strategic_insights,
         new_promos         = new_promos_email,
         new_promos_week    = new_promos_week_email,
@@ -521,6 +483,7 @@ def main() -> int:
     )
     _save_html_fallback(html, output_path)
 
+    # 'to' is now a list[str] — empty list is falsy, populated list is truthy
     smtp_ready = all([addr, pwd, to])
 
     email_subject = (
@@ -536,7 +499,7 @@ def main() -> int:
             name for name, val in [
                 ('GMAIL_ADDRESS',      addr),
                 ('GMAIL_APP_PASSWORD', pwd),
-                ('RECIPIENT_EMAIL',    to),
+                ('RECIPIENT_EMAIL',    to),   # empty list is falsy → flagged correctly
             ] if not val
         ]
         print(f'  ❌ Missing {" / ".join(missing)} — email skipped')
@@ -546,15 +509,15 @@ def main() -> int:
             success = send_email(
                 html_content    = html,
                 subject         = email_subject,
-                recipient       = to,
+                recipient       = to,             # now passes list[str]
                 new_promos      = new_promos_email,
                 new_promos_week = new_promos_week_email,
                 promotions_data = all_promos_email,
                 ai_unavailable  = not ai_ok,
-                scraped_data    = data_json_content,   # data.json dict for plain-text stats
+                scraped_data    = data_json_content,
             )
             if success:
-                print(f'  ✅ Email sent → {to}')
+                print(f'  ✅ Email sent → {", ".join(to)}')
             else:
                 print('  ❌ send_email() returned False')
                 print(f'  📄 HTML preview → {output_path}')
@@ -566,8 +529,6 @@ def main() -> int:
     elapsed  = time.monotonic() - t_start
     db_stats = get_db_stats()
 
-    # Use data_json_content for the summary counts so the console output
-    # matches the email rather than the raw DB counts.
     _summary_promos  = (
         data_json_content.get('promotions', [])
         if data_json_content else all_promos_email
