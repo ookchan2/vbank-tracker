@@ -674,9 +674,6 @@ def save_promotions(
                         if (existing and len(title) >= len(existing['title']))
                         else (existing['title'] if existing else title)
                     )
-                    # ★ FIX: bank_name is now always synced on every UPDATE.
-                    #   Previously missing → stale names like "Airstar Bank" / "PAObank"
-                    #   persisted forever in the DB even after the bank was renamed.
                     conn.execute("""
                         UPDATE promotions SET
                             bank_name   = ?,
@@ -697,7 +694,7 @@ def save_promotions(
                             last_seen   = ?
                         WHERE id = ?
                     """, (
-                        bank_name,          # ★ always overwrite with current canonical name
+                        bank_name,
                         keep_title,
                         highlight,
                         p.get('description', ''), p.get('category', ''),
@@ -1270,6 +1267,54 @@ def load_promotions(active_only: bool = True) -> List[Dict[str, Any]]:
             return []
 
 
+# ★ FIX: sanitize AI-generated insights so all list fields are always real lists
+def _sanitize_insights(insights: Optional[Dict]) -> Optional[Dict]:
+    """
+    Coerce any string/None values in strategic_insights array fields into
+    proper Python lists before they are serialised to data.json.
+
+    Fields sanitised:
+      bank_analysis[bank].strengths
+      bank_analysis[bank].vs_za_pros
+      bank_analysis[bank].vs_za_cons
+      best_for[*].similar_banks
+    """
+    if not insights:
+        return insights
+
+    def _to_list(val) -> list:
+        if val is None:
+            return []
+        if isinstance(val, list):
+            return [str(v).strip() for v in val if str(v).strip()]
+        if isinstance(val, str):
+            # Try splitting on common AI list separators
+            for sep in ('\n', '•', ';'):
+                if sep in val:
+                    return [
+                        s.lstrip('-–*·• ').strip()
+                        for s in val.split(sep)
+                        if s.strip()
+                    ]
+            return [val.strip()] if val.strip() else []
+        return []
+
+    # Sanitise bank_analysis
+    for bank_data in (insights.get('bank_analysis') or {}).values():
+        if not isinstance(bank_data, dict):
+            continue
+        for field in ('strengths', 'vs_za_pros', 'vs_za_cons'):
+            bank_data[field] = _to_list(bank_data.get(field))
+
+    # Sanitise best_for similar_banks
+    for item in (insights.get('best_for') or []):
+        if not isinstance(item, dict):
+            continue
+        item['similar_banks'] = _to_list(item.get('similar_banks'))
+
+    return insights
+
+
 def export_to_json(
     output_path:        str,
     strategic_insights: Optional[Dict] = None,
@@ -1310,12 +1355,15 @@ def export_to_json(
             'last_seen':     p.get('last_seen')     or '',
         })
 
+    # ★ FIX: sanitise insights so all list fields are real arrays, not strings
+    clean_insights = _sanitize_insights(strategic_insights)
+
     output: Dict[str, Any] = {
         'updated':    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'promotions': records,
     }
-    if strategic_insights:
-        output['strategic_insights'] = strategic_insights
+    if clean_insights:
+        output['strategic_insights'] = clean_insights
     if ai_unavailable:
         output['ai_unavailable'] = True
 
@@ -1326,7 +1374,7 @@ def export_to_json(
     active_non_bau = sum(1 for r in records if r['active'] and not r['is_bau'])
     bau_n          = sum(1 for r in records if r['is_bau'])
     expired_n      = sum(1 for r in records if not r['active'])
-    insights_tag   = ' +insights' if strategic_insights else ''
+    insights_tag   = ' +insights' if clean_insights else ''
     ai_tag         = ' [AI unavailable — cached]' if ai_unavailable else ''
     print(
         f'  📄 data.json → {active_non_bau} active non-BAU '

@@ -356,9 +356,9 @@ const BANK_COLORS = {
   "WeLab Bank":   "#7c3aed",
   "livi bank":    "#f97316",
   "PADB":         "#0ea5e9",
-  "PAObank":      "#0ea5e9",   // backward-compat alias
+  "PAObank":      "#0ea5e9",
   "EleBank":      "#06b6d4",
-  "Airstar Bank": "#06b6d4",   // backward-compat alias
+  "Airstar Bank": "#06b6d4",
   "Fusion Bank":  "#14b8a6",
   "Ant Bank":     "#1677ff",
 };
@@ -451,6 +451,25 @@ function bauTag(p) {
   return `<span class="cat-tag" style="background:#64748b">⚙️ BAU</span>`;
 }
 
+// ── ★ FIX: toArray — safely coerce any AI field value to a JS array ──────────
+// Handles: null/undefined → []  |  string → split on newline/bullet/comma
+// string array items → trim + filter blanks  |  already-array → pass through
+function toArray(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.map(String).filter(Boolean);
+  if (typeof val === 'string') {
+    // Try newline split first, then bullet (•), then comma
+    const bySep = ['\n', '•', ';', ','];
+    for (const sep of bySep) {
+      if (val.includes(sep)) {
+        return val.split(sep).map(s => s.replace(/^[-–*·]\s*/, '').trim()).filter(Boolean);
+      }
+    }
+    return val.trim() ? [val.trim()] : [];
+  }
+  return [];
+}
+
 // ── Stable "today" string computed ONCE at page load (HKT) ────────────────
 const _PAGE_TODAY_STR     = new Date(Date.now() + 8 * 3600000).toISOString().substring(0, 10);
 const _MS_PER_DAY         = 86400000;
@@ -489,9 +508,8 @@ function statusBadge(p) {
                        text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
 }
 
-// ★ Use _PAGE_TODAY_STR everywhere for consistency (fixes Bug 2)
-function hktToday()       { return _PAGE_TODAY_STR; }
-function hktDaysAgo(n)    {
+function hktToday()    { return _PAGE_TODAY_STR; }
+function hktDaysAgo(n) {
   return new Date(Date.now() + 8 * 3600000 - n * _MS_PER_DAY).toISOString().substring(0, 10);
 }
 
@@ -642,7 +660,7 @@ async function loadData() {
       `Last updated: ${data.updated || data.last_updated || 'Unknown'} HKT`;
 
     buildBankTabs(banks);
-    buildCatButtons();            // ★ Bug 1 fix: was missing
+    buildCatButtons();
     buildNewSections();
     buildStrategicInsights(strategicInsights);
     buildBankAnalysis(strategicInsights);
@@ -875,7 +893,8 @@ function buildStrategicInsights(insights) {
                      ? item.standard
                      : (HOW_DEFINED[cat] || '—');
 
-    const similar  = (item.similar_banks || []).filter(b => b !== bank);
+    // ★ FIX: use toArray() — similar_banks may be a string from AI output
+    const similar  = toArray(item.similar_banks).filter(b => b !== bank);
     const whyLose  = item.why_others_lose || '—';
     const isBau    = item.is_bau || false;
     const isNone   = ['none','n/a',''].includes(bank.toLowerCase());
@@ -885,7 +904,6 @@ function buildStrategicInsights(insights) {
       ? `<span class="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-semibold">⚙️ BAU</span>`
       : '';
 
-    // ★ Completed from cut-off point
     const winnerBadge = isNone
       ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs
                       font-bold bg-gray-100 text-gray-400">—</span>`
@@ -924,30 +942,32 @@ function buildBankAnalysis(insights) {
     return;
   }
 
-  const analysis   = insights.bank_analysis;
-  const bankNames  = Object.keys(analysis);
+  const analysis  = insights.bank_analysis;
+  const bankNames = Object.keys(analysis);
   if (!bankNames.length) {
     grid.innerHTML = analysisNoDataHtml();
     return;
   }
 
-  // ZA Bank always first, rest alphabetical
   const sorted = [
     ...bankNames.filter(b => b === 'ZA Bank'),
     ...bankNames.filter(b => b !== 'ZA Bank').sort(),
   ];
 
   grid.innerHTML = sorted.map(bankName => {
-    const d          = analysis[bankName] || {};
-    const color      = bankColor(bankName);
-    const strengths  = d.strengths      || [];
-    const pros       = d.vs_za_pros     || [];
-    const cons       = d.vs_za_cons     || [];
-    const alert      = d.expiring_alert || '';
-    const focus      = d.focus          || '';
-    const count      = d.count          || 0;
-    const bauCount   = d.bau_count      || 0;
-    const isZA       = bankName === 'ZA Bank';
+    const d = analysis[bankName] || {};
+
+    // ★ FIX: use toArray() for all three list fields — AI may return strings
+    const strengths = toArray(d.strengths);
+    const pros      = toArray(d.vs_za_pros);
+    const cons      = toArray(d.vs_za_cons);
+
+    const color    = bankColor(bankName);
+    const alert    = d.expiring_alert || '';
+    const focus    = d.focus          || '';
+    const count    = d.count          || 0;
+    const bauCount = d.bau_count      || 0;
+    const isZA     = bankName === 'ZA Bank';
 
     const zaBadge = isZA
       ? `<span class="text-xs px-2 py-0.5 bg-white/20 rounded-full font-semibold ml-2">📊 Baseline</span>`
@@ -1028,10 +1048,9 @@ function buildComparisonTable() {
   if (bankSet.length < 2) { section.style.display = 'none'; return; }
   section.style.display = '';
 
-  // Count active non-BAU promos per category per bank
   const activeNonBau = allPromos.filter(p => !p.is_bau && getStatus(p) !== 'expired');
 
-  const catCounts = {};   // { cat: { bank: n } }
+  const catCounts  = {};
   const bankTotals = {};
   bankSet.forEach(b => { bankTotals[b] = 0; });
 
@@ -1044,17 +1063,15 @@ function buildComparisonTable() {
     if (p.bank_name) bankTotals[p.bank_name] = (bankTotals[p.bank_name] || 0) + 1;
   });
 
-  // Sort categories by total count desc
   const cats = Object.keys(catCounts).sort((a, b) => {
     const sumA = Object.values(catCounts[a]).reduce((s, n) => s + n, 0);
     const sumB = Object.values(catCounts[b]).reduce((s, n) => s + n, 0);
     return sumB - sumA;
   });
 
-  const zaName   = bankSet.find(b => b === 'ZA Bank') || '';
-  const zaTotal  = zaName ? (bankTotals[zaName] || 0) : 0;
+  const zaName  = bankSet.find(b => b === 'ZA Bank') || '';
+  const zaTotal = zaName ? (bankTotals[zaName] || 0) : 0;
 
-  // Header row
   const headerHtml = `
     <thead>
       <tr class="bg-gray-50 border-b-2 border-gray-200">
@@ -1068,12 +1085,9 @@ function buildComparisonTable() {
       </tr>
     </thead>`;
 
-  // Category rows
   const bodyRows = cats.map(cat => {
     const counts  = catCounts[cat] || {};
     const zaCount = zaName ? (counts[zaName] || 0) : 0;
-
-    // All banks tied at max are co-leaders
     const maxN    = Math.max(0, ...Object.values(counts));
     const leaders = new Set(
       Object.entries(counts)
@@ -1115,7 +1129,6 @@ function buildComparisonTable() {
       </tr>`;
   }).join('');
 
-  // Total row
   const totalCells = bankSet.map(b => {
     const n    = bankTotals[b] || 0;
     const isZA = b === zaName;
@@ -1151,11 +1164,14 @@ function buildComparisonTable() {
     prosConsWrap.innerHTML = bankSet
       .filter(b => b !== 'ZA Bank')
       .map(bank => {
-        const d    = (strategicInsights.bank_analysis || {})[bank];
+        const d = (strategicInsights.bank_analysis || {})[bank];
         if (!d) return '';
-        const pros = d.vs_za_pros || [];
-        const cons = d.vs_za_cons || [];
+
+        // ★ FIX: use toArray() here too — same AI-string risk
+        const pros = toArray(d.vs_za_pros);
+        const cons = toArray(d.vs_za_cons);
         if (!pros.length && !cons.length) return '';
+
         const color = bankColor(bank);
         return `
           <div class="rounded-xl border border-gray-100 overflow-hidden shadow-sm">
@@ -1251,17 +1267,14 @@ function applyFilters() {
   const sort   = document.getElementById('sortFilter').value;
 
   filtered = allPromos.filter(p => {
-    // Bank tab
     if (activeBankTab && p.bank_name !== activeBankTab) return false;
 
-    // Status
     const s = getStatus(p);
     if (status === 'active'          && s !== 'active')   return false;
     if (status === 'expiring'        && s !== 'expiring') return false;
     if (status === 'active+expiring' && s === 'expired')  return false;
     if (status === 'expired'         && s !== 'expired')  return false;
 
-    // Category / BAU filter
     if (selectedCats.length) {
       const hasBauFilter = selectedCats.includes('BAU');
       const catKeys      = selectedCats.filter(c => c !== 'BAU');
@@ -1272,7 +1285,6 @@ function applyFilters() {
       if (!matchesCat && !matchesBAU) return false;
     }
 
-    // Search
     if (search) {
       const haystack = [
         p.bank_name || '', p.title || '', p.highlight || '',
@@ -1285,7 +1297,6 @@ function applyFilters() {
     return true;
   });
 
-  // Sort
   if (sort === 'bank') {
     filtered.sort((a, b) => (a.bank_name || '').localeCompare(b.bank_name || ''));
   } else if (sort === 'enddate') {
