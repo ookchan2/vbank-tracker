@@ -428,7 +428,7 @@ def _build_plain_text(
     date_only = _hkt_now().strftime('%d %b %Y')
 
     lines = [
-        f'VBank Tracker Daily Report — {date_only}',
+        f'VBank Tracker Daily Report - {date_only}',
         '=' * 50,
     ]
     if ai_unavailable:
@@ -458,7 +458,7 @@ def _build_plain_text(
     week_show = [p for p in (new_promos_week or []) if not p.get('is_bau', False)]
     if week_show:
         lines += [
-            f'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK — PAST 6 DAYS ({len(week_show)}):',
+            f'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK - PAST 6 DAYS ({len(week_show)}):',
         ]
         for p in week_show:
             bank  = p.get('bName') or p.get('bank_name') or '?'
@@ -468,7 +468,7 @@ def _build_plain_text(
             if tc: lines.append(f'    Source : {tc}')
         lines.append('')
     elif not new_show:
-        lines += ['', 'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK — PAST 6 DAYS: None', '']
+        lines += ['', 'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK - PAST 6 DAYS: None', '']
 
     lines += [
         f'TOTAL PROMOTIONS : {total_shown}',
@@ -489,7 +489,7 @@ def _build_plain_text(
     lines.append('')
 
     lines += [
-        '—',
+        '-',
         'VBank Tracker • Auto-generated daily at 09:00 HKT',
         'Data sourced from official bank websites only.',
         'For full strategic insights visit the web dashboard.',
@@ -812,8 +812,8 @@ def send_email(
 
     if not subject:
         date_str = _hkt_now().strftime('%d %b %Y')
-        base     = f'🏦 VBank Daily Report — {date_str}'
-        subject  = f'{base} [Cached Data — AI Unavailable]' if ai_unavailable else base
+        base     = f'VBank Daily Report - {date_str}'
+        subject  = f'{base} [Cached Data - AI Unavailable]' if ai_unavailable else base
 
     now_str = _hkt_now().strftime('%d %b %Y, %H:%M HKT')
 
@@ -862,7 +862,7 @@ def send_email(
                     wait = 2 ** attempt
                     logger.warning(f'SMTP attempt {attempt} failed for {email_to}: {exc} - retrying in {wait}s')
                     print(f'  [WARN]  SMTP attempt {attempt} failed for {email_to}: '
-                          f'{exc} — retrying in {wait}s…')
+                          f'{exc} - retrying in {wait}s...')
                     time.sleep(wait)
                 else:
                     logger.error(f'Email send failed for {email_to} after {_SMTP_MAX_RETRIES} attempts: {exc}')

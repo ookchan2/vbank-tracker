@@ -28,6 +28,7 @@ from database  import (
     mark_inactive_old,
     reactivate_promotions_seen_on,
     reactivate_most_recently_seen,
+    migrate_legacy_bank_names,
     generate_daily_report,
     export_to_json,
     get_active_promos_for_bank,
@@ -218,7 +219,7 @@ def main() -> int:
                 print('  [WARN]  Recovery found nothing to restore - DB may be truly empty')
         elif _pre_total > 0 and _pre_active > 0:
             print(
-                f'\n  [INFO]  AI unavailable — using existing '
+                f'\n  [INFO]  AI unavailable - using existing '
                 f'{_pre_active} active promotions from DB for email/website'
             )
         else:
@@ -293,7 +294,8 @@ def main() -> int:
                 default_url = default_url,
             )
         except Exception as exc:
-            print(f'    [ERR] AI extraction error for {bank_name}: {exc}')
+            safe_exc = str(exc).encode('ascii', 'replace').decode('ascii')
+            print(f'    [ERR] AI extraction error for {bank_name}: {safe_exc}')
             continue
 
         if not promos:
@@ -334,8 +336,12 @@ def main() -> int:
         except Exception as exc:
             print(f'    [WARN]  DB-match error for {bank_name}: {exc} - formula pass only')
 
-        # 4d: Save to DB
+        # 4d: Normalize bank name and save to DB
         total_extracted += len(promos)
+        canonical_name = _canonical_bank_name(bank_name)
+        if canonical_name != bank_name:
+            print(f'    [INFO]  Normalized bank name: "{bank_name}" -> "{canonical_name}"')
+            bank_name = canonical_name
         try:
             db_result = save_promotions(
                 bank_id, bank_name, promos,
@@ -351,7 +357,7 @@ def main() -> int:
         total_updated += db_result['updated']
         print(
             f"    [OK] {db_result['new']} new, {db_result['updated']} updated, "
-            f"{db_result['skipped']} skipped — {bank_name}"
+            f"{db_result['skipped']} skipped - {bank_name}"
         )
 
     print(f'  [TIME]  AI extraction completed in {time.monotonic() - t4:.1f}s')
@@ -365,12 +371,12 @@ def main() -> int:
 
     if not ai_ok:
         print(
-            '  [WARN]  AI unavailable — skipping mark_stale_as_inactive and '
+            '  [WARN]  AI unavailable - skipping mark_stale_as_inactive and '
             'mark_inactive_old to preserve existing data'
         )
     elif not banks_ai_saved:
         print(
-            '  [WARN]  No banks were successfully saved this run — '
+            '  [WARN]  No banks were successfully saved this run - '
             'skipping mark_stale_as_inactive to avoid false-expiry'
         )
     else:
@@ -387,13 +393,22 @@ def main() -> int:
         recovered = reactivate_promotions_seen_on(RUN_DATE)
         if not recovered:
             print(
-                '  [ERR] Recovery found nothing — attempting broad recovery'
+                '  [ERR] Recovery found nothing - attempting broad recovery'
             )
             reactivate_most_recently_seen(window_days=7)
     elif not _active_after_stale and not banks_ai_saved:
         print(
             '  [WARN]  Still 0 active promotions after Step 2b recovery attempt'
         )
+
+    # -- Step 5b: Migrate legacy bank names --------------------
+    print('\nStep 5b -- Migrate legacy bank names to canonical names')
+    try:
+        migrated_count = migrate_legacy_bank_names(dry_run=False)
+        if migrated_count > 0:
+            print(f'  [OK]  Migrated {migrated_count} legacy bank name(s)')
+    except Exception as exc:
+        print(f'  [WARN]  Bank name migration error: {exc} - continuing')
 
     # -- Step 5c: Repair re-inserted promotions --------------------
     print('\nStep 5c -- Repair re-inserted promotions')
@@ -411,7 +426,7 @@ def main() -> int:
     _active_for_export = get_active_promotions(include_bau=True)
     if not _active_for_export:
         print(
-            '  [WARN]  Skipping data.json export — 0 active promotions in DB '
+            '  [WARN]  Skipping data.json export - 0 active promotions in DB '
             '(preserving existing file)'
         )
     else:
@@ -477,7 +492,7 @@ def main() -> int:
     if _found_legacy:
         print(
             f'  [WARN]  Legacy bank name(s) still in promos_by_name after normalisation: '
-            f'{_found_legacy} — run migrate_bank_names.py to fix DB rows'
+            f'{_found_legacy} - run migrate_bank_names.py to fix DB rows'
         )
 
     all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
@@ -545,8 +560,8 @@ def main() -> int:
     smtp_ready = all([addr, pwd, to])
 
     email_subject = (
-        f'[BANK] VBank Daily Report — {datetime.now().strftime("%d %b %Y")} '
-        f'{"[Cached Data — AI Unavailable]" if not ai_ok else ""}'
+        f'[BANK] VBank Daily Report - {datetime.now().strftime("%d %b %Y")} '
+        f'{"[Cached Data - AI Unavailable]" if not ai_ok else ""}'
     ).strip()
 
     if _NO_EMAIL:

@@ -140,8 +140,8 @@ def _filter_bank_relevant_promotions(promos: list, bank_name: str) -> list:
                 else f'non-bank domain in tc_link "{bad_domain}"'
             )
             print(
-                f'  🚫 Non-bank filter REMOVED [{bank_name}]: '
-                f'"{p.get("name") or p.get("title")}" — {reason}'
+                f'  [BLOCK] Non-bank filter REMOVED [{bank_name}]: '
+                f'"{p.get("name") or p.get("title")}" - {reason}'
             )
             removed += 1
         else:
@@ -1059,7 +1059,7 @@ def analyze_promotions(
                     bau_count = sum(1 for p in parsed if p.get('is_bau'))
                     logger.info(f'Successfully extracted {len(results)} promotions for {bank_name} ({bau_count} BAU)')
                     print(
-                        f'  [INFO] Text → {len(results)} promotions for {bank_name} '
+                        f'  [INFO] Text -> {len(results)} promotions for {bank_name} '
                         f'({bau_count} BAU)'
                     )
                     break
@@ -1070,7 +1070,8 @@ def analyze_promotions(
             except Exception as exc:
                 logger.error(f'AI extraction error for {bank_name}: {type(exc).__name__}: {exc}')
                 if attempt == 0:
-                    print(f'  [WARN] AI error for {bank_name}: {exc} — retrying...')
+                    safe_exc = str(exc).encode('ascii', 'replace').decode('ascii')
+                    print(f'  [WARN] AI error for {bank_name}: {safe_exc} - retrying...')
         else:
             logger.error(f'All AI attempts failed for {bank_name}')
             print(f'  [ERR] Both attempts failed for {bank_name}')
@@ -1194,9 +1195,9 @@ Titles to evaluate (0-indexed):
             return dup_map
         except Exception as exc:
             if attempt == 0:
-                print(f'  [WARN] ai_dedup_titles [{bank_name}] attempt 1 failed: {exc!r} — retrying')
+                print(f'  [WARN] ai_dedup_titles [{bank_name}] attempt 1 failed: {exc!r} - retrying')
             else:
-                print(f'  [WARN] ai_dedup_titles [{bank_name}]: {exc!r} — skipping')
+                print(f'  [WARN] ai_dedup_titles [{bank_name}]: {exc!r} - skipping')
                 return {}
     return {}
 
@@ -1301,15 +1302,15 @@ No explanation. No markdown. No code fences."""
             msg = (
                 f'{len(result_map)} match(es)'
                 if result_map else
-                '0 matches — all appear genuinely new'
+                '0 matches - all appear genuinely new'
             )
             print(f'  [AI] ai_match_against_existing [{bank_name}]: {msg}')
             return result_map
         except Exception as exc:
             if attempt == 0:
-                print(f'  [WARN] ai_match_against_existing [{bank_name}] attempt 1: {exc!r} — retrying')
+                print(f'  [WARN] ai_match_against_existing [{bank_name}] attempt 1: {exc!r} - retrying')
             else:
-                print(f'  [WARN] ai_match_against_existing [{bank_name}]: {exc!r} — skipping')
+                print(f'  [WARN] ai_match_against_existing [{bank_name}]: {exc!r} - skipping')
                 return {}
     return {}
 
@@ -1413,9 +1414,9 @@ def _diagnose_input_data(promotions_by_bank: dict) -> dict[str, list[str]]:
                     break
 
         if covered_by:
-            print(f'    [OK] {cat_name:<42} → {", ".join(covered_by)}')
+            print(f'    [OK] {cat_name:<42} -> {", ".join(covered_by)}')
         else:
-            print(f'    [ERR] {cat_name:<42} → NO DATA — will output None')
+            print(f'    [ERR] {cat_name:<42} -> NO DATA - will output None')
 
     print('=' * 70)
     print()
@@ -1484,7 +1485,7 @@ def generate_strategic_insights(
     db_fetch_fn=None,
 ) -> Optional[dict]:
     if not AI_AVAILABLE:
-        print('[WARN] AI not available — skipping strategic insights')
+        print('[WARN] AI not available - skipping strategic insights')
         return None
 
     _diagnose_input_data(promotions_by_bank)
@@ -1514,7 +1515,7 @@ def generate_strategic_insights(
         )
 
     if not bank_summaries:
-        print('[WARN] No promotions data — skipping strategic insights')
+        print('[WARN] No promotions data - skipping strategic insights')
         return None
 
     promotions_text = '\n\n'.join(bank_summaries)

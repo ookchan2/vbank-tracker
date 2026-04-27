@@ -339,7 +339,7 @@ def _truncate_sections(
     running: int                   = 0
     for url, text in sections:
         if running >= total_cap:
-            print(f'    [TRIM] total cap ({total_cap:,} chars) reached — dropping remaining sections')
+            print(f'    [TRIM] total cap ({total_cap:,} chars) reached - dropping remaining sections')
             break
         chunk = text[:per_section]
         output.append((url, chunk))
@@ -448,7 +448,7 @@ async def _try_url(
                 wait_s = 2 ** attempt
                 print(
                     f'    [WARN] attempt {attempt}/{retries} failed for {url}: '
-                    f'{msg[:80]} — retrying in {wait_s}s…'
+                    f'{msg[:80]} - retrying in {wait_s}s...'
                 )
                 await asyncio.sleep(wait_s)
             else:
@@ -482,7 +482,7 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
 
     if skipped_urls:
         print(
-            f'    [BLOCKED] {len(skipped_urls)} URL(s) outside {cfg["name"]} domain skipped — '
+            f'    [BLOCKED] {len(skipped_urls)} URL(s) outside {cfg["name"]} domain skipped - '
             f'prevents cross-site content contamination'
         )
 

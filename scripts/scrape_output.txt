@@ -1,0 +1,395 @@
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23040' coro=<<async_generator_athrow without __name__>()>>
+C:\Users\olivia.chan\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\base_events.py:744: RuntimeWarning: coroutine method 'aclose' of 'Response.aiter_text' was never awaited
+  self._ready.clear()
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23043' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23046' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23049' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23052' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23055' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23058' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23061' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23064' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23067' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23070' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23073' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23076' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23079' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23082' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23085' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23088' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23091' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23094' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23097' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23100' coro=<<async_generator_athrow without __name__>()>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-23103' coro=<<async_generator_athrow without __name__>()>>
+
+============================================================
+  HK Virtual Bank Promotions Tracker  |  2026-04-27
+  MODE: --no-email  (pipeline runs; SMTP skipped)
+============================================================
+
+  Env check:
+    GMAIL_ADDRESS     : [OK] set
+    GMAIL_APP_PASSWORD: [OK] set (hidden)
+    RECIPIENT_EMAIL   : [OK] olivia.chan@za.group
+    [SKIP] --no-email flag - SMTP step will be skipped
+
+Step 1 -- Init database
+  [OK] Database ready
+  [RUN] Scrape run #28 started
+
+Step 2 -- Init AI
+[OK] Poe API ready
+
+Step 3 -- Scrape all 8 banks
+
+== ZA Bank =======================================
+
+== Mox Bank ======================================
+
+== livi bank =====================================
+    -> https://bank.za.group/en/promotion
+    -> https://mox.com/promotions/
+    -> https://www.livibank.com/
+    [OK]  17,430 chars
+    -> https://mox.com/zh/promotions/
+    [OK]  1,967 chars
+    -> https://bank.za.group/en
+    [SCRUB] Scrubbed blocked content: "? ? Donation Acknowledgement and Tax Deduction Arrangements ? The Government sin..."
+    [SCRUB] Scrubbed blocked content: "If you wish to receive the letter, please register via the website - https://efo..."
+    [SCRUB] Scrubbed blocked content: "Donations made to the Support Fund for Wang Fuk Court in Tai Po through bank tra..."
+    [SCRUB] Scrubbed blocked content: "Donors are however required to retain the relevant donation records, such as ban..."
+    [SCRUB] Scrubbed blocked content: "For details, please visit https://www.taipofire.gov.hk/eng/taxdeduction.html ? ?..."
+    [SCRUB] Content scrubber [livi bank]: 5 fragment(s) removed containing blocked URLs/phrases
+    [OK]  2,566 chars
+    -> https://www.livibank.com/zh_HK/
+    [OK]  7,355 chars
+    -> https://mox.com/
+    [OK]  15,305 chars
+    -> https://mox.com/zh/promotions/moxsmart/
+    [SCRUB] Scrubbed blocked content: "? ? ??????????? ? ??????????????????????????????????????????????????????????? ht..."
+    [SCRUB] Scrubbed blocked content: "????????????????????????????????????????????????????????????????????????????????..."
+    [SCRUB] Scrubbed blocked content: "?????? https://www.taipofire.gov.hk/chi/taxdeduction.html ? ? ? ? liviSave ?????..."
+    [SCRUB] Content scrubber [livi bank]: 3 fragment(s) removed containing blocked URLs/phrases
+    [OK]  989 chars
+  [OK]  livi bank: 3,647 chars from 2/2 URLs in 34.61s
+
+== WeLab Bank ====================================
+    -> https://www.welab.bank/en/feature/
+    [OK]  20,944 chars
+    -> https://bank.za.group/
+    [OK]  1,479 chars
+    -> https://mox.com/zh/promotions/The-Club/
+    [RETRY] thin (33 chars) -> requests fallback for https://www.welab.bank/en/feature/
+    [ERR] requests failed for https://www.welab.bank/en/feature/: 404 Client Error: Not Found for url: https://www.welab.bank/en/feature/
+    [WARN] Insufficient content from both methods: https://www.welab.bank/en/feature/
+    -> https://www.welab.bank/en/
+    [OK]  1,961 chars
+    -> https://mox.com/zh/promotions/1500mox/
+    [OK]  6,988 chars
+    -> https://bank.za.group/hk/usstock
+    [OK]  4,242 chars
+    -> https://www.welab.bank/
+    [OK]  2,691 chars
+    -> https://bank.za.group/hkstock
+    [OK]  1,480 chars
+    -> https://www.welab.bank/en/feature/2026-wm-april-cash-reward/
+    [OK]  1,879 chars
+    -> https://mox.com/promotions/Personal-Accident-Cushion-Promotion-Jan2026/
+    [OK]  8,293 chars
+    -> https://www.welab.bank/zh/feature/dcp-easter-lucky-draw-2026/
+    [OK]  2,616 chars
+    -> https://www.welab.bank/zh/feature/2-in-1-welcome-rewards-apr26/
+    [OK]  3,617 chars
+    -> https://bank.za.group/hk/fund
+    [OK]  4,532 chars
+    -> https://mox.com/promotions/CLUBLINK/
+    [OK]  2,437 chars
+    -> https://www.welab.bank/zh/feature/tesla-mega-combo/
+    [OK]  1,274 chars
+    -> https://www.welab.bank/zh/feature/fund/
+    [OK]  3,174 chars
+    -> https://bank.za.group/hk/loan
+    [OK]  7,566 chars
+    -> https://www.welab.bank/en/feature/loan_mgm/
+    [OK]  3,726 chars
+    -> https://mox.com/promotions/moxtrip25/
+    [OK]  511 chars
+    -> https://mox.com/promotions/MOXHKT25/
+    [OK]  5,138 chars
+    -> https://www.welab.bank/zh/feature/loan_mgm/
+    [OK]  511 chars
+    -> https://mox.com/zh/promotions/best-in-town-telco/
+    [OK]  1,804 chars
+  [OK]  WeLab Bank: 35,428 chars from 9/10 URLs in 92.95s | 1 error(s)
+
+== PADB ==========================================
+    [OK]  3,776 chars
+    -> https://bank.za.group/hk/statement-instalment
+    [OK]  511 chars
+    -> https://mox.com/promotions/mox-zone-at-the-club-hkt/
+    -> https://www.pingandb.com/en/
+    [OK]  511 chars
+    -> https://mox.com/zh/promotions/Mox-Referral-Programme/
+    [OK]  3,082 chars
+    -> https://bank.za.group/hk/open-account-mgm
+    [OK]  2,556 chars
+    -> https://www.pingandb.com/tc/
+    [OK]  511 chars
+  [OK]  Mox Bank: 44,255 chars from 13/13 URLs in 144.66s
+
+== EleBank =======================================
+    -> https://www.elebank.com/en-hk/promotion
+    [OK]  1,373 chars
+    -> https://www.elebank.com/zh-hk/promotion
+    [OK]  5,341 chars
+    -> https://bank.za.group/6th-anniversary-campaign
+    [OK]  894 chars
+    -> https://www.pingandb.com/tc/money-market-fund.html
+    [OK]  546 chars
+    -> https://www.elebank.com/zh-hk
+    [OK]  2,063 chars
+  [OK]  EleBank: 4,144 chars from 3/3 URLs in 25.49s
+
+== Fusion Bank ===================================
+    -> https://www.fusionbank.com/?lang=en
+    [OK]  3,574 chars
+  [OK]  ZA Bank: 44,729 chars from 10/10 URLs in 176.48s
+
+== Ant Bank ======================================
+    -> https://www.antbank.hk/em-plus-offer?lang=en_us
+    [OK]  3,273 chars
+    -> https://www.pingandb.com/tc/investment.html
+    [OK]  5,800 chars
+    -> https://www.fusionbank.com/?lang=zh-HK
+    [OK]  1,851 chars
+    -> https://www.pingandb.com/tc/stock.html
+    [RETRY] thin (0 chars) -> requests fallback for https://www.antbank.hk/em-plus-offer?lang=en_us
+    [WARN] Insufficient content from both methods: https://www.antbank.hk/em-plus-offer?lang=en_us
+    -> https://www.antbank.hk/em-plus-offer?lang=zh_hk
+    [OK]  1,717 chars
+    -> https://www.fusionbank.com/common/detail.html?key=fxtd2023&lang=en
+    [OK]  2,530 chars
+  [OK]  PADB: 11,384 chars from 5/5 URLs in 68.98s
+    [RETRY] thin (0 chars) -> requests fallback for https://www.antbank.hk/em-plus-offer?lang=zh_hk
+    [WARN] Insufficient content from both methods: https://www.antbank.hk/em-plus-offer?lang=zh_hk
+    -> https://www.antbank.hk/
+    [OK]  788 chars
+    -> https://www.fusionbank.com/common/detail.html?key=fxtd2023&lang=tc
+    [OK]  303 chars
+    -> https://www.fusionbank.com/common/detail.html?key=fusionflash&lang=en
+    [RETRY] thin (0 chars) -> requests fallback for https://www.antbank.hk/
+    [WARN] Insufficient content from both methods: https://www.antbank.hk/
+    -> https://www.antbank.hk/fund?lang=zh_hk
+    [OK]  594 chars
+    -> https://www.fusionbank.com/common/detail.html?key=fusionflash&lang=tc
+    [RETRY] thin (0 chars) -> requests fallback for https://www.antbank.hk/fund?lang=zh_hk
+    [WARN] Insufficient content from both methods: https://www.antbank.hk/fund?lang=zh_hk
+    -> https://www.antbank.hk/fund?lang=en_us
+    [OK]  393 chars
+    -> https://www.fusionbank.com/common/detail.html?key=savinginterestplus&lang=en
+    [RETRY] thin (0 chars) -> requests fallback for https://www.antbank.hk/fund?lang=en_us
+    [WARN] Insufficient content from both methods: https://www.antbank.hk/fund?lang=en_us
+    [SCREENSHOT] Still thin -> screenshot fallback...
+    [OK]  394 chars
+    -> https://www.fusionbank.com/common/detail.html?key=savinginterestplus&lang=tc
+    [OK]  screenshot taken
+  [ERR]  Ant Bank: 0 chars from 0/5 URLs in 74.78s | 5 error(s)
+    [OK]  392 chars
+    -> https://www.fusionbank.com/common/detail.html?key=mgm_4&lang=en
+    [OK]  394 chars
+    -> https://www.fusionbank.com/common/detail.html?key=mgm_4&lang=tc
+    [OK]  394 chars
+  [OK]  Fusion Bank: 11,978 chars from 10/10 URLs in 100.44s
+  [TIME]  Scrape completed in 272.7s
+
+Step 4 -- AI extraction
+
+  [LIVI] livi bank  [OK]  (3,647 chars)
+  [DEBUG] AI (claude-3.7-sonnet) [livi] -> 7106 chars in 28.7s
+  [INFO] Text -> 14 promotions for livi bank (7 BAU)
+  [OK] Total: 14 promotions for livi bank
+  [DEBUG] AI (claude-3.7-sonnet) [dedup/livi bank] -> 13 chars in 1.6s
+  [DEBUG] Full response: '{"groups":[]}'
+  [DEBUG] AI (claude-3.7-sonnet) [match/livi bank] -> 168 chars in 2.2s
+  [AI] ai_match_against_existing [livi bank]: 14 match(es)
+  [livi] saved -> new:0  updated:14  skipped:0
+    [OK] 0 new, 14 updated, 0 skipped — livi bank
+
+  [WELAB] WeLab Bank  [OK]  (35,428 chars)
+  [DEBUG] AI (claude-3.7-sonnet) [welab] -> 9396 chars in 41.6s
+  [INFO] Text -> 15 promotions for WeLab Bank (11 BAU)
+  [OK] Total: 15 promotions for WeLab Bank
+  [DEBUG] AI (claude-3.7-sonnet) [dedup/WeLab Bank] -> 1116 chars in 5.1s
+  [AI] ai_dedup_titles [WeLab Bank]: 3 duplicate(s)
+    [AI] Within-batch dedup: 3 removed (15 -> 12) for WeLab Bank
+  [DEBUG] AI (claude-3.7-sonnet) [match/WeLab Bank] -> 117 chars in 2.2s
+  [AI] ai_match_against_existing [WeLab Bank]: 9 match(es)
+  [welab] saved -> new:2  updated:10  skipped:0
+    [OK] 2 new, 10 updated, 0 skipped — WeLab Bank
+
+  [MOX] Mox Bank  [OK]  (44,255 chars)
+  [DEBUG] AI (claude-3.7-sonnet) [mox] -> 12900 chars in 66.7s
+  [INFO] Text -> 20 promotions for Mox Bank (0 BAU)
+  [OK] Total: 20 promotions for Mox Bank
+  [DEBUG] AI (claude-3.7-sonnet) [dedup/Mox Bank] -> 147 chars in 2.6s
+  [AI] ai_dedup_titles [Mox Bank]: 1 duplicate(s)
+    [AI] Within-batch dedup: 1 removed (20 -> 19) for Mox Bank
+  [DEBUG] AI (claude-3.7-sonnet) [match/Mox Bank] -> 210 chars in 2.8s
+  [AI] ai_match_against_existing [Mox Bank]: 18 match(es)
+  [mox] saved -> new:0  updated:19  skipped:0
+    [OK] 0 new, 19 updated, 0 skipped — Mox Bank
+
+  [AIRSTAR] EleBank  [OK]  (4,144 chars)
+  [DEBUG] AI (claude-3.7-sonnet) [airstar] -> 9214 chars in 41.0s
+  [INFO] Text -> 14 promotions for EleBank (11 BAU)
+  [OK] Total: 14 promotions for EleBank
+  [DEBUG] AI (claude-3.7-sonnet) [dedup/EleBank] -> 437 chars in 3.4s
+  [AI] ai_dedup_titles [EleBank]: 3 duplicate(s)
+    [AI] Within-batch dedup: 3 removed (14 -> 11) for EleBank
+  [DEBUG] AI (claude-3.7-sonnet) [match/EleBank] -> 116 chars in 2.9s
+  [AI] ai_match_against_existing [EleBank]: 10 match(es)
+  [airstar] saved -> new:0  updated:11  skipped:0
+    [OK] 0 new, 11 updated, 0 skipped — EleBank
+
+  [ZA] ZA Bank  [OK]  (44,729 chars)
+  [DEBUG] AI (claude-3.7-sonnet) [za] -> 20497 chars in 95.5s
+  [INFO] Text -> 31 promotions for ZA Bank (14 BAU)
+    [BAU] BAU override: New Crypto Customer Fee Waiver
+  [OK] Total: 31 promotions for ZA Bank
+  [DEBUG] AI (claude-3.7-sonnet) [dedup/ZA Bank] -> 776 chars in 4.7s
+  [AI] ai_dedup_titles [ZA Bank]: 7 duplicate(s)
+    [AI] Within-batch dedup: 7 removed (31 -> 24) for ZA Bank
+  [DEBUG] AI (claude-3.7-sonnet) [match/ZA Bank] -> 359 chars in 4.8s
+  [AI] ai_match_against_existing [ZA Bank]: 23 match(es)
+  [za] saved -> new:1  updated:23  skipped:0
+    [OK] 1 new, 23 updated, 0 skipped — ZA Bank
+
+  [PAO] PADB  [OK]  (11,384 chars)
+  [DEBUG] AI (claude-3.7-sonnet) [pao] -> 7200 chars in 30.3s
+  [INFO] Text -> 12 promotions for PADB (12 BAU)
+  [OK] Total: 12 promotions for PADB
+  [DEBUG] AI (claude-3.7-sonnet) [dedup/PADB] -> 13 chars in 3.3s
+  [DEBUG] Full response: '{"groups":[]}'
+  [DEBUG] AI (claude-3.7-sonnet) [match/PADB] -> 141 chars in 2.3s
+  [AI] ai_match_against_existing [PADB]: 12 match(es)
+  [pao] saved -> new:0  updated:12  skipped:0
+    [OK] 0 new, 12 updated, 0 skipped — PADB
+
+  [ANT] Ant Bank  [ERR]  (0 chars)
+    [WARN]  Scrape failed - skip AI for Ant Bank
+
+  [FUSION] Fusion Bank  [OK]  (11,978 chars)
+  [DEBUG] AI (claude-3.7-sonnet) [fusion] -> 4729 chars in 22.0s
+  [INFO] Text -> 8 promotions for Fusion Bank (6 BAU)
+  [OK] Total: 8 promotions for Fusion Bank
+  [DEBUG] AI (claude-3.7-sonnet) [dedup/Fusion Bank] -> 13 chars in 1.9s
+  [DEBUG] Full response: '{"groups":[]}'
+  [DEBUG] AI (claude-3.7-sonnet) [match/Fusion Bank] -> 91 chars in 2.1s
+  [AI] ai_match_against_existing [Fusion Bank]: 8 match(es)
+  [fusion] saved -> new:0  updated:8  skipped:0
+    [OK] 0 new, 8 updated, 0 skipped — Fusion Bank
+  [TIME]  AI extraction completed in 367.9s
+
+[STATS] Extracted:100  New:3  Updated:97  Deduped:14  DB-matched:94
+
+Step 5 -- Mark stale / old promos inactive
+  [CLEANUP]  0 old promos marked inactive (>90d)
+
+Step 5c -- Repair re-inserted promotions
+  [MIGRATE] repair_reinserted_promotions: 0 row(s) corrected
+
+Step 6 -- Export data.json for website
+  [FILE] data.json -> 55 active non-BAU (+118 BAU), 37 expired -> C:\Users\olivia.chan\OneDrive - Zhongan Technologies International Group Limited\Desktop\vbank-tracker\scripts\..\docs\data.json
+  [OK] data.json timestamp patched -> 2026-04-27 23:53
+
+Step 6b -- Load data.json for email count source
+  [OK] data.json loaded for email stats (180 promotions in file)
+
+Step 7 -- Generate daily report
+  [NEW] New:     7
+  [OK] Active:  48
+  [ERR] Expired: 1
+    AIRSTAR: 3 active
+    ANT: 1 active
+    FUSION: 3 active
+    LIVI: 3 active
+    MOX: 23 active
+    PAO: 1 active
+    WELAB: 3 active
+    ZA: 18 active
+
+Step 8 -- Generate AI strategic insights
+  [STATS] Insights input: 143 promos (88 BAU + 55 time-limited)
+  [INFO] Non-BAU new (today):        7
+  [INFO] Non-BAU new (past 6 days):  19
+  [INFO] Non-BAU active (all):       55
+  [INFO] BAU (insights input):       88
+  [INFO] Banks in promos_by_name:    ['Ant Bank', 'EleBank', 'Fusion Bank', 'Mox Bank', 'PADB', 'WeLab Bank', 'ZA Bank', 'livi bank']
+
+======================================================================
+[STATS]  INSIGHTS INPUT DIAGNOSTIC
+======================================================================
+  [STATS] Ant Bank            :  1 active +  8 BAU =  9 total  | tags: [WARN] NONE  [OK]
+  [STATS] EleBank             :  3 active + 17 BAU = 20 total  | tags: [WARN] NONE  [OK]
+  [STATS] Fusion Bank         :  3 active +  6 BAU =  9 total  | tags: [WARN] NONE  [OK]
+  [STATS] Mox Bank            : 23 active +  1 BAU = 24 total  | tags: [WARN] NONE  [OK]
+  [STATS] PADB                :  1 active + 13 BAU = 14 total  | tags: [WARN] NONE  [OK]
+  [STATS] WeLab Bank          :  3 active + 15 BAU = 18 total  | tags: [WARN] NONE  [OK]
+  [STATS] ZA Bank             : 18 active + 17 BAU = 35 total  | tags: [WARN] NONE  [OK]
+  [STATS] livi bank           :  3 active + 11 BAU = 14 total  | tags: [WARN] NONE  [OK]
+
+  CATEGORY COVERAGE CHECK:
+    [OK] HK Stock Trading                           -> EleBank, Ant Bank, PADB, ZA Bank
+    [OK] US Stock Trading                           -> EleBank, Ant Bank, PADB, ZA Bank
+    [OK] Crypto Trading                             -> ZA Bank
+    [OK] Fund Investment                            -> EleBank, Ant Bank, Fusion Bank, livi bank, Mox Bank, PADB, WeLab Bank, ZA Bank
+    [OK] Referral Bonus                             -> WeLab Bank, ZA Bank
+    [OK] Travel                                     -> EleBank, livi bank, Mox Bank, PADB, ZA Bank
+    [OK] Spending/CashBack                          -> EleBank, Ant Bank, Mox Bank, WeLab Bank, ZA Bank
+    [OK] Welcome Bonus                              -> Mox Bank, WeLab Bank, ZA Bank
+    [OK] Loan APR                                   -> EleBank, Ant Bank, livi bank, Mox Bank, WeLab Bank, ZA Bank
+    [OK] FX/Multi-Currency                          -> EleBank, Ant Bank, Fusion Bank, WeLab Bank, ZA Bank
+======================================================================
+
+  [DEBUG] AI (claude-3.7-sonnet) [insights] -> 12129 chars in 60.0s
+  [OK] HK stock: EleBank total cost HKD 15/order — lower than ZA Bank HKD 18. Accepted.
+[OK] Strategic insights generated (4 BAU winner(s), 0 None slot(s))
+  [OK] data.json patched with key(s): strategic_insights
+
+Step 8b -- Reload data.json after insights patch
+  [OK] data.json loaded for email stats (180 promotions in file)
+
+Step 9 -- Build & send email
+  [OK] HTML email built
+  [FILE] HTML saved -> C:\Users\olivia.chan\OneDrive - Zhongan Technologies International Group Limited\Desktop\vbank-tracker\scripts\..\output\email_preview.html
+  [SKIP] Email skipped (--no-email)
+  [FILE] HTML preview -> C:\Users\olivia.chan\OneDrive - Zhongan Technologies International Group Limited\Desktop\vbank-tracker\scripts\..\output\email_preview.html
+
+============================================================
+  Done in 700.7s  |  [NEW] 7 new today  |  [WEEK] 19 new this week  |  [OK] 55 active (DB)  |  [FILE] 50 active (data.json)  |  [ERR] 1 expired  |  [AI] deduped:14 matched:94  |  [CONFIG]  88 BAU  |  [DB] DB:180 total
+============================================================
+

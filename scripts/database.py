@@ -637,7 +637,7 @@ def save_promotions(
                     stats['skipped'] += 1
                     print(
                         f'  [WARN]  [{bank_id}] skipped promo with empty title '
-                        f'— keys: {list(p.keys())}'
+                        f'- keys: {list(p.keys())}'
                     )
                     continue
 
@@ -829,7 +829,7 @@ def reactivate_most_recently_seen(window_days: int = 7) -> int:
                 "SELECT MAX(DATE(last_seen)) AS max_date FROM promotions"
             ).fetchone()
             if not row or not row['max_date']:
-                print('  [WARN]  Recovery: DB is completely empty — nothing to reactivate')
+                print('  [WARN]  Recovery: DB is completely empty - nothing to reactivate')
                 return 0
 
             max_date_str = row['max_date']
@@ -969,6 +969,62 @@ def repair_reinserted_promotions(dry_run: bool = False) -> int:
             conn.rollback()
             print(f'  [ERR] repair_reinserted_promotions error: {exc}')
             return 0
+
+
+def migrate_legacy_bank_names(dry_run: bool = False) -> int:
+    """
+    Migrate legacy bank names to canonical names in the promotions table.
+
+    Legacy mappings:
+    - 'Airstar Bank' -> 'EleBank'
+    - 'PAObank', 'PAO Bank', 'PAOB' -> 'PADB'
+
+    Returns the number of records updated.
+    """
+    migrations = {
+        'Airstar Bank': 'EleBank',
+        'PAObank': 'PADB',
+        'PAO Bank': 'PADB',
+        'PAOB': 'PADB',
+    }
+
+    migrated = 0
+
+    with _db_connection() as conn:
+        try:
+            for legacy_name, canonical_name in migrations.items():
+                rows = conn.execute(
+                    "SELECT id, bank_name FROM promotions WHERE bank_name = ?",
+                    (legacy_name,)
+                ).fetchall()
+
+                if not rows:
+                    continue
+
+                count = len(rows)
+                tag = '[DRY RUN] ' if dry_run else ''
+                print(f'  [MIGRATE] {tag}"{legacy_name}" -> "{canonical_name}": {count} record(s)')
+
+                if not dry_run:
+                    conn.execute(
+                        "UPDATE promotions SET bank_name = ? WHERE bank_name = ?",
+                        (canonical_name, legacy_name)
+                    )
+                    conn.commit()
+
+                migrated += count
+
+            if migrated == 0:
+                print('  [MIGRATE] No legacy bank names found - all normalized')
+            elif not dry_run:
+                print(f'  [MIGRATE] Total migrated: {migrated} record(s)')
+
+        except Exception as exc:
+            logger.error(f'Bank name migration failed: {exc}')
+            if not dry_run:
+                conn.rollback()
+
+    return migrated
 
 
 # ── 6. Queries ────────────────────────────────────────────────────────────────
@@ -1327,7 +1383,8 @@ def export_to_json(
     strategic_insights: Optional[Dict] = None,
     ai_unavailable:     bool           = False,
 ) -> None:
-    all_promos = load_promotions(active_only=False)
+    # Load only ACTIVE promotions for website/email display
+    all_promos = load_promotions(active_only=True)
     records: List[Dict] = []
 
     for p in all_promos:
@@ -1378,13 +1435,16 @@ def export_to_json(
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    active_non_bau = sum(1 for r in records if r['active'] and not r['is_bau'])
-    bau_n          = sum(1 for r in records if r['is_bau'])
-    expired_n      = sum(1 for r in records if not r['active'])
+    # All loaded promotions are active (filtered by load_promotions)
+    active_non_bau = sum(1 for r in records if not r['is_bau'])
+    active_bau     = sum(1 for r in records if r['is_bau'])
+    # Count expired from separate query for reference
+    with _db_connection() as conn:
+        expired_count = conn.execute('SELECT COUNT(*) FROM promotions WHERE active = 0').fetchone()[0]
     insights_tag   = ' +insights' if clean_insights else ''
-    ai_tag         = ' [AI unavailable — cached]' if ai_unavailable else ''
+    ai_tag         = ' [AI unavailable - cached]' if ai_unavailable else ''
     print(
         f'  [FILE] data.json -> {active_non_bau} active non-BAU '
-        f'(+{bau_n} BAU), {expired_n} expired'
+        f'(+{active_bau} BAU), {expired_count} expired'
         f'{insights_tag}{ai_tag} -> {output_path}'
     )
