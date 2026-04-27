@@ -371,7 +371,7 @@ async def _async_call(messages: list, label: str = '') -> str:
         return result
     except Exception as exc:
         logger.error(f'Poe API call error: {type(exc).__name__}: {exc}')
-        print(f'  ❌ Poe API call error: {exc}')
+        print(f'  [ERR] Poe API call error: {exc}')
         return ''
 
 
@@ -395,7 +395,7 @@ def init_ai() -> bool:
     """Initialize AI using Poe API (Claude bots)."""
     try:
         if fp is None:
-            print('❌ fastapi-poe package not installed. Run: pip install fastapi-poe')
+            print('[ERR] fastapi-poe package not installed. Run: pip install fastapi-poe')
             AI_AVAILABLE = False
             return False
 
@@ -439,7 +439,7 @@ def _parse_array(raw: str) -> list:
             return data if isinstance(data, list) else [data]
         except Exception:
             pass
-    print(f'  ⚠️  JSON parse failed. First 200 chars: {raw[:200]}')
+    print(f'  [WARN] JSON parse failed. First 200 chars: {raw[:200]}')
     return []
 
 
@@ -456,7 +456,7 @@ def _parse_object(raw: str) -> Optional[dict]:
         data = json.loads(raw)
         return data if isinstance(data, dict) else None
     except json.JSONDecodeError as exc:
-        print(f'  ⚠️  JSON object parse failed: {exc}. First 200 chars: {raw[:200]}')
+        print(f'  [WARN] JSON object parse failed: {exc}. First 200 chars: {raw[:200]}')
         return None
 
 
@@ -634,7 +634,7 @@ def _validate_best_for_evidence(best_for: list) -> list:
 
         if is_vague:
             print(
-                f'  ⚠️  Vague-pattern flag [{cat}] "{bank}" — '
+                f'  [WARN] Vague-pattern flag [{cat}] "{bank}" — '
                 f'evidence present={has_evidence}: "{detail[:70]}"'
             )
 
@@ -776,7 +776,7 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                         ),
                     }
                 print(
-                    f'  ✅ HK stock: EleBank total cost HKD {_ELEBANK_HK_TOTAL_COST:.0f}/order — '
+                    f'  [OK] HK stock: EleBank total cost HKD {_ELEBANK_HK_TOTAL_COST:.0f}/order — '
                     f'lower than ZA Bank HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f}. Accepted.'
                 )
                 # Ensure ZA Bank and PADB appear as similar banks
@@ -806,7 +806,7 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                         ),
                     }
                 print(
-                    f'  ✅ US stock: EleBank selected — total cost matches ZA Bank '
+                    f'  [OK] US stock: EleBank selected — total cost matches ZA Bank '
                     f'(both min USD {_ELEBANK_US_MIN_TOTAL:.2f}/order). Accepted.'
                 )
                 existing_similar = [s.lower() for s in (best_for[i].get('similar_banks') or [])]
@@ -879,7 +879,7 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                     overrides += 1
                 else:
                     print(
-                        f'  ✅ US stock total-cost KEPT [{cat}]: '
+                        f'  [OK] US stock total-cost KEPT [{cat}]: '
                         f'"{bank}" @ USD {per_share}/share × 200 = USD {competitor_cost_200:.2f} '
                         f'< ZA Bank/EleBank USD {za_cost_200:.2f} for 200-share benchmark. '
                         f'Break-even: {breakeven:.0f} shares.'
@@ -955,7 +955,7 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                     ),
                 }
             print(
-                f'  ℹ️  HK stock winner kept [{cat}]: '
+                f'  [INFO] HK stock winner kept [{cat}]: '
                 f'"{bank}" charges commission + $0 platform. '
                 f'EleBank (HKD {_ELEBANK_HK_TOTAL_COST:.0f}) and '
                 f'ZA Bank (HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f}) offer lower total cost.'
@@ -1059,7 +1059,7 @@ def analyze_promotions(
                     bau_count = sum(1 for p in parsed if p.get('is_bau'))
                     logger.info(f'Successfully extracted {len(results)} promotions for {bank_name} ({bau_count} BAU)')
                     print(
-                        f'  📝 Text → {len(results)} promotions for {bank_name} '
+                        f'  [INFO] Text → {len(results)} promotions for {bank_name} '
                         f'({bau_count} BAU)'
                     )
                     break
@@ -1070,18 +1070,18 @@ def analyze_promotions(
             except Exception as exc:
                 logger.error(f'AI extraction error for {bank_name}: {type(exc).__name__}: {exc}')
                 if attempt == 0:
-                    print(f'  ⚠️  AI error for {bank_name}: {exc} — retrying...')
+                    print(f'  [WARN] AI error for {bank_name}: {exc} — retrying...')
         else:
             logger.error(f'All AI attempts failed for {bank_name}')
-            print(f'  ❌ Both attempts failed for {bank_name}')
+            print(f'  [ERR] Both attempts failed for {bank_name}')
     else:
-        print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')
+        print(f'  [WARN] Text too short ({len(clean)} chars) for {bank_name}')
 
     results = _stamp(results, bank_id, bank_name, default_url)
     results = _apply_bau_overrides(results, bank_id)
     results = _filter_bank_relevant_promotions(results, bank_name)
 
-    print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
+    print(f'  [OK] Total: {len(results)} promotions for {bank_name}')
     return results
 
 
@@ -1190,13 +1190,13 @@ Titles to evaluate (0-indexed):
                 for dup in g.get('duplicate_indices', [])
             }
             if dup_map:
-                print(f'  🤖 ai_dedup_titles [{bank_name}]: {len(dup_map)} duplicate(s)')
+                print(f'  [AI] ai_dedup_titles [{bank_name}]: {len(dup_map)} duplicate(s)')
             return dup_map
         except Exception as exc:
             if attempt == 0:
-                print(f'  ⚠️  ai_dedup_titles [{bank_name}] attempt 1 failed: {exc!r} — retrying')
+                print(f'  [WARN] ai_dedup_titles [{bank_name}] attempt 1 failed: {exc!r} — retrying')
             else:
-                print(f'  ⚠️  ai_dedup_titles [{bank_name}]: {exc!r} — skipping')
+                print(f'  [WARN] ai_dedup_titles [{bank_name}]: {exc!r} — skipping')
                 return {}
     return {}
 
@@ -1303,13 +1303,13 @@ No explanation. No markdown. No code fences."""
                 if result_map else
                 '0 matches — all appear genuinely new'
             )
-            print(f'  🤖 ai_match_against_existing [{bank_name}]: {msg}')
+            print(f'  [AI] ai_match_against_existing [{bank_name}]: {msg}')
             return result_map
         except Exception as exc:
             if attempt == 0:
-                print(f'  ⚠️  ai_match_against_existing [{bank_name}] attempt 1: {exc!r} — retrying')
+                print(f'  [WARN] ai_match_against_existing [{bank_name}] attempt 1: {exc!r} — retrying')
             else:
-                print(f'  ⚠️  ai_match_against_existing [{bank_name}]: {exc!r} — skipping')
+                print(f'  [WARN] ai_match_against_existing [{bank_name}]: {exc!r} — skipping')
                 return {}
     return {}
 
@@ -1353,7 +1353,7 @@ _SPARSE_THRESHOLD = 3
 def _diagnose_input_data(promotions_by_bank: dict) -> dict[str, list[str]]:
     print()
     print('=' * 70)
-    print('📊  INSIGHTS INPUT DIAGNOSTIC')
+    print('[STATS]  INSIGHTS INPUT DIAGNOSTIC')
     print('=' * 70)
 
     bank_tag_map: dict[str, list[str]] = {}
@@ -1375,15 +1375,15 @@ def _diagnose_input_data(promotions_by_bank: dict) -> dict[str, list[str]]:
         tag_display = ', '.join(
             t for t in sorted(all_tags)
             if 1 < len(t) <= 12 and t not in ('', 'others', 'general')
-        ) or '⚠️  NONE'
+        ) or '[WARN] NONE'
 
         sparse_flag = (
-            '  ⚠️  SPARSE — may cause None slots'
+            '  [WARN] SPARSE — may cause None slots'
             if len(promos) < _SPARSE_THRESHOLD
-            else '  ✅'
+            else '  [OK]'
         )
         print(
-            f'  📊 {bank:<20}: {len(non_bau_promos):>2} active'
+            f'  [STATS] {bank:<20}: {len(non_bau_promos):>2} active'
             f' + {len(bau_promos):>2} BAU'
             f' = {len(promos):>2} total'
             f'  | tags: {tag_display[:55]}'
@@ -1413,9 +1413,9 @@ def _diagnose_input_data(promotions_by_bank: dict) -> dict[str, list[str]]:
                     break
 
         if covered_by:
-            print(f'    ✅ {cat_name:<42} → {", ".join(covered_by)}')
+            print(f'    [OK] {cat_name:<42} → {", ".join(covered_by)}')
         else:
-            print(f'    ❌ {cat_name:<42} → NO DATA — will output None')
+            print(f'    [ERR] {cat_name:<42} → NO DATA — will output None')
 
     print('=' * 70)
     print()
@@ -1429,7 +1429,7 @@ def _check_sparse_banks(promotions_by_bank: dict) -> list[str]:
     ]
     if sparse:
         print(
-            f'  ⚠️  SPARSE BANKS: {sparse} (each has < {_SPARSE_THRESHOLD} promos)\n'
+            f'  [WARN] SPARSE BANKS: {sparse} (each has < {_SPARSE_THRESHOLD} promos)\n'
             f'     Pass db_fetch_fn to generate_strategic_insights() to auto-supplement.'
         )
     return sparse
@@ -1447,10 +1447,10 @@ def supplement_from_db(
         try:
             db_promos = db_fetch_fn(bank)
         except Exception as exc:
-            print(f'  ⚠️  supplement_from_db: DB fetch failed for "{bank}": {exc}')
+            print(f'  [WARN] supplement_from_db: DB fetch failed for "{bank}": {exc}')
             continue
         if not db_promos:
-            print(f'  ⚠️  supplement_from_db: no DB rows for "{bank}"')
+            print(f'  [WARN] supplement_from_db: no DB rows for "{bank}"')
             continue
 
         existing_titles = {
@@ -1484,7 +1484,7 @@ def generate_strategic_insights(
     db_fetch_fn=None,
 ) -> Optional[dict]:
     if not AI_AVAILABLE:
-        print('⚠️  AI not available — skipping strategic insights')
+        print('[WARN] AI not available — skipping strategic insights')
         return None
 
     _diagnose_input_data(promotions_by_bank)
@@ -1493,11 +1493,11 @@ def generate_strategic_insights(
     if sparse_banks:
         if db_fetch_fn is not None:
             promotions_by_bank = supplement_from_db(promotions_by_bank, db_fetch_fn)
-            print('  📊 POST-SUPPLEMENT DIAGNOSTIC:')
+            print('  [STATS] POST-SUPPLEMENT DIAGNOSTIC:')
             _diagnose_input_data(promotions_by_bank)
         else:
             print(
-                '  ⚠️  Sparse banks found but no db_fetch_fn provided.\n'
+                '  [WARN] Sparse banks found but no db_fetch_fn provided.\n'
                 '     Pass db_fetch_fn=get_promotions_by_bank_name to auto-supplement.'
             )
 
@@ -1514,7 +1514,7 @@ def generate_strategic_insights(
         )
 
     if not bank_summaries:
-        print('⚠️  No promotions data — skipping strategic insights')
+        print('[WARN] No promotions data — skipping strategic insights')
         return None
 
     promotions_text = '\n\n'.join(bank_summaries)
@@ -1768,12 +1768,12 @@ Return this EXACT JSON structure (no markdown, no code fences):
 
     raw = _call([{'role': 'user', 'content': prompt}], label='insights')
     if not raw:
-        print('❌ Strategic insights: empty response from AI')
+        print('[ERR] Strategic insights: empty response from AI')
         return None
 
     result = _parse_object(raw)
     if result is None:
-        print('❌ Strategic insights: JSON parse failed')
+        print('[ERR] Strategic insights: JSON parse failed')
         return None
 
     # ── Post-processing pipeline ──────────────────────────────────────────────
@@ -1804,12 +1804,12 @@ Return this EXACT JSON structure (no markdown, no code fences):
             if (b.get('bank') or '').lower() in ('none', '', 'n/a')
         ]
         print(
-            f'  ⚠️  {none_wins} best_for slot(s) still None after all fixes: {none_cats}\n'
+            f'  [WARN] {none_wins} best_for slot(s) still None after all fixes: {none_cats}\n'
             f'     ↳ Check diagnostic above — these categories had no input data.'
         )
 
     print(
-        f'✅ Strategic insights generated '
+        f'[OK] Strategic insights generated '
         f'({bau_wins} BAU winner(s), {none_wins} None slot(s))'
     )
     return result

@@ -316,7 +316,7 @@ def start_new_run(banks: List[str] = None) -> int:
             )
             conn.commit()
             run_id = cur.lastrowid
-            print(f'  🏃 Scrape run #{run_id} started')
+            print(f'  [RUN] Scrape run #{run_id} started')
             return run_id
         except Exception as exc:
             print(f'  [ERR] start_new_run error: {exc}')
