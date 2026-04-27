@@ -105,8 +105,8 @@ def _is_valid_bank_url(url: str, bank_id: str) -> bool:
 
 # ── Bank configs ──────────────────────────────────────────────────────────────
 # ★ CHANGED:
-#   'airstar' → name='EleBank', new elebank.com URLs
-#   'pao'     → name='PADB' (formerly PAObank); URLs unchanged (still pingandb.com)
+#   'airstar' -> name='EleBank', new elebank.com URLs
+#   'pao'     -> name='PADB' (formerly PAObank); URLs unchanged (still pingandb.com)
 
 BANK_CONFIGS: dict[str, dict] = {
     'za': {
@@ -301,13 +301,13 @@ def _scrub_blocked_content(text: str, bank_name: str = '') -> str:
         if _BLOCKED_CONTENT_RE.search(frag):
             removed += 1
             snippet = frag.strip()[:80]
-            print(f'    🧹 Scrubbed blocked content: "{snippet}…"')
+            print(f'    [SCRUB] Scrubbed blocked content: "{snippet}…"')
         else:
             clean.append(frag)
     if removed:
         label = f' [{bank_name}]' if bank_name else ''
         print(
-            f'    🧹 Content scrubber{label}: '
+            f'    [SCRUB] Content scrubber{label}: '
             f'{removed} fragment(s) removed containing blocked URLs/phrases'
         )
     return ' '.join(clean)
@@ -324,7 +324,7 @@ def _deduplicate_sections(
             seen.add(h)
             unique.append((url, text))
         else:
-            print(f'    ♻  near-duplicate skipped: {url}')
+            print(f'    [DUP]  near-duplicate skipped: {url}')
     return unique
 
 
@@ -365,6 +365,44 @@ def scrape_with_requests(url: str) -> str | None:
         print(f'    ❌ requests failed for {url}: {e}')
         return None
 
+# ── Screenshot cache helpers ──────────────────────────────────────────────────
+
+import os  # For file system operations
+
+_SCREENSHOT_CACHE_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), '..', '.screenshot_cache'
+)
+
+def _cache_screenshot(url: str, data: bytes) -> Optional[str]:
+    """Save screenshot to disk cache. Returns cache path or None on error."""
+    try:
+        os.makedirs(_SCREENSHOT_CACHE_DIR, exist_ok=True)
+        # Create filename from URL hash
+        import hashlib
+        fname = hashlib.md5(url.encode()).hexdigest() + '.png'
+        fpath = os.path.join(_SCREENSHOT_CACHE_DIR, fname)
+        with open(fpath, 'wb') as f:
+            f.write(data)
+        return fpath
+    except Exception as exc:
+        print(f'    ⚠  Screenshot cache write failed: {exc}')
+        return None
+
+
+def _load_cached_screenshot(url: str) -> Optional[bytes]:
+    """Load screenshot from disk cache if exists."""
+    try:
+        import hashlib
+        fname = hashlib.md5(url.encode()).hexdigest() + '.png'
+        fpath = os.path.join(_SCREENSHOT_CACHE_DIR, fname)
+        if os.path.exists(fpath):
+            with open(fpath, 'rb') as f:
+                return f.read()
+    except Exception:
+        pass
+    return None
+
+
 # ── Single URL via Playwright ─────────────────────────────────────────────────
 
 async def _try_url(
@@ -391,10 +429,14 @@ async def _try_url(
 
             screenshot: Optional[bytes] = None
             if len(text) > MIN_CONTENT_CHARS:
-                try:
-                    screenshot = await page.screenshot(full_page=False, type='png')
-                except Exception:
-                    pass
+                # Try cache first
+                screenshot = _load_cached_screenshot(url)
+                if screenshot is None:
+                    try:
+                        screenshot = await page.screenshot(full_page=False, type='png')
+                        _cache_screenshot(url, screenshot)
+                    except Exception:
+                        pass
 
             return text, screenshot
 
@@ -434,11 +476,11 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
             valid_urls.append(url)
         else:
             skipped_urls.append(url)
-            print(f'    ⛔ Domain guard SKIPPED non-bank URL for {cfg["name"]}: {url}')
+            print(f'    [BLOCKED] Domain guard SKIPPED non-bank URL for {cfg["name"]}: {url}')
 
     if skipped_urls:
         print(
-            f'    ⛔ {len(skipped_urls)} URL(s) outside {cfg["name"]} domain skipped — '
+            f'    [BLOCKED] {len(skipped_urls)} URL(s) outside {cfg["name"]} domain skipped — '
             f'prevents cross-site content contamination'
         )
 
@@ -498,7 +540,7 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
         await page.route('**/*', _handle_route)
 
         for url in valid_urls:
-            print(f'    → {url}')
+            print(f'    -> {url}')
             text, shot = await _try_url(page, url, wait_extra, retries)
 
             if text and len(text) > MIN_CONTENT_CHARS:
@@ -507,15 +549,15 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
                 if best_shot is None and shot:
                     best_shot  = shot
                     result.url = url
-                print(f'    ✓  {len(text):,} chars')
+                print(f'    [OK]  {len(text):,} chars')
             else:
                 thin_len = len(text)
-                print(f'    🔁 thin ({thin_len} chars) → requests fallback for {url}')
+                print(f'    🔁 thin ({thin_len} chars) -> requests fallback for {url}')
                 fb = scrape_with_requests(url)
                 if fb and len(fb) > MIN_CONTENT_CHARS:
                     fb = _scrub_blocked_content(fb, cfg['name'])
                     sections.append((url, fb))
-                    print(f'    ✓  requests: {len(fb):,} chars')
+                    print(f'    [OK]  requests: {len(fb):,} chars')
                 else:
                     msg = f'Insufficient content from both methods: {url}'
                     result.errors.append(msg)
@@ -530,13 +572,13 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
         ).strip()
 
         if best_shot is None and len(combined) < MIN_CONTENT_CHARS:
-            print('    📸 Still thin → screenshot fallback…')
+            print('    [SCREENSHOT] Still thin -> screenshot fallback…')
             try:
                 await page.unroute('**/*')
                 await page.goto(cfg['link'], wait_until='domcontentloaded', timeout=45_000)
                 await page.wait_for_timeout(wait_extra + 3_000)
                 best_shot = await page.screenshot(full_page=True, type='png')
-                print('    ✓  screenshot taken')
+                print('    [OK]  screenshot taken')
             except Exception as exc:
                 msg = f'Screenshot fallback failed: {exc}'
                 result.errors.append(msg)
@@ -562,8 +604,8 @@ async def _run_all() -> dict[str, dict]:
     async def _bounded(browser: Browser, bank_id: str) -> None:
         async with sem:
             cfg    = BANK_CONFIGS[bank_id]
-            header = f'══ {cfg["name"]} '
-            print(f'\n{header}{"═" * max(1, 50 - len(header))}')
+            header = f'== {cfg["name"]} '
+            print(f'\n{header}{"=" * max(1, 50 - len(header))}')
 
             result = await _scrape_bank(browser, bank_id)
 

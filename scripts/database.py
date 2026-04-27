@@ -1,13 +1,16 @@
 # scripts/database.py
 
 import json
+import logging
 import os
 import re
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 DB_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'promotions.db'
@@ -34,12 +37,16 @@ def _db_connection():
 
 # ── 0-a. HKT date helpers ─────────────────────────────────────────────────────
 
+# Hong Kong timezone (UTC+8, no DST)
+_HKT = timezone(timedelta(hours=8))
+
+
 def _hkt_today() -> str:
-    return (datetime.utcnow() + timedelta(hours=8)).strftime('%Y-%m-%d')
+    return datetime.now(_HKT).strftime('%Y-%m-%d')
 
 
 def _hkt_n_days_ago(n: int) -> str:
-    return (datetime.utcnow() + timedelta(hours=8) - timedelta(days=n)).strftime('%Y-%m-%d')
+    return (datetime.now(_HKT) - timedelta(days=n)).strftime('%Y-%m-%d')
 
 
 # ── 0-b. Non-bank content guard ───────────────────────────────────────────────
@@ -234,7 +241,7 @@ def init_db():
             existing_cols = {
                 row[1] for row in conn.execute('PRAGMA table_info(promotions)').fetchall()
             }
-            print('  🔧 DB migration: rebuilt table (legacy "bank" → "bank_id")')
+            print('  [MIGRATE] DB migration: rebuilt table (legacy "bank" -> "bank_id")')
 
         migrations = [
             ('bank_id',       "ALTER TABLE promotions ADD COLUMN bank_id       TEXT NOT NULL DEFAULT ''"),
@@ -258,7 +265,7 @@ def init_db():
         for col, sql in migrations:
             if col not in existing_cols:
                 conn.execute(sql)
-                print(f'  🔧 DB migration: added column "{col}"')
+                print(f'  [MIGRATE] DB migration: added column "{col}"')
 
         null_row = conn.execute(
             'SELECT COUNT(*) FROM promotions WHERE first_seen_at IS NULL'
@@ -270,7 +277,7 @@ def init_db():
             )
             conn.commit()
             print(
-                f'  🔧 DB migration: first_seen_at back-filled '
+                f'  [MIGRATE] DB migration: first_seen_at back-filled '
                 f'for {null_row[0]} NULL row(s) from created_at'
             )
 
@@ -287,9 +294,9 @@ def init_db():
         ''')
 
         conn.commit()
-        print('  ✅ Database ready')
+        print('  [OK] Database ready')
     except Exception as exc:
-        print(f'  ❌ init_db error: {exc}')
+        print(f'  [ERR] init_db error: {exc}')
         raise
     finally:
         conn.close()
@@ -312,7 +319,7 @@ def start_new_run(banks: List[str] = None) -> int:
             print(f'  🏃 Scrape run #{run_id} started')
             return run_id
         except Exception as exc:
-            print(f'  ❌ start_new_run error: {exc}')
+            print(f'  [ERR] start_new_run error: {exc}')
             return 0
 
 
@@ -325,7 +332,7 @@ def get_previous_run_id(current_run_id: int) -> Optional[int]:
             ).fetchone()
             return row['id'] if row else None
         except Exception as exc:
-            print(f'  ❌ get_previous_run_id error: {exc}')
+            print(f'  [ERR] get_previous_run_id error: {exc}')
             return None
 
 
@@ -629,7 +636,7 @@ def save_promotions(
                 if not title:
                     stats['skipped'] += 1
                     print(
-                        f'  ⚠️  [{bank_id}] skipped promo with empty title '
+                        f'  [WARN]  [{bank_id}] skipped promo with empty title '
                         f'— keys: {list(p.keys())}'
                     )
                     continue
@@ -727,7 +734,7 @@ def save_promotions(
             conn.commit()
             blocked_tag = f'  blocked:{stats["blocked"]}' if stats['blocked'] else ''
             print(
-                f"  [{bank_id}] saved → "
+                f"  [{bank_id}] saved -> "
                 f"new:{stats['new']}  updated:{stats['updated']}  "
                 f"skipped:{stats['skipped']}{blocked_tag}"
             )
@@ -735,7 +742,7 @@ def save_promotions(
 
         except Exception as exc:
             conn.rollback()
-            print(f'  ❌ save_promotions error: {exc}')
+            print(f'  [ERR] save_promotions error: {exc}')
             raise
 
 
@@ -765,7 +772,7 @@ def mark_stale_as_inactive(
                 ''', (bank_id, today_str, today_str))
                 if cur.rowcount:
                     print(
-                        f'  🗑️  {bank_id}: {cur.rowcount} promo(s) marked inactive '
+                        f'  [CLEANUP]  {bank_id}: {cur.rowcount} promo(s) marked inactive '
                         f'(end_date past or unknown)'
                     )
                 total += cur.rowcount
@@ -773,7 +780,7 @@ def mark_stale_as_inactive(
             return total
         except Exception as exc:
             conn.rollback()
-            print(f'  ❌ mark_stale_as_inactive error: {exc}')
+            print(f'  [ERR] mark_stale_as_inactive error: {exc}')
             return 0
 
 
@@ -786,11 +793,11 @@ def mark_inactive_old(days_threshold: int = 90) -> int:
                 (cutoff,)
             )
             conn.commit()
-            print(f'  🗑️  {cur.rowcount} old promos marked inactive (>{days_threshold}d)')
+            print(f'  [CLEANUP]  {cur.rowcount} old promos marked inactive (>{days_threshold}d)')
             return cur.rowcount
         except Exception as exc:
             conn.rollback()
-            print(f'  ❌ mark_inactive_old error: {exc}')
+            print(f'  [ERR] mark_inactive_old error: {exc}')
             return 0
 
 
@@ -805,13 +812,13 @@ def reactivate_promotions_seen_on(date_str: str) -> int:
             conn.commit()
             count = cur.rowcount
             if count:
-                print(f'  🔄 Recovery: reactivated {count} promo(s) with last_seen={date_str}')
+                print(f'  [RECOVER] Recovery: reactivated {count} promo(s) with last_seen={date_str}')
             else:
-                print(f'  ⚠️  Recovery: no promotions found with last_seen={date_str}')
+                print(f'  [WARN]  Recovery: no promotions found with last_seen={date_str}')
             return count
         except Exception as exc:
             conn.rollback()
-            print(f'  ❌ reactivate_promotions_seen_on error: {exc}')
+            print(f'  [ERR] reactivate_promotions_seen_on error: {exc}')
             return 0
 
 
@@ -822,7 +829,7 @@ def reactivate_most_recently_seen(window_days: int = 7) -> int:
                 "SELECT MAX(DATE(last_seen)) AS max_date FROM promotions"
             ).fetchone()
             if not row or not row['max_date']:
-                print('  ⚠️  Recovery: DB is completely empty — nothing to reactivate')
+                print('  [WARN]  Recovery: DB is completely empty — nothing to reactivate')
                 return 0
 
             max_date_str = row['max_date']
@@ -838,18 +845,18 @@ def reactivate_most_recently_seen(window_days: int = 7) -> int:
             count = cur.rowcount
             if count:
                 print(
-                    f'  🔄 Recovery: reactivated {count} promo(s) '
+                    f'  [RECOVER] Recovery: reactivated {count} promo(s) '
                     f'(last_seen >= {cutoff};  most recent batch: {max_date_str})'
                 )
             else:
                 print(
-                    f'  ⚠️  Recovery: all promotions already active '
+                    f'  [WARN]  Recovery: all promotions already active '
                     f'(most recent last_seen: {max_date_str})'
                 )
             return count
         except Exception as exc:
             conn.rollback()
-            print(f'  ❌ reactivate_most_recently_seen error: {exc}')
+            print(f'  [ERR] reactivate_most_recently_seen error: {exc}')
             return 0
 
 
@@ -869,7 +876,7 @@ def repair_reinserted_promotions(dry_run: bool = False) -> int:
             ).fetchall()
 
             if not today_rows:
-                print('  🔧 repair_reinserted_promotions: nothing to repair')
+                print('  [MIGRATE] repair_reinserted_promotions: nothing to repair')
                 return 0
 
             for row in today_rows:
@@ -935,9 +942,9 @@ def repair_reinserted_promotions(dry_run: bool = False) -> int:
                 if best_match_id and best_older_date:
                     tag = '[DRY RUN] ' if dry_run else ''
                     print(
-                        f'  🔧 {tag}repair [{bank_id}] '
+                        f'  [MIGRATE] {tag}repair [{bank_id}] '
                         f'"{title[:55]}" '
-                        f'first_seen_at {today} → {best_older_date} '
+                        f'first_seen_at {today} -> {best_older_date} '
                         f'(reason: {best_reason}, old_id={best_match_id})'
                     )
                     if not dry_run:
@@ -955,12 +962,12 @@ def repair_reinserted_promotions(dry_run: bool = False) -> int:
                 conn.commit()
 
             tag = '[DRY RUN] ' if dry_run else ''
-            print(f'  🔧 {tag}repair_reinserted_promotions: {fixed} row(s) corrected')
+            print(f'  [MIGRATE] {tag}repair_reinserted_promotions: {fixed} row(s) corrected')
             return fixed
 
         except Exception as exc:
             conn.rollback()
-            print(f'  ❌ repair_reinserted_promotions error: {exc}')
+            print(f'  [ERR] repair_reinserted_promotions error: {exc}')
             return 0
 
 
@@ -986,7 +993,7 @@ def get_new_promotions_today(
                 ORDER BY bank_id ASC, id ASC
             ''', (today, today)).fetchall())
         except Exception as exc:
-            print(f'  ❌ get_new_promotions_today error: {exc}')
+            print(f'  [ERR] get_new_promotions_today error: {exc}')
             return []
 
 
@@ -1005,7 +1012,7 @@ def get_new_promotions_for_run(
                 ORDER BY bank_id ASC, id ASC
             ''', (current_run_id,)).fetchall())
         except Exception as exc:
-            print(f'  ❌ get_new_promotions_for_run error: {exc}')
+            print(f'  [ERR] get_new_promotions_for_run error: {exc}')
             return []
 
 
@@ -1035,7 +1042,7 @@ def get_new_promotions_last_n_days(
                 ORDER BY COALESCE(first_seen_at, created_at) DESC, bank_id ASC
             ''', (since, today, today)).fetchall())
         except Exception as exc:
-            print(f'  ❌ get_new_promotions_last_n_days error: {exc}')
+            print(f'  [ERR] get_new_promotions_last_n_days error: {exc}')
             return []
 
 
@@ -1049,7 +1056,7 @@ def get_active_promotions(include_bau: bool = True) -> List[Dict[str, Any]]:
                 ORDER BY bank_id ASC, last_seen DESC
             ''').fetchall())
         except Exception as exc:
-            print(f'  ❌ get_active_promotions error: {exc}')
+            print(f'  [ERR] get_active_promotions error: {exc}')
             return []
 
 
@@ -1065,7 +1072,7 @@ def get_expired_promotions() -> List[Dict[str, Any]]:
                 ORDER BY bank_id ASC, last_seen DESC
             ''', (yesterday,)).fetchall())
         except Exception as exc:
-            print(f'  ❌ get_expired_promotions error: {exc}')
+            print(f'  [ERR] get_expired_promotions error: {exc}')
             return []
 
 
@@ -1077,7 +1084,7 @@ def get_active_promos_for_bank(bank_id: str) -> List[Dict[str, Any]]:
                 (bank_id,)
             ).fetchall())
         except Exception as exc:
-            print(f'  ❌ get_active_promos_for_bank error: {exc}')
+            print(f'  [ERR] get_active_promos_for_bank error: {exc}')
             return []
 
 
@@ -1090,7 +1097,7 @@ def get_promotions_by_bank_name(bank_name: str) -> List[Dict[str, Any]]:
                 (bank_name,)
             ).fetchall())
         except Exception as exc:
-            print(f'  ❌ get_promotions_by_bank_name error: {exc}')
+            print(f'  [ERR] get_promotions_by_bank_name error: {exc}')
             return []
 
 
@@ -1113,7 +1120,7 @@ def get_db_stats() -> Dict[str, Any]:
                 'last_run_at':       last_run['run_at'] if last_run else None,
             }
         except Exception as exc:
-            print(f'  ❌ get_db_stats error: {exc}')
+            print(f'  [ERR] get_db_stats error: {exc}')
             return {}
 
 
@@ -1238,7 +1245,7 @@ def merge_duplicate_promotions(dry_run: bool = True) -> int:
 
         except Exception as exc:
             conn.rollback()
-            print(f'  ❌ merge_duplicate_promotions error: {exc}')
+            print(f'  [ERR] merge_duplicate_promotions error: {exc}')
             return 0
 
 
@@ -1248,9 +1255,9 @@ def vacuum_db() -> None:
     with _db_connection() as conn:
         try:
             conn.execute('VACUUM')
-            print('  🧹 VACUUM completed')
+            print('  [VACUUM] VACUUM completed')
         except Exception as exc:
-            print(f'  ❌ vacuum_db error: {exc}')
+            print(f'  [ERR] vacuum_db error: {exc}')
 
 
 # ── 9. Load & Export ──────────────────────────────────────────────────────────
@@ -1263,7 +1270,7 @@ def load_promotions(active_only: bool = True) -> List[Dict[str, Any]]:
                 f'SELECT * FROM promotions {where} ORDER BY bank_id ASC, last_seen DESC'
             ).fetchall()]
         except Exception as exc:
-            print(f'  ❌ load_promotions error: {exc}')
+            print(f'  [ERR] load_promotions error: {exc}')
             return []
 
 
@@ -1377,7 +1384,7 @@ def export_to_json(
     insights_tag   = ' +insights' if clean_insights else ''
     ai_tag         = ' [AI unavailable — cached]' if ai_unavailable else ''
     print(
-        f'  📄 data.json → {active_non_bau} active non-BAU '
+        f'  [FILE] data.json -> {active_non_bau} active non-BAU '
         f'(+{bau_n} BAU), {expired_n} expired'
-        f'{insights_tag}{ai_tag} → {output_path}'
+        f'{insights_tag}{ai_tag} -> {output_path}'
     )

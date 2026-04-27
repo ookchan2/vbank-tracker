@@ -13,26 +13,36 @@
 import asyncio
 import concurrent.futures
 import json
+import logging
 import os
 import re
 import time
 from datetime import datetime
 from typing import Optional
 
-_api_key     = None
-_bot_name    = "Claude-3-7-Sonnet"
+logger = logging.getLogger(__name__)
+
+# Anthropic SDK configuration
+try:
+    import anthropic
+    from anthropic.types import Message
+except ImportError:
+    anthropic = None
+
+_client = None
+_model_name = "claude-3-7-sonnet-20250219"  # Latest Claude 3.7 Sonnet
 AI_AVAILABLE = False
 
-_ENV_BOT_NAME = os.environ.get('POE_BOT_NAME', '').strip()
+# Environment variable for Anthropic API key
+# Note: This is evaluated at call time, not import time
+def _get_anthropic_key():
+    return os.environ.get('ANTHROPIC_API_KEY', '').strip()
 
-MODELS_TO_TRY = (
-    [_ENV_BOT_NAME] if _ENV_BOT_NAME else [
-        "Claude-3-7-Sonnet",
-        "Claude-3-5-Sonnet",
-        "GPT-4o",
-        "Perplexity-Pro-Search",
-    ]
-)
+# Fallback models list (only Claude models available via Anthropic API)
+MODELS_TO_TRY = [
+    "claude-3-7-sonnet-20250219",  # Latest and most capable
+    "claude-3-5-sonnet-20241022",  # Previous generation
+]
 
 ALLOWED_CATEGORIES = [
     "迎新", "消費", "投資", "旅遊", "保險",
@@ -303,98 +313,101 @@ def _build_prompt(bank_name: str, url: str, text: str) -> str:
     return prompt
 
 
-# ── Poe async core ────────────────────────────────────────────────────────────
+# ── Anthropic SDK core ────────────────────────────────────────────────────────
 
-_executor = concurrent.futures.ThreadPoolExecutor(
-    max_workers=2,
-    thread_name_prefix='poe_ai',
-)
+def _init_client() -> bool:
+    """Initialize Anthropic SDK client."""
+    global _client, _model_name, AI_AVAILABLE
 
+    if anthropic is None:
+        logger.error('anthropic package not installed. Run: pip install anthropic')
+        print('[ERROR] anthropic package not installed. Run: pip install anthropic')
+        return False
 
-async def _async_call(messages: list, bot_name: str) -> str:
+    api_key = _get_anthropic_key()
+    if not api_key:
+        logger.error('ANTHROPIC_API_KEY not set')
+        print('[ERROR] ANTHROPIC_API_KEY not set in environment')
+        return False
+
     try:
-        import fastapi_poe as fp
-        poe_messages = [
-            fp.ProtocolMessage(role=m['role'], content=m['content'])
-            for m in messages
-        ]
-        response_text = ''
-        async for partial in fp.get_bot_response(
-            messages=poe_messages,
-            bot_name=bot_name,
-            api_key=_api_key,
-        ):
-            response_text += partial.text
-        return response_text.strip()
+        _client = anthropic.Anthropic(api_key=api_key)
+        # Test the client with a simple request
+        response = _client.messages.create(
+            model=_model_name,
+            max_tokens=10,
+            messages=[{"role": "user", "content": "OK"}]
+        )
+        AI_AVAILABLE = True
+        logger.info(f'Anthropic client initialized: {_model_name}')
+        print(f'[OK] Anthropic ready: {_model_name}')
+        return True
     except Exception as exc:
-        print(f'  ⚠️  Poe async call error ({bot_name}): {exc}')
-        return ''
-
-
-def _run_async(coro) -> str:
-    try:
-        asyncio.get_running_loop()
-        future = _executor.submit(asyncio.run, coro)
-        return future.result(timeout=180)
-    except RuntimeError:
-        return asyncio.run(coro)
-    except Exception as exc:
-        print(f'  ⚠️  _run_async error: {exc}')
-        return ''
+        logger.error(f'Failed to initialize Anthropic client: {exc}')
+        print(f'[ERROR] Anthropic init failed: {exc}')
+        AI_AVAILABLE = False
+        return False
 
 
 def _call(messages: list, label: str = '') -> str:
-    if not AI_AVAILABLE or _api_key is None:
-        return ''
+    """Synchronous call to Anthropic API using Claude model."""
+    global _client
+
+    if not AI_AVAILABLE:
+        if _client is None and _ANTHROPIC_API_KEY:
+            _init_client()
+        if not AI_AVAILABLE:
+            return ''
+
     t = time.monotonic()
     try:
-        result  = _run_async(_async_call(messages, _bot_name))
+        # Convert messages format if needed
+        anthropic_messages = [
+            {"role": m["role"], "content": m["content"]}
+            for m in messages
+        ]
+
+        response = _client.messages.create(
+            model=_model_name,
+            max_tokens=4096,
+            temperature=0.1,
+            messages=anthropic_messages,
+        )
+
+        result = response.content[0].text
         elapsed = time.monotonic() - t
-        tag     = f' [{label}]' if label else ''
-        print(f'  [DEBUG] AI ({_bot_name}){tag} → {len(result)} chars in {elapsed:.1f}s')
+        tag = f' [{label}]' if label else ''
+        logger.info(f'Anthropic call ({_model_name}){tag} → {len(result)} chars in {elapsed:.1f}s')
+        print(f'  [DEBUG] AI ({_model_name}){tag} → {len(result)} chars in {elapsed:.1f}s')
         if len(result) < 50:
             print(f'  [DEBUG] Full response: {repr(result)}')
         return result
     except Exception as exc:
-        print(f'  ⚠️  Call error: {exc}')
+        logger.error(f'Anthropic call error: {type(exc).__name__}: {exc}')
+        print(f'  ❌ Anthropic call error: {exc}')
         return ''
 
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 def init_ai() -> bool:
-    global _api_key, _bot_name, AI_AVAILABLE
+    """Initialize AI using Anthropic SDK (Claude models)."""
     try:
-        import fastapi_poe  # noqa
-        key = os.environ.get('POE_API_KEY', '').strip()
-        if not key:
-            print('⚠️  POE_API_KEY not set — AI disabled')
+        if anthropic is None:
+            print('❌ anthropic package not installed. Run: pip install anthropic')
+            AI_AVAILABLE = False
             return False
-        _api_key = key
-        for model in MODELS_TO_TRY:
-            print(f'  🔍 Testing model: {model} ...')
-            try:
-                test = _run_async(
-                    _async_call([{'role': 'user', 'content': 'Reply OK only.'}], model)
-                )
-            except Exception as exc:
-                print(f'  ❌ {model} error: {exc}')
-                test = ''
-            if test:
-                _bot_name    = model
-                AI_AVAILABLE = True
-                print(f'✅ Poe ready: {_bot_name}')
-                return True
-            print(f'  ❌ {model} failed, trying next...')
-        print('❌ All models failed — AI disabled')
-        AI_AVAILABLE = False
-        return False
-    except ImportError:
-        print('❌ fastapi-poe not installed')
-        AI_AVAILABLE = False
-        return False
+
+        api_key = _get_anthropic_key()
+        if not api_key:
+            print('[WARNING] ANTHROPIC_API_KEY not set - AI disabled')
+            print('   Set it with: export ANTHROPIC_API_KEY=sk-ant-...')
+            AI_AVAILABLE = False
+            return False
+
+        return _init_client()
     except Exception as exc:
-        print(f'❌ AI init failed: {exc}')
+        print(f'[ERROR] AI init failed: {exc}')
         AI_AVAILABLE = False
         return False
 
@@ -1037,19 +1050,28 @@ def analyze_promotions(
         prompt = _build_prompt(bank_name=bank_name, url=default_url, text=clean)
 
         for attempt in range(2):
-            raw    = _call([{'role': 'user', 'content': prompt}], label=bank_id)
-            parsed = _parse_array(raw)
-            if parsed:
-                results   = parsed
-                bau_count = sum(1 for p in parsed if p.get('is_bau'))
-                print(
-                    f'  📝 Text → {len(results)} promotions for {bank_name} '
-                    f'({bau_count} BAU)'
-                )
-                break
-            if attempt == 0:
-                print(f'  🔄 Retry AI for {bank_name}...')
+            try:
+                raw    = _call([{'role': 'user', 'content': prompt}], label=bank_id)
+                parsed = _parse_array(raw)
+                if parsed:
+                    results   = parsed
+                    bau_count = sum(1 for p in parsed if p.get('is_bau'))
+                    logger.info(f'Successfully extracted {len(results)} promotions for {bank_name} ({bau_count} BAU)')
+                    print(
+                        f'  📝 Text → {len(results)} promotions for {bank_name} '
+                        f'({bau_count} BAU)'
+                    )
+                    break
+                else:
+                    logger.warning(f'AI returned empty result for {bank_name} on attempt {attempt + 1}')
+                    if attempt == 0:
+                        print(f'  🔄 Retry AI for {bank_name}...')
+            except Exception as exc:
+                logger.error(f'AI extraction error for {bank_name}: {type(exc).__name__}: {exc}')
+                if attempt == 0:
+                    print(f'  ⚠️  AI error for {bank_name}: {exc} — retrying...')
         else:
+            logger.error(f'All AI attempts failed for {bank_name}')
             print(f'  ❌ Both attempts failed for {bank_name}')
     else:
         print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')

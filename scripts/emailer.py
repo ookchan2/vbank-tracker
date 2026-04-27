@@ -2,9 +2,9 @@
 #
 # DATA SOURCE CONTRACT — read this before modifying stats logic:
 #
-#   new_promos      → database.get_new_promotions_today()
-#   new_promos_week → database.get_new_promotions_last_n_days(days=6)
-#   scraped_data    → the full data.json dict  ← ★ REQUIRED for correct stats
+#   new_promos      -> database.get_new_promotions_today()
+#   new_promos_week -> database.get_new_promotions_last_n_days(days=6)
+#   scraped_data    -> the full data.json dict  ← ★ REQUIRED for correct stats
 #
 # ROOT CAUSE of email 52/45/7 vs website 47/41/6:
 #   promotions_data (raw DB) contains stale rows whose active flag was never
@@ -23,6 +23,7 @@
 #   send_email().  If scraped_data is omitted the code falls back to
 #   promotions_data, which may reproduce the over-count.
 
+import logging
 import os
 import smtplib
 import time
@@ -30,8 +31,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta, timezone
 
+logger = logging.getLogger(__name__)
+
 # ── HKT timezone (UTC+8, no DST) ─────────────────────────────────────────────
-_HKT = timezone(timedelta(hours=8))
+# Already defined at module level for reuse
+if '_HKT' not in globals():
+    _HKT = timezone(timedelta(hours=8))
 
 # ── Category metadata ─────────────────────────────────────────────────────────
 
@@ -50,8 +55,8 @@ CATEGORY_META = {
 }
 
 # ★ CHANGED:
-#   "Airstar Bank" → "EleBank"  (bank renamed; backward-compat alias kept)
-#   "PAObank"      → "PADB"     (bank renamed; backward-compat alias kept)
+#   "Airstar Bank" -> "EleBank"  (bank renamed; backward-compat alias kept)
+#   "PAObank"      -> "PADB"     (bank renamed; backward-compat alias kept)
 
 BANK_COLORS = {
     "ZA Bank":      "#25CD9C",
@@ -68,12 +73,12 @@ BANK_COLORS = {
 
 BANK_DISPLAY_NAMES = {
     "ZA Bank":      "ZA",
-    "EleBank":      "EleBank",   # ★ was Airstar Bank → Airstar
+    "EleBank":      "EleBank",   # ★ was Airstar Bank -> Airstar
     "Airstar Bank": "EleBank",   # backward-compat alias
     "Ant Bank":     "Ant",
     "Fusion Bank":  "Fusion",
     "Mox Bank":     "Mox",
-    "PADB":         "PADB",      # ★ was PAObank → PAO
+    "PADB":         "PADB",      # ★ was PAObank -> PAO
     "PAObank":      "PADB",      # backward-compat alias
     "WeLab Bank":   "WeLab",
     "livi bank":    "Livi",
@@ -166,10 +171,10 @@ def _classify_promo(p: dict, today_d, threshold_d) -> str:
     Returns 'past' | 'expiring' | 'active'.
 
     Mirrors website getStatus() exactly:
-      1. active === false  →  'expired'  →  'past'
-      2. end_date < today  →  'expired'  →  'past'
-      3. end_date within 30 days          →  'expiring'
-      4. everything else                  →  'active'
+      1. active === false  ->  'expired'  ->  'past'
+      2. end_date < today  ->  'expired'  ->  'past'
+      3. end_date within 30 days          ->  'expiring'
+      4. everything else                  ->  'active'
     """
     active = p.get('active')
     if active is not None and not active:
@@ -429,7 +434,7 @@ def _build_plain_text(
     if ai_unavailable:
         lines += [
             '',
-            '⚠️  NOTICE: AI extraction was unavailable today.',
+            '[WARN]  NOTICE: AI extraction was unavailable today.',
             '    Data shown is from the last successful AI run (cached).',
             '    Promotions may not reflect today\'s latest changes.',
         ]
@@ -592,7 +597,7 @@ def build_html_email(
   <td style="background:#fffbeb;border-radius:12px;padding:16px 20px;
              border:1px solid #fcd34d;border-left:4px solid #f59e0b;">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td style="vertical-align:middle;width:36px;font-size:24px;">⚠️</td>
+      <td style="vertical-align:middle;width:36px;font-size:24px;">[WARN]</td>
       <td style="vertical-align:middle;">
         <div style="font-size:13px;font-weight:800;color:#92400e;margin-bottom:3px;">
           AI Extraction Unavailable Today — Showing Cached Data
@@ -797,11 +802,11 @@ def send_email(
                 ('GMAIL_APP_PASSWORD', smtp_pass),
             ] if not val
         ]
-        print(f'❌ Missing SMTP credentials: {", ".join(missing)}')
+        print(f'[ERR] Missing SMTP credentials: {", ".join(missing)}')
         return False
 
     if not all_recipients:
-        print('❌ No recipient emails configured. '
+        print('[ERR] No recipient emails configured. '
               'Set RECIPIENT_EMAIL (and optionally RECIPIENT_EMAIL_2) env vars.')
         return False
 
@@ -840,29 +845,45 @@ def send_email(
                     server.ehlo()
                     server.login(smtp_user, smtp_pass)
                     server.sendmail(smtp_user, [email_to], msg.as_string())
-                print(f'  ✅ Email sent → {email_to}')
+                logger.info(f'Email sent successfully -> {email_to}')
+                print(f'  [OK] Email sent -> {email_to}')
                 success_count += 1
                 break
+            except smtplib.SMTPAuthenticationError as exc:
+                logger.error(f'SMTP auth failed for {email_to}: {exc}')
+                print(f'  [ERR] SMTP authentication failed for {email_to}: Check GMAIL_APP_PASSWORD')
+                break  # Don't retry auth failures
+            except smtplib.SMTPRecipientsRefused as exc:
+                logger.error(f'Recipient refused for {email_to}: {exc}')
+                print(f'  [ERR] Recipient rejected by server for {email_to}: Invalid email address?')
+                break  # Don't retry invalid recipients
             except smtplib.SMTPException as exc:
                 if attempt < _SMTP_MAX_RETRIES:
                     wait = 2 ** attempt
-                    print(f'  ⚠️  SMTP attempt {attempt} failed for {email_to}: '
+                    logger.warning(f'SMTP attempt {attempt} failed for {email_to}: {exc} - retrying in {wait}s')
+                    print(f'  [WARN]  SMTP attempt {attempt} failed for {email_to}: '
                           f'{exc} — retrying in {wait}s…')
                     time.sleep(wait)
                 else:
-                    print(f'  ❌ Email send failed for {email_to} after '
+                    logger.error(f'Email send failed for {email_to} after {_SMTP_MAX_RETRIES} attempts: {exc}')
+                    print(f'  [ERR] Email send failed for {email_to} after '
                           f'{_SMTP_MAX_RETRIES} attempts: {exc}')
+            except ConnectionRefusedError as exc:
+                logger.error(f'SMTP connection refused for {email_to}: {exc}')
+                print(f'  [ERR] SMTP connection refused for {email_to}: Check SMTP_HOST/PORT')
+                break
             except Exception as exc:
-                print(f'  ❌ Email send error for {email_to}: {exc}')
+                logger.error(f'Unexpected email error for {email_to}: {type(exc).__name__}: {exc}')
+                print(f'  [ERR] Email send error for {email_to}: {exc}')
                 break
 
     if success_count == len(all_recipients):
-        print(f'✅ All emails sent → {len(all_recipients)} recipient(s): '
+        print(f'[OK] All emails sent -> {len(all_recipients)} recipient(s): '
               f'{", ".join(all_recipients)}')
         return True
     elif success_count > 0:
-        print(f'⚠️  Email partial: {success_count}/{len(all_recipients)} recipients received it')
+        print(f'[WARN]  Email partial: {success_count}/{len(all_recipients)} recipients received it')
         return True
     else:
-        print(f'❌ Email failed for all {len(all_recipients)} recipient(s)')
+        print(f'[ERR] Email failed for all {len(all_recipients)} recipient(s)')
         return False
