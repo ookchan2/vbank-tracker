@@ -121,7 +121,7 @@ def _print_env_check(addr: str, pwd: str, to: list[str]) -> None:
     print(f'    GMAIL_APP_PASSWORD: {"[OK] set (hidden)" if pwd else "[ERR] MISSING"}')
     print(f'    RECIPIENT_EMAIL   : {"[OK] " + to_display if to else "[ERR] MISSING"}')
     if _NO_EMAIL:
-        print('    [SKIP] --no-email flag — SMTP step will be skipped')
+        print('    [SKIP] --no-email flag - SMTP step will be skipped')
 
 
 def _save_html_fallback(html: str, path: str) -> None:
@@ -156,10 +156,10 @@ def _load_data_json(path: str) -> dict | None:
         print(f'  [OK] data.json loaded for email stats ({n} promotions in file)')
         return content
     except FileNotFoundError:
-        print(f'  [WARN]  data.json not found at {path} — email will use DB rows for stats')
+        print(f'  [WARN]  data.json not found at {path} - email will use DB rows for stats')
         return None
     except Exception as exc:
-        print(f'  [WARN]  data.json load failed: {exc} — email will use DB rows for stats')
+        print(f'  [WARN]  data.json load failed: {exc} - email will use DB rows for stats')
         return None
 
 
@@ -187,7 +187,7 @@ def main() -> int:
         init_db()
         current_run_id = start_new_run(banks=list(BANK_CONFIGS.keys()))
     except Exception as exc:
-        print(f'  [ERR] Database init failed — cannot continue: {exc}')
+        print(f'  [ERR] Database init failed - cannot continue: {exc}')
         return 1
 
     # -- Step 2: AI ------------------------------------------------
@@ -215,7 +215,7 @@ def main() -> int:
                     f'{_post.get("bau_promotions", 0)} BAU)'
                 )
             else:
-                print('  [WARN]  Recovery found nothing to restore — DB may be truly empty')
+                print('  [WARN]  Recovery found nothing to restore - DB may be truly empty')
         elif _pre_total > 0 and _pre_active > 0:
             print(
                 f'\n  [INFO]  AI unavailable — using existing '
@@ -248,7 +248,7 @@ def main() -> int:
     print(f'  [TIME]  Scrape completed in {time.monotonic() - t3:.1f}s')
 
     if not scraped:
-        print('  [ERR] No data scraped — abort')
+        print('  [ERR] No data scraped - abort')
         return 1
 
     bank_ids_ok: list[str] = [bid for bid, r in scraped.items() if r.get('success')]
@@ -277,10 +277,10 @@ def main() -> int:
         print(f'\n  [{bank_id.upper()}] {bank_name}  {mark}  ({chars:,} chars)')
 
         if not ai_ok:
-            print('    [WARN]  AI unavailable — skip')
+            print('    [WARN]  AI unavailable - skip')
             continue
         if not result.get('success') and not _SKIP_SCRAPE:
-            print(f'    [WARN]  Scrape failed — skip AI for {bank_name}')
+            print(f'    [WARN]  Scrape failed - skip AI for {bank_name}')
             continue
 
         # 4a: Extract promotions
@@ -330,9 +330,9 @@ def main() -> int:
                         promos[idx]['_matched_id'] = db_id
                 total_db_matched += len(match_map)
             else:
-                print(f'    [INFO]  No existing DB records for {bank_name} — all will be new')
+                print(f'    [INFO]  No existing DB records for {bank_name} - all will be new')
         except Exception as exc:
-            print(f'    [WARN]  DB-match error for {bank_name}: {exc} — formula pass only')
+            print(f'    [WARN]  DB-match error for {bank_name}: {exc} - formula pass only')
 
         # 4d: Save to DB
         total_extracted += len(promos)
@@ -401,9 +401,9 @@ def main() -> int:
         try:
             repair_reinserted_promotions(dry_run=False)
         except Exception as exc:
-            print(f'  [WARN]  repair_reinserted_promotions error: {exc} — continuing')
+            print(f'  [WARN]  repair_reinserted_promotions error: {exc} - continuing')
     else:
-        print('  [NEXT]  Skipping repair — AI unavailable this run (no new insertions possible)')
+        print('  [NEXT]  Skipping repair - AI unavailable this run (no new insertions possible)')
 
     # -- Step 6: Export data.json for website --------------------─
     print('\nStep 6 -- Export data.json for website')
@@ -514,7 +514,7 @@ def main() -> int:
         _patch_data_json(DATA_JSON_PATH, {'strategic_insights': strategic_insights})
     else:
         _patch_data_json(DATA_JSON_PATH, {'strategic_insights': None})
-        print('  [WARN]  Insights unavailable — continuing without it')
+        print('  [WARN]  Insights unavailable - continuing without it')
 
     # -- Step 8b: Reload data.json after insights patch ------------------------
     if strategic_insights:
@@ -560,7 +560,7 @@ def main() -> int:
                 ('RECIPIENT_EMAIL',    to),
             ] if not val
         ]
-        print(f'  [ERR] Missing {" / ".join(missing)} — email skipped')
+        print(f'  [ERR] Missing {" / ".join(missing)} - email skipped')
         print(f'  [FILE] HTML preview -> {output_path}')
     else:
         try:

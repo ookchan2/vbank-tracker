@@ -1,0 +1,382 @@
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 40: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26040' coro=<<async_generator_athrow without __name__>()>>
+C:\Users\olivia.chan\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\base_events.py:744: RuntimeWarning: coroutine method 'aclose' of 'Response.aiter_text' was never awaited
+  self._ready.clear()
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+AI returned empty result for livi bank on attempt 1
+AI extraction error for livi bank: UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined>
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 40: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26043' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for livi bank on attempt 2
+All AI attempts failed for livi bank
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 39: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26046' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for Mox Bank on attempt 1
+AI extraction error for Mox Bank: UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined>
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 39: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26049' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for Mox Bank on attempt 2
+All AI attempts failed for Mox Bank
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 41: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26052' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for WeLab Bank on attempt 1
+AI extraction error for WeLab Bank: UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined>
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 41: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26055' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for WeLab Bank on attempt 2
+All AI attempts failed for WeLab Bank
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 38: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26058' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for ZA Bank on attempt 1
+AI extraction error for ZA Bank: UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined>
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 38: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26061' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for ZA Bank on attempt 2
+All AI attempts failed for ZA Bank
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 43: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26064' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for EleBank on attempt 1
+AI extraction error for EleBank: UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined>
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 43: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26067' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for EleBank on attempt 2
+All AI attempts failed for EleBank
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 39: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26070' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for PADB on attempt 1
+AI extraction error for PADB: UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined>
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 39: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26073' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for PADB on attempt 2
+All AI attempts failed for PADB
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 42: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26076' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for Fusion Bank on attempt 1
+AI extraction error for Fusion Bank: UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined>
+Poe API call error: UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 42: character maps to <undefined>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-26079' coro=<<async_generator_athrow without __name__>()>>
+AI returned empty result for Fusion Bank on attempt 2
+All AI attempts failed for Fusion Bank
+
+============================================================
+  HK Virtual Bank Promotions Tracker  |  2026-04-27
+  MODE: --no-email  (pipeline runs; SMTP skipped)
+============================================================
+
+  Env check:
+    GMAIL_ADDRESS     : [OK] set
+    GMAIL_APP_PASSWORD: [OK] set (hidden)
+    RECIPIENT_EMAIL   : [OK] olivia.chan@za.group, lauren.fung@za.group
+    [SKIP] --no-email flag — SMTP step will be skipped
+
+Step 1 -- Init database
+  [OK] Database ready
+  [RUN] Scrape run #21 started
+
+Step 2 -- Init AI
+[OK] Poe API ready
+
+Step 3 -- Scrape all 8 banks
+
+== ZA Bank =======================================
+
+== Mox Bank ======================================
+
+== livi bank =====================================
+    -> https://bank.za.group/en/promotion
+    -> https://mox.com/promotions/
+    -> https://www.livibank.com/
+    [OK]  17,436 chars
+    -> https://mox.com/zh/promotions/
+    [SCRUB] Scrubbed blocked content: "? ? Donation Acknowledgement and Tax Deduction Arrangements ? The Government sin..."
+    [SCRUB] Scrubbed blocked content: "If you wish to receive the letter, please register via the website - https://efo..."
+    [SCRUB] Scrubbed blocked content: "Donations made to the Support Fund for Wang Fuk Court in Tai Po through bank tra..."
+    [SCRUB] Scrubbed blocked content: "Donors are however required to retain the relevant donation records, such as ban..."
+    [SCRUB] Scrubbed blocked content: "For details, please visit https://www.taipofire.gov.hk/eng/taxdeduction.html ? ?..."
+    [SCRUB] Content scrubber [livi bank]: 5 fragment(s) removed containing blocked URLs/phrases
+    [OK]  2,566 chars
+    -> https://www.livibank.com/zh_HK/
+    [OK]  1,967 chars
+    -> https://bank.za.group/en
+    [OK]  7,355 chars
+    -> https://mox.com/
+    [OK]  15,305 chars
+    -> https://mox.com/zh/promotions/moxsmart/
+    [OK]  20,944 chars
+    -> https://bank.za.group/
+    [SCRUB] Scrubbed blocked content: "? ? ??????????? ? ??????????????????????????????????????????????????????????? ht..."
+    [SCRUB] Scrubbed blocked content: "????????????????????????????????????????????????????????????????????????????????..."
+    [SCRUB] Scrubbed blocked content: "?????? https://www.taipofire.gov.hk/chi/taxdeduction.html ? ? ? ? liviSave ?????..."
+    [SCRUB] Content scrubber [livi bank]: 3 fragment(s) removed containing blocked URLs/phrases
+    [OK]  989 chars
+  [OK]  livi bank: 3,647 chars from 2/2 URLs in 45.99s
+
+== WeLab Bank ====================================
+    -> https://www.welab.bank/en/feature/
+    [OK]  1,479 chars
+    -> https://mox.com/zh/promotions/The-Club/
+    [RETRY] thin (33 chars) -> requests fallback for https://www.welab.bank/en/feature/
+    [ERR] requests failed for https://www.welab.bank/en/feature/: 404 Client Error: Not Found for url: https://www.welab.bank/en/feature/
+    [WARN] Insufficient content from both methods: https://www.welab.bank/en/feature/
+    -> https://www.welab.bank/en/
+    [OK]  6,988 chars
+    -> https://bank.za.group/hk/usstock
+    [OK]  1,961 chars
+    -> https://mox.com/zh/promotions/1500mox/
+    [OK]  4,242 chars
+    -> https://www.welab.bank/
+    [OK]  2,691 chars
+    -> https://bank.za.group/hkstock
+    [OK]  1,879 chars
+    -> https://mox.com/promotions/Personal-Accident-Cushion-Promotion-Jan2026/
+    [OK]  1,480 chars
+    -> https://www.welab.bank/en/feature/2026-wm-april-cash-reward/
+    [OK]  4,532 chars
+    -> https://mox.com/promotions/CLUBLINK/
+    [OK]  8,293 chars
+    -> https://www.welab.bank/zh/feature/dcp-easter-lucky-draw-2026/
+    [OK]  3,617 chars
+    -> https://bank.za.group/hk/fund
+    [OK]  3,726 chars
+    -> https://mox.com/promotions/moxtrip25/
+    [OK]  2,616 chars
+    -> https://www.welab.bank/zh/feature/2-in-1-welcome-rewards-apr26/
+    [OK]  3,174 chars
+    -> https://bank.za.group/hk/loan
+    [OK]  2,437 chars
+    -> https://www.welab.bank/zh/feature/tesla-mega-combo/
+    [OK]  5,565 chars
+    -> https://mox.com/promotions/MOXHKT25/
+    [OK]  3,740 chars
+    -> https://bank.za.group/hk/statement-instalment
+    [OK]  4,722 chars
+    -> https://mox.com/zh/promotions/best-in-town-telco/
+    [OK]  1,274 chars
+    -> https://www.welab.bank/zh/feature/fund/
+    [OK]  3,064 chars
+    -> https://bank.za.group/hk/open-account-mgm
+    [OK]  2,033 chars
+    -> https://mox.com/promotions/mox-zone-at-the-club-hkt/
+    [OK]  7,566 chars
+    -> https://www.welab.bank/en/feature/loan_mgm/
+    [OK]  7,456 chars
+    -> https://mox.com/zh/promotions/Mox-Referral-Programme/
+    [OK]  5,341 chars
+    -> https://bank.za.group/6th-anniversary-campaign
+    [OK]  5,138 chars
+    -> https://www.welab.bank/zh/feature/loan_mgm/
+    [OK]  3,756 chars
+    [TRIM] total cap (50,000 chars) reached — dropping remaining sections
+  [OK]  Mox Bank: 51,776 chars from 10/13 URLs in 219.79s
+
+== PADB ==========================================
+    -> https://www.pingandb.com/en/
+    [OK]  1,804 chars
+  [OK]  WeLab Bank: 35,428 chars from 9/10 URLs in 182.24s | 1 error(s)
+
+== EleBank =======================================
+    -> https://www.elebank.com/en-hk/promotion
+    [OK]  3,574 chars
+  [OK]  ZA Bank: 44,675 chars from 10/10 URLs in 233.38s
+
+== Fusion Bank ===================================
+    -> https://www.fusionbank.com/?lang=en
+    [OK]  2,556 chars
+    -> https://www.pingandb.com/tc/
+    [OK]  1,373 chars
+    -> https://www.elebank.com/zh-hk/promotion
+    [OK]  546 chars
+    -> https://www.elebank.com/zh-hk
+    [OK]  894 chars
+    -> https://www.pingandb.com/tc/money-market-fund.html
+    [OK]  5,800 chars
+    -> https://www.fusionbank.com/?lang=zh-HK
+    [OK]  2,063 chars
+  [OK]  EleBank: 4,144 chars from 3/3 URLs in 32.48s
+
+== Ant Bank ======================================
+    -> https://www.antbank.hk/em-plus-offer?lang=en_us
+    [OK]  1,717 chars
+    -> https://www.fusionbank.com/common/detail.html?key=fxtd2023&lang=en
+    [RETRY] thin (0 chars) -> requests fallback for https://www.antbank.hk/em-plus-offer?lang=en_us
+    [WARN] Insufficient content from both methods: https://www.antbank.hk/em-plus-offer?lang=en_us
+    -> https://www.antbank.hk/em-plus-offer?lang=zh_hk
+    [OK]  3,273 chars
+    -> https://www.pingandb.com/tc/investment.html
+    [OK]  788 chars
+    -> https://www.fusionbank.com/common/detail.html?key=fxtd2023&lang=tc
+    [OK]  1,851 chars
+    -> https://www.pingandb.com/tc/stock.html
+    [RETRY] thin (0 chars) -> requests fallback for https://www.antbank.hk/em-plus-offer?lang=zh_hk
+    [WARN] Insufficient content from both methods: https://www.antbank.hk/em-plus-offer?lang=zh_hk
+    -> https://www.antbank.hk/
+    [OK]  303 chars
+    -> https://www.fusionbank.com/common/detail.html?key=fusionflash&lang=en
+    [OK]  2,530 chars
+  [OK]  PADB: 11,384 chars from 5/5 URLs in 86.73s
+    [RETRY] thin (0 chars) -> requests fallback for https://www.antbank.hk/
+    [WARN] Insufficient content from both methods: https://www.antbank.hk/
+    -> https://www.antbank.hk/fund?lang=zh_hk
+    [OK]  594 chars
+    -> https://www.fusionbank.com/common/detail.html?key=fusionflash&lang=tc
+    [RETRY] thin (0 chars) -> requests fallback for https://www.antbank.hk/fund?lang=zh_hk
+    [WARN] Insufficient content from both methods: https://www.antbank.hk/fund?lang=zh_hk
+    -> https://www.antbank.hk/fund?lang=en_us
+    [OK]  263 chars
+    -> https://www.fusionbank.com/common/detail.html?key=savinginterestplus&lang=en
+    [RETRY] thin (0 chars) -> requests fallback for https://www.antbank.hk/fund?lang=en_us
+    [WARN] Insufficient content from both methods: https://www.antbank.hk/fund?lang=en_us
+    [SCREENSHOT] Still thin -> screenshot fallback...
+    [OK]  559 chars
+    -> https://www.fusionbank.com/common/detail.html?key=savinginterestplus&lang=tc
+    [OK]  screenshot taken
+  [ERR]  Ant Bank: 0 chars from 0/5 URLs in 95.47s | 5 error(s)
+    [OK]  230 chars
+    -> https://www.fusionbank.com/common/detail.html?key=mgm_4&lang=en
+    [OK]  559 chars
+    -> https://www.fusionbank.com/common/detail.html?key=mgm_4&lang=tc
+    [OK]  230 chars
+    [DUP]  near-duplicate skipped: https://www.fusionbank.com/common/detail.html?key=mgm_4&lang=en
+    [DUP]  near-duplicate skipped: https://www.fusionbank.com/common/detail.html?key=mgm_4&lang=tc
+  [OK]  Fusion Bank: 10,899 chars from 8/10 URLs in 159.33s
+  [TIME]  Scrape completed in 398.0s
+
+Step 4 -- AI extraction
+
+  [LIVI] livi bank  [OK]  (3,647 chars)
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 40: character maps to <undefined>
+  [WARN] AI error for livi bank: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined> — retrying...
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 40: character maps to <undefined>
+  [ERR] Both attempts failed for livi bank
+  [OK] Total: 0 promotions for livi bank
+    [WARN]  0 promotions extracted for livi bank
+
+  [MOX] Mox Bank  [OK]  (51,776 chars)
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 39: character maps to <undefined>
+  [WARN] AI error for Mox Bank: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined> — retrying...
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 39: character maps to <undefined>
+  [ERR] Both attempts failed for Mox Bank
+  [OK] Total: 0 promotions for Mox Bank
+    [WARN]  0 promotions extracted for Mox Bank
+
+  [WELAB] WeLab Bank  [OK]  (35,428 chars)
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 41: character maps to <undefined>
+  [WARN] AI error for WeLab Bank: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined> — retrying...
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 41: character maps to <undefined>
+  [ERR] Both attempts failed for WeLab Bank
+  [OK] Total: 0 promotions for WeLab Bank
+    [WARN]  0 promotions extracted for WeLab Bank
+
+  [ZA] ZA Bank  [OK]  (44,675 chars)
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 38: character maps to <undefined>
+  [WARN] AI error for ZA Bank: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined> — retrying...
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 38: character maps to <undefined>
+  [ERR] Both attempts failed for ZA Bank
+  [OK] Total: 0 promotions for ZA Bank
+    [WARN]  0 promotions extracted for ZA Bank
+
+  [AIRSTAR] EleBank  [OK]  (4,144 chars)
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 43: character maps to <undefined>
+  [WARN] AI error for EleBank: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined> — retrying...
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 43: character maps to <undefined>
+  [ERR] Both attempts failed for EleBank
+  [OK] Total: 0 promotions for EleBank
+    [WARN]  0 promotions extracted for EleBank
+
+  [PAO] PADB  [OK]  (11,384 chars)
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 39: character maps to <undefined>
+  [WARN] AI error for PADB: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined> — retrying...
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 39: character maps to <undefined>
+  [ERR] Both attempts failed for PADB
+  [OK] Total: 0 promotions for PADB
+    [WARN]  0 promotions extracted for PADB
+
+  [ANT] Ant Bank  [ERR]  (0 chars)
+    [WARN]  Scrape failed — skip AI for Ant Bank
+
+  [FUSION] Fusion Bank  [OK]  (10,899 chars)
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 42: character maps to <undefined>
+  [WARN] AI error for Fusion Bank: 'charmap' codec can't encode character '\U0001f504' in position 2: character maps to <undefined> — retrying...
+  [ERR] Poe API call error: 'charmap' codec can't encode character '\u2192' in position 42: character maps to <undefined>
+  [ERR] Both attempts failed for Fusion Bank
+  [OK] Total: 0 promotions for Fusion Bank
+    [WARN]  0 promotions extracted for Fusion Bank
+  [TIME]  AI extraction completed in 601.2s
+
+[STATS] Extracted:0  New:0  Updated:0  Deduped:0  DB-matched:0
+
+Step 5 -- Mark stale / old promos inactive
+  [WARN]  No banks were successfully saved this run — skipping mark_stale_as_inactive to avoid false-expiry
+
+Step 5c -- Repair re-inserted promotions
+  [MIGRATE] repair_reinserted_promotions: nothing to repair
+
+Step 6 -- Export data.json for website
+  [FILE] data.json -> 47 active non-BAU (+98 BAU), 33 expired -> C:\Users\olivia.chan\OneDrive - Zhongan Technologies International Group Limited\Desktop\vbank-tracker\scripts\..\docs\data.json
+  [OK] data.json timestamp patched -> 2026-04-27 16:58
+
+Step 6b -- Load data.json for email count source
+  [OK] data.json loaded for email stats (152 promotions in file)
+
+Step 7 -- Generate daily report
+  [NEW] New:     0
+  [OK] Active:  47
+  [ERR] Expired: 0
+    AIRSTAR: 3 active
+    ANT: 1 active
+    FUSION: 3 active
+    LIVI: 2 active
+    MOX: 20 active
+    PAO: 1 active
+    WELAB: 4 active
+    ZA: 13 active
+
+Step 8 -- Generate AI strategic insights
+  [STATS] Insights input: 119 promos (72 BAU + 47 time-limited)
+  [INFO] Non-BAU new (today):        0
+  [INFO] Non-BAU new (past 6 days):  23
+  [INFO] Non-BAU active (all):       47
+  [INFO] BAU (insights input):       72
+  [INFO] Banks in promos_by_name:    ['Ant Bank', 'EleBank', 'Fusion Bank', 'Mox Bank', 'PADB', 'WeLab Bank', 'ZA Bank', 'livi bank']
+
+======================================================================
+[STATS]  INSIGHTS INPUT DIAGNOSTIC
+======================================================================
+  [STATS] Ant Bank            :  1 active +  8 BAU =  9 total  | tags: [WARN] NONE  [OK]
+  [STATS] EleBank             :  3 active + 13 BAU = 16 total  | tags: [WARN] NONE  [OK]
+  [STATS] Fusion Bank         :  3 active +  5 BAU =  8 total  | tags: [WARN] NONE  [OK]
+  [STATS] Mox Bank            : 20 active +  2 BAU = 22 total  | tags: [WARN] NONE  [OK]
+  [STATS] PADB                :  1 active +  9 BAU = 10 total  | tags: [WARN] NONE  [OK]
+  [STATS] WeLab Bank          :  4 active + 12 BAU = 16 total  | tags: policy loan  [OK]
+  [STATS] ZA Bank             : 13 active + 10 BAU = 23 total  | tags: [WARN] NONE  [OK]
+  [STATS] livi bank           :  2 active + 13 BAU = 15 total  | tags: [WARN] NONE  [OK]
+
+  CATEGORY COVERAGE CHECK:
+  [WARN]  Insights error: 'charmap' codec can't encode character '\u2192' in position 52: character maps to <undefined>
+  [OK] data.json patched with key(s): strategic_insights
+  [WARN]  Insights unavailable — continuing without it
+
+Step 9 -- Build & send email
+  [OK] HTML email built
+  [FILE] HTML saved -> C:\Users\olivia.chan\OneDrive - Zhongan Technologies International Group Limited\Desktop\vbank-tracker\scripts\..\output\email_preview.html
+  [SKIP] Email skipped (--no-email)
+  [FILE] HTML preview -> C:\Users\olivia.chan\OneDrive - Zhongan Technologies International Group Limited\Desktop\vbank-tracker\scripts\..\output\email_preview.html
+
+============================================================
+  Done in 1000.1s  |  [NEW] 0 new today  |  [WEEK] 23 new this week  |  [OK] 47 active (DB)  |  [FILE] 41 active (data.json)  |  [ERR] 0 expired  |  [AI] deduped:0 matched:0  |  [CONFIG]  72 BAU  |  [DB] DB:152 total
+============================================================
+

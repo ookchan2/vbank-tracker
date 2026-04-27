@@ -301,7 +301,9 @@ def _scrub_blocked_content(text: str, bank_name: str = '') -> str:
         if _BLOCKED_CONTENT_RE.search(frag):
             removed += 1
             snippet = frag.strip()[:80]
-            print(f'    [SCRUB] Scrubbed blocked content: "{snippet}…"')
+            # Sanitize for Windows console - remove non-ASCII chars
+            snippet = snippet.encode('ascii', errors='replace').decode('ascii')
+            print(f'    [SCRUB] Scrubbed blocked content: "{snippet}..."')
         else:
             clean.append(frag)
     if removed:
@@ -337,7 +339,7 @@ def _truncate_sections(
     running: int                   = 0
     for url, text in sections:
         if running >= total_cap:
-            print(f'    ✂  total cap ({total_cap:,} chars) reached — dropping remaining sections')
+            print(f'    [TRIM] total cap ({total_cap:,} chars) reached — dropping remaining sections')
             break
         chunk = text[:per_section]
         output.append((url, chunk))
@@ -362,7 +364,7 @@ def scrape_with_requests(url: str) -> str | None:
         text = _clean_text(soup.get_text(separator=' ', strip=True))
         return text if len(text) > MIN_CONTENT_CHARS else None
     except Exception as e:
-        print(f'    ❌ requests failed for {url}: {e}')
+        print(f'    [ERR] requests failed for {url}: {e}')
         return None
 
 # ── Screenshot cache helpers ──────────────────────────────────────────────────
@@ -385,7 +387,7 @@ def _cache_screenshot(url: str, data: bytes) -> Optional[str]:
             f.write(data)
         return fpath
     except Exception as exc:
-        print(f'    ⚠  Screenshot cache write failed: {exc}')
+        print(f'    [WARN] Screenshot cache write failed: {exc}')
         return None
 
 
@@ -445,12 +447,12 @@ async def _try_url(
             if attempt < retries:
                 wait_s = 2 ** attempt
                 print(
-                    f'    ⚠  attempt {attempt}/{retries} failed for {url}: '
+                    f'    [WARN] attempt {attempt}/{retries} failed for {url}: '
                     f'{msg[:80]} — retrying in {wait_s}s…'
                 )
                 await asyncio.sleep(wait_s)
             else:
-                print(f'    ⚠  all {retries} attempts exhausted for {url}: {msg}')
+                print(f'    [WARN] all {retries} attempts exhausted for {url}: {msg}')
 
     return '', None
 
@@ -552,7 +554,7 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
                 print(f'    [OK]  {len(text):,} chars')
             else:
                 thin_len = len(text)
-                print(f'    🔁 thin ({thin_len} chars) -> requests fallback for {url}')
+                print(f'    [RETRY] thin ({thin_len} chars) -> requests fallback for {url}')
                 fb = scrape_with_requests(url)
                 if fb and len(fb) > MIN_CONTENT_CHARS:
                     fb = _scrub_blocked_content(fb, cfg['name'])
@@ -561,7 +563,7 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
                 else:
                     msg = f'Insufficient content from both methods: {url}'
                     result.errors.append(msg)
-                    print(f'    ⚠  {msg}')
+                    print(f'    [WARN] {msg}')
 
         sections = _deduplicate_sections(sections)
         sections = _truncate_sections(sections)
@@ -572,7 +574,7 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
         ).strip()
 
         if best_shot is None and len(combined) < MIN_CONTENT_CHARS:
-            print('    [SCREENSHOT] Still thin -> screenshot fallback…')
+            print('    [SCREENSHOT] Still thin -> screenshot fallback...')
             try:
                 await page.unroute('**/*')
                 await page.goto(cfg['link'], wait_until='domcontentloaded', timeout=45_000)
@@ -582,7 +584,7 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
             except Exception as exc:
                 msg = f'Screenshot fallback failed: {exc}'
                 result.errors.append(msg)
-                print(f'    ❌ {msg}')
+                print(f'    [ERR] {msg}')
 
         result.text           = combined
         result.screenshot     = best_shot
@@ -609,7 +611,7 @@ async def _run_all() -> dict[str, dict]:
 
             result = await _scrape_bank(browser, bank_id)
 
-            mark       = '✅' if result.success else '❌'
+            mark       = '[OK]' if result.success else '[ERR]'
             total      = len(cfg['urls'])
             error_note = f' | {len(result.errors)} error(s)' if result.errors else ''
             print(

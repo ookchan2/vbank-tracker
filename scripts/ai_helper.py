@@ -148,7 +148,7 @@ def _filter_bank_relevant_promotions(promos: list, bank_name: str) -> list:
             filtered.append(p)
 
     if removed:
-        print(f'  🚫 Non-bank filter: {removed} non-bank promotion(s) removed for {bank_name}')
+        print(f'  [BLOCK] Non-bank filter: {removed} non-bank promotion(s) removed for {bank_name}')
     return filtered
 
 
@@ -364,8 +364,8 @@ async def _async_call(messages: list, label: str = '') -> str:
 
         elapsed = time.monotonic() - t
         tag = f' [{label}]' if label else ''
-        logger.info(f'Poe API call{tag} → {len(result)} chars in {elapsed:.1f}s')
-        print(f'  [DEBUG] AI (claude-3.7-sonnet){tag} → {len(result)} chars in {elapsed:.1f}s')
+        logger.info(f'Poe API call{tag} -> {len(result)} chars in {elapsed:.1f}s')
+        print(f'  [DEBUG] AI (claude-3.7-sonnet){tag} -> {len(result)} chars in {elapsed:.1f}s')
         if len(result) < 50:
             print(f'  [DEBUG] Full response: {repr(result)}')
         return result
@@ -502,7 +502,7 @@ def _apply_bau_overrides(promos: list, bank_id: str) -> list:
         if any(override in title for override in all_overrides):
             if not p.get('is_bau'):
                 p['is_bau'] = True
-                print(f'    🔒 BAU override: {p.get("name") or p.get("title")}')
+                print(f'    [BAU] BAU override: {p.get("name") or p.get("title")}')
     return promos
 
 
@@ -654,7 +654,7 @@ def _validate_best_for_evidence(best_for: list) -> list:
             validated.append(entry)
 
     if reject_count:
-        print(f'  🚫 Evidence gate total: {reject_count} vague winner(s) nullified')
+        print(f'  [BLOCK] Evidence gate total: {reject_count} vague winner(s) nullified')
     return validated
 
 
@@ -837,10 +837,10 @@ def _validate_stock_trading_winners(best_for: list) -> list:
 
                 if competitor_cost_200 > za_cost_200:
                     print(
-                        f'  🔄 US stock total-cost OVERRIDE [{cat}]: '
-                        f'"{bank}" @ USD {per_share}/share × 200 = USD {competitor_cost_200:.2f} '
+                        f'  [OVERRIDE] US stock total-cost OVERRIDE [{cat}]: '
+                        f'"{bank}" @ USD {per_share}/share x 200 = USD {competitor_cost_200:.2f} '
                         f'vs ZA Bank/EleBank USD {za_cost_200:.2f} platform fee. '
-                        f'ZA Bank is cheaper above {breakeven:.0f} shares → overriding.'
+                        f'ZA Bank is cheaper above {breakeven:.0f} shares - overriding.'
                     )
                     best_for[i] = {
                         **entry,
@@ -905,7 +905,7 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                         }
             else:
                 print(
-                    f'  🔄 Stock trading OVERRIDE [{cat}]: '
+                    f'  [OVERRIDE] Stock trading OVERRIDE [{cat}]: '
                     f'"{bank}" charges commission (rate unclear). '
                     f'ZA Bank $0 commission is safer default.'
                 )
@@ -970,7 +970,7 @@ def _validate_stock_trading_winners(best_for: list) -> list:
             best_for[i] = {**best_for[i], 'similar_banks': added_similar}
 
     if overrides:
-        print(f'  🔄 Stock trading total-cost override: {overrides} winner(s) updated')
+        print(f'  [OVERRIDE] Stock trading total-cost override: {overrides} winner(s) updated')
     return best_for
 
 
@@ -1018,14 +1018,14 @@ def _cross_check_best_for_from_strengths(
         )
 
         print(
-            f'  🔁 Strength cross-check FILLED [{cat}] → {best_bank}: '
+            f'  [FILL] Strength cross-check FILLED [{cat}] -> {best_bank}: '
             f'"{best_detail[:80]}"'
         )
         best_for[i] = {**entry, 'bank': best_bank, 'detail': best_detail, 'is_bau': is_bau_guess}
         filled += 1
 
     if filled:
-        print(f'  🔁 Cross-check: {filled} slot(s) filled from bank_analysis.strengths')
+        print(f'  [FILL] Cross-check: {filled} slot(s) filled from bank_analysis.strengths')
 
     result['best_for'] = best_for
     return result
@@ -1066,7 +1066,7 @@ def analyze_promotions(
                 else:
                     logger.warning(f'AI returned empty result for {bank_name} on attempt {attempt + 1}')
                     if attempt == 0:
-                        print(f'  🔄 Retry AI for {bank_name}...')
+                        print(f'  [RETRY] Retry AI for {bank_name}...')
             except Exception as exc:
                 logger.error(f'AI extraction error for {bank_name}: {type(exc).__name__}: {exc}')
                 if attempt == 0:
@@ -1178,7 +1178,7 @@ Titles to evaluate (0-indexed):
             raw = _call([{'role': 'user', 'content': prompt}], label=f'dedup/{bank_name}')
             if not raw:
                 if attempt == 0:
-                    print(f'  🔄 Retry ai_dedup_titles for {bank_name}...')
+                    print(f'  [RETRY] Retry ai_dedup_titles for {bank_name}...')
                     continue
                 return {}
             raw  = re.sub(r'^```[a-z]*\n?', '', raw.strip())
@@ -1287,7 +1287,7 @@ No explanation. No markdown. No code fences."""
             )
             if not raw:
                 if attempt == 0:
-                    print(f'  🔄 Retry ai_match_against_existing for {bank_name}...')
+                    print(f'  [RETRY] Retry ai_match_against_existing for {bank_name}...')
                     continue
                 return {}
             raw  = re.sub(r'^```[a-z]*\n?', '', raw.strip())
@@ -1468,12 +1468,12 @@ def supplement_from_db(
         promotions_by_bank[bank] = promos
         supplemented_total += added
         print(
-            f'  🔄 supplement_from_db: "{bank}" '
-            f'{"added " + str(added) + " from DB → now " + str(len(promos)) + " total" if added else "no new titles found in DB"}'
+            f'  [MERGE] supplement_from_db: "{bank}" '
+            f'{"added " + str(added) + " from DB -> now " + str(len(promos)) + " total" if added else "no new titles found in DB"}'
         )
 
     if supplemented_total:
-        print(f'  🔄 supplement_from_db: {supplemented_total} DB row(s) merged total')
+        print(f'  [MERGE] supplement_from_db: {supplemented_total} DB row(s) merged total')
     return promotions_by_bank
 
 
