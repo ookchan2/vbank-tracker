@@ -22,26 +22,19 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# Anthropic SDK configuration
+# Poe API configuration
 try:
-    import anthropic
-    from anthropic.types import Message
+    import fastapi_poe as fp
 except ImportError:
-    anthropic = None
+    fp = None
 
-_client = None
-_model_name = "claude-3-7-sonnet-20250219"  # Latest Claude 3.7 Sonnet
 AI_AVAILABLE = False
+_POE_API_KEY = os.environ.get('POE_API_KEY', '').strip()
 
-# Environment variable for Anthropic API key
-# Note: This is evaluated at call time, not import time
-def _get_anthropic_key():
-    return os.environ.get('ANTHROPIC_API_KEY', '').strip()
-
-# Fallback models list (only Claude models available via Anthropic API)
+# Fallback models list
 MODELS_TO_TRY = [
-    "claude-3-7-sonnet-20250219",  # Latest and most capable
-    "claude-3-5-sonnet-20241022",  # Previous generation
+    "claude-3.7-sonnet",
+    "claude-3-5-sonnet",
 ]
 
 ALLOWED_CATEGORIES = [
@@ -313,99 +306,107 @@ def _build_prompt(bank_name: str, url: str, text: str) -> str:
     return prompt
 
 
-# ── Anthropic SDK core ────────────────────────────────────────────────────────
+# ── Poe API core ────────────────────────────────────────────────────────────────
 
-def _init_client() -> bool:
-    """Initialize Anthropic SDK client."""
-    global _client, _model_name, AI_AVAILABLE
+def _init_poe() -> bool:
+    """Initialize Poe API client."""
+    global AI_AVAILABLE
 
-    if anthropic is None:
-        logger.error('anthropic package not installed. Run: pip install anthropic')
-        print('[ERROR] anthropic package not installed. Run: pip install anthropic')
+    if fp is None:
+        logger.error('fastapi-poe package not installed. Run: pip install fastapi-poe')
+        print('[ERROR] fastapi-poe package not installed. Run: pip install fastapi-poe')
         return False
 
-    api_key = _get_anthropic_key()
+    api_key = _get_poe_key()
     if not api_key:
-        logger.error('ANTHROPIC_API_KEY not set')
-        print('[ERROR] ANTHROPIC_API_KEY not set in environment')
+        logger.error('POE_API_KEY not set')
+        print('[ERROR] POE_API_KEY not set in environment')
         return False
 
     try:
-        _client = anthropic.Anthropic(api_key=api_key)
-        # Test the client with a simple request
-        response = _client.messages.create(
-            model=_model_name,
-            max_tokens=10,
-            messages=[{"role": "user", "content": "OK"}]
-        )
         AI_AVAILABLE = True
-        logger.info(f'Anthropic client initialized: {_model_name}')
-        print(f'[OK] Anthropic ready: {_model_name}')
+        logger.info(f'Poe API initialized')
+        print(f'[OK] Poe API ready')
         return True
     except Exception as exc:
-        logger.error(f'Failed to initialize Anthropic client: {exc}')
-        print(f'[ERROR] Anthropic init failed: {exc}')
+        logger.error(f'Failed to initialize Poe client: {exc}')
+        print(f'[ERROR] Poe init failed: {exc}')
         AI_AVAILABLE = False
         return False
 
 
-def _call(messages: list, label: str = '') -> str:
-    """Synchronous call to Anthropic API using Claude model."""
-    global _client
+def _get_poe_key():
+    return os.environ.get('POE_API_KEY', '').strip()
+
+
+async def _async_call(messages: list, label: str = '') -> str:
+    """Async call to Poe API using Claude bot."""
+    global AI_AVAILABLE
 
     if not AI_AVAILABLE:
-        if _client is None and _ANTHROPIC_API_KEY:
-            _init_client()
+        if fp is not None and _POE_API_KEY:
+            _init_poe()
         if not AI_AVAILABLE:
             return ''
 
     t = time.monotonic()
     try:
-        # Convert messages format if needed
-        anthropic_messages = [
-            {"role": m["role"], "content": m["content"]}
-            for m in messages
-        ]
+        # Get the last user message content
+        user_content = messages[-1]['content'] if messages else ''
 
-        response = _client.messages.create(
-            model=_model_name,
-            max_tokens=4096,
-            temperature=0.1,
-            messages=anthropic_messages,
-        )
+        result = ''
+        async for chunk in fp.get_bot_response(
+            messages=[fp.ProtocolMessage(role=m['role'], content=m['content']) for m in messages],
+            bot_name='claude-3.7-sonnet',
+            api_key=_POE_API_KEY,
+        ):
+            result += chunk.text
 
-        result = response.content[0].text
         elapsed = time.monotonic() - t
         tag = f' [{label}]' if label else ''
-        logger.info(f'Anthropic call ({_model_name}){tag} → {len(result)} chars in {elapsed:.1f}s')
-        print(f'  [DEBUG] AI ({_model_name}){tag} → {len(result)} chars in {elapsed:.1f}s')
+        logger.info(f'Poe API call{tag} → {len(result)} chars in {elapsed:.1f}s')
+        print(f'  [DEBUG] AI (claude-3.7-sonnet){tag} → {len(result)} chars in {elapsed:.1f}s')
         if len(result) < 50:
             print(f'  [DEBUG] Full response: {repr(result)}')
         return result
     except Exception as exc:
-        logger.error(f'Anthropic call error: {type(exc).__name__}: {exc}')
-        print(f'  ❌ Anthropic call error: {exc}')
+        logger.error(f'Poe API call error: {type(exc).__name__}: {exc}')
+        print(f'  ❌ Poe API call error: {exc}')
+        return ''
+
+
+def _call(messages: list, label: str = '') -> str:
+    """Synchronous wrapper for Poe API calls."""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(_async_call(messages, label))
+        finally:
+            loop.close()
+    except Exception as exc:
+        logger.error(f'Sync wrapper error: {type(exc).__name__}: {exc}')
         return ''
 
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 def init_ai() -> bool:
-    """Initialize AI using Anthropic SDK (Claude models)."""
+    """Initialize AI using Poe API (Claude bots)."""
     try:
-        if anthropic is None:
-            print('❌ anthropic package not installed. Run: pip install anthropic')
+        if fp is None:
+            print('❌ fastapi-poe package not installed. Run: pip install fastapi-poe')
             AI_AVAILABLE = False
             return False
 
-        api_key = _get_anthropic_key()
+        api_key = _get_poe_key()
         if not api_key:
-            print('[WARNING] ANTHROPIC_API_KEY not set - AI disabled')
-            print('   Set it with: export ANTHROPIC_API_KEY=sk-ant-...')
+            print('[WARNING] POE_API_KEY not set - AI disabled')
+            print('   Set it with: export POE_API_KEY=your-key-here')
             AI_AVAILABLE = False
             return False
 
-        return _init_client()
+        return _init_poe()
     except Exception as exc:
         print(f'[ERROR] AI init failed: {exc}')
         AI_AVAILABLE = False
@@ -1808,7 +1809,7 @@ Return this EXACT JSON structure (no markdown, no code fences):
         )
 
     print(
-        f'✅ Strategic insights generated via {_bot_name} '
+        f'✅ Strategic insights generated '
         f'({bau_wins} BAU winner(s), {none_wins} None slot(s))'
     )
     return result
