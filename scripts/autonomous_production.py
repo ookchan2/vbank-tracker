@@ -43,9 +43,10 @@ def main():
     try:
         result = subprocess.run(
             [sys.executable, '-c',
-             'import asyncio; from scraper import run_scraper; '
-             'data = asyncio.run(run_scraper()); '
-             'import json; print(json.dumps({k: {"bank_name": v.get("bank_name"), "text_len": len(v.get("text", ""))} for k, v in data.items()}))'],
+             'from scraper import run_scraper; '
+             'import json; '
+             'data = run_scraper(); '
+             'print(json.dumps({k: {"bank_name": v.get("bank_name"), "text_len": len(v.get("text", ""))} for k, v in data.items()}))'],
             cwd=str(BASE_DIR / 'scripts'),
             capture_output=True,
             text=True,

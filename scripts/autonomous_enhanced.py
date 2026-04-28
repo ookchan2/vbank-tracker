@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR / 'scripts'))
 
 import database as db
-from ai_processor import process_bank_content
+from ai_advanced_processor import extract_promotions_advanced, extract_products_advanced
 
 print("=" * 70)
 print("  VBank Tracker - Enhanced Autonomous Mode")
@@ -90,11 +90,11 @@ def save_promotions_to_db(bank_id: str, bank_name: str, promotions: list):
                     bank_id, bank_name, title, highlight, description,
                     start_date, end_date, period, quota, cost,
                     promo_type, url, tc_link, is_bau,
-                    first_seen_at, last_seen, active
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                    created_at, first_seen_at, last_seen, active
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             """, (bank_id, bank_name, title, highlight, description,
                   start_date, end_date, period, quota, cost,
-                  promo_type, url, tc_link, is_bau, today, today))
+                  promo_type, url, tc_link, is_bau, today, today, today))
             stats['new'] += 1
 
     conn.commit()
@@ -151,10 +151,10 @@ def save_products_to_db(bank_id: str, bank_name: str, products: list):
                 INSERT INTO products (
                     bank_id, bank_name, product_name, category, subcategory,
                     description, features, interest_rate, fees, eligibility,
-                    url, first_seen_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    url, first_seen_at, last_seen
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (bank_id, bank_name, name, category, subcategory,
-                  description, features, interest_rate, fees, eligibility, url, today))
+                  description, features, interest_rate, fees, eligibility, url, today, today))
             stats['new'] += 1
 
     conn.commit()
@@ -176,9 +176,10 @@ def main():
     try:
         result = subprocess.run(
             [sys.executable, '-c',
-             'import asyncio; from scraper import run_scraper; '
-             'data = asyncio.run(run_scraper()); '
-             'import json; print(json.dumps(data, default=str))'],
+             'from scraper import run_scraper; '
+             'import json; '
+             'data = run_scraper(); '
+             'print(json.dumps(data, default=str))'],
             cwd=str(BASE_DIR / 'scripts'),
             capture_output=True,
             text=True,
@@ -223,12 +224,18 @@ def main():
             print(f"  [SKIP] {bank_name}: Insufficient content")
             continue
 
-        # Process with AI
-        processed = process_bank_content(bank_id, bank_name, text_content)
+        print(f"  [PROCESSING] {bank_name} ({len(text_content)} chars)")
+
+        # Extract using advanced AI processor
+        promotions = extract_promotions_advanced(text_content, bank_id, bank_name)
+        products = extract_products_advanced(text_content, bank_id, bank_name)
 
         # Save to database
-        promo_stats = save_promotions_to_db(bank_id, bank_name, processed['promotions'])
-        prod_stats = save_products_to_db(bank_id, bank_name, processed['products'])
+        promo_stats = save_promotions_to_db(bank_id, bank_name, promotions)
+        prod_stats = save_products_to_db(bank_id, bank_name, products)
+
+        print(f"    Promotions: {promo_stats['new']} new, {promo_stats['updated']} updated")
+        print(f"    Products: {prod_stats['new']} new, {prod_stats['updated']} updated")
 
         # Update totals
         total_stats['promotions']['new'] += promo_stats['new']

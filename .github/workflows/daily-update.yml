@@ -58,15 +58,14 @@ jobs:
           playwright install chromium
           playwright install-deps chromium
 
-      - name: Run tracker bot
+      - name: Run autonomous tracker (zero-cost mode)
         env:
-          ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
           GMAIL_ADDRESS:       ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD:  ${{ secrets.GMAIL_APP_PASSWORD }}
           RECIPIENT_EMAIL:     ${{ secrets.RECIPIENT_EMAIL }}
         run: |
           cd scripts
-          python main.py
+          python autonomous_enhanced.py
 
       - name: Commit updated website data
         run: |
