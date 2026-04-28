@@ -16,6 +16,7 @@ BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR / 'scripts'))
 
 import database as db
+from ai_processor import process_bank_content
 
 print("=" * 70)
 print("  VBank Tracker - Production Autonomous Mode")
