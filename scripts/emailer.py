@@ -470,6 +470,38 @@ def _build_plain_text(
     elif not new_show:
         lines += ['', 'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK - PAST 6 DAYS: None', '']
 
+    # Add new products section
+    if new_products:
+        lines += [
+            f'{"="*60}',
+            f'NEW PRODUCTS TODAY ({len(new_products)}):',
+            f'{"="*60}',
+        ]
+        for p in new_products:
+            bank = p.get('bank_name') or '?'
+            name = p.get('product_name') or '?'
+            cat = p.get('category', '').upper()
+            subcat = p.get('subcategory', '')
+            desc = p.get('description', '')
+            rate = p.get('interest_rate', '')
+            fees = p.get('fees', '')
+            url = p.get('url', '')
+
+            lines.append(f'\n  [{cat}] {name}')
+            if subcat:
+                lines.append(f'    Type       : {subcat}')
+            if desc:
+                lines.append(f'    Description: {desc}')
+            if rate:
+                lines.append(f'    Rate       : {rate}')
+            if fees:
+                lines.append(f'    Fees       : {fees}')
+            if url:
+                lines.append(f'    Source     : {url}')
+        lines.append('')
+    else:
+        lines += ['', '='*60, 'NEW PRODUCTS TODAY: None', '='*60, '']
+
     lines += [
         f'TOTAL PROMOTIONS : {total_shown}',
         f'ACTIVE           : {active_count}',
@@ -505,10 +537,12 @@ def build_html_email(
     strategic_insights: dict = None,
     new_promos:         list = None,
     new_promos_week:    list = None,
+    new_products:       list = None,
     ai_unavailable:     bool = False,
 ) -> str:
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
+    new_products    = new_products    or []
 
     date_only = _hkt_now().strftime('%d %b %Y')
 
@@ -636,6 +670,82 @@ def build_html_email(
         skip_if_empty = False,
     )
 
+    # Build new products HTML section
+    products_section = ''
+    if new_products:
+        product_rows = ''
+        for p in new_products:
+            bank = p.get('bank_name', 'Unknown')
+            name = p.get('product_name', '')
+            cat = p.get('category', '').upper()
+            subcat = p.get('subcategory', '')
+            desc = p.get('description', '')
+            rate = p.get('interest_rate', '')
+            fees = p.get('fees', '')
+            url = p.get('url', '')
+
+            cat_color = {
+                'DEPOSIT': '#10b981',
+                'CARD': '#3b82f6',
+                'INVESTMENT': '#8b5cf6',
+                'LOAN': '#f59e0b',
+            }.get(cat, '#6b7280')
+
+            product_rows += f"""
+<tr style="border-bottom:1px solid #f3f4f6;">
+  <td style="padding:14px 16px;">
+    <div style="margin-bottom:4px;">
+      <span style="display:inline-block;background:{cat_color};color:#fff;
+                   padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;">
+        {cat}
+      </span>
+    </div>
+    <div style="font-weight:700;font-size:14px;color:#1f2937;margin-bottom:3px;">{name}</div>
+    <div style="font-size:12px;color:#6b7280;font-weight:500;">{bank}</div>
+    {f'<div style="font-size:12px;color:#374151;margin-top:3px;">{desc}</div>' if desc else ''}
+    {f'<div style="font-size:12px;color:#059669;font-weight:600;margin-top:2px;">Rate: {rate}</div>' if rate else ''}
+    {f'<div style="font-size:12px;color:#dc2626;margin-top:2px;">Fees: {fees}</div>' if fees else ''}
+    {f'<div style="font-size:11px;color:#9ca3af;margin-top:4px;"><a href="{url}" style="color:#3b82f6;text-decoration:none;">View Details →</a></div>' if url else ''}
+  </td>
+</tr>"""
+
+        products_section = f"""
+<tr><td style="height:18px;"></td></tr>
+<tr>
+  <td style="background:#ffffff;border-radius:14px;padding:22px 24px;
+             border:1px solid #e5e7eb;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="vertical-align:middle;width:32px;font-size:26px;">🆕</td>
+        <td style="vertical-align:middle;">
+          <div style="font-size:15px;font-weight:800;color:#111827;line-height:1.3;">
+            New Products Today
+          </div>
+          <div style="font-size:11px;color:#6b7280;font-weight:600;margin-top:2px;">
+            Newly detected banking products · {len(new_products)} product{"s" if len(new_products) != 1 else ""}
+          </div>
+        </td>
+      </tr>
+      <tr><td style="height:14px;"></td></tr>
+      <tr><td>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+          {product_rows}
+        </table>
+      </td></tr>
+    </table>
+  </td>
+</tr>"""
+    else:
+        products_section = """
+<tr><td style="height:18px;"></td></tr>
+<tr>
+  <td style="background:#f9fafb;border-radius:14px;padding:18px 24px;
+             border:1px dashed #d1d5db;text-align:center;">
+    <div style="font-size:13px;font-weight:700;color:#6b7280;">No new products detected today</div>
+  </td>
+</tr>"""
+
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -674,6 +784,7 @@ def build_html_email(
   {ai_notice_html}
   {today_section}
   {week_section}
+  {products_section}
 
   <tr><td style="height:20px;"></td></tr>
 

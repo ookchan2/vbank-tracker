@@ -1814,3 +1814,137 @@ Return this EXACT JSON structure (no markdown, no code fences):
         f'({bau_wins} BAU winner(s), {none_wins} None slot(s))'
     )
     return result
+
+
+# ── Product Extraction ───────────────────────────────────────────────────────
+
+def extract_products(bank_id: str, bank_name: str, text: str) -> list[dict]:
+    """
+    Extract core banking products from scraped website text.
+
+    Products include:
+    - Deposit products (savings accounts, time deposits, multi-currency accounts)
+    - Card products (debit cards, credit cards)
+    - Investment products (US/HK stock trading, fund investment, crypto trading)
+    - Loan products (personal loans, mortgage loans)
+
+    Returns a list of product dicts with fields:
+    - product_name: Name of the product
+    - category: One of 'deposit', 'card', 'investment', 'loan'
+    - subcategory: More specific type (e.g., 'savings', 'stocks', 'funds')
+    - description: Brief description
+    - features: List of key features
+    - interest_rate: Interest rate if applicable
+    - fees: Fee structure
+    - eligibility: Eligibility criteria
+    - url: Source URL
+    """
+    if not AI_AVAILABLE or len(text.strip()) < 500:
+        logger.warning(f'Skipping product extraction for {bank_name}: insufficient text or AI unavailable')
+        return []
+
+    # Text is already cleaned by scraper, use as-is
+    prompt = f"""You are a banking product analyst. Extract all CORE BANKING PRODUCTS from the following bank website content.
+
+TARGET BANK: {bank_name}
+
+PRODUCT CATEGORIES TO IDENTIFY:
+1. DEPOSIT PRODUCTS: Savings accounts, time deposits, multi-currency accounts, high-yield accounts
+2. CARD PRODUCTS: Debit cards, credit cards, prepaid cards
+3. INVESTMENT PRODUCTS: Stock trading (US/HK), fund investment, cryptocurrency trading, bond investment
+4. LOAN PRODUCTS: Personal loans, mortgage loans, business loans
+
+EXTRACTION RULES:
+- Focus on PERMANENT product offerings, NOT time-limited promotions
+- A product is a core banking service that exists continuously (e.g., "High Yield Savings Account")
+- A promotion is a temporary offer (e.g., "0.5% extra interest for new accounts this month")
+- If you see both, extract the underlying PRODUCT and note any promotional features separately
+- Each product should be unique - don't list the same product twice with different names
+
+OUTPUT FORMAT: Return a JSON array of product objects with these fields:
+{{
+  "product_name": "Clear, concise product name",
+  "category": "deposit|card|investment|loan",
+  "subcategory": "Specific type (e.g., savings/stocks/funds/crypto/debit-card/personal-loan)",
+  "description": "1-2 sentence description of what this product offers",
+  "features": ["feature1", "feature2", "feature3"],
+  "interest_rate": "Rate if mentioned (e.g., '3.5% p.a.'), empty string if N/A",
+  "fees": "Fee structure (e.g., 'HKD 50/month'), empty string if free/N/A",
+  "eligibility": "Who can apply (e.g., 'HK residents 18+'), empty string if standard",
+  "url": "Source page URL"
+}}
+
+EXAMPLE FOR REFERENCE:
+If you see: "ZA Bank High Yield Savings - Earn up to 3.88% p.a. on your savings balance. No minimum deposit required. Available to all HK residents."
+
+Extract:
+{{
+  "product_name": "High Yield Savings Account",
+  "category": "deposit",
+  "subcategory": "savings",
+  "description": "High-interest savings account with competitive rates and no minimum deposit",
+  "features": ["Up to 3.88% p.a. interest", "No minimum deposit", "Instant access to funds"],
+  "interest_rate": "Up to 3.88% p.a.",
+  "fees": "",
+  "eligibility": "HK residents 18+",
+  "url": ""
+}}
+
+IMPORTANT:
+- Return ONLY valid JSON array - no markdown, no code fences, no explanation
+- If no products found in a category, simply don't include them (return only actual products)
+- Use the EXACT feature/rate/fee language from the source text
+- For investment products, specify which markets (US stocks, HK stocks, specific cryptocurrencies)
+
+WEBSITE CONTENT TO ANALYZE:
+{text[:40000]}
+
+Return ONLY a valid JSON array of products — NO other text, NO markdown fences, NO explanation."""
+
+    try:
+        raw = _call([{'role': 'user', 'content': prompt}], label=f'products/{bank_name}')
+        if not raw:
+            print(f'  [WARN] Product extraction: empty response for {bank_name}')
+            return []
+
+        result = _parse_object(raw)
+        if result is None:
+            print(f'  [WARN] Product extraction: JSON parse failed for {bank_name}')
+            print(f'  First 200 chars: {raw[:200]}')
+            return []
+
+        # Ensure it's a list
+        if isinstance(result, dict):
+            result = result.get('products', [])
+
+        if not isinstance(result, list):
+            print(f'  [WARN] Product extraction: expected list, got {type(result)} for {bank_name}')
+            return []
+
+        # Add bank info and validate structure
+        products = []
+        for p in result:
+            if not isinstance(p, dict):
+                continue
+            products.append({
+                'product_name': p.get('product_name', '').strip(),
+                'category': p.get('category', '').strip().lower(),
+                'subcategory': p.get('subcategory', '').strip(),
+                'description': p.get('description', '').strip(),
+                'features': p.get('features', []),
+                'interest_rate': str(p.get('interest_rate', '')).strip(),
+                'fees': str(p.get('fees', '')).strip(),
+                'eligibility': str(p.get('eligibility', '')).strip(),
+                'url': p.get('url', '').strip(),
+            })
+
+        valid_categories = {'deposit', 'card', 'investment', 'loan'}
+        products = [p for p in products if p['product_name'] and p['category'] in valid_categories]
+
+        print(f'  [INFO] Product extraction: {len(products)} products found for {bank_name}')
+        return products
+
+    except Exception as exc:
+        logger.error(f'Product extraction error for {bank_name}: {exc}')
+        print(f'  [WARN] Product extraction error for {bank_name}: {exc}')
+        return []

@@ -19,13 +19,16 @@ from ai_helper import (
     ai_dedup_titles,
     ai_match_against_existing,
     generate_strategic_insights,
+    extract_products,
 )
 from database  import (
     init_db,
     start_new_run,
     save_promotions,
+    save_products,
     mark_stale_as_inactive,
     mark_inactive_old,
+    mark_stale_products_as_inactive,
     reactivate_promotions_seen_on,
     reactivate_most_recently_seen,
     migrate_legacy_bank_names,
@@ -36,6 +39,8 @@ from database  import (
     get_promotions_by_bank_name,
     get_new_promotions_today,
     get_new_promotions_last_n_days,
+    get_new_products_today,
+    get_all_active_products,
     get_db_stats,
     repair_reinserted_promotions,
 )
@@ -366,6 +371,33 @@ def main() -> int:
         f"Deduped:{total_deduped}  DB-matched:{total_db_matched}"
     )
 
+    # -- Step 4b: Product extraction --------------------------------
+    if ai_ok:
+        print('\nStep 4b -- Extract banking products from scraped text')
+        total_products_new = 0
+        total_products_updated = 0
+
+        for bank_id, result in scraped.items():
+            bank_name = result.get('bank_name', bank_id)
+
+            if not result.get('success') and not _SKIP_SCRAPE:
+                continue
+            if len(result.get('text', '')) < 500:
+                continue
+
+            try:
+                products = extract_products(bank_id, bank_name, result.get('text', ''))
+                if products:
+                    prod_result = save_products(bank_id, bank_name, products, today_str=RUN_DATE)
+                    total_products_new += prod_result['new']
+                    total_products_updated += prod_result['updated']
+            except Exception as exc:
+                print(f'    [WARN] Product extraction error for {bank_name}: {exc}')
+
+        print(f'  [PRODUCTS] Summary: {total_products_new} new, {total_products_updated} updated across all banks')
+    else:
+        print('\nStep 4b -- Product extraction skipped (AI unavailable)')
+
     # -- Step 5: Mark stale / old inactive ------------------------
     print('\nStep 5 -- Mark stale / old promos inactive')
 
@@ -382,6 +414,8 @@ def main() -> int:
     else:
         mark_stale_as_inactive(banks_ai_saved, today_str=RUN_DATE)
         mark_inactive_old(days_threshold=90)
+        # Also mark products as inactive if not seen today
+        mark_stale_products_as_inactive()
 
     # -- Step 5b: Post-staleness sanity check --------------------─
     _active_after_stale = get_active_promotions(include_bau=True)
@@ -541,12 +575,16 @@ def main() -> int:
     # -- Step 9: Build & send email --------------------------------
     print('\nStep 9 -- Build & send email')
 
+    # Get new products for email
+    new_products_for_email = get_new_products_today() if ai_ok else []
+
     html = build_html_email(
         promotions_data    = all_promos_email,
         scraped_data       = data_json_content,
         strategic_insights = strategic_insights,
         new_promos         = new_promos_email,
         new_promos_week    = new_promos_week_email,
+        new_products       = new_products_for_email,
         ai_unavailable     = not ai_ok,
     )
     print('  [OK] HTML email built')
