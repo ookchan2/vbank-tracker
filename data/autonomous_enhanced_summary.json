@@ -1,25 +1,25 @@
 {
-  "timestamp": "2026-04-29T00:59:59.316751",
+  "timestamp": "2026-04-29T01:23:40.634268",
   "mode": "enhanced_autonomous",
   "banks_scraped": 8,
   "stats": {
     "promotions": {
-      "new": 0,
-      "updated": 0
+      "new": 26,
+      "updated": 3
     },
     "products": {
-      "new": 5,
-      "updated": 11
+      "new": 14,
+      "updated": 0
     }
   },
   "database": {
-    "total_promotions": 233,
-    "active_promotions": 175,
-    "bau_promotions": 114,
-    "non_bau_active": 61,
-    "total_runs": 35,
-    "last_run_at": "2026-04-28 19:37:48"
+    "total_promotions": 26,
+    "active_promotions": 26,
+    "bau_promotions": 24,
+    "non_bau_active": 2,
+    "total_runs": 0,
+    "last_run_at": null
   },
-  "elapsed_seconds": 268.5242735000793,
+  "elapsed_seconds": 237.54135190008674,
   "email_sent": false
 }
