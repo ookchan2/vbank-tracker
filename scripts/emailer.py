@@ -662,7 +662,7 @@ def build_html_email(
     week_section = _new_section_html(
         promos        = new_promos_wk_show,
         heading       = 'Promotion newly launched within this week',
-        sub_heading   = '本週新推出優惠 · first_seen_at in past 6 days (excl. today, HKT) · active only',
+        sub_heading   = 'first_seen_at in past 6 days (excl. today, HKT) · active only',
         icon          = '📅',
         header_color  = 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)',
         header_dark   = '#6366f1',

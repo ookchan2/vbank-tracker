@@ -63,9 +63,17 @@ def _identify_promotion_sections(text: str) -> List[str]:
 def _extract_single_promotion(section: str, bank_id: str, bank_name: str) -> Dict[str, Any]:
     """Extract a single promotion from a text section"""
 
+    # Skip if this is just a SOURCE header
+    if section.strip().startswith('=== SOURCE:'):
+        return None
+
     # Extract title (usually first sentence or line)
     title = _extract_title(section)
     if not title:
+        return None
+
+    # Skip if title is just a SOURCE header
+    if '=== SOURCE:' in title:
         return None
 
     # Extract description (substantive content)
@@ -110,21 +118,42 @@ def _extract_single_promotion(section: str, bank_id: str, bank_name: str) -> Dic
 def _extract_title(text: str) -> str:
     """Extract promotion title"""
 
+    # Skip SOURCE headers
+    if '=== SOURCE:' in text[:100]:
+        # Find the first real content after SOURCE header
+        lines = text.split('\n')
+        for i, line in enumerate(lines):
+            if '=== SOURCE:' in line:
+                continue
+            line = line.strip()
+            if len(line) > 10 and len(line) < 200 and '===' not in line:
+                return line
+
     # Try to find headline-style text
     lines = text.split('\n')
 
     for line in lines[:5]:  # Check first 5 lines
         line = line.strip()
-        if len(line) > 10 and len(line) < 200:
-            # Likely a title
-            return line
+        # Skip SOURCE headers
+        if '=== SOURCE:' in line:
+            continue
+        # Skip navigation/menu text
+        if len(line) < 10 or len(line) > 200:
+            continue
+        # Skip common boilerplate
+        if any(word in line.lower() for word in ['tc 繁體', 'english', 'created with sketch', 'get tc']):
+            continue
+        # Likely a title
+        return line
 
-    # Fallback: use first sentence
+    # Fallback: use first sentence (skip boilerplate)
     sentences = re.split(r'[.!?]', text)
-    if sentences:
-        return sentences[0].strip()[:200]
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if len(sentence) > 10 and '===' not in sentence:
+            return sentence[:200]
 
-    return text[:100].strip()
+    return text[:100].strip() if '===' not in text[:100] else ''
 
 def _extract_description(text: str) -> str:
     """Extract detailed description"""
@@ -133,12 +162,45 @@ def _extract_description(text: str) -> str:
     lines = text.split('\n')
     content = '\n'.join(lines[1:]) if len(lines) > 1 else text
 
-    # Clean up
+    # Remove SOURCE headers
+    content = re.sub(r'=== SOURCE:.*?===', '', content)
+
+    # Remove common website boilerplate
+    boilerplate_patterns = [
+        r'Get \w+ TC',
+        r'繁體中文',
+        r'EN English',
+        r'\w+\+ Travel Playbook',
+        r'Features Arrow Created with Sketch',
+        r'Log in to the \w+ App',
+        r'Go to',
+        r'Click here',
+        r'Learn more',
+        r'Download app',
+        r'Contact us',
+        r'Follow us',
+        r'Privacy Policy',
+        r'Terms of Use',
+        r'Cookie Policy',
+    ]
+
+    for pattern in boilerplate_patterns:
+        content = re.sub(pattern, '', content, flags=re.IGNORECASE)
+
+    # Remove navigation/menu text (short uppercase or capitalized phrases)
+    content = re.sub(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', lambda m: m.group(0) if len(m.group(0)) > 30 else '', content)
+
+    # Clean up whitespace
     content = re.sub(r'\s+', ' ', content).strip()
 
     # Limit length
     if len(content) > 500:
-        content = content[:500] + '...'
+        # Try to cut at sentence boundary
+        sentences = re.split(r'[.!?]', content[:500])
+        if len(sentences) > 1:
+            content = '. '.join(sentences[:-1]) + '.'
+        else:
+            content = content[:500] + '...'
 
     return content
 
