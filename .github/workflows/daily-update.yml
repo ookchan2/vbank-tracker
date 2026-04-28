@@ -40,11 +40,13 @@ jobs:
           restore-keys: |
             promotions-db-
 
-      - name: Clear Python cache
+      - name: Clear Python cache (aggressive)
         run: |
           find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
           find . -name "*.pyc" -delete 2>/dev/null || true
-          echo "Python cache cleared"
+          find . -name "*.pyo" -delete 2>/dev/null || true
+          find scripts -name "*.py" -exec touch {} \;  # Force recompile
+          echo "Python cache aggressively cleared"
 
       - name: Install Python dependencies
         run: |

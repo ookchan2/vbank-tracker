@@ -195,6 +195,62 @@
   </details>
 </div>
 
+<!-- ══ NEW PRODUCTS TODAY ═══════════════════════════════════════════ -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-2" id="newProductsTodaySection" style="display:none;">
+  <details open class="rounded-2xl shadow-sm overflow-hidden border border-green-200">
+    <summary class="select-none">
+      <div class="bg-gradient-to-r from-green-500 to-emerald-400 px-5 py-4
+                  flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🆕</span>
+          <div>
+            <div class="font-extrabold text-white text-lg tracking-tight">New Products Today</div>
+            <div class="text-green-100 text-xs mt-0.5">今日新推出產品 · first_seen_at = today (HKT) · products only</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="newProductsTodayCount" class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+          <span class="accordion-chevron chevron text-white text-base">▼</span>
+        </div>
+      </div>
+    </summary>
+    <div class="bg-green-50 p-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newProductsTodayCards"></div>
+    </div>
+    <div id="newProductsTodayEmpty" class="hidden bg-green-50 px-5 py-10 text-center text-gray-400 text-sm">
+      🔍 No new products detected today.
+    </div>
+  </details>
+</div>
+
+<!-- ══ NEW PRODUCTS THIS WEEK ═══════════════════════════════════════ -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newProductsWeeklySection" style="display:none;">
+  <details class="rounded-2xl shadow-sm overflow-hidden border border-teal-200">
+    <summary class="select-none">
+      <div class="bg-gradient-to-r from-teal-500 to-cyan-500 px-5 py-4
+                  flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">📅</span>
+          <div>
+            <div class="font-extrabold text-white text-lg tracking-tight">Products newly launched within this week</div>
+            <div class="text-teal-100 text-xs mt-0.5">本週新推出產品 · first_seen_at in past 6 days (excl. today, HKT) · products only</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="newProductsWeeklyCount" class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+          <span class="accordion-chevron chevron text-white text-base">▼</span>
+        </div>
+      </div>
+    </summary>
+    <div class="bg-teal-50 p-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newProductsWeeklyCards"></div>
+    </div>
+    <div id="newProductsWeeklyEmpty" class="hidden bg-teal-50 px-5 py-10 text-center text-gray-400 text-sm">
+      🔍 No new products in the past 6 days.
+    </div>
+  </details>
+</div>
+
 <!-- ══ ALL PRODUCTS ═══════════════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4" id="allProductsSection" style="display:none;">
   <details class="rounded-2xl shadow-sm overflow-hidden border border-blue-200">
@@ -808,7 +864,19 @@ function buildNewSections() {
   }
 }
 
-// ── All Products Section ──────────────────────────────────────────
+// ── Product helper functions ───────────────────────────────────────
+function isNewProductToday(p, today) {
+  const firstSeen = (p.first_seen_at || '').substring(0, 10);
+  return firstSeen === today;
+}
+
+function isNewProductThisWeek(p, today) {
+  const firstSeen = (p.first_seen_at || '').substring(0, 10);
+  const sixAgo    = hktDaysAgo(6);
+  const yesterday = hktDaysAgo(1);
+  return firstSeen >= sixAgo && firstSeen <= yesterday;
+}
+
 function buildProductCard(p) {
   const color   = bankColor(p.bank_name);
   const cat     = (p.category || '').toUpperCase();
@@ -877,23 +945,65 @@ function buildProductCard(p) {
 }
 
 function buildProductsSection(products) {
-  const sec      = document.getElementById('allProductsSection');
-  const cards    = document.getElementById('productsCards');
-  const count    = document.getElementById('productsCount');
-  const empty    = document.getElementById('productsEmpty');
+  const today = hktToday();
 
-  if (!sec) return; // Safety check
+  // New products today
+  const newTodayProds   = products.filter(p => isNewProductToday(p, today));
+  const todaySec        = document.getElementById('newProductsTodaySection');
+  const todayCards      = document.getElementById('newProductsTodayCards');
+  const todayCount      = document.getElementById('newProductsTodayCount');
+  const todayEmpty      = document.getElementById('newProductsTodayEmpty');
 
-  sec.style.display = 'block';
+  if (todaySec) {
+    todaySec.style.display = 'block';
+    if (!newTodayProds.length) {
+      todayCards.innerHTML = '';
+      todayEmpty.classList.remove('hidden');
+      todayCount.textContent = '0 new today';
+    } else {
+      todayEmpty.classList.add('hidden');
+      todayCount.textContent = `${newTodayProds.length} new today`;
+      todayCards.innerHTML   = newTodayProds.map(buildProductCard).join('');
+    }
+  }
 
-  if (!products.length) {
-    cards.innerHTML = '';
-    empty.classList.remove('hidden');
-    count.textContent = '0 products';
-  } else {
-    empty.classList.add('hidden');
-    count.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
-    cards.innerHTML = products.map(buildProductCard).join('');
+  // New products this week
+  const newWeekProds   = products.filter(p => isNewProductThisWeek(p, today));
+  const weekSec        = document.getElementById('newProductsWeeklySection');
+  const weekCards      = document.getElementById('newProductsWeeklyCards');
+  const weekCount      = document.getElementById('newProductsWeeklyCount');
+  const weekEmpty      = document.getElementById('newProductsWeeklyEmpty');
+
+  if (weekSec) {
+    weekSec.style.display = 'block';
+    if (!newWeekProds.length) {
+      weekCards.innerHTML = '';
+      weekEmpty.classList.remove('hidden');
+      weekCount.textContent = '0 newly launched this week';
+    } else {
+      weekEmpty.classList.add('hidden');
+      weekCount.textContent = `${newWeekProds.length} newly launched this week`;
+      weekCards.innerHTML   = newWeekProds.map(buildProductCard).join('');
+    }
+  }
+
+  // All products
+  const allSec      = document.getElementById('allProductsSection');
+  const allCards    = document.getElementById('productsCards');
+  const allCount    = document.getElementById('productsCount');
+  const allEmpty    = document.getElementById('productsEmpty');
+
+  if (allSec) {
+    allSec.style.display = 'block';
+    if (!products.length) {
+      allCards.innerHTML = '';
+      allEmpty.classList.remove('hidden');
+      allCount.textContent = '0 products';
+    } else {
+      allEmpty.classList.add('hidden');
+      allCount.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+      allCards.innerHTML = products.map(buildProductCard).join('');
+    }
   }
 }
 

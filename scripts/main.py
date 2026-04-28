@@ -1,4 +1,5 @@
 # scripts/main.py
+# Force cache rebuild - 2026-04-28 email fix verification
 
 import json as _json
 import os
