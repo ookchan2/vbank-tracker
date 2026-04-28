@@ -22,14 +22,14 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# Poe API configuration
+# Claude API configuration (via Anthropic SDK)
 try:
-    import fastapi_poe as fp
+    from anthropic import Anthropic
 except ImportError:
-    fp = None
+    Anthropic = None
 
 AI_AVAILABLE = False
-_POE_API_KEY = os.environ.get('POE_API_KEY', '').strip()
+_ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '').strip()
 
 # Fallback models list
 MODELS_TO_TRY = [
@@ -429,107 +429,95 @@ def _build_prompt(bank_name: str, url: str, text: str) -> str:
     return prompt
 
 
-# ── Poe API core ────────────────────────────────────────────────────────────────
+# ── Claude API core ────────────────────────────────────────────────────────────────
 
-def _init_poe() -> bool:
-    """Initialize Poe API client."""
+def _init_claude() -> bool:
+    """Initialize Claude API client."""
     global AI_AVAILABLE
 
-    if fp is None:
-        logger.error('fastapi-poe package not installed. Run: pip install fastapi-poe')
-        print('[ERROR] fastapi-poe package not installed. Run: pip install fastapi-poe')
+    if Anthropic is None:
+        logger.error('anthropic package not installed. Run: pip install anthropic')
+        print('[ERROR] anthropic package not installed. Run: pip install anthropic')
         return False
 
-    api_key = _get_poe_key()
+    api_key = _get_anthropic_key()
     if not api_key:
-        logger.error('POE_API_KEY not set')
-        print('[ERROR] POE_API_KEY not set in environment')
+        logger.error('ANTHROPIC_API_KEY not set')
+        print('[ERROR] ANTHROPIC_API_KEY not set in environment')
         return False
 
     try:
         AI_AVAILABLE = True
-        logger.info(f'Poe API initialized')
-        print(f'[OK] Poe API ready')
+        logger.info('Claude API initialized')
+        print('[OK] Claude API ready')
         return True
     except Exception as exc:
-        logger.error(f'Failed to initialize Poe client: {exc}')
-        print(f'[ERROR] Poe init failed: {exc}')
+        logger.error(f'Failed to initialize Claude client: {exc}')
+        print(f'[ERROR] Claude init failed: {exc}')
         AI_AVAILABLE = False
         return False
 
 
-def _get_poe_key():
-    return os.environ.get('POE_API_KEY', '').strip()
+def _get_anthropic_key():
+    return os.environ.get('ANTHROPIC_API_KEY', '').strip()
 
 
-async def _async_call(messages: list, label: str = '') -> str:
-    """Async call to Poe API using Claude bot."""
+def _call(messages: list, label: str = '') -> str:
+    """Call Claude API directly."""
     global AI_AVAILABLE
 
     if not AI_AVAILABLE:
-        if fp is not None and _POE_API_KEY:
-            _init_poe()
+        if Anthropic is not None and _ANTHROPIC_API_KEY:
+            _init_claude()
         if not AI_AVAILABLE:
             return ''
 
     t = time.monotonic()
     try:
-        # Get the last user message content
-        user_content = messages[-1]['content'] if messages else ''
+        client = Anthropic(api_key=_ANTHROPIC_API_KEY)
 
-        result = ''
-        async for chunk in fp.get_bot_response(
-            messages=[fp.ProtocolMessage(role=m['role'], content=m['content']) for m in messages],
-            bot_name='claude-3.7-sonnet',
-            api_key=_POE_API_KEY,
-        ):
-            result += chunk.text
+        # Convert messages format if needed
+        system_message = "You are a helpful AI assistant for HK virtual bank promotions tracking."
+
+        result = client.messages.create(
+            model="claude-3-7-sonnet-20250219",
+            max_tokens=4096,
+            system=system_message,
+            messages=messages,
+        )
 
         elapsed = time.monotonic() - t
         tag = f' [{label}]' if label else ''
-        logger.info(f'Poe API call{tag} -> {len(result)} chars in {elapsed:.1f}s')
-        print(f'  [DEBUG] AI (claude-3.7-sonnet){tag} -> {len(result)} chars in {elapsed:.1f}s')
-        if len(result) < 50:
-            print(f'  [DEBUG] Full response: {repr(result)}')
-        return result
+        response_text = result.content[0].text
+        logger.info(f'Claude API call{tag} -> {len(response_text)} chars in {elapsed:.1f}s')
+        print(f'  [DEBUG] AI (claude-3.7-sonnet){tag} -> {len(response_text)} chars in {elapsed:.1f}s')
+        if len(response_text) < 50:
+            print(f'  [DEBUG] Full response: {repr(response_text)}')
+        return response_text
     except Exception as exc:
-        logger.error(f'Poe API call error: {type(exc).__name__}: {exc}')
-        print(f'  [ERR] Poe API call error: {exc}')
-        return ''
-
-
-def _call(messages: list, label: str = '') -> str:
-    """Synchronous wrapper for Poe API calls."""
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            return loop.run_until_complete(_async_call(messages, label))
-        finally:
-            loop.close()
-    except Exception as exc:
-        logger.error(f'Sync wrapper error: {type(exc).__name__}: {exc}')
+        logger.error(f'Claude API call error: {type(exc).__name__}: {exc}')
+        print(f'  [ERR] Claude API call error: {exc}')
         return ''
 
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 def init_ai() -> bool:
-    """Initialize AI using Poe API (Claude bots)."""
+    """Initialize AI using Claude API."""
     try:
-        if fp is None:
-            print('[ERR] fastapi-poe package not installed. Run: pip install fastapi-poe')
+        if Anthropic is None:
+            print('[ERR] anthropic package not installed. Run: pip install anthropic')
             AI_AVAILABLE = False
             return False
 
-        api_key = _get_poe_key()
+        api_key = _get_anthropic_key()
         if not api_key:
-            print('[WARNING] POE_API_KEY not set - AI disabled')
-            print('   Set it with: export POE_API_KEY=your-key-here')
+            print('[WARNING] ANTHROPIC_API_KEY not set - AI disabled')
+            print('   Set it with: export ANTHROPIC_API_KEY=your-key-here')
             AI_AVAILABLE = False
             return False
 
-        return _init_poe()
+        return _init_claude()
     except Exception as exc:
         print(f'[ERROR] AI init failed: {exc}')
         AI_AVAILABLE = False

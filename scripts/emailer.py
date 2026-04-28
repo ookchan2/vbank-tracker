@@ -637,7 +637,7 @@ def build_html_email(
           AI Extraction Unavailable Today — Showing Cached Data
         </div>
         <div style="font-size:12px;color:#b45309;line-height:1.5;">
-          The POE_API_KEY was not available during this run, so no new promotions
+          The ANTHROPIC_API_KEY was not available during this run, so no new promotions
           were extracted or classified. The data shown below reflects the last
           successful AI run. Promotions may not include today's latest changes.
         </div>
