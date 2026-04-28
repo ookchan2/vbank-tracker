@@ -1125,14 +1125,17 @@ def get_new_promotions_last_n_days(
 
 
 def get_active_promotions(include_bau: bool = True) -> List[Dict[str, Any]]:
+    today = _hkt_today()
     with _db_connection() as conn:
         try:
             bau_clause = '' if include_bau else 'AND is_bau = 0'
             return _to_dicts(conn.execute(f'''
                 SELECT * FROM promotions
-                WHERE active = 1 {bau_clause}
+                WHERE active = 1
+                  AND (end_date IS NULL OR end_date = '' OR DATE(end_date) >= ?)
+                  {bau_clause}
                 ORDER BY bank_id ASC, last_seen DESC
-            ''').fetchall())
+            ''', (today,)).fetchall())
         except Exception as exc:
             print(f'  [ERR] get_active_promotions error: {exc}')
             return []
