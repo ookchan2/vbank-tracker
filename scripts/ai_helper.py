@@ -1907,15 +1907,17 @@ Return ONLY a valid JSON array of products — NO other text, NO markdown fences
             print(f'  [WARN] Product extraction: empty response for {bank_name}')
             return []
 
-        result = _parse_object(raw)
-        if result is None:
-            print(f'  [WARN] Product extraction: JSON parse failed for {bank_name}')
-            print(f'  First 200 chars: {raw[:200]}')
-            return []
-
-        # Ensure it's a list
-        if isinstance(result, dict):
-            result = result.get('products', [])
+        # Try parsing as array first (expected format), then object
+        result = _parse_array(raw)
+        if not result:
+            # Fallback to object parsing for legacy responses
+            obj = _parse_object(raw)
+            if obj and isinstance(obj, dict):
+                result = obj.get('products', [])
+            else:
+                print(f'  [WARN] Product extraction: JSON parse failed for {bank_name}')
+                print(f'  First 200 chars: {raw[:200]}')
+                return []
 
         if not isinstance(result, list):
             print(f'  [WARN] Product extraction: expected list, got {type(result)} for {bank_name}')

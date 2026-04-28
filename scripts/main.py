@@ -576,7 +576,7 @@ def main() -> int:
     print('\nStep 9 -- Build & send email')
 
     # Get new products for email
-    new_products_for_email = get_new_products_today() if ai_ok else []
+    new_products = get_new_products_today() if ai_ok else []
 
     html = build_html_email(
         promotions_data    = all_promos_email,
@@ -584,7 +584,7 @@ def main() -> int:
         strategic_insights = strategic_insights,
         new_promos         = new_promos_email,
         new_promos_week    = new_promos_week_email,
-        new_products       = new_products_for_email,
+        new_products       = new_products,
         ai_unavailable     = not ai_ok,
     )
     print('  [OK] HTML email built')
