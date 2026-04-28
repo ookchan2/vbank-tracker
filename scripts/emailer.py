@@ -407,6 +407,7 @@ def _build_plain_text(
     now:             str,
     ai_unavailable:  bool = False,
     count_source:    list = None,
+    new_products:    list = None,
 ) -> str:
     _src    = count_source if (count_source is not None) else (promotions_data or [])
     non_bau = [p for p in _src if not p.get('is_bau', False)]
@@ -938,6 +939,7 @@ def send_email(
     promotions_data: list                   = None,
     ai_unavailable:  bool                   = False,
     scraped_data:    dict                   = None,
+    new_products:    list                   = None,
 ) -> bool:
     smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.getenv('SMTP_PORT', '587'))
@@ -986,6 +988,7 @@ def send_email(
         now             = now_str,
         ai_unavailable  = ai_unavailable,
         count_source    = _count_source,
+        new_products    = new_products    or [],
     )
 
     success_count = 0
