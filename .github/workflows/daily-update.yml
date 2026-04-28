@@ -40,6 +40,12 @@ jobs:
           restore-keys: |
             promotions-db-
 
+      - name: Clear Python cache
+        run: |
+          find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+          find . -name "*.pyc" -delete 2>/dev/null || true
+          echo "Python cache cleared"
+
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
