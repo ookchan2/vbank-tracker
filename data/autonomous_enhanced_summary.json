@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-28T20:49:42.271986",
+  "timestamp": "2026-04-29T00:26:59.567763",
   "mode": "enhanced_autonomous",
   "banks_scraped": 8,
   "stats": {
@@ -13,8 +13,13 @@
     }
   },
   "database": {
+    "total_promotions": 233,
     "active_promotions": 175,
-    "products": 11
+    "bau_promotions": 114,
+    "non_bau_active": 61,
+    "total_runs": 35,
+    "last_run_at": "2026-04-28 19:37:48"
   },
+  "elapsed_seconds": 258.14478860003874,
   "email_sent": false
 }

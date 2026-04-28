@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Enhanced Autonomous VBank Tracker with Integrated AI Processing
-This version processes scraped data automatically using Claude Code's built-in AI
+Enhanced Autonomous VBank Tracker - Complete Implementation
+Replicates all functionality from main.py but with autonomous AI processing
 """
 
 import os
@@ -9,6 +9,7 @@ import sys
 import json
 import sqlite3
 import subprocess
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -18,31 +19,37 @@ sys.path.insert(0, str(BASE_DIR / 'scripts'))
 import database as db
 from ai_advanced_processor import extract_promotions_advanced, extract_products_advanced
 from emailer import build_html_email, send_email
+from database import (
+    get_active_promotions,
+    get_new_promotions_today,
+    get_new_promotions_last_n_days,
+    get_new_products_today,
+    export_to_json,
+    get_db_stats,
+)
 
 # Paths
 DATA_JSON_PATH = BASE_DIR / 'docs' / 'data.json'
 EMAIL_PREVIEW_PATH = BASE_DIR / 'output' / 'email_preview.html'
+DB_PATH = BASE_DIR / 'data' / 'promotions.db'
 
 print("=" * 70)
 print("  VBank Tracker - Enhanced Autonomous Mode")
 print("=" * 70)
-print("  [OK] Integrated AI processing")
-print("  [OK] Automatic data extraction")
-print("  [OK] Zero external dependencies")
+print("  [OK] High-accuracy AI processing")
+print("  [OK] Complete workflow replication")
+print("  [OK] Zero external API dependencies")
 print("=" * 70)
 print()
 
-DB_PATH = BASE_DIR / 'data' / 'promotions.db'
 
 def save_promotions_to_db(bank_id: str, bank_name: str, promotions: list):
     """Save extracted promotions to database"""
-
     if not promotions:
         return {'new': 0, 'updated': 0}
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-
     stats = {'new': 0, 'updated': 0}
 
     for promo in promotions:
@@ -74,7 +81,6 @@ def save_promotions_to_db(bank_id: str, bank_name: str, promotions: list):
         today = datetime.now().strftime('%Y-%m-%d')
 
         if existing:
-            # Update existing
             cursor.execute("""
                 UPDATE promotions SET
                     bank_name = ?, highlight = ?, description = ?,
@@ -89,7 +95,6 @@ def save_promotions_to_db(bank_id: str, bank_name: str, promotions: list):
                   url, tc_link, is_bau, today, existing[0]))
             stats['updated'] += 1
         else:
-            # Insert new
             cursor.execute("""
                 INSERT INTO promotions (
                     bank_id, bank_name, title, highlight, description,
@@ -104,18 +109,16 @@ def save_promotions_to_db(bank_id: str, bank_name: str, promotions: list):
 
     conn.commit()
     conn.close()
-
     return stats
+
 
 def save_products_to_db(bank_id: str, bank_name: str, products: list):
     """Save extracted products to database"""
-
     if not products:
         return {'new': 0, 'updated': 0}
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-
     stats = {'new': 0, 'updated': 0}
 
     for prod in products:
@@ -123,7 +126,6 @@ def save_products_to_db(bank_id: str, bank_name: str, products: list):
         if not name:
             continue
 
-        # Check if exists
         cursor.execute("""
             SELECT id FROM products
             WHERE bank_id = ? AND product_name = ?
@@ -164,11 +166,33 @@ def save_products_to_db(bank_id: str, bank_name: str, products: list):
 
     conn.commit()
     conn.close()
-
     return stats
 
+
+def _load_data_json(path: str) -> dict | None:
+    """Load data.json file"""
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except:
+        return None
+
+
+def _canonical_bank_name(name: str) -> str:
+    """Normalize bank names to canonical form"""
+    mapping = {
+        'Airstar Bank': 'EleBank',
+        'PAObank': 'PADB',
+        'PAO Bank': 'PADB',
+        'PAOB': 'PADB',
+    }
+    return mapping.get(name, name)
+
+
 def main():
-    # Step 1: Initialize
+    t_start = time.monotonic()
+
+    # Step 1: Initialize database
     print("Step 1: Initialize database")
     db.init_db()
     print("  [OK] Database ready")
@@ -197,7 +221,6 @@ def main():
 
         print("  [OK] Scraper completed")
 
-        # Parse scraped data
         try:
             scraped_data = json.loads(result.stdout.strip().split('\n')[-1])
             print(f"  [OK] Scraped {len(scraped_data)} banks")
@@ -216,7 +239,7 @@ def main():
 
     # Step 3: AI Processing
     print("Step 3: AI Analysis & Extraction")
-    print("  [INFO] Processing with Claude Code built-in AI")
+    print("  [INFO] Processing with high-accuracy rule-based AI")
     print()
 
     total_stats = {'promotions': {'new': 0, 'updated': 0}, 'products': {'new': 0, 'updated': 0}}
@@ -242,7 +265,6 @@ def main():
         print(f"    Promotions: {promo_stats['new']} new, {promo_stats['updated']} updated")
         print(f"    Products: {prod_stats['new']} new, {prod_stats['updated']} updated")
 
-        # Update totals
         total_stats['promotions']['new'] += promo_stats['new']
         total_stats['promotions']['updated'] += promo_stats['updated']
         total_stats['products']['new'] += prod_stats['new']
@@ -250,114 +272,143 @@ def main():
 
     print()
 
-    # Step 4: Export data.json for website
+    # Step 4: Export data.json
     print("Step 4: Export data.json for website")
     try:
-        db.export_to_json(str(DATA_JSON_PATH), ai_unavailable=False)
+        export_to_json(str(DATA_JSON_PATH), ai_unavailable=False)
         print(f"  [OK] Exported to {DATA_JSON_PATH}")
     except Exception as e:
         print(f"  [ERR] Failed to export data.json: {e}")
 
+    # Patch timestamp
+    try:
+        run_ts = datetime.now().strftime('%Y-%m-%d %H:%M')
+        with open(DATA_JSON_PATH, 'r', encoding='utf-8') as f:
+            jdata = json.load(f)
+        jdata.update({'updated': run_ts, 'last_updated': run_ts})
+        with open(DATA_JSON_PATH, 'w', encoding='utf-8') as f:
+            json.dump(jdata, f, ensure_ascii=False, indent=2)
+        print(f"  [OK] Timestamp patched: {run_ts}")
+    except Exception as e:
+        print(f"  [WARN] Timestamp patch failed: {e}")
+
     print()
 
-    # Step 5: Generate and send email
-    print("Step 5: Generate email report")
+    # Step 5: Load data.json
+    print("Step 5: Load data.json for email")
+    data_json_content = _load_data_json(str(DATA_JSON_PATH))
+    if data_json_content:
+        print("  [OK] data.json loaded")
+    else:
+        print("  [WARN] data.json not loaded, using empty dict")
+        data_json_content = {}
 
-    # Load data for email
-    all_promos = db.load_promotions(active_only=True)
+    print()
 
-    # Load data.json
-    try:
-        with open(DATA_JSON_PATH, 'r', encoding='utf-8') as f:
-            data_json = json.load(f)
-    except:
-        data_json = {}
+    # Step 6: Get promotions for email
+    print("Step 6: Prepare email content")
+    all_active_with_bau = get_active_promotions(include_bau=True)
+    all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
 
-    # Get today's date for filtering
-    today = datetime.now().strftime('%Y-%m-%d')
+    new_promos_email = get_new_promotions_today(include_bau=False)
+    new_promos_week_email = [
+        p for p in get_new_promotions_last_n_days(days=6, include_bau=False)
+        if not p.get('is_bau', False)
+    ]
 
-    # Filter new promotions (today and this week)
-    new_promos_today = [p for p in all_promos if p.get('first_seen_at') == today]
+    print(f"  Non-BAU active (all):       {len(all_promos_email)}")
+    print(f"  Non-BAU new (today):        {len(new_promos_email)}")
+    print(f"  Non-BAU new (past 6 days):  {len(new_promos_week_email)}")
 
-    # Build HTML email
+    print()
+
+    # Step 7: Build email
+    print("Step 7: Build email report")
+
+    new_products = get_new_products_today()
+
     html = build_html_email(
-        promotions_data=all_promos,
-        scraped_data=data_json,
+        promotions_data=all_promos_email,
+        scraped_data=data_json_content,
         strategic_insights=None,
-        new_promos=new_promos_today,
-        new_promos_week=[],
-        new_products=[],
-        ai_unavailable=False
+        new_promos=new_promos_email,
+        new_promos_week=new_promos_week_email,
+        new_products=new_products,
+        ai_unavailable=False,
     )
+    print("  [OK] HTML email built")
 
-    # Check email configuration
-    gmail_address = os.environ.get('GMAIL_ADDRESS')
-    gmail_password = os.environ.get('GMAIL_APP_PASSWORD')
+    # Save preview
+    EMAIL_PREVIEW_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(EMAIL_PREVIEW_PATH, 'w', encoding='utf-8') as f:
+        f.write(html)
+    print(f"  [FILE] Preview saved: {EMAIL_PREVIEW_PATH}")
+
+    print()
+
+    # Step 8: Send email
+    print("Step 8: Send email")
+
+    # Check SMTP credentials
+    smtp_user = os.environ.get('GMAIL_ADDRESS')
+    smtp_pass = os.environ.get('GMAIL_APP_PASSWORD')
     recipient = os.environ.get('RECIPIENT_EMAIL')
 
-    if gmail_address and gmail_password and recipient:
-        # Send email
+    smtp_ready = all([smtp_user, smtp_pass, recipient])
+
+    email_subject = f'VBank Daily Report - {datetime.now().strftime("%d %b %Y")}'
+
+    if not smtp_ready:
+        missing = [
+            name for name, val in [
+                ('GMAIL_ADDRESS', smtp_user),
+                ('GMAIL_APP_PASSWORD', smtp_pass),
+                ('RECIPIENT_EMAIL', recipient),
+            ] if not val
+        ]
+        print(f"  [ERR] Missing {' / '.join(missing)} - email skipped")
+        print(f"  [FILE] HTML preview available at {EMAIL_PREVIEW_PATH}")
+    else:
         try:
             success = send_email(
                 html_content=html,
-                subject=f"VBank Tracker Update - {datetime.now().strftime('%Y-%m-%d')}",
+                subject=email_subject,
                 recipient=[recipient],
-                gmail_address=gmail_address,
-                gmail_app_password=gmail_password
+                new_promos=new_promos_email,
+                new_promos_week=new_promos_week_email,
+                promotions_data=all_promos_email,
+                ai_unavailable=False,
+                scraped_data=data_json_content,
             )
             if success:
                 print(f"  [OK] Email sent to {recipient}")
             else:
-                print("  [ERR] Email sending failed")
-                # Save preview
-                EMAIL_PREVIEW_PATH.parent.mkdir(parents=True, exist_ok=True)
-                with open(EMAIL_PREVIEW_PATH, 'w', encoding='utf-8') as f:
-                    f.write(html)
-                print(f"  [FILE] Saved preview to {EMAIL_PREVIEW_PATH}")
-        except Exception as e:
-            print(f"  [ERR] Email error: {e}")
-            # Save preview
-            EMAIL_PREVIEW_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with open(EMAIL_PREVIEW_PATH, 'w', encoding='utf-8') as f:
-                f.write(html)
-            print(f"  [FILE] Saved preview to {EMAIL_PREVIEW_PATH}")
-    else:
-        print("  [INFO] Email not configured (missing GMAIL_ADDRESS/GMAIL_APP_PASSWORD/RECIPIENT_EMAIL)")
-        # Save preview
-        EMAIL_PREVIEW_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(EMAIL_PREVIEW_PATH, 'w', encoding='utf-8') as f:
-            f.write(html)
-        print(f"  [FILE] Saved preview to {EMAIL_PREVIEW_PATH}")
+                print('  [ERR] send_email() returned False')
+                print(f"  [FILE] HTML preview available at {EMAIL_PREVIEW_PATH}")
+        except Exception as exc:
+            print(f'  [ERR] Email failed: {exc}')
+            print(f'  [FILE] HTML preview available at {EMAIL_PREVIEW_PATH}')
 
     print()
 
-    # Step 6: Database stats
-    print("Step 6: Database statistics")
+    # Step 9: Summary
+    print("Step 9: Final statistics")
 
-    # Get current database state
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    db_stats = get_db_stats()
+    elapsed = time.monotonic() - t_start
 
-    cursor.execute("SELECT COUNT(*) FROM promotions WHERE active=1")
-    active_promos = cursor.fetchone()[0]
+    print(f"  Active promotions: {db_stats.get('active_promotions', 0)}")
+    print(f"  Total products: {db_stats.get('total_products', 0)}")
+    print(f"  Elapsed time: {elapsed:.1f}s")
 
-    cursor.execute("SELECT COUNT(*) FROM products")
-    total_products = cursor.fetchone()[0]
-
-    conn.close()
-
-    print(f"  Active promotions: {active_promos}")
-    print(f"  Total products: {total_products}")
     print()
-
-    # Summary
     print("=" * 70)
     print("  AUTONOMOUS RUN COMPLETE")
     print("=" * 70)
     print(f"  Promotions: {total_stats['promotions']['new']} new, {total_stats['promotions']['updated']} updated")
     print(f"  Products: {total_stats['products']['new']} new, {total_stats['products']['updated']} updated")
     print()
-    print("  [OK] AI processing completed")
+    print("  [OK] AI analysis completed")
     print("  [OK] Database updated")
     print("  [OK] data.json exported")
     print("  [OK] Email report generated")
@@ -370,11 +421,9 @@ def main():
         'mode': 'enhanced_autonomous',
         'banks_scraped': len(scraped_data),
         'stats': total_stats,
-        'database': {
-            'active_promotions': active_promos,
-            'products': total_products
-        },
-        'email_sent': bool(gmail_address and gmail_password and recipient)
+        'database': db_stats,
+        'elapsed_seconds': elapsed,
+        'email_sent': smtp_ready,
     }
 
     output_file = BASE_DIR / 'data' / 'autonomous_enhanced_summary.json'
@@ -382,6 +431,7 @@ def main():
         json.dump(summary, f, indent=2)
 
     print(f"\n  [OUTPUT] {output_file}")
+
 
 if __name__ == '__main__':
     main()
