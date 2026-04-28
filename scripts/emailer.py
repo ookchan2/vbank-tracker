@@ -745,6 +745,54 @@ def build_html_email(
   </td>
 </tr>"""
 
+    # Build all active promotions section (not just new ones)
+    # Filter out BAU and already-shown promos to avoid duplication
+    shown_ids = {p['id'] for p in new_promos_show + new_promos_wk_show}
+    all_active_non_bau = [
+        p for p in count_list
+        if not p.get('is_bau', False)
+        and p.get('active') is not False
+        and p['id'] not in shown_ids
+    ]
+
+    if all_active_non_bau:
+        active_cards = ''.join(_new_promo_card(p) for p in all_active_non_bau[:50])  # Cap at 50 to avoid email bloat
+        active_count = len(all_active_non_bau)
+        all_active_section = f"""
+<tr><td style="height:20px;"></td></tr>
+<tr><td style="background:#ffffff;border-radius:16px;padding:24px;
+               box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;">
+    <tr>
+      <td bgcolor="#10b981"
+          style="background-color:#10b981;
+                 background:linear-gradient(135deg,#10b981 0%,#059669 100%);
+                 border-radius:12px;padding:16px 22px;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="vertical-align:middle;">
+            <span style="font-size:22px;vertical-align:middle;">✅</span>
+            <span style="font-weight:900;font-size:17px;color:#1f2937;
+                         vertical-align:middle;margin-left:10px;">All Active Promotions</span>
+            <div style="font-size:11px;color:rgba(0,0,0,0.45);margin-top:3px;
+                        margin-left:34px;">所有進行中優惠 · currently active & valid · detailed view</div>
+          </td>
+          <td style="text-align:right;vertical-align:middle;white-space:nowrap;">
+            <span style="background:rgba(0,0,0,0.15);color:#1f2937;
+                         padding:4px 14px;border-radius:20px;
+                         font-size:12px;font-weight:700;">
+              {active_count} promotion{"s" if active_count != 1 else ""}
+            </span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+  </table>
+  {active_cards}
+  {f'<div style="text-align:center;padding:20px;color:#9ca3af;font-size:12px;font-weight:600;">... and {active_count - 50} more (email capped at 50)</div>' if active_count > 50 else ''}
+</td></tr>"""
+    else:
+        all_active_section = ''
+
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -785,6 +833,7 @@ def build_html_email(
   {today_section}
   {week_section}
   {products_section}
+  {all_active_section}
 
   <tr><td style="height:20px;"></td></tr>
 
