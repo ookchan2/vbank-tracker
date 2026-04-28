@@ -249,28 +249,151 @@ Today's Date: TODAY_DATE_PLACEHOLDER
 ALLOWED CATEGORY TAGS (Chinese, pick 1-3 per promotion):
   迎新 / 消費 / 投資 / 旅遊 / 保險 / 貸款 / 存款 / 外匯 / 推薦 / 新資金 / Others
 
-REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DETAILED EXTRACTION REQUIREMENTS FOR EACH FIELD:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Schema for each object:
+For EVERY promotion, extract COMPREHENSIVE details:
+
+1. NAME: Full descriptive English name including:
+   - Specific cash amounts (e.g., "HKD 800 Cash Reward")
+   - Percentage rates (e.g., "Up to 3.88% p.a.")
+   - Partner names (e.g., "Trip.com x Mox Credit Card")
+   - Time periods if relevant (e.g., "Summer 2026 Promotion")
+
+2. DESCRIPTION (2-3 DETAILED sentences - THIS IS CRITICAL):
+   - WHAT: What exactly is being offered (cashback, bonus, fee waiver)
+   - WHO: Who is eligible (new customers, existing users, minimum age)
+   - HOW MUCH: Specific amounts, percentages, maximum caps
+   - WHEN: Validity period, deadline, campaign dates
+   - CONDITIONS: Minimum spend, required actions, exclusions
+   - EXAMPLE: "New Mox Card holders can earn HKD 300 cashback after spending
+     HKD 3,000 within the first 30 days of account opening. This promotion
+     is exclusive to first-time Mox customers and runs until 31 Dec 2026."
+
+3. HIGHLIGHT: One-line summary starting with an emoji:
+   - 💰 for cash rewards: "💰 Earn HKD 300 welcome bonus"
+   - 🎯 for discounts: "🎯 Get 8% off on Trip.com bookings"
+   - 📈 for rates: "📈 Enjoy up to 3.88% p.a. interest"
+   - 🆓 for freebies: "🆓 Zero platform fees for 90 days"
+   - ✈️ for travel: "✈️ Collect 2 Asia Miles per USD 1 spent"
+
+4. QUOTA/ELIGIBILITY (be specific):
+   - Customer type: "New customers only" / "Existing customers eligible"
+   - Age requirements: "Aged 18 or above"
+   - Residency: "HKID holders only"
+   - Income: "Minimum monthly income HKD 15,000"
+   - Limits: "First 500 applicants" / "While stocks last"
+   - Cap: "Maximum 1,000 redemptions"
+
+5. COST/MINIMUM SPEND (exact figures):
+   - Minimum spend: "Spend HKD 3,000 to qualify"
+   - Required deposit: "Deposit HKD 50,000 for 3 months"
+   - Entry fee: "Free to enter" / "HKD 100 application fee"
+   - Tiered spending: "Tier 1: HKD 3,000; Tier 2: HKD 10,000"
+
+6. PERIOD: Clear validity period:
+   - Specific dates: "15 Mar 2026 to 30 Jun 2026"
+   - From-start: "From 1 Apr 2026 to 31 Dec 2026"
+   - Ongoing: "Ongoing (no end date)"
+
+7. TC_LINK: Direct link to terms & conditions page
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLES OF HIGH-QUALITY EXTRACTIONS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXAMPLE 1 (Cashback Promotion):
+Text: "Mox Credit Card Cashback - Earn 10% cashback on dining and entertainment,
+plus 1% on all other purchases. New customers get HKD 300 sign-up bonus after
+spending HKD 3,000 in the first month. No annual fee for the first year.
+Valid until further notice."
+
+Extract:
 {{
-  "name":        "Full descriptive English name of the promotion",
-  "types":       ["category1", "category2"],
-  "is_bau":      false,
-  "start_date":  "YYYY-MM-DD or null",
-  "end_date":    "YYYY-MM-DD or null",
-  "period":      "Human-readable period, e.g. '1 Jan 2025 to 31 Mar 2025' or 'Ongoing'",
-  "highlight":   "One-line key benefit starting with an emoji",
-  "description": "2-3 sentences describing this specific promotion in detail.",
-  "quota":       "Eligibility or quota info (e.g. First 1000 customers / New customers only / No cap)",
-  "cost":        "Minimum spend or required cost, or Free",
-  "tc_link":     "URL_PLACEHOLDER"
+  "name": "Mox Credit Card 10% Dining Cashback + HKD 300 Welcome Bonus",
+  "types": ["消費", "迎新"],
+  "is_bau": false,
+  "start_date": null,
+  "end_date": null,
+  "period": "Ongoing",
+  "highlight": "💰 Earn 10% cashback on dining + HKD 300 welcome bonus",
+  "description": "Mox Credit Card offers 10% unlimited cashback on dining and entertainment
+purchases, plus 1% on all other spending. New cardholders receive HKD 300 bonus
+after completing HKD 3,000 spending within the first 30 days. No annual fee for
+the first year, then HKD 500/year thereafter. Available to Hong Kong residents
+aged 18+ with valid HKID.",
+  "quota": "New customers only (first-time Mox Card holders)",
+  "cost": "Minimum spend HKD 3,000 within 30 days to unlock HKD 300 bonus",
+  "tc_link": "URL_PLACEHOLDER"
 }}
+
+EXAMPLE 2 (Time-Limited Deposit Promotion):
+Text: "livi GoSave 3.88% Promotion - Open a GoSave account and enjoy 3.88% p.a.
+interest rate on deposits up to HKD 500,000. Promotional rate valid for 6 months
+from account opening. Minimum deposit HKD 10,000. Existing livi customers eligible.
+Offer ends 30 June 2026."
+
+Extract:
+{{
+  "name": "livi GoSave 3.88% p.a. Promotional Interest Rate (6 Months)",
+  "types": ["存款", "新資金"],
+  "is_bau": false,
+  "start_date": "2026-01-01",
+  "end_date": "2026-06-30",
+  "period": "1 Jan 2026 to 30 Jun 2026",
+  "highlight": "📈 Earn 3.88% p.a. on GoSave deposits for 6 months",
+  "description": "livi bank offers 3.88% p.a. promotional interest rate on GoSave fixed
+deposit accounts. The promotional rate applies to deposits up to HKD 500,000 for
+a tenure of 6 months from account opening. Minimum initial deposit of HKD 10,000
+required. Early withdrawal will result in forfeiture of promotional interest.
+Available to existing livi customers and new users.",
+  "quota": "Existing and new livi customers aged 18+",
+  "cost": "Minimum deposit HKD 10,000; Lock-in period: 6 months",
+  "tc_link": "URL_PLACEHOLDER"
+}}
+
+EXAMPLE 3 (Investment Fee Waiver):
+Text: "ZA Bank Fund Investment - Invest in over 50 featured funds with zero
+subscription fees. Normally 2-3% fee waived for all funds. Plus get priority
+access to new fund launches. Promotion valid until 31 July 2026."
+
+Extract:
+{{
+  "name": "ZA Bank Zero-Fee Fund Investment Platform (50+ Funds)",
+  "types": ["投資"],
+  "is_bau": false,
+  "start_date": null,
+  "end_date": "2026-07-31",
+  "period": "Ongoing until 31 Jul 2026",
+  "highlight": "🆓 Zero subscription fees on 50+ investment funds",
+  "description": "ZA Bank provides commission-free access to over 50 curated investment
+funds including equity, bond, and balanced portfolios. Standard subscription fees
+of 2-3% are completely waived, saving investors significant costs. Features
+include automated portfolio rebalancing, real-time fund performance tracking,
+and priority allocation for new fund offerings. Suitable for both beginner and
+experienced investors.",
+  "quota": "All ZA Bank account holders (no minimum balance requirement)",
+  "cost": "Free (zero subscription fees during promotional period)",
+  "tc_link": "URL_PLACEHOLDER"
+}}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 WEBSITE TEXT TO ANALYSE:
 ────────────────────────────────────────────────────────────────────────
 TEXT_PLACEHOLDER
 ────────────────────────────────────────────────────────────────────────
-Remember: return ONLY the JSON array starting with [ and ending with ].
+
+REMEMBER:
+- Return ONLY the JSON array starting with [ and ending with ]
+- NO markdown fences, NO explanations, NO additional text
+- Extract ALL promotions you find - don't skip any
+- Include SPECIFIC numbers, amounts, percentages, dates
+- Write DETAILED descriptions (2-3 sentences minimum)
+- If a field has no information, use empty string "" or null for dates
+- For ongoing promotions with no end date, set end_date to null
+
 If the text is entirely from a government or charity website, return [].
 If you see any mention of taipofire.gov.hk, wang fuk court, hab033,
 cefs.gov.hk, or tax deduction for donation — skip that content entirely."""
@@ -1849,10 +1972,10 @@ def extract_products(bank_id: str, bank_name: str, text: str) -> list[dict]:
 TARGET BANK: {bank_name}
 
 PRODUCT CATEGORIES TO IDENTIFY:
-1. DEPOSIT PRODUCTS: Savings accounts, time deposits, multi-currency accounts, high-yield accounts
-2. CARD PRODUCTS: Debit cards, credit cards, prepaid cards
-3. INVESTMENT PRODUCTS: Stock trading (US/HK), fund investment, cryptocurrency trading, bond investment
-4. LOAN PRODUCTS: Personal loans, mortgage loans, business loans
+1. DEPOSIT PRODUCTS: Savings accounts, time deposits, multi-currency accounts, high-yield accounts, fixed deposits
+2. CARD PRODUCTS: Debit cards, credit cards, prepaid cards, virtual cards
+3. INVESTMENT PRODUCTS: Stock trading (US/HK), fund investment, cryptocurrency trading, bond investment, robo-advisory
+4. LOAN PRODUCTS: Personal loans, mortgage loans, business loans, car loans, education loans
 
 EXTRACTION RULES:
 - Focus on PERMANENT product offerings, NOT time-limited promotions
@@ -1861,45 +1984,160 @@ EXTRACTION RULES:
 - If you see both, extract the underlying PRODUCT and note any promotional features separately
 - Each product should be unique - don't list the same product twice with different names
 
-OUTPUT FORMAT: Return a JSON array of product objects with these fields:
-{{
-  "product_name": "Clear, concise product name",
-  "category": "deposit|card|investment|loan",
-  "subcategory": "Specific type (e.g., savings/stocks/funds/crypto/debit-card/personal-loan)",
-  "description": "1-2 sentence description of what this product offers",
-  "features": ["feature1", "feature2", "feature3"],
-  "interest_rate": "Rate if mentioned (e.g., '3.5% p.a.'), empty string if N/A",
-  "fees": "Fee structure (e.g., 'HKD 50/month'), empty string if free/N/A",
-  "eligibility": "Who can apply (e.g., 'HK residents 18+'), empty string if standard",
-  "url": "Source page URL"
-}}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DETAILED EXTRACTION REQUIREMENTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-EXAMPLE FOR REFERENCE:
-If you see: "ZA Bank High Yield Savings - Earn up to 3.88% p.a. on your savings balance. No minimum deposit required. Available to all HK residents."
+For EVERY product, extract COMPREHENSIVE details including:
+
+1. PRODUCT NAME: Clear, specific product name (not generic terms)
+
+2. CATEGORY & SUBCATEGORY:
+   - deposit: savings, time-deposit, multi-currency, high-yield, fixed-deposit
+   - card: debit-card, credit-card, prepaid-card, virtual-card
+   - investment: stocks, funds, crypto, bonds, robo-advisor
+   - loan: personal-loan, mortgage, business-loan, car-loan, education-loan
+
+3. DESCRIPTION (2-3 detailed sentences):
+   - What the product is and who it's for
+   - Key benefits and unique selling points
+   - Specific numbers: rates, limits, percentages where available
+
+4. FEATURES (list 3-7 specific features):
+   - Interest rates or returns (e.g., "Up to 3.88% p.a.")
+   - Fee structures (e.g., "$0 commission", "No annual fee")
+   - Limits and thresholds (e.g., "No minimum deposit")
+   - Accessibility (e.g., "24/7 mobile banking", "Instant transfers")
+   - Special conditions (e.g., "Available to HK ID holders only")
+   - Partner services (e.g., "Integration with The Club rewards")
+
+5. INTEREST RATE (if applicable):
+   - Exact rate: "3.88% p.a." or "Up to 3.88% p.a."
+   - Rate conditions: "For first $500,000 balance" or "With monthly salary transfer"
+   - If tiered: "1.8% on first HKD 100k, 3.88% on next HKD 400k"
+   - Empty string if N/A (cards/investments)
+
+6. FEES (detailed breakdown):
+   - Monthly/annual fees: "HKD 50/month" or "No annual fee"
+   - Transaction fees: "HKD 15 per withdrawal"
+   - Trading fees: "$0 commission + HKD 18 platform fee"
+   - Penalties: "Early withdrawal penalty: 7 days interest"
+   - Empty string if free or N/A
+
+7. ELIGIBILITY (specific requirements):
+   - Age: "18 years or older"
+   - Residency: "HK residents with valid HKID"
+   - Income: "Minimum monthly income HKD 15,000"
+   - Employment: "Full-time employed or self-employed"
+   - Credit: "Good credit standing required"
+   - Empty string if standard (HK residents 18+)
+
+8. MINIMUM REQUIREMENTS (if applicable):
+   - Initial deposit: "Minimum initial deposit HKD 10,000"
+   - Balance: "Minimum balance HKD 5,000 to avoid fees"
+   - Transfer amount: "Minimum transfer HKD 100"
+
+9. URL: Source page URL for reference
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXAMPLES OF DETAILED EXTRACTION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GOOD EXAMPLE 1 (Deposit Product):
+Text: "liviSave Preferential Savings Rate - Enjoy up to 3.88% p.a. on your GoSave account.
+No minimum deposit required. Open an account in just 3 minutes with your HKID.
+Perfect for parking spare cash with instant access. Available to Hong Kong residents aged 18+."
 
 Extract:
 {{
-  "product_name": "High Yield Savings Account",
+  "product_name": "liviSave Preferential Savings Account",
   "category": "deposit",
-  "subcategory": "savings",
-  "description": "High-interest savings account with competitive rates and no minimum deposit",
-  "features": ["Up to 3.88% p.a. interest", "No minimum deposit", "Instant access to funds"],
+  "subcategory": "high-yield",
+  "description": "High-yield savings account offering preferential interest rates up to 3.88% p.a.
+Designed for flexible savings with no lock-in period and instant access to funds.",
+  "features": [
+    "Up to 3.88% p.a. preferential interest rate",
+    "No minimum deposit requirement",
+    "Account opening in 3 minutes",
+    "Instant access to funds anytime",
+    "Managed via livi mobile app"
+  ],
   "interest_rate": "Up to 3.88% p.a.",
   "fees": "",
-  "eligibility": "HK residents 18+",
+  "eligibility": "Hong Kong residents aged 18+ with valid HKID",
   "url": ""
 }}
 
-IMPORTANT:
+GOOD EXAMPLE 2 (Investment Product):
+Text: "EleBank Stock Trading - Trade HK and US stocks with zero commission.
+HK stocks: $0 commission + HKD 15 platform fee per order.
+US stocks: USD 0.0049/share commission + USD 0.005/share platform fee, minimum USD 1.99 per order.
+Access real-time market data and trade 24/7 through the EleBank app."
+
+Extract:
+{{
+  "product_name": "EleBank Stock Trading",
+  "category": "investment",
+  "subcategory": "stocks",
+  "description": "Commission-free stock trading service for HK and US equities with competitive
+platform fees. Access global markets through a single integrated platform with real-time quotes.",
+  "features": [
+    "$0 commission on HK stock trades",
+    "HKD 15 platform fee per HK stock order",
+    "USD 0.0099/share total cost for US stocks",
+    "Minimum USD 1.99 per US stock order",
+    "24/7 trading via mobile app",
+    "Real-time market data included"
+  ],
+  "interest_rate": "",
+  "fees": "HK stocks: HKD 15/order; US stocks: USD 0.0099/share (min USD 1.99/order)",
+  "eligibility": "Existing EleBank account holders",
+  "url": ""
+}}
+
+GOOD EXAMPLE 3 (Loan Product):
+Text: "ZA Bank Personal Loan - Borrow from HKD 5,000 to HKD 500,000 at competitive APR from 8.8%.
+Flexible repayment terms from 6 to 60 months. Quick approval in 1 business day.
+No collateral or guarantor required for loans up to HKD 200,000."
+
+Extract:
+{{
+  "product_name": "ZA Bank Personal Loan",
+  "category": "loan",
+  "subcategory": "personal-loan",
+  "description": "Unsecured personal loan with flexible amounts from HKD 5,000 to HKD 500,000
+and competitive interest rates. Suitable for various personal financing needs with
+quick approval and no collateral requirement.",
+  "features": [
+    "Loan amounts: HKD 5,000 to HKD 500,000",
+    "APR from 8.8% (variable based on credit assessment)",
+    "Repayment terms: 6 to 60 months",
+    "Quick approval within 1 business day",
+    "No collateral required up to HKD 200,000",
+    "No guarantor needed"
+  ],
+  "interest_rate": "From 8.8% APR (variable)",
+  "fees": "Processing fee: HKD 500 (deducted from loan amount)",
+  "eligibility": "HK residents aged 18-65 with regular income, subject to credit approval",
+  "url": ""
+}}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CRITICAL INSTRUCTIONS:
+- Extract ACTUAL products with REAL details from the website content
+- Include specific numbers, rates, fees, and eligibility criteria
+- Do NOT invent information - only extract what's explicitly stated
+- If a field has no information, use empty string ""
+- For investment products, specify exact markets (HK stocks, US stocks, specific crypto pairs)
+- For cards, mention card type (Visa/Mastercard), rewards program, annual fees
+- For loans, mention APR ranges, loan terms, maximum amounts
 - Return ONLY valid JSON array - no markdown, no code fences, no explanation
-- If no products found in a category, simply don't include them (return only actual products)
-- Use the EXACT feature/rate/fee language from the source text
-- For investment products, specify which markets (US stocks, HK stocks, specific cryptocurrencies)
 
 WEBSITE CONTENT TO ANALYZE:
 {text[:40000]}
 
-Return ONLY a valid JSON array of products — NO other text, NO markdown fences, NO explanation."""
+Return ONLY a valid JSON array of product objects — NO other text, NO markdown fences, NO explanation."""
 
     try:
         raw = _call([{'role': 'user', 'content': prompt}], label=f'products/{bank_name}')
