@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Advanced AI Processor - High Accuracy Zero-Cost Solution
-Uses sophisticated pattern matching and heuristics for 95%+ accuracy
-NO EXTERNAL API - But achieves near-API accuracy through smart rules
+Advanced AI Processor - Rule-Based Extraction with Quality Filtering
+Mimics the quality of AI extraction without external API calls
 """
 
 import re
@@ -10,34 +9,148 @@ import json
 from datetime import datetime
 from typing import List, Dict, Any, Tuple
 
-# ── Advanced Promotion Extraction ─────────────────────────────────────
+# ── Non-bank content filtering (from ai_helper.py) ─────────────────────────────
+
+_NON_BANK_CONTENT_PATTERNS = [
+    'taipofire.gov.hk',
+    'taxdeduction.html',
+    'hab033',
+    'cefs.gov.hk',
+    'wang fuk court',
+    'wangfuk',
+    '宏福苑',
+    'support fund for wang fuk',
+    'support fund for',
+    '大埔宏福苑',
+    '援助基金',
+    'tai po fire',
+    'inland revenue',
+    'ird.gov.hk',
+    'gov.hk/taxdeduction',
+    'tax deduction for donation',
+    'tax deduction arrangement',
+    'donation receipt',
+    'donation acknowledgement',
+    'letter of appreciation',
+    'government sincerely thanks',
+    '政府衷心感謝',
+    '捐款致謝',
+    '稅務扣除安排',
+    'charity donation',
+    'relief fund',
+    'disaster relief',
+    'taipofire',
+    'fire support',
+    'fire.gov',
+    'approved charitable donation',
+    'inland revenue ordinance',
+    'bank of china (hong kong) account number 012-875',
+]
+
+_NON_BANK_DOMAINS = [
+    'gov.hk',
+    'ird.gov.hk',
+    'taipofire.gov.hk',
+    'taipofire',
+    'cefs.gov.hk',
+    'police.gov.hk',
+    'welfare.gov.hk',
+    'charities',
+    'redcross',
+]
+
+# ── BAU Detection Patterns ───────────────────────────────────────────────────
+
+BAU_PATTERNS = [
+    r'account opening in \d+ minutes',
+    r'quick account opening',
+    r'mobile account opening',
+    r'open account in minutes',
+    r'24/7 mobile banking',
+    r'24/7 digital banking',
+    r'24×7 banking',
+    r'free instant fps transfers',
+    r'multi-currency savings account',
+]
+
+# ── Category Keywords ─────────────────────────────────────────────────────────
+
+CATEGORY_KEYWORDS = {
+    '迎新': ['welcome', 'new customer', 'sign up', 'open account', '迎新', '新客', '首次'],
+    '消費': ['cashback', 'rebate', 'spending', 'purchase', '消費', '回贈', '簽賬', 'card'],
+    '投資': ['investment', 'stock', 'fund', 'trading', 'securities', '投資', '股票', '基金', 'brokerage', 'commission'],
+    '旅遊': ['travel', 'airline', 'hotel', 'flight', '旅遊', '航空', '酒店', 'trip.com'],
+    '保險': ['insurance', 'protection', 'coverage', '保險', '保障'],
+    '貸款': ['loan', 'borrow', 'mortgage', 'personal loan', '貸款', '按揭', '借貸', 'apr'],
+    '存款': ['deposit', 'savings', 'interest rate', 'time deposit', '存款', '儲蓄', '定期'],
+    '外匯': ['forex', 'foreign exchange', 'currency', 'fx', '外匯', '兌換', 'global wallet'],
+    '推薦': ['referral', 'refer a friend', 'recommend', '推薦', '介紹朋友', 'invite'],
+    '新資金': ['new funds', 'fresh funds', 'new money', '新資金', '新增資金']
+}
+
+# ── Main Extraction Functions ─────────────────────────────────────────────────
 
 def extract_promotions_advanced(text: str, bank_id: str, bank_name: str) -> List[Dict[str, Any]]:
     """
-    Advanced promotion extraction using:
-    1. Multi-stage parsing
-    2. Context-aware detection
-    3. Pattern matching
-    4. Heuristic validation
+    Advanced promotion extraction with quality filtering
     """
-
     promotions = []
 
-    # Stage 1: Identify promotion sections
-    promo_sections = _identify_promotion_sections(text)
+    # Step 1: Clean the text
+    cleaned_text = _clean_text(text)
 
-    # Stage 2: Extract individual promotions
+    # Step 2: Identify promotion sections
+    promo_sections = _identify_promotion_sections(cleaned_text)
+
+    # Step 3: Extract individual promotions
     for section in promo_sections:
         promo = _extract_single_promotion(section, bank_id, bank_name)
-        if promo and _validate_promotion_strict(promo):
+        if promo and _validate_promotion(promo):
             promotions.append(promo)
 
     return promotions
 
-def _identify_promotion_sections(text: str) -> List[str]:
-    """Identify distinct promotion sections in text"""
 
-    # Common promotion delimiters
+def _clean_text(text: str) -> str:
+    """Remove website boilerplate and navigation text"""
+
+    # Remove SOURCE headers
+    text = re.sub(r'=== SOURCE:.*?===', '', text)
+
+    # Remove common navigation patterns
+    nav_patterns = [
+        r'Get \w+ TC',
+        r'繁體中文',
+        r'EN English',
+        r'\w+\+ Travel Playbook',
+        r'Features Arrow Created with Sketch',
+        r'Go to',
+        r'Click here',
+        r'Learn more',
+        r'Download app',
+        r'Contact us',
+        r'Follow us',
+        r'Privacy Policy',
+        r'Terms of Use',
+        r'Cookie Policy',
+        r'Accept',
+        r'Decline',
+        r'Close',
+    ]
+
+    for pattern in nav_patterns:
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE)
+
+    # Remove extra whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+
+    return text
+
+
+def _identify_promotion_sections(text: str) -> List[str]:
+    """Split text into potential promotion sections"""
+
+    # Try splitting by common delimiters
     delimiters = [
         r'\n\n+',  # Double newlines
         r'─+',     # Horizontal rules
@@ -47,46 +160,41 @@ def _identify_promotion_sections(text: str) -> List[str]:
 
     sections = []
 
-    # Try each delimiter
     for delim in delimiters:
         if re.search(delim, text):
             parts = re.split(delim, text)
-            sections.extend([p.strip() for p in parts if len(p.strip()) > 50])
+            sections.extend([p.strip() for p in parts if len(p.strip()) > 100])
             break
 
-    # If no clear delimiters, treat entire text as one section
     if not sections:
         sections = [text]
 
     return sections
 
-def _extract_single_promotion(section: str, bank_id: str, bank_name: str) -> Dict[str, Any]:
-    """Extract a single promotion from a text section"""
 
-    # Skip if this is just a SOURCE header
-    if section.strip().startswith('=== SOURCE:'):
+def _extract_single_promotion(section: str, bank_id: str, bank_name: str) -> Dict[str, Any]:
+    """Extract a single promotion from text section"""
+
+    # Skip if non-bank content
+    if _is_non_bank_content(section):
         return None
 
-    # Extract title (usually first sentence or line)
+    # Extract title
     title = _extract_title(section)
     if not title:
         return None
 
-    # Skip if title is just a SOURCE header
-    if '=== SOURCE:' in title:
-        return None
-
-    # Extract description (substantive content)
+    # Extract description
     description = _extract_description(section)
 
     # Extract dates
-    start_date, end_date = _extract_dates_advanced(section)
+    start_date, end_date = _extract_dates(section)
 
-    # Extract period text
-    period = _extract_period_text(section)
+    # Extract period
+    period = _extract_period(section, start_date, end_date)
 
     # Categorize
-    categories = _categorize_advanced(section)
+    categories = _categorize(section)
 
     # Extract quota and cost
     quota = _extract_quota(section)
@@ -98,11 +206,14 @@ def _extract_single_promotion(section: str, bank_id: str, bank_name: str) -> Dic
     # Determine if BAU
     is_bau = _is_bau_promotion(section, end_date)
 
+    # Generate highlight
+    highlight = _generate_highlight(description or title)
+
     return {
         'bank_id': bank_id,
         'bank_name': bank_name,
         'title': title,
-        'highlight': _generate_highlight(description),
+        'highlight': highlight,
         'description': description,
         'types': categories,
         'start_date': start_date,
@@ -115,82 +226,85 @@ def _extract_single_promotion(section: str, bank_id: str, bank_name: str) -> Dic
         'is_bau': is_bau
     }
 
+
+def _is_non_bank_content(text: str) -> bool:
+    """Check if content is from non-bank sources"""
+    text_lower = text.lower()
+
+    # Check for non-bank patterns
+    for pattern in _NON_BANK_CONTENT_PATTERNS:
+        if pattern in text_lower:
+            return True
+
+    # Check for non-bank domains
+    for domain in _NON_BANK_DOMAINS:
+        if domain in text_lower:
+            return True
+
+    return False
+
+
 def _extract_title(text: str) -> str:
-    """Extract promotion title"""
+    """Extract promotion title - first meaningful line"""
 
-    # Skip SOURCE headers
-    if '=== SOURCE:' in text[:100]:
-        # Find the first real content after SOURCE header
-        lines = text.split('\n')
-        for i, line in enumerate(lines):
-            if '=== SOURCE:' in line:
-                continue
-            line = line.strip()
-            if len(line) > 10 and len(line) < 200 and '===' not in line:
-                return line
-
-    # Try to find headline-style text
     lines = text.split('\n')
 
-    for line in lines[:5]:  # Check first 5 lines
+    for line in lines[:10]:  # Check first 10 lines
         line = line.strip()
-        # Skip SOURCE headers
-        if '=== SOURCE:' in line:
-            continue
-        # Skip navigation/menu text
-        if len(line) < 10 or len(line) > 200:
-            continue
-        # Skip common boilerplate
-        if any(word in line.lower() for word in ['tc 繁體', 'english', 'created with sketch', 'get tc']):
-            continue
-        # Likely a title
-        return line
 
-    # Fallback: use first sentence (skip boilerplate)
+        # Skip short lines
+        if len(line) < 15:
+            continue
+
+        # Skip if too long (likely description)
+        if len(line) > 150:
+            continue
+
+        # Skip navigation text
+        if any(word in line.lower() for word in ['get tc', 'english', 'created with', '繁體']):
+            continue
+
+        # This is likely a title
+        return line[:150]
+
+    # Fallback: use first sentence
     sentences = re.split(r'[.!?]', text)
     for sentence in sentences:
         sentence = sentence.strip()
-        if len(sentence) > 10 and '===' not in sentence:
-            return sentence[:200]
+        if len(sentence) > 15 and len(sentence) < 150:
+            return sentence[:150]
 
-    return text[:100].strip() if '===' not in text[:100] else ''
+    return ''
+
 
 def _extract_description(text: str) -> str:
     """Extract detailed description"""
 
-    # Remove title (first line)
+    # Remove title (first significant line)
     lines = text.split('\n')
-    content = '\n'.join(lines[1:]) if len(lines) > 1 else text
+    content_lines = []
+    title_found = False
 
-    # Remove SOURCE headers
-    content = re.sub(r'=== SOURCE:.*?===', '', content)
+    for line in lines:
+        line = line.strip()
 
-    # Remove common website boilerplate
-    boilerplate_patterns = [
-        r'Get \w+ TC',
-        r'繁體中文',
-        r'EN English',
-        r'\w+\+ Travel Playbook',
-        r'Features Arrow Created with Sketch',
-        r'Log in to the \w+ App',
-        r'Go to',
-        r'Click here',
-        r'Learn more',
-        r'Download app',
-        r'Contact us',
-        r'Follow us',
-        r'Privacy Policy',
-        r'Terms of Use',
-        r'Cookie Policy',
-    ]
+        # Skip the title line
+        if not title_found and len(line) > 15:
+            title_found = True
+            continue
 
-    for pattern in boilerplate_patterns:
-        content = re.sub(pattern, '', content, flags=re.IGNORECASE)
+        # Skip short lines and navigation
+        if len(line) < 20:
+            continue
 
-    # Remove navigation/menu text (short uppercase or capitalized phrases)
-    content = re.sub(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', lambda m: m.group(0) if len(m.group(0)) > 30 else '', content)
+        if any(word in line.lower() for word in ['get tc', 'english', 'created with', '繁體']):
+            continue
 
-    # Clean up whitespace
+        content_lines.append(line)
+
+    content = ' '.join(content_lines[:5])  # Take first 5 substantial lines
+
+    # Clean up
     content = re.sub(r'\s+', ' ', content).strip()
 
     # Limit length
@@ -200,12 +314,13 @@ def _extract_description(text: str) -> str:
         if len(sentences) > 1:
             content = '. '.join(sentences[:-1]) + '.'
         else:
-            content = content[:500] + '...'
+            content = content[:497] + '...'
 
     return content
 
-def _extract_dates_advanced(text: str) -> Tuple[str, str]:
-    """Advanced date extraction with multiple patterns"""
+
+def _extract_dates(text: str) -> Tuple[str, str]:
+    """Extract start and end dates"""
 
     start_date = None
     end_date = None
@@ -227,18 +342,25 @@ def _extract_dates_advanced(text: str) -> Tuple[str, str]:
         elif len(dates) == 1:
             end_date = _normalize_date(dates[0])
 
-    # Pattern 3: "Until DD Month YYYY"
+    # Pattern 3: "Until DD Month YYYY" or "until DD Month YYYY"
     if not end_date:
         match = re.search(r'until\s+(\d{1,2}\s+\w+\s+\d{4})', text, re.IGNORECASE)
         if match:
             end_date = _parse_month_date(match.group(1))
 
+    # Pattern 4: "From DD Month YYYY to DD Month YYYY"
+    if not start_date or not end_date:
+        match = re.search(r'from\s+(\d{1,2}\s+\w+\s+\d{4})\s+to\s+(\d{1,2}\s+\w+\s+\d{4})', text, re.IGNORECASE)
+        if match:
+            start_date = _parse_month_date(match.group(1))
+            end_date = _parse_month_date(match.group(2))
+
     return start_date, end_date
+
 
 def _normalize_date(date_str: str) -> str:
     """Normalize date to YYYY-MM-DD format"""
     try:
-        # Handle DD/MM/YYYY
         if '/' in date_str:
             parts = date_str.split('/')
             if len(parts) == 3:
@@ -247,6 +369,7 @@ def _normalize_date(date_str: str) -> str:
     except:
         pass
     return date_str
+
 
 def _parse_month_date(date_str: str) -> str:
     """Parse 'DD Month YYYY' format"""
@@ -270,14 +393,14 @@ def _parse_month_date(date_str: str) -> str:
 
     return None
 
-def _extract_period_text(text: str) -> str:
+
+def _extract_period(text: str, start_date: str, end_date: str) -> str:
     """Extract promotional period description"""
 
-    # Look for period indicators
+    # Look for explicit period text
     patterns = [
-        r'(?:period|valid|from|until)[:\s]+([^.]+\.)',
+        r'(?:period|valid)[:\s]+([^.]+\.)',
         r'(\d{1,2}\s+\w+\s+\d{4}\s+to\s+\d{1,2}\s+\w+\s+\d{4})',
-        r'(ongoing|limited time|while supplies last)',
     ]
 
     for pattern in patterns:
@@ -285,105 +408,75 @@ def _extract_period_text(text: str) -> str:
         if match:
             return match.group(1).strip()
 
-    return 'Ongoing'
+    # Construct from dates
+    if start_date and end_date:
+        return f"{start_date} to {end_date}"
+    elif end_date:
+        return f"Until {end_date}"
 
-def _categorize_advanced(text: str) -> List[str]:
-    """Advanced categorization with confidence scoring"""
+    return "Ongoing"
+
+
+def _categorize(text: str) -> List[str]:
+    """Categorize promotion using keywords"""
 
     text_lower = text.lower()
-
-    # Category definitions with weight
-    categories = {
-        '迎新': {
-            'keywords': ['welcome', 'new customer', 'sign up', 'open account', '迎新', '新客', '首次'],
-            'weight': 1.0
-        },
-        '消費': {
-            'keywords': ['cashback', 'rebate', 'spending', 'purchase', '消費', '回贈', '簽賬'],
-            'weight': 1.0
-        },
-        '投資': {
-            'keywords': ['investment', 'stock', 'fund', 'trading', 'securities', '投資', '股票', '基金'],
-            'weight': 1.0
-        },
-        '旅遊': {
-            'keywords': ['travel', 'airline', 'hotel', 'flight', '旅遊', '航空', '酒店'],
-            'weight': 0.9
-        },
-        '保險': {
-            'keywords': ['insurance', 'protection', 'coverage', '保險', '保障'],
-            'weight': 0.9
-        },
-        '貸款': {
-            'keywords': ['loan', 'borrow', 'mortgage', 'personal loan', '貸款', '按揭', '借貸'],
-            'weight': 1.0
-        },
-        '存款': {
-            'keywords': ['deposit', 'savings', 'interest rate', 'time deposit', '存款', '儲蓄', '定期'],
-            'weight': 1.0
-        },
-        '外匯': {
-            'keywords': ['forex', 'foreign exchange', 'currency', 'fx', '外匯', '兌換'],
-            'weight': 0.9
-        },
-        '推薦': {
-            'keywords': ['referral', 'refer a friend', 'recommend', '推薦', '介紹朋友'],
-            'weight': 0.8
-        },
-        '新資金': {
-            'keywords': ['new funds', 'fresh funds', 'new money', '新資金', '新增資金'],
-            'weight': 0.9
-        }
-    }
-
-    # Score each category
     scores = {}
-    for cat, config in categories.items():
-        score = 0
-        for keyword in config['keywords']:
-            if keyword in text_lower:
-                score += config['weight']
-        if score > 0:
-            scores[cat] = score
 
-    # Return top categories
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        score = sum(1 for keyword in keywords if keyword in text_lower)
+        if score > 0:
+            scores[category] = score
+
+    # Return top 3 categories
     if scores:
         sorted_cats = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         return [cat for cat, score in sorted_cats[:3]]
 
     return ['Others']
 
+
 def _extract_quota(text: str) -> str:
     """Extract quota/eligibility information"""
 
     patterns = [
-        r'(?:quota|eligibility|available to|eligible)[:\s]+([^.]{10,100})',
+        r'(?:quota|eligibility|available to|eligible)[:\s]+([^.]{10,150})',
         r'(first\s+\d+\s+(?:customers|applicants))',
-        r'(limited\s+(?:to|quota)[:\s]+[^.]+)',
+        r'(limited\s+(?:to|quota)[:\s]+[^.]{10,100})',
+        r'(new customers? only)',
+        r'(existing customers? only)',
     ]
 
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            return match.group(1).strip()
+            quota = match.group(1).strip()
+            # Clean up
+            quota = re.sub(r'\s+', ' ', quota)
+            return quota[:200]
 
     return ''
+
 
 def _extract_cost(text: str) -> str:
     """Extract cost/minimum spend requirements"""
 
     patterns = [
-        r'(?:minimum|min\.?\s+(?:spend|purchase|deposit))[:\s]+([^.]{10,100})',
+        r'(?:minimum|min\.?\s+(?:spend|purchase|deposit))[:\s]+([^.]{10,150})',
         r'(spend\s+HKD\s+[\d,]+)',
         r'(minimum\s+HKD\s+[\d,]+)',
+        r'(min\s+spend[:\s]+[^.]{10,100})',
     ]
 
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            return match.group(1).strip()
+            cost = match.group(1).strip()
+            cost = re.sub(r'\s+', ' ', cost)
+            return cost[:200]
 
     return ''
+
 
 def _extract_links(text: str) -> Tuple[str, str]:
     """Extract URLs from text"""
@@ -395,24 +488,22 @@ def _extract_links(text: str) -> Tuple[str, str]:
 
     return url, tc_link
 
+
 def _is_bau_promotion(text: str, end_date: str) -> bool:
     """Determine if this is a BAU (ongoing) promotion"""
 
-    # BAU indicators
-    bau_keywords = [
-        'ongoing', 'permanent', 'no end date', 'always on',
-        '長期', '永久', '長期優惠'
-    ]
-
+    # Check BAU patterns
     text_lower = text.lower()
-    if any(keyword in text_lower for keyword in bau_keywords):
-        return True
+    for pattern in BAU_PATTERNS:
+        if re.search(pattern, text_lower):
+            return True
 
     # No end date suggests BAU
     if not end_date:
         return True
 
     return False
+
 
 def _generate_highlight(description: str) -> str:
     """Generate brief highlight from description"""
@@ -422,13 +513,14 @@ def _generate_highlight(description: str) -> str:
     if sentences:
         highlight = sentences[0].strip()
         if len(highlight) > 150:
-            highlight = highlight[:150] + '...'
+            highlight = highlight[:147] + '...'
         return highlight
 
-    return description[:100]
+    return description[:150]
 
-def _validate_promotion_strict(promo: Dict[str, Any]) -> bool:
-    """Strict validation for high accuracy"""
+
+def _validate_promotion(promo: Dict[str, Any]) -> bool:
+    """Validate promotion has minimum required fields"""
 
     # Must have title
     if not promo.get('title') or len(promo['title']) < 10:
@@ -442,28 +534,35 @@ def _validate_promotion_strict(promo: Dict[str, Any]) -> bool:
     if not promo.get('description') or len(promo.get('description', '')) < 20:
         return False
 
+    # Check for non-bank content
+    title = promo.get('title', '').lower()
+    desc = promo.get('description', '').lower()
+
+    for pattern in _NON_BANK_CONTENT_PATTERNS:
+        if pattern in title or pattern in desc:
+            return False
+
     return True
 
-# ── Product Extraction (similar advanced logic) ─────────────────────────
+
+# ── Product Extraction ───────────────────────────────────────────────────────
 
 def extract_products_advanced(text: str, bank_id: str, bank_name: str) -> List[Dict[str, Any]]:
-    """Advanced product extraction"""
+    """Extract banking products"""
 
     products = []
 
-    # Identify product sections
     product_keywords = {
         'card': ['credit card', 'debit card', 'visa', 'mastercard'],
-        'deposit': ['savings account', 'current account', 'deposit account'],
+        'deposit': ['savings account', 'current account', 'deposit account', 'time deposit'],
         'loan': ['personal loan', 'mortgage', 'overdraft'],
-        'investment': ['investment account', 'securities account', 'trading account']
+        'investment': ['investment account', 'securities account', 'trading account', 'stock trading']
     }
 
     text_lower = text.lower()
 
     for category, keywords in product_keywords.items():
         if any(keyword in text_lower for keyword in keywords):
-            # Extract product details
             product = {
                 'bank_id': bank_id,
                 'bank_name': bank_name,
@@ -481,6 +580,7 @@ def extract_products_advanced(text: str, bank_id: str, bank_name: str) -> List[D
             products.append(product)
 
     return products
+
 
 # Export
 __all__ = [

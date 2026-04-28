@@ -1,5 +1,5 @@
 {
-  "updated": "2026-04-29 00:26",
+  "updated": "2026-04-29 00:59",
   "promotions": [
     {
       "id": 218,
@@ -4343,6 +4343,34 @@
       "first_seen_at": "2026-04-28"
     },
     {
+      "bank_id": "airstar",
+      "bank_name": "EleBank",
+      "product_name": "EleBank Deposit Product",
+      "category": "deposit",
+      "subcategory": "",
+      "description": "Deposit product from EleBank",
+      "features": [],
+      "interest_rate": "",
+      "fees": "",
+      "eligibility": "",
+      "url": "",
+      "first_seen_at": "2026-04-29"
+    },
+    {
+      "bank_id": "fusion",
+      "bank_name": "Fusion Bank",
+      "product_name": "Fusion Bank Deposit Product",
+      "category": "deposit",
+      "subcategory": "",
+      "description": "Deposit product from Fusion Bank",
+      "features": [],
+      "interest_rate": "",
+      "fees": "",
+      "eligibility": "",
+      "url": "",
+      "first_seen_at": "2026-04-29"
+    },
+    {
       "bank_id": "fusion",
       "bank_name": "Fusion Bank",
       "product_name": "Fusion Bank Loan Product",
@@ -4415,6 +4443,20 @@
     {
       "bank_id": "pao",
       "bank_name": "PADB",
+      "product_name": "PADB Deposit Product",
+      "category": "deposit",
+      "subcategory": "",
+      "description": "Deposit product from PADB",
+      "features": [],
+      "interest_rate": "",
+      "fees": "",
+      "eligibility": "",
+      "url": "",
+      "first_seen_at": "2026-04-29"
+    },
+    {
+      "bank_id": "pao",
+      "bank_name": "PADB",
       "product_name": "PADB Investment Product",
       "category": "investment",
       "subcategory": "",
@@ -4439,6 +4481,20 @@
       "eligibility": "",
       "url": "",
       "first_seen_at": "2026-04-28"
+    },
+    {
+      "bank_id": "welab",
+      "bank_name": "WeLab Bank",
+      "product_name": "WeLab Bank Deposit Product",
+      "category": "deposit",
+      "subcategory": "",
+      "description": "Deposit product from WeLab Bank",
+      "features": [],
+      "interest_rate": "",
+      "fees": "",
+      "eligibility": "",
+      "url": "",
+      "first_seen_at": "2026-04-29"
     },
     {
       "bank_id": "welab",
@@ -4481,7 +4537,21 @@
       "eligibility": "",
       "url": "",
       "first_seen_at": "2026-04-28"
+    },
+    {
+      "bank_id": "za",
+      "bank_name": "ZA Bank",
+      "product_name": "ZA Bank Deposit Product",
+      "category": "deposit",
+      "subcategory": "",
+      "description": "Deposit product from ZA Bank",
+      "features": [],
+      "interest_rate": "",
+      "fees": "",
+      "eligibility": "",
+      "url": "",
+      "first_seen_at": "2026-04-29"
     }
   ],
-  "last_updated": "2026-04-29 00:26"
+  "last_updated": "2026-04-29 00:59"
 }
