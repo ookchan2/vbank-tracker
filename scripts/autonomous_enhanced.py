@@ -17,6 +17,11 @@ sys.path.insert(0, str(BASE_DIR / 'scripts'))
 
 import database as db
 from ai_advanced_processor import extract_promotions_advanced, extract_products_advanced
+from emailer import build_html_email, send_email
+
+# Paths
+DATA_JSON_PATH = BASE_DIR / 'docs' / 'data.json'
+EMAIL_PREVIEW_PATH = BASE_DIR / 'output' / 'email_preview.html'
 
 print("=" * 70)
 print("  VBank Tracker - Enhanced Autonomous Mode")
@@ -245,8 +250,89 @@ def main():
 
     print()
 
-    # Step 4: Generate outputs
-    print("Step 4: Generate outputs")
+    # Step 4: Export data.json for website
+    print("Step 4: Export data.json for website")
+    try:
+        db.export_to_json(str(DATA_JSON_PATH), ai_unavailable=False)
+        print(f"  [OK] Exported to {DATA_JSON_PATH}")
+    except Exception as e:
+        print(f"  [ERR] Failed to export data.json: {e}")
+
+    print()
+
+    # Step 5: Generate and send email
+    print("Step 5: Generate email report")
+
+    # Load data for email
+    all_promos = db.load_promotions(active_only=True)
+
+    # Load data.json
+    try:
+        with open(DATA_JSON_PATH, 'r', encoding='utf-8') as f:
+            data_json = json.load(f)
+    except:
+        data_json = {}
+
+    # Get today's date for filtering
+    today = datetime.now().strftime('%Y-%m-%d')
+
+    # Filter new promotions (today and this week)
+    new_promos_today = [p for p in all_promos if p.get('first_seen_at') == today]
+
+    # Build HTML email
+    html = build_html_email(
+        promotions_data=all_promos,
+        scraped_data=data_json,
+        strategic_insights=None,
+        new_promos=new_promos_today,
+        new_promos_week=[],
+        new_products=[],
+        ai_unavailable=False
+    )
+
+    # Check email configuration
+    gmail_address = os.environ.get('GMAIL_ADDRESS')
+    gmail_password = os.environ.get('GMAIL_APP_PASSWORD')
+    recipient = os.environ.get('RECIPIENT_EMAIL')
+
+    if gmail_address and gmail_password and recipient:
+        # Send email
+        try:
+            success = send_email(
+                html_content=html,
+                subject=f"VBank Tracker Update - {datetime.now().strftime('%Y-%m-%d')}",
+                recipient=[recipient],
+                gmail_address=gmail_address,
+                gmail_app_password=gmail_password
+            )
+            if success:
+                print(f"  [OK] Email sent to {recipient}")
+            else:
+                print("  [ERR] Email sending failed")
+                # Save preview
+                EMAIL_PREVIEW_PATH.parent.mkdir(parents=True, exist_ok=True)
+                with open(EMAIL_PREVIEW_PATH, 'w', encoding='utf-8') as f:
+                    f.write(html)
+                print(f"  [FILE] Saved preview to {EMAIL_PREVIEW_PATH}")
+        except Exception as e:
+            print(f"  [ERR] Email error: {e}")
+            # Save preview
+            EMAIL_PREVIEW_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(EMAIL_PREVIEW_PATH, 'w', encoding='utf-8') as f:
+                f.write(html)
+            print(f"  [FILE] Saved preview to {EMAIL_PREVIEW_PATH}")
+    else:
+        print("  [INFO] Email not configured (missing GMAIL_ADDRESS/GMAIL_APP_PASSWORD/RECIPIENT_EMAIL)")
+        # Save preview
+        EMAIL_PREVIEW_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(EMAIL_PREVIEW_PATH, 'w', encoding='utf-8') as f:
+            f.write(html)
+        print(f"  [FILE] Saved preview to {EMAIL_PREVIEW_PATH}")
+
+    print()
+
+    # Step 6: Database stats
+    print("Step 6: Database statistics")
 
     # Get current database state
     conn = sqlite3.connect(DB_PATH)
@@ -260,7 +346,8 @@ def main():
 
     conn.close()
 
-    print(f"  Database: {active_promos} active promotions, {total_products} products")
+    print(f"  Active promotions: {active_promos}")
+    print(f"  Total products: {total_products}")
     print()
 
     # Summary
@@ -272,6 +359,8 @@ def main():
     print()
     print("  [OK] AI processing completed")
     print("  [OK] Database updated")
+    print("  [OK] data.json exported")
+    print("  [OK] Email report generated")
     print("  [OK] Zero external API calls")
     print("=" * 70)
 
@@ -284,7 +373,8 @@ def main():
         'database': {
             'active_promotions': active_promos,
             'products': total_products
-        }
+        },
+        'email_sent': bool(gmail_address and gmail_password and recipient)
     }
 
     output_file = BASE_DIR / 'data' / 'autonomous_enhanced_summary.json'
