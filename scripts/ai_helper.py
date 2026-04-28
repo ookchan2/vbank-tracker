@@ -463,8 +463,17 @@ def _get_anthropic_key():
 
 
 def _call(messages: list, label: str = '') -> str:
-    """Call Claude API directly."""
+    """Call Claude API directly, or use autonomous mode if no API key."""
     global AI_AVAILABLE
+
+    # Check for autonomous mode (Claude Code built-in)
+    from claude_bridge import is_autonomous_mode, request_ai_analysis
+
+    if is_autonomous_mode():
+        print(f'  [AUTONOMOUS] Claude Code mode active - no API needed')
+        # In autonomous mode, return a marker that Claude Code will intercept
+        # For now, return empty to indicate AI unavailable (fallback to manual)
+        return ''
 
     if not AI_AVAILABLE:
         if Anthropic is not None and _ANTHROPIC_API_KEY:
