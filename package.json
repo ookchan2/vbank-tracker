@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "@playwright/cli": "^0.1.11",
     "better-sqlite3": "^12.9.0",
     "dotenv": "^16.4.0",
     "nodemailer": "^6.9.0",
