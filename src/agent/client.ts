@@ -1,10 +1,12 @@
 /**
  * Agent SDK client wrapper — V1 query() with structured output support.
  * Includes AI-unavailability flag for Copy3's graceful degradation.
+ * Falls back to direct Anthropic API when Agent SDK is not available.
  * @author Alfie
  */
 
 import { query, type Query, type SDKMessage, type SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
+import { callAnthropicDirect, shouldUseDirectAPI } from './direct-ai';
 
 export interface AgentQueryOptions {
   prompt: string;
@@ -36,24 +38,39 @@ export interface AgentResult {
 /** Track whether Agent SDK is available for the session */
 let _agentAvailable = true;
 
+/** Track whether we should use direct API */
+let _useDirectApi = false;
+
 /** Check if Agent SDK was previously detected as unavailable */
 export function isAgentUnavailable(): boolean {
-  return !_agentAvailable;
+  return !_agentAvailable && !_useDirectApi;
 }
 
 /**
  * Run an agent query and collect the final result.
- * Breaks out of the message stream as soon as a result message is received
- * to avoid capturing the subprocess exit error that follows.
+ * Falls back to direct Anthropic API when Agent SDK is not available.
  * @author Alfie
  */
 export async function runAgent(opts: AgentQueryOptions): Promise<AgentResult> {
+  // Check if we should use direct API (GitHub Actions or ANTHROPIC_API_KEY set)
+  if (shouldUseDirectAPI()) {
+    _useDirectApi = true;
+    if (!opts.systemPromptAppend) {
+      return { success: false, errors: ['System prompt required for direct API'] };
+    }
+    return callAnthropicDirect(
+      opts.prompt,
+      opts.systemPromptAppend,
+      opts.outputSchema || {},
+    );
+  }
+
   if (!_agentAvailable) {
     return { success: false, agentUnavailable: true, errors: ['Agent SDK unavailable (previous init failed)'] };
   }
 
   const options: any = {
-    model: opts.model || 'glm-5',
+    model: opts.model || 'claude-sonnet-4-20250514',
     maxTurns: opts.maxTurns || 30,
     permissionMode: opts.permissionMode || 'bypassPermissions',
     allowDangerouslySkipPermissions: opts.permissionMode === 'bypassPermissions',
@@ -155,9 +172,17 @@ export async function runAgent(opts: AgentQueryOptions): Promise<AgentResult> {
 
 /**
  * Pre-warm an agent subprocess for faster first query.
+ * Detects if we should use direct API instead.
  * @author Alfie
  */
 export async function warmup(): Promise<void> {
+  // Check if we should use direct API
+  if (shouldUseDirectAPI()) {
+    _useDirectApi = true;
+    console.log('  ℹ️  Using direct Anthropic API (ANTHROPIC_API_KEY detected or GitHub Actions)');
+    return;
+  }
+
   try {
     const sdk = await import('@anthropic-ai/claude-agent-sdk');
     const startupFn = (sdk as any).startup;
@@ -167,7 +192,7 @@ export async function warmup(): Promise<void> {
     }
     const warm = await startupFn({
       options: {
-        model: 'glm-5',
+        model: 'claude-sonnet-4-20250514',
         permissionMode: 'bypassPermissions',
         allowDangerouslySkipPermissions: true,
       } as any,
@@ -177,6 +202,6 @@ export async function warmup(): Promise<void> {
     console.log('  🔥 Agent subprocess warmed up');
   } catch {
     _agentAvailable = false;
-    console.log('  ⚠️  Agent warmup failed — AI features will be unavailable');
+    console.log('  ⚠️  Agent warmup failed — will use direct API if available');
   }
 }
