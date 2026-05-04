@@ -1,0 +1,25 @@
+{
+  "name": "vbank-tracker-agent",
+  "version": "1.0.0",
+  "description": "HK Virtual Bank Promotions Tracker - Agent SDK Edition",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/main.ts",
+    "dev": "ts-node src/main.ts --no-email"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "better-sqlite3": "^12.9.0",
+    "dotenv": "^16.4.0",
+    "nodemailer": "^6.9.0",
+    "playwright": "^1.59.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^22.0.0",
+    "@types/nodemailer": "^6.4.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.7.0"
+  }
+}

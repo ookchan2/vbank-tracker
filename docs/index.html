@@ -89,6 +89,20 @@
   </div>
 </div>
 
+<!-- ── TAB NAVIGATION ──────────────────────────────────────────── -->
+<div class="max-w-screen-2xl mx-auto px-4 pt-4">
+  <div class="flex gap-2">
+    <button onclick="switchTab('promotions')" id="tab-promotions"
+      class="tab-btn px-5 py-2 rounded-full text-sm font-bold bg-indigo-600 text-white transition-colors">
+      🎁 Promotions
+    </button>
+    <button onclick="switchTab('products')" id="tab-products"
+      class="tab-btn px-5 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors">
+      📦 Products
+    </button>
+  </div>
+</div>
+
 <!-- ── BANK FILTER TABS ───────────────────────────────────────── -->
 <div class="max-w-screen-2xl mx-auto px-4 pt-4">
   <div class="flex gap-2 flex-wrap" id="bankTabs">
@@ -138,6 +152,9 @@
     <div class="mt-2 text-sm text-gray-500" id="resultCount"></div>
   </div>
 </div>
+
+<!-- ══ PROMOTIONS TAB ═════════════════════════════════════════════ -->
+<div id="promotionsTab">
 
 <!-- ══ NEW TODAY ════════════════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-2" id="newTodaySection" style="display:none;">
@@ -194,6 +211,11 @@
     </div>
   </details>
 </div>
+
+</div><!-- END PROMOTIONS TAB -->
+
+<!-- ══ PRODUCTS TAB ════════════════════════════════════════════════ -->
+<div id="productsTab" style="display:none;">
 
 <!-- ══ NEW PRODUCTS TODAY ═══════════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-2" id="newProductsTodaySection" style="display:none;">
@@ -278,6 +300,8 @@
     </div>
   </details>
 </div>
+
+</div><!-- END PRODUCTS TAB -->
 
 <!-- ══ STRATEGIC INSIGHTS ════════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4">
@@ -803,6 +827,16 @@ function buildPromoCard(p) {
          </a>
        </div>` : '';
 
+  // Analysis points section
+  const analysisHtml = p.analysis_points && p.analysis_points.length
+    ? `<div class="mt-3 pt-3 border-t border-gray-100">
+         <div class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">📊 Analysis</div>
+         <ul class="space-y-1">
+           ${p.analysis_points.map(pt => `<li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-indigo-400 shrink-0">•</span>${pt}</li>`).join('')}
+         </ul>
+       </div>`
+    : '';
+
   return `
     <div class="new-promo-card">
       <div class="px-4 py-3 flex items-center justify-between" style="background:${color};">
@@ -822,7 +856,7 @@ function buildPromoCard(p) {
           ? `<div class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg
                          px-3 py-2 mb-1 border-l-2" style="border-color:${color}">${summary}</div>`
           : ''}
-        ${quotaHtml}${costHtml}${sourceHtml}
+        ${quotaHtml}${costHtml}${analysisHtml}${sourceHtml}
       </div>
     </div>`;
 }
@@ -879,20 +913,28 @@ function isNewProductThisWeek(p, today) {
 
 function buildProductCard(p) {
   const color   = bankColor(p.bank_name);
-  const cat     = (p.category || '').toUpperCase();
+  const cat     = (p.category || 'Others');
   const subcat  = p.subcategory || '';
   const desc    = p.description || '';
   const rate    = p.interest_rate || '';
   const fees    = p.fees || '';
   const url     = p.url || '';
+  const zaComp  = p.za_comparison;
 
+  // 10 product categories
   const catMap = {
-    'DEPOSIT': { bg: '#3b82f6', emoji: '🏦', label: 'Deposit' },
-    'CARD': { bg: '#ec4899', emoji: '💳', label: 'Card' },
-    'INVESTMENT': { bg: '#8b5cf6', emoji: '📈', label: 'Investment' },
-    'LOAN': { bg: '#f59e0b', emoji: '💰', label: 'Loan' },
+    'US Stock':               { bg: '#6366f1', emoji: '🇺🇸', label: 'US Stock' },
+    'HK Stock':               { bg: '#e11d48', emoji: '🇭🇰', label: 'HK Stock' },
+    'Crypto':                 { bg: '#f59e0b', emoji: '₿',  label: 'Crypto' },
+    'Fund':                   { bg: '#8b5cf6', emoji: '📊', label: 'Fund' },
+    'Credit Card':            { bg: '#ec4899', emoji: '💳', label: 'Credit Card' },
+    'Saving/Current Deposit': { bg: '#3b82f6', emoji: '🏦', label: 'Savings' },
+    'Time Deposit':           { bg: '#0ea5e9', emoji: '⏳', label: 'Time Deposit' },
+    'Currency Exchange':      { bg: '#14b8a6', emoji: '💱', label: 'FX' },
+    'Personal Loan':          { bg: '#ef4444', emoji: '💰', label: 'Loan' },
+    'Others':                 { bg: '#6b7280', emoji: '📋', label: 'Others' },
   };
-  const catInfo = catMap[cat] || { bg: '#6b7280', emoji: '📋', label: cat };
+  const catInfo = catMap[cat] || catMap['Others'];
 
   const featuresHtml = p.features && p.features.length
     ? `<div class="mt-2 pt-2 border-t border-gray-100">
@@ -922,6 +964,25 @@ function buildProductCard(p) {
        </div>`
     : '';
 
+  // ZA Bank comparison section
+  let zaHtml = '';
+  if (zaComp && typeof zaComp === 'object' && (zaComp.pros_vs_za?.length || zaComp.cons_vs_za?.length)) {
+    const prosHtml = (zaComp.pros_vs_za || []).slice(0, 3)
+      .map(pro => `<li class="text-xs text-green-700 flex items-start gap-1"><span class="text-green-500">▲</span>${pro}</li>`)
+      .join('');
+    const consHtml = (zaComp.cons_vs_za || []).slice(0, 3)
+      .map(con => `<li class="text-xs text-red-700 flex items-start gap-1"><span class="text-red-500">▼</span>${con}</li>`)
+      .join('');
+    const verdictHtml = zaComp.verdict
+      ? `<div class="text-xs text-gray-600 italic mt-2">${zaComp.verdict}</div>`
+      : '';
+    zaHtml = `<div class="mt-3 pt-3 border-t border-gray-100">
+        <div class="text-xs font-bold text-gray-500 mb-1">vs ZA Bank</div>
+        <ul class="space-y-0.5">${prosHtml}${consHtml}</ul>
+        ${verdictHtml}
+      </div>`;
+  }
+
   return `
     <div class="new-promo-card">
       <div class="px-4 py-3 flex items-center justify-between" style="background:${color};">
@@ -939,7 +1000,7 @@ function buildProductCard(p) {
           ? `<div class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg
                          px-3 py-2 mb-1 border-l-2" style="border-color:${color}">${desc}</div>`
           : ''}
-        ${rateHtml}${feesHtml}${featuresHtml}${linkHtml}
+        ${rateHtml}${feesHtml}${featuresHtml}${zaHtml}${linkHtml}
       </div>
     </div>`;
 }
@@ -1023,6 +1084,30 @@ function buildBankTabs(banks) {
     btn.onclick        = () => setBankTab(b);
     container.appendChild(btn);
   });
+}
+
+// ── Tab switching (Promotions/Products) ─────────────────────────────
+function switchTab(tabName) {
+  const promoTab = document.getElementById('promotionsTab');
+  const prodTab  = document.getElementById('productsTab');
+  const promoBtn = document.getElementById('tab-promotions');
+  const prodBtn  = document.getElementById('tab-products');
+
+  if (tabName === 'promotions') {
+    promoTab.style.display = 'block';
+    prodTab.style.display  = 'none';
+    promoBtn.classList.remove('bg-gray-200','text-gray-600');
+    promoBtn.classList.add('bg-indigo-600','text-white');
+    prodBtn.classList.remove('bg-indigo-600','text-white');
+    prodBtn.classList.add('bg-gray-200','text-gray-600');
+  } else {
+    promoTab.style.display = 'none';
+    prodTab.style.display  = 'block';
+    prodBtn.classList.remove('bg-gray-200','text-gray-600');
+    prodBtn.classList.add('bg-indigo-600','text-white');
+    promoBtn.classList.remove('bg-indigo-600','text-white');
+    promoBtn.classList.add('bg-gray-200','text-gray-600');
+  }
 }
 
 function setBankTab(bank) {

@@ -18,18 +18,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.11'
-
-      - name: Cache pip packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          node-version: '22'
+          cache: 'npm'
 
       - name: Restore promotions database
         id: cache-db
@@ -40,32 +33,21 @@ jobs:
           restore-keys: |
             promotions-db-
 
-      - name: Clear Python cache (aggressive)
-        run: |
-          find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-          find . -name "*.pyc" -delete 2>/dev/null || true
-          find . -name "*.pyo" -delete 2>/dev/null || true
-          find scripts -name "*.py" -exec touch {} \;  # Force recompile
-          echo "Python cache aggressively cleared"
-
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Install Node.js dependencies
+        run: npm ci
 
       - name: Install Playwright browsers
         run: |
-          playwright install chromium
-          playwright install-deps chromium
+          npx playwright install chromium
+          npx playwright install-deps chromium
 
-      - name: Run autonomous tracker (zero-cost mode)
+      - name: Run tracker pipeline
         env:
+          ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
           GMAIL_ADDRESS:       ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD:  ${{ secrets.GMAIL_APP_PASSWORD }}
           RECIPIENT_EMAIL:     ${{ secrets.RECIPIENT_EMAIL }}
-        run: |
-          cd scripts
-          python autonomous_enhanced.py
+        run: npx ts-node src/main.ts
 
       - name: Commit updated website data
         run: |
