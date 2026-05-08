@@ -336,14 +336,12 @@ def init_db():
             ('fees',          "ALTER TABLE products ADD COLUMN fees          TEXT DEFAULT ''"),
             ('min_amount',    "ALTER TABLE products ADD COLUMN min_amount    TEXT DEFAULT ''"),
             ('currency',      "ALTER TABLE products ADD COLUMN currency      TEXT DEFAULT ''"),
+            ('is_active',     "ALTER TABLE products ADD COLUMN is_active     INTEGER NOT NULL DEFAULT 1"),
         ]
         for col, sql in products_migrations:
             if col not in products_cols:
-                try:
-                    conn.execute(sql)
-                    print(f'  [MIGRATE] DB migration: added column "{col}" to products table')
-                except Exception:
-                    pass  # Column may already exist
+                conn.execute(sql)
+                print(f'  [MIGRATE] DB migration: added column "{col}" to products table')
 
         conn.executescript('''
             CREATE INDEX IF NOT EXISTS idx_products_bank_id    ON products(bank_id);
