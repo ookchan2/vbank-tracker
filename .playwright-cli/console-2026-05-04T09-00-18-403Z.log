@@ -1,5 +1,0 @@
-[    2072ms] [WARNING] 已设置yuyanId，其他 id 将不生效 @ https://gw.alipayobjects.com/os/lib/alipay/yuyan-monitor-sdk/1.1.0/dist/index.umd.min.js:0
-[    2237ms] [WARNING] [YuyanMonitor]获取服务端配置失败：Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ https://gw.alipayobjects.com/os/lib/alipay/yuyan-monitor-sdk/1.1.0/dist/index.umd.min.js:0
-[    4432ms] [INFO] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://gw.alipayobjects.com/os/bmw-prod/2eeb8d59-6d62-45e1-a1c1-93516e23c061.woff2 @ https://www.antbank.hk/em-plus-offer?lang=zh_hk:0
-[    4432ms] [INFO] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://gw.alipayobjects.com/os/bmw-prod/308d97c6-ab55-4c17-b5b6-48a52b1a77a4.woff2 @ https://www.antbank.hk/em-plus-offer?lang=zh_hk:0
-[    6565ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://www.antbank.hk/undefined:0

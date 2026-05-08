@@ -407,7 +407,6 @@ def _build_plain_text(
     now:             str,
     ai_unavailable:  bool = False,
     count_source:    list = None,
-    new_products:    list = None,
 ) -> str:
     _src    = count_source if (count_source is not None) else (promotions_data or [])
     non_bau = [p for p in _src if not p.get('is_bau', False)]
@@ -429,7 +428,7 @@ def _build_plain_text(
     date_only = _hkt_now().strftime('%d %b %Y')
 
     lines = [
-        f'VBank Tracker Daily Report - {date_only}',
+        f'VBank Tracker Daily Report — {date_only}',
         '=' * 50,
     ]
     if ai_unavailable:
@@ -459,7 +458,7 @@ def _build_plain_text(
     week_show = [p for p in (new_promos_week or []) if not p.get('is_bau', False)]
     if week_show:
         lines += [
-            f'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK - PAST 6 DAYS ({len(week_show)}):',
+            f'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK — PAST 6 DAYS ({len(week_show)}):',
         ]
         for p in week_show:
             bank  = p.get('bName') or p.get('bank_name') or '?'
@@ -469,39 +468,7 @@ def _build_plain_text(
             if tc: lines.append(f'    Source : {tc}')
         lines.append('')
     elif not new_show:
-        lines += ['', 'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK - PAST 6 DAYS: None', '']
-
-    # Add new products section
-    if new_products:
-        lines += [
-            f'{"="*60}',
-            f'NEW PRODUCTS TODAY ({len(new_products)}):',
-            f'{"="*60}',
-        ]
-        for p in new_products:
-            bank = p.get('bank_name') or '?'
-            name = p.get('product_name') or '?'
-            cat = p.get('category', '').upper()
-            subcat = p.get('subcategory', '')
-            desc = p.get('description', '')
-            rate = p.get('interest_rate', '')
-            fees = p.get('fees', '')
-            url = p.get('url', '')
-
-            lines.append(f'\n  [{cat}] {name}')
-            if subcat:
-                lines.append(f'    Type       : {subcat}')
-            if desc:
-                lines.append(f'    Description: {desc}')
-            if rate:
-                lines.append(f'    Rate       : {rate}')
-            if fees:
-                lines.append(f'    Fees       : {fees}')
-            if url:
-                lines.append(f'    Source     : {url}')
-        lines.append('')
-    else:
-        lines += ['', '='*60, 'NEW PRODUCTS TODAY: None', '='*60, '']
+        lines += ['', 'PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK — PAST 6 DAYS: None', '']
 
     lines += [
         f'TOTAL PROMOTIONS : {total_shown}',
@@ -522,12 +489,134 @@ def _build_plain_text(
     lines.append('')
 
     lines += [
-        '-',
+        '—',
         'VBank Tracker • Auto-generated daily at 09:00 HKT',
         'Data sourced from official bank websites only.',
         'For full strategic insights visit the web dashboard.',
     ]
     return '\n'.join(lines)
+
+
+# ── Products section builder ───────────────────────────────────────────────────
+
+def _build_products_section(
+    product_stats:      dict,
+    new_products_today: list,
+    new_products_week:  list,
+) -> str:
+    """Build the products section HTML for the email."""
+    total_products = product_stats.get('total_products', 0)
+    by_category    = product_stats.get('by_category', {})
+    by_bank        = product_stats.get('by_bank', {})
+    new_today      = len(new_products_today)
+    new_week       = len(new_products_week)
+
+    if total_products == 0:
+        return ''
+
+    # Build category breakdown
+    category_rows = ''
+    category_order = [
+        'US Stock', 'HK Stock', 'Investment Funds', 'Crypto Trading',
+        'Credit Card', 'Loans', 'Saving/Current Deposit', 'Time Deposit'
+    ]
+    for cat in category_order:
+        count = by_category.get(cat, 0)
+        if count > 0:
+            category_rows += f'''
+    <tr style="border-bottom:1px solid #f3f4f6;">
+      <td style="padding:8px 12px;font-size:13px;color:#374151;">{cat}</td>
+      <td style="padding:8px 12px;text-align:center;font-weight:700;color:#6366f1;">{count}</td>
+    </tr>'''
+
+    # Build bank breakdown
+    bank_rows = ''
+    sorted_banks = sorted(by_bank.items(), key=lambda x: x[1], reverse=True)
+    for bank_name, count in sorted_banks[:8]:  # Top 8 banks
+        bank_rows += f'''
+    <tr style="border-bottom:1px solid #f3f4f6;">
+      <td style="padding:8px 12px;font-size:13px;color:#374151;">{bank_name}</td>
+      <td style="padding:8px 12px;text-align:center;font-weight:700;color:#6366f1;">{count}</td>
+    </tr>'''
+
+    # New products today section
+    new_today_html = ''
+    if new_today > 0:
+        new_today_html = f'''
+  <tr><td style="height:16px;"></td></tr>
+  <tr><td style="background:#fff7ed;border-radius:12px;padding:14px 18px;
+                 border:1px solid #fed7aa;border-left:4px solid #f97316;">
+    <div style="font-size:14px;font-weight:800;color:#9a3412;">
+      🆕 New Product{('s' if new_today > 1 else '')} Launched Today
+    </div>
+    <div style="font-size:12px;color:#c2410c;margin-top:4px;">
+      {new_today} new product{('s' if new_today > 1 else '')} added today
+    </div>
+  </td></tr>'''
+
+    # New products this week section
+    new_week_html = ''
+    if new_week > 0:
+        new_week_html = f'''
+  <tr><td style="height:16px;"></td></tr>
+  <tr><td style="background:#f0fdf4;border-radius:12px;padding:14px 18px;
+                 border:1px solid #bbf7d0;border-left:4px solid #22c55e;">
+    <div style="font-size:14px;font-weight:800;color:#166534;">
+      📅 New Product{('s' if new_week > 1 else '')} This Week
+    </div>
+    <div style="font-size:12px;color:#15803d;margin-top:4px;">
+      {new_week} new product{('s' if new_week > 1 else '')} launched in the past 7 days
+    </div>
+  </td></tr>'''
+
+    return f'''
+  <tr><td style="height:24px;"></td></tr>
+
+  <!-- Products Section -->
+  <tr><td style="background:#ffffff;border-radius:14px;padding:22px 22px 16px;
+                 box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+    <div style="font-size:17px;font-weight:800;color:#1f2937;margin-bottom:4px;">
+      📦 Products Overview
+    </div>
+    <div style="font-size:12px;color:#9ca3af;margin-bottom:18px;">
+      Total products tracked across all banks
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+      <tr>
+        <td width="50%" style="text-align:center;padding:16px;
+                               border-right:1px solid #f3f4f6;">
+          <div style="font-size:32px;font-weight:900;color:#6366f1;line-height:1;">
+            {total_products}
+          </div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Total Products</div>
+        </td>
+        <td width="50%" style="text-align:center;padding:16px;">
+          <div style="font-size:32px;font-weight:900;color:#22c55e;line-height:1;">
+            {new_week}
+          </div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">New This Week</div>
+        </td>
+      </tr>
+    </table>
+
+    {new_today_html}
+    {new_week_html}
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+      <tr><td colspan="2" style="font-size:13px;font-weight:700;color:#374151;padding-bottom:8px;">
+        By Category
+      </td></tr>
+      {category_rows}
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
+      <tr><td colspan="2" style="font-size:13px;font-weight:700;color:#374151;padding-bottom:8px;">
+        By Bank
+      </td></tr>
+      {bank_rows}
+    </table>
+  </td></tr>'''
 
 
 # ── Main HTML builder ─────────────────────────────────────────────────────────
@@ -538,12 +627,16 @@ def build_html_email(
     strategic_insights: dict = None,
     new_promos:         list = None,
     new_promos_week:    list = None,
-    new_products:       list = None,
     ai_unavailable:     bool = False,
+    product_stats:      dict = None,
+    new_products_today: list = None,
+    new_products_week:  list = None,
 ) -> str:
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
-    new_products    = new_products    or []
+    product_stats   = product_stats   or {}
+    new_products_today = new_products_today or []
+    new_products_week  = new_products_week  or []
 
     date_only = _hkt_now().strftime('%d %b %Y')
 
@@ -638,7 +731,7 @@ def build_html_email(
           AI Extraction Unavailable Today — Showing Cached Data
         </div>
         <div style="font-size:12px;color:#b45309;line-height:1.5;">
-          The ANTHROPIC_API_KEY was not available during this run, so no new promotions
+          The POE_API_KEY was not available during this run, so no new promotions
           were extracted or classified. The data shown below reflects the last
           successful AI run. Promotions may not include today's latest changes.
         </div>
@@ -662,7 +755,7 @@ def build_html_email(
     week_section = _new_section_html(
         promos        = new_promos_wk_show,
         heading       = 'Promotion newly launched within this week',
-        sub_heading   = 'first_seen_at in past 6 days (excl. today, HKT) · active only',
+        sub_heading   = '本週新推出優惠 · first_seen_at in past 6 days (excl. today, HKT) · active only',
         icon          = '📅',
         header_color  = 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)',
         header_dark   = '#6366f1',
@@ -670,130 +763,6 @@ def build_html_email(
         count_label   = '{count} newly launched this week',
         skip_if_empty = False,
     )
-
-    # Build new products HTML section
-    products_section = ''
-    if new_products:
-        product_rows = ''
-        for p in new_products:
-            bank = p.get('bank_name', 'Unknown')
-            name = p.get('product_name', '')
-            cat = p.get('category', '').upper()
-            subcat = p.get('subcategory', '')
-            desc = p.get('description', '')
-            rate = p.get('interest_rate', '')
-            fees = p.get('fees', '')
-            url = p.get('url', '')
-
-            cat_color = {
-                'DEPOSIT': '#10b981',
-                'CARD': '#3b82f6',
-                'INVESTMENT': '#8b5cf6',
-                'LOAN': '#f59e0b',
-            }.get(cat, '#6b7280')
-
-            product_rows += f"""
-<tr style="border-bottom:1px solid #f3f4f6;">
-  <td style="padding:14px 16px;">
-    <div style="margin-bottom:4px;">
-      <span style="display:inline-block;background:{cat_color};color:#fff;
-                   padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;">
-        {cat}
-      </span>
-    </div>
-    <div style="font-weight:700;font-size:14px;color:#1f2937;margin-bottom:3px;">{name}</div>
-    <div style="font-size:12px;color:#6b7280;font-weight:500;">{bank}</div>
-    {f'<div style="font-size:12px;color:#374151;margin-top:3px;">{desc}</div>' if desc else ''}
-    {f'<div style="font-size:12px;color:#059669;font-weight:600;margin-top:2px;">Rate: {rate}</div>' if rate else ''}
-    {f'<div style="font-size:12px;color:#dc2626;margin-top:2px;">Fees: {fees}</div>' if fees else ''}
-    {f'<div style="font-size:11px;color:#9ca3af;margin-top:4px;"><a href="{url}" style="color:#3b82f6;text-decoration:none;">View Details →</a></div>' if url else ''}
-  </td>
-</tr>"""
-
-        products_section = f"""
-<tr><td style="height:18px;"></td></tr>
-<tr>
-  <td style="background:#ffffff;border-radius:14px;padding:22px 24px;
-             border:1px solid #e5e7eb;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
-    <table width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        <td style="vertical-align:middle;width:32px;font-size:26px;">🆕</td>
-        <td style="vertical-align:middle;">
-          <div style="font-size:15px;font-weight:800;color:#111827;line-height:1.3;">
-            New Products Today
-          </div>
-          <div style="font-size:11px;color:#6b7280;font-weight:600;margin-top:2px;">
-            Newly detected banking products · {len(new_products)} product{"s" if len(new_products) != 1 else ""}
-          </div>
-        </td>
-      </tr>
-      <tr><td style="height:14px;"></td></tr>
-      <tr><td>
-        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-          {product_rows}
-        </table>
-      </td></tr>
-    </table>
-  </td>
-</tr>"""
-    else:
-        products_section = """
-<tr><td style="height:18px;"></td></tr>
-<tr>
-  <td style="background:#f9fafb;border-radius:14px;padding:18px 24px;
-             border:1px dashed #d1d5db;text-align:center;">
-    <div style="font-size:13px;font-weight:700;color:#6b7280;">No new products detected today</div>
-  </td>
-</tr>"""
-
-    # Build all active promotions section (not just new ones)
-    # Filter out BAU and already-shown promos to avoid duplication
-    shown_ids = {p['id'] for p in new_promos_show + new_promos_wk_show}
-    all_active_non_bau = [
-        p for p in count_list
-        if not p.get('is_bau', False)
-        and p.get('active') is not False
-        and p['id'] not in shown_ids
-    ]
-
-    if all_active_non_bau:
-        active_cards = ''.join(_new_promo_card(p) for p in all_active_non_bau[:50])  # Cap at 50 to avoid email bloat
-        active_count = len(all_active_non_bau)
-        all_active_section = f"""
-<tr><td style="height:20px;"></td></tr>
-<tr><td style="background:#ffffff;border-radius:16px;padding:24px;
-               box-shadow:0 2px 8px rgba(0,0,0,0.07);">
-  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;">
-    <tr>
-      <td bgcolor="#10b981"
-          style="background-color:#10b981;
-                 background:linear-gradient(135deg,#10b981 0%,#059669 100%);
-                 border-radius:12px;padding:16px 22px;">
-        <table width="100%" cellpadding="0" cellspacing="0"><tr>
-          <td style="vertical-align:middle;">
-            <span style="font-size:22px;vertical-align:middle;">✅</span>
-            <span style="font-weight:900;font-size:17px;color:#1f2937;
-                         vertical-align:middle;margin-left:10px;">All Active Promotions</span>
-            <div style="font-size:11px;color:rgba(0,0,0,0.45);margin-top:3px;
-                        margin-left:34px;">所有進行中優惠 · currently active & valid · detailed view</div>
-          </td>
-          <td style="text-align:right;vertical-align:middle;white-space:nowrap;">
-            <span style="background:rgba(0,0,0,0.15);color:#1f2937;
-                         padding:4px 14px;border-radius:20px;
-                         font-size:12px;font-weight:700;">
-              {active_count} promotion{"s" if active_count != 1 else ""}
-            </span>
-          </td>
-        </tr></table>
-      </td>
-    </tr>
-  </table>
-  {active_cards}
-  {f'<div style="text-align:center;padding:20px;color:#9ca3af;font-size:12px;font-weight:600;">... and {active_count - 50} more (email capped at 50)</div>' if active_count > 50 else ''}
-</td></tr>"""
-    else:
-        all_active_section = ''
-
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -833,8 +802,6 @@ def build_html_email(
   {ai_notice_html}
   {today_section}
   {week_section}
-  {products_section}
-  {all_active_section}
 
   <tr><td style="height:20px;"></td></tr>
 
@@ -909,6 +876,9 @@ def build_html_email(
     </table>
   </td></tr>
 
+  <!-- Products Section -->
+  {_build_products_section(product_stats, new_products_today, new_products_week)}
+
   <!-- FOOTER -->
   <tr><td style="height:16px;"></td></tr>
   <tr><td style="text-align:center;padding:16px 12px;">
@@ -939,7 +909,6 @@ def send_email(
     promotions_data: list                   = None,
     ai_unavailable:  bool                   = False,
     scraped_data:    dict                   = None,
-    new_products:    list                   = None,
 ) -> bool:
     smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.getenv('SMTP_PORT', '587'))
@@ -974,8 +943,8 @@ def send_email(
 
     if not subject:
         date_str = _hkt_now().strftime('%d %b %Y')
-        base     = f'VBank Daily Report - {date_str}'
-        subject  = f'{base} [Cached Data - AI Unavailable]' if ai_unavailable else base
+        base     = f'🏦 VBank Daily Report — {date_str}'
+        subject  = f'{base} [Cached Data — AI Unavailable]' if ai_unavailable else base
 
     now_str = _hkt_now().strftime('%d %b %Y, %H:%M HKT')
 
@@ -988,7 +957,6 @@ def send_email(
         now             = now_str,
         ai_unavailable  = ai_unavailable,
         count_source    = _count_source,
-        new_products    = new_products    or [],
     )
 
     success_count = 0
@@ -1025,7 +993,7 @@ def send_email(
                     wait = 2 ** attempt
                     logger.warning(f'SMTP attempt {attempt} failed for {email_to}: {exc} - retrying in {wait}s')
                     print(f'  [WARN]  SMTP attempt {attempt} failed for {email_to}: '
-                          f'{exc} - retrying in {wait}s...')
+                          f'{exc} — retrying in {wait}s…')
                     time.sleep(wait)
                 else:
                     logger.error(f'Email send failed for {email_to} after {_SMTP_MAX_RETRIES} attempts: {exc}')

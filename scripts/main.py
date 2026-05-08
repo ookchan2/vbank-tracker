@@ -1,5 +1,4 @@
 # scripts/main.py
-# Force cache rebuild - 2026-04-28 email fix verification
 
 import json as _json
 import os
@@ -17,10 +16,10 @@ from scraper   import run_scraper, BANK_CONFIGS
 from ai_helper import (
     init_ai,
     analyze_promotions,
+    analyze_products,
     ai_dedup_titles,
     ai_match_against_existing,
     generate_strategic_insights,
-    extract_products,
 )
 from database  import (
     init_db,
@@ -29,20 +28,21 @@ from database  import (
     save_products,
     mark_stale_as_inactive,
     mark_inactive_old,
-    mark_stale_products_as_inactive,
+    mark_products_stale,
     reactivate_promotions_seen_on,
     reactivate_most_recently_seen,
-    migrate_legacy_bank_names,
     generate_daily_report,
     export_to_json,
+    export_products_to_json,
     get_active_promos_for_bank,
     get_active_promotions,
     get_promotions_by_bank_name,
     get_new_promotions_today,
     get_new_promotions_last_n_days,
-    get_new_products_today,
-    get_all_active_products,
     get_db_stats,
+    get_product_stats,
+    get_new_products_today,
+    get_new_products_last_n_days,
     repair_reinserted_promotions,
 )
 from emailer   import build_html_email, send_email
@@ -128,7 +128,7 @@ def _print_env_check(addr: str, pwd: str, to: list[str]) -> None:
     print(f'    GMAIL_APP_PASSWORD: {"[OK] set (hidden)" if pwd else "[ERR] MISSING"}')
     print(f'    RECIPIENT_EMAIL   : {"[OK] " + to_display if to else "[ERR] MISSING"}')
     if _NO_EMAIL:
-        print('    [SKIP] --no-email flag - SMTP step will be skipped')
+        print('    [SKIP] --no-email flag — SMTP step will be skipped')
 
 
 def _save_html_fallback(html: str, path: str) -> None:
@@ -163,10 +163,10 @@ def _load_data_json(path: str) -> dict | None:
         print(f'  [OK] data.json loaded for email stats ({n} promotions in file)')
         return content
     except FileNotFoundError:
-        print(f'  [WARN]  data.json not found at {path} - email will use DB rows for stats')
+        print(f'  [WARN]  data.json not found at {path} — email will use DB rows for stats')
         return None
     except Exception as exc:
-        print(f'  [WARN]  data.json load failed: {exc} - email will use DB rows for stats')
+        print(f'  [WARN]  data.json load failed: {exc} — email will use DB rows for stats')
         return None
 
 
@@ -194,7 +194,7 @@ def main() -> int:
         init_db()
         current_run_id = start_new_run(banks=list(BANK_CONFIGS.keys()))
     except Exception as exc:
-        print(f'  [ERR] Database init failed - cannot continue: {exc}')
+        print(f'  [ERR] Database init failed — cannot continue: {exc}')
         return 1
 
     # -- Step 2: AI ------------------------------------------------
@@ -222,10 +222,10 @@ def main() -> int:
                     f'{_post.get("bau_promotions", 0)} BAU)'
                 )
             else:
-                print('  [WARN]  Recovery found nothing to restore - DB may be truly empty')
+                print('  [WARN]  Recovery found nothing to restore — DB may be truly empty')
         elif _pre_total > 0 and _pre_active > 0:
             print(
-                f'\n  [INFO]  AI unavailable - using existing '
+                f'\n  [INFO]  AI unavailable — using existing '
                 f'{_pre_active} active promotions from DB for email/website'
             )
         else:
@@ -255,7 +255,7 @@ def main() -> int:
     print(f'  [TIME]  Scrape completed in {time.monotonic() - t3:.1f}s')
 
     if not scraped:
-        print('  [ERR] No data scraped - abort')
+        print('  [ERR] No data scraped — abort')
         return 1
 
     bank_ids_ok: list[str] = [bid for bid, r in scraped.items() if r.get('success')]
@@ -284,10 +284,10 @@ def main() -> int:
         print(f'\n  [{bank_id.upper()}] {bank_name}  {mark}  ({chars:,} chars)')
 
         if not ai_ok:
-            print('    [WARN]  AI unavailable - skip')
+            print('    [WARN]  AI unavailable — skip')
             continue
         if not result.get('success') and not _SKIP_SCRAPE:
-            print(f'    [WARN]  Scrape failed - skip AI for {bank_name}')
+            print(f'    [WARN]  Scrape failed — skip AI for {bank_name}')
             continue
 
         # 4a: Extract promotions
@@ -300,8 +300,7 @@ def main() -> int:
                 default_url = default_url,
             )
         except Exception as exc:
-            safe_exc = str(exc).encode('ascii', 'replace').decode('ascii')
-            print(f'    [ERR] AI extraction error for {bank_name}: {safe_exc}')
+            print(f'    [ERR] AI extraction error for {bank_name}: {exc}')
             continue
 
         if not promos:
@@ -338,16 +337,12 @@ def main() -> int:
                         promos[idx]['_matched_id'] = db_id
                 total_db_matched += len(match_map)
             else:
-                print(f'    [INFO]  No existing DB records for {bank_name} - all will be new')
+                print(f'    [INFO]  No existing DB records for {bank_name} — all will be new')
         except Exception as exc:
-            print(f'    [WARN]  DB-match error for {bank_name}: {exc} - formula pass only')
+            print(f'    [WARN]  DB-match error for {bank_name}: {exc} — formula pass only')
 
-        # 4d: Normalize bank name and save to DB
+        # 4d: Save to DB
         total_extracted += len(promos)
-        canonical_name = _canonical_bank_name(bank_name)
-        if canonical_name != bank_name:
-            print(f'    [INFO]  Normalized bank name: "{bank_name}" -> "{canonical_name}"')
-            bank_name = canonical_name
         try:
             db_result = save_promotions(
                 bank_id, bank_name, promos,
@@ -363,8 +358,22 @@ def main() -> int:
         total_updated += db_result['updated']
         print(
             f"    [OK] {db_result['new']} new, {db_result['updated']} updated, "
-            f"{db_result['skipped']} skipped - {bank_name}"
+            f"{db_result['skipped']} skipped — {bank_name}"
         )
+
+        # 4e: Extract products (if AI available)
+        if ai_ok and result.get('text'):
+            try:
+                products = analyze_products(
+                    bank_id     = bank_id,
+                    bank_name   = bank_name,
+                    text        = result.get('text', ''),
+                    default_url = default_url,
+                )
+                if products:
+                    save_products(bank_id, bank_name, products, today_str=RUN_DATE)
+            except Exception as exc:
+                print(f'    [WARN] Product extraction error for {bank_name}: {exc}')
 
     print(f'  [TIME]  AI extraction completed in {time.monotonic() - t4:.1f}s')
     print(
@@ -372,51 +381,22 @@ def main() -> int:
         f"Deduped:{total_deduped}  DB-matched:{total_db_matched}"
     )
 
-    # -- Step 4b: Product extraction --------------------------------
-    if ai_ok:
-        print('\nStep 4b -- Extract banking products from scraped text')
-        total_products_new = 0
-        total_products_updated = 0
-
-        for bank_id, result in scraped.items():
-            bank_name = result.get('bank_name', bank_id)
-
-            if not result.get('success') and not _SKIP_SCRAPE:
-                continue
-            if len(result.get('text', '')) < 500:
-                continue
-
-            try:
-                products = extract_products(bank_id, bank_name, result.get('text', ''))
-                if products:
-                    prod_result = save_products(bank_id, bank_name, products, today_str=RUN_DATE)
-                    total_products_new += prod_result['new']
-                    total_products_updated += prod_result['updated']
-            except Exception as exc:
-                print(f'    [WARN] Product extraction error for {bank_name}: {exc}')
-
-        print(f'  [PRODUCTS] Summary: {total_products_new} new, {total_products_updated} updated across all banks')
-    else:
-        print('\nStep 4b -- Product extraction skipped (AI unavailable)')
-
     # -- Step 5: Mark stale / old inactive ------------------------
     print('\nStep 5 -- Mark stale / old promos inactive')
 
     if not ai_ok:
         print(
-            '  [WARN]  AI unavailable - skipping mark_stale_as_inactive and '
+            '  [WARN]  AI unavailable — skipping mark_stale_as_inactive and '
             'mark_inactive_old to preserve existing data'
         )
     elif not banks_ai_saved:
         print(
-            '  [WARN]  No banks were successfully saved this run - '
+            '  [WARN]  No banks were successfully saved this run — '
             'skipping mark_stale_as_inactive to avoid false-expiry'
         )
     else:
         mark_stale_as_inactive(banks_ai_saved, today_str=RUN_DATE)
         mark_inactive_old(days_threshold=90)
-        # Also mark products as inactive if not seen today
-        mark_stale_products_as_inactive()
 
     # -- Step 5b: Post-staleness sanity check --------------------─
     _active_after_stale = get_active_promotions(include_bau=True)
@@ -428,7 +408,7 @@ def main() -> int:
         recovered = reactivate_promotions_seen_on(RUN_DATE)
         if not recovered:
             print(
-                '  [ERR] Recovery found nothing - attempting broad recovery'
+                '  [ERR] Recovery found nothing — attempting broad recovery'
             )
             reactivate_most_recently_seen(window_days=7)
     elif not _active_after_stale and not banks_ai_saved:
@@ -436,24 +416,19 @@ def main() -> int:
             '  [WARN]  Still 0 active promotions after Step 2b recovery attempt'
         )
 
-    # -- Step 5b: Migrate legacy bank names --------------------
-    print('\nStep 5b -- Migrate legacy bank names to canonical names')
-    try:
-        migrated_count = migrate_legacy_bank_names(dry_run=False)
-        if migrated_count > 0:
-            print(f'  [OK]  Migrated {migrated_count} legacy bank name(s)')
-    except Exception as exc:
-        print(f'  [WARN]  Bank name migration error: {exc} - continuing')
-
     # -- Step 5c: Repair re-inserted promotions --------------------
     print('\nStep 5c -- Repair re-inserted promotions')
     if ai_ok:
         try:
             repair_reinserted_promotions(dry_run=False)
         except Exception as exc:
-            print(f'  [WARN]  repair_reinserted_promotions error: {exc} - continuing')
+            print(f'  [WARN]  repair_reinserted_promotions error: {exc} — continuing')
     else:
-        print('  [NEXT]  Skipping repair - AI unavailable this run (no new insertions possible)')
+        print('  [NEXT]  Skipping repair — AI unavailable this run (no new insertions possible)')
+
+    # -- Step 5d: Mark stale products inactive --------------------
+    if ai_ok and banks_ai_saved:
+        mark_products_stale(banks_ai_saved, today_str=RUN_DATE)
 
     # -- Step 6: Export data.json for website --------------------─
     print('\nStep 6 -- Export data.json for website')
@@ -461,7 +436,7 @@ def main() -> int:
     _active_for_export = get_active_promotions(include_bau=True)
     if not _active_for_export:
         print(
-            '  [WARN]  Skipping data.json export - 0 active promotions in DB '
+            '  [WARN]  Skipping data.json export — 0 active promotions in DB '
             '(preserving existing file)'
         )
     else:
@@ -527,7 +502,7 @@ def main() -> int:
     if _found_legacy:
         print(
             f'  [WARN]  Legacy bank name(s) still in promos_by_name after normalisation: '
-            f'{_found_legacy} - run migrate_bank_names.py to fix DB rows'
+            f'{_found_legacy} — run migrate_bank_names.py to fix DB rows'
         )
 
     all_promos_email = [p for p in all_active_with_bau if not p.get('is_bau', False)]
@@ -564,7 +539,7 @@ def main() -> int:
         _patch_data_json(DATA_JSON_PATH, {'strategic_insights': strategic_insights})
     else:
         _patch_data_json(DATA_JSON_PATH, {'strategic_insights': None})
-        print('  [WARN]  Insights unavailable - continuing without it')
+        print('  [WARN]  Insights unavailable — continuing without it')
 
     # -- Step 8b: Reload data.json after insights patch ------------------------
     if strategic_insights:
@@ -573,11 +548,17 @@ def main() -> int:
         if _reloaded is not None:
             data_json_content = _reloaded
 
+    # -- Step 8c: Get product data for email -----------------------------
+    print('\nStep 8c -- Get product data for email')
+    new_products_today = get_new_products_today()
+    new_products_week  = get_new_products_last_n_days(days=6)
+    product_stats      = get_product_stats()
+    print(f'  [INFO] Products: {product_stats.get("total_products", 0)} total')
+    print(f'  [INFO] New products today: {len(new_products_today)}')
+    print(f'  [INFO] New products this week: {len(new_products_week)}')
+
     # -- Step 9: Build & send email --------------------------------
     print('\nStep 9 -- Build & send email')
-
-    # Get new products for email
-    new_products = get_new_products_today() if ai_ok else []
 
     html = build_html_email(
         promotions_data    = all_promos_email,
@@ -585,8 +566,10 @@ def main() -> int:
         strategic_insights = strategic_insights,
         new_promos         = new_promos_email,
         new_promos_week    = new_promos_week_email,
-        new_products       = new_products,
         ai_unavailable     = not ai_ok,
+        product_stats      = product_stats,
+        new_products_today = new_products_today,
+        new_products_week  = new_products_week,
     )
     print('  [OK] HTML email built')
 
@@ -599,8 +582,8 @@ def main() -> int:
     smtp_ready = all([addr, pwd, to])
 
     email_subject = (
-        f'[BANK] VBank Daily Report - {datetime.now().strftime("%d %b %Y")} '
-        f'{"[Cached Data - AI Unavailable]" if not ai_ok else ""}'
+        f'[BANK] VBank Daily Report — {datetime.now().strftime("%d %b %Y")} '
+        f'{"[Cached Data — AI Unavailable]" if not ai_ok else ""}'
     ).strip()
 
     if _NO_EMAIL:
@@ -614,7 +597,7 @@ def main() -> int:
                 ('RECIPIENT_EMAIL',    to),
             ] if not val
         ]
-        print(f'  [ERR] Missing {" / ".join(missing)} - email skipped')
+        print(f'  [ERR] Missing {" / ".join(missing)} — email skipped')
         print(f'  [FILE] HTML preview -> {output_path}')
     else:
         try:

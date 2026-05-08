@@ -77,6 +77,27 @@ _NON_BANK_PATTERNS: List[str] = [
     '援助基金',
     '捐款收據',
     '慈善捐款',
+    # Scam alerts and security notices are NOT promotions
+    'beware of scam',
+    'beware of bogus',
+    'bogus call',
+    'scam alert',
+    'fraud alert',
+    'security alert',
+    '防騙',
+    '詐騙',
+    '提防騙案',
+    '假冒',
+    '偽冒',
+    # Service information is NOT a promotion
+    '24x7 service',
+    '24x7 banking',
+    '24/7 service',
+    'customer service hour',
+    'service hour',
+    'branch hour',
+    'opening hour',
+    'business hour',
 ]
 
 _NON_BANK_COMPOUND: List[tuple] = [
@@ -87,8 +108,8 @@ _NON_BANK_COMPOUND: List[tuple] = [
 ]
 
 
-def _is_non_bank_content(title: str, highlight: str = '') -> bool:
-    combined = ' '.join([title or '', highlight or '']).lower()
+def _is_non_bank_content(title: str, highlight: str = '', description: str = '', tc_link: str = '') -> bool:
+    combined = ' '.join([title or '', highlight or '', description or '', tc_link or '']).lower()
     for pat in _NON_BANK_PATTERNS:
         if pat == '大埔':
             continue
@@ -225,28 +246,6 @@ def init_db():
                 active        INTEGER NOT NULL DEFAULT 1
             );
 
-            CREATE TABLE IF NOT EXISTS products (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                bank_id         TEXT    NOT NULL DEFAULT '',
-                bank_name       TEXT    NOT NULL DEFAULT '',
-                product_name    TEXT    NOT NULL,
-                category        TEXT    NOT NULL DEFAULT '',
-                subcategory     TEXT    DEFAULT '',
-                description     TEXT    DEFAULT '',
-                features        TEXT    DEFAULT '',
-                interest_rate   TEXT    DEFAULT '',
-                fees            TEXT    DEFAULT '',
-                eligibility     TEXT    DEFAULT '',
-                url             TEXT    DEFAULT '',
-                first_seen_at   TEXT    NOT NULL,
-                last_seen       TEXT    NOT NULL,
-                active          INTEGER NOT NULL DEFAULT 1
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_products_bank ON products(bank_id, active);
-            CREATE INDEX IF NOT EXISTS idx_products_category ON products(category, active);
-            CREATE INDEX IF NOT EXISTS idx_products_name ON products(product_name);
-
             CREATE TABLE IF NOT EXISTS scrape_runs (
                 id            INTEGER PRIMARY KEY AUTOINCREMENT,
                 run_at        TEXT    NOT NULL,
@@ -303,6 +302,56 @@ def init_db():
                 f'for {null_row[0]} NULL row(s) from created_at'
             )
 
+        # ── Products table ──────────────────────────────────────────────────────
+        conn.executescript('''
+            CREATE TABLE IF NOT EXISTS products (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                bank_id       TEXT    NOT NULL,
+                bank_name     TEXT    NOT NULL,
+                product_name  TEXT    NOT NULL,
+                category      TEXT    NOT NULL,
+                description   TEXT    DEFAULT '',
+                highlight     TEXT    DEFAULT '',
+                features      TEXT    DEFAULT '',
+                fees          TEXT    DEFAULT '',
+                min_amount    TEXT    DEFAULT '',
+                currency      TEXT    DEFAULT '',
+                url           TEXT    DEFAULT '',
+                tc_link       TEXT    DEFAULT '',
+                is_active     INTEGER NOT NULL DEFAULT 1,
+                created_at    TEXT    NOT NULL,
+                first_seen_at TEXT    DEFAULT NULL,
+                last_seen     TEXT    NOT NULL
+            );
+        ''')
+
+        # Check if products table needs migration
+        products_cols = {
+            row[1] for row in conn.execute('PRAGMA table_info(products)').fetchall()
+        }
+
+        products_migrations = [
+            ('first_seen_at', "ALTER TABLE products ADD COLUMN first_seen_at TEXT DEFAULT NULL"),
+            ('features',      "ALTER TABLE products ADD COLUMN features      TEXT DEFAULT ''"),
+            ('fees',          "ALTER TABLE products ADD COLUMN fees          TEXT DEFAULT ''"),
+            ('min_amount',    "ALTER TABLE products ADD COLUMN min_amount    TEXT DEFAULT ''"),
+            ('currency',      "ALTER TABLE products ADD COLUMN currency      TEXT DEFAULT ''"),
+        ]
+        for col, sql in products_migrations:
+            if col not in products_cols:
+                try:
+                    conn.execute(sql)
+                    print(f'  [MIGRATE] DB migration: added column "{col}" to products table')
+                except Exception:
+                    pass  # Column may already exist
+
+        conn.executescript('''
+            CREATE INDEX IF NOT EXISTS idx_products_bank_id    ON products(bank_id);
+            CREATE INDEX IF NOT EXISTS idx_products_category   ON products(category);
+            CREATE INDEX IF NOT EXISTS idx_products_active     ON products(is_active);
+            CREATE INDEX IF NOT EXISTS idx_products_first_seen ON products(first_seen_at);
+        ''')
+
         conn.executescript('''
             CREATE INDEX IF NOT EXISTS idx_bank_id       ON promotions(bank_id);
             CREATE INDEX IF NOT EXISTS idx_active        ON promotions(active);
@@ -338,7 +387,7 @@ def start_new_run(banks: List[str] = None) -> int:
             )
             conn.commit()
             run_id = cur.lastrowid
-            print(f'  [RUN] Scrape run #{run_id} started')
+            print(f'  🏃 Scrape run #{run_id} started')
             return run_id
         except Exception as exc:
             print(f'  [ERR] start_new_run error: {exc}')
@@ -659,11 +708,14 @@ def save_promotions(
                     stats['skipped'] += 1
                     print(
                         f'  [WARN]  [{bank_id}] skipped promo with empty title '
-                        f'- keys: {list(p.keys())}'
+                        f'— keys: {list(p.keys())}'
                     )
                     continue
 
-                if _is_non_bank_content(title, highlight):
+                description = (p.get('description') or '').strip()
+                tc_link = (p.get('tc_link') or p.get('url') or '').strip()
+
+                if _is_non_bank_content(title, highlight, description, tc_link):
                     stats['blocked'] += 1
                     print(
                         f'  🚫 [{bank_id}] blocked non-bank content: '
@@ -851,7 +903,7 @@ def reactivate_most_recently_seen(window_days: int = 7) -> int:
                 "SELECT MAX(DATE(last_seen)) AS max_date FROM promotions"
             ).fetchone()
             if not row or not row['max_date']:
-                print('  [WARN]  Recovery: DB is completely empty - nothing to reactivate')
+                print('  [WARN]  Recovery: DB is completely empty — nothing to reactivate')
                 return 0
 
             max_date_str = row['max_date']
@@ -993,62 +1045,6 @@ def repair_reinserted_promotions(dry_run: bool = False) -> int:
             return 0
 
 
-def migrate_legacy_bank_names(dry_run: bool = False) -> int:
-    """
-    Migrate legacy bank names to canonical names in the promotions table.
-
-    Legacy mappings:
-    - 'Airstar Bank' -> 'EleBank'
-    - 'PAObank', 'PAO Bank', 'PAOB' -> 'PADB'
-
-    Returns the number of records updated.
-    """
-    migrations = {
-        'Airstar Bank': 'EleBank',
-        'PAObank': 'PADB',
-        'PAO Bank': 'PADB',
-        'PAOB': 'PADB',
-    }
-
-    migrated = 0
-
-    with _db_connection() as conn:
-        try:
-            for legacy_name, canonical_name in migrations.items():
-                rows = conn.execute(
-                    "SELECT id, bank_name FROM promotions WHERE bank_name = ?",
-                    (legacy_name,)
-                ).fetchall()
-
-                if not rows:
-                    continue
-
-                count = len(rows)
-                tag = '[DRY RUN] ' if dry_run else ''
-                print(f'  [MIGRATE] {tag}"{legacy_name}" -> "{canonical_name}": {count} record(s)')
-
-                if not dry_run:
-                    conn.execute(
-                        "UPDATE promotions SET bank_name = ? WHERE bank_name = ?",
-                        (canonical_name, legacy_name)
-                    )
-                    conn.commit()
-
-                migrated += count
-
-            if migrated == 0:
-                print('  [MIGRATE] No legacy bank names found - all normalized')
-            elif not dry_run:
-                print(f'  [MIGRATE] Total migrated: {migrated} record(s)')
-
-        except Exception as exc:
-            logger.error(f'Bank name migration failed: {exc}')
-            if not dry_run:
-                conn.rollback()
-
-    return migrated
-
-
 # ── 6. Queries ────────────────────────────────────────────────────────────────
 
 def _to_dicts(rows) -> List[Dict[str, Any]]:
@@ -1125,17 +1121,14 @@ def get_new_promotions_last_n_days(
 
 
 def get_active_promotions(include_bau: bool = True) -> List[Dict[str, Any]]:
-    today = _hkt_today()
     with _db_connection() as conn:
         try:
             bau_clause = '' if include_bau else 'AND is_bau = 0'
             return _to_dicts(conn.execute(f'''
                 SELECT * FROM promotions
-                WHERE active = 1
-                  AND (end_date IS NULL OR end_date = '' OR DATE(end_date) >= ?)
-                  {bau_clause}
+                WHERE active = 1 {bau_clause}
                 ORDER BY bank_id ASC, last_seen DESC
-            ''', (today,)).fetchall())
+            ''').fetchall())
         except Exception as exc:
             print(f'  [ERR] get_active_promotions error: {exc}')
             return []
@@ -1355,132 +1348,6 @@ def load_promotions(active_only: bool = True) -> List[Dict[str, Any]]:
             return []
 
 
-# ── Product Management Functions ─────────────────────────────────────────────
-
-def save_products(bank_id: str, bank_name: str, products: List[Dict], today_str: str = None) -> Dict:
-    """
-    Save or update products for a bank. Returns stats on new/updated/skipped.
-
-    Products are core banking offerings (accounts, cards, loans, investment services)
-    separate from time-limited promotions.
-    """
-    today = today_str or _hkt_today()
-    stats = {'new': 0, 'updated': 0, 'skipped': 0}
-
-    with _db_connection() as conn:
-        try:
-            for p in products:
-                product_name = (p.get('product_name') or p.get('name') or '').strip()
-                if not product_name:
-                    stats['skipped'] += 1
-                    continue
-
-                category = p.get('category', '').strip()
-                subcategory = p.get('subcategory', '').strip()
-                description = p.get('description', '').strip()
-                features = json.dumps(p.get('features', []), ensure_ascii=False) if isinstance(p.get('features'), list) else str(p.get('features', ''))
-                interest_rate = str(p.get('interest_rate', '')).strip()
-                fees = str(p.get('fees', '')).strip()
-                eligibility = str(p.get('eligibility', '')).strip()
-                url = p.get('url', '').strip()
-
-                # Check if product already exists
-                existing = conn.execute(
-                    "SELECT id, last_seen FROM products WHERE bank_id = ? AND product_name = ? AND category = ?",
-                    (bank_id, product_name, category)
-                ).fetchone()
-
-                if existing:
-                    # Update existing product's last_seen date
-                    conn.execute(
-                        "UPDATE products SET last_seen = ?, active = 1 WHERE id = ?",
-                        (today, existing['id'])
-                    )
-                    stats['updated'] += 1
-                else:
-                    # Insert new product
-                    conn.execute('''
-                        INSERT INTO products (bank_id, bank_name, product_name, category, subcategory,
-                                            description, features, interest_rate, fees, eligibility,
-                                            url, first_seen_at, last_seen, active)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-                    ''', (bank_id, bank_name, product_name, category, subcategory,
-                          description, features, interest_rate, fees, eligibility, url, today, today))
-                    stats['new'] += 1
-
-            conn.commit()
-            print(f"  [PRODUCTS] [{bank_name}] saved -> new:{stats['new']}  updated:{stats['updated']}  skipped:{stats['skipped']}")
-            return stats
-
-        except Exception as exc:
-            logger.error(f'Error saving products for {bank_name}: {exc}')
-            conn.rollback()
-            return stats
-
-
-def get_new_products_today(include_inactive: bool = False) -> List[Dict[str, Any]]:
-    """Get products that were first seen today."""
-    today = _hkt_today()
-    with _db_connection() as conn:
-        try:
-            where = "WHERE DATE(first_seen_at) = DATE(?)"
-            params = [today]
-            if not include_inactive:
-                where += " AND active = 1"
-            return [dict(r) for r in conn.execute(
-                f"SELECT * FROM products {where} ORDER BY bank_name ASC, category ASC",
-                params
-            ).fetchall()]
-        except Exception as exc:
-            print(f'  [ERR] get_new_products_today error: {exc}')
-            return []
-
-
-def get_active_products_by_category(category: str) -> List[Dict[str, Any]]:
-    """Get all active products in a specific category."""
-    with _db_connection() as conn:
-        try:
-            return [dict(r) for r in conn.execute(
-                "SELECT * FROM products WHERE category = ? AND active = 1 ORDER BY bank_name ASC, product_name ASC",
-                (category,)
-            ).fetchall()]
-        except Exception as exc:
-            print(f'  [ERR] get_active_products_by_category error: {exc}')
-            return []
-
-
-def get_all_active_products() -> List[Dict[str, Any]]:
-    """Get all active products across all banks."""
-    with _db_connection() as conn:
-        try:
-            return [dict(r) for r in conn.execute(
-                "SELECT * FROM products WHERE active = 1 ORDER BY bank_id ASC, category ASC, product_name ASC"
-            ).fetchall()]
-        except Exception as exc:
-            print(f'  [ERR] get_all_active_products error: {exc}')
-            return []
-
-
-def mark_stale_products_as_inactive() -> int:
-    """Mark products as inactive if they weren't seen in the latest scrape."""
-    today = _hkt_today()
-    with _db_connection() as conn:
-        try:
-            result = conn.execute(
-                "UPDATE products SET active = 0 WHERE last_seen != ? AND active = 1",
-                (today,)
-            )
-            count = result.rowcount
-            conn.commit()
-            if count > 0:
-                print(f'  [PRODUCTS] {count} product(s) marked inactive (not seen today)')
-            return count
-        except Exception as exc:
-            logger.error(f'Error marking stale products: {exc}')
-            conn.rollback()
-            return 0
-
-
 # ★ FIX: sanitize AI-generated insights so all list fields are always real lists
 def _sanitize_insights(insights: Optional[Dict]) -> Optional[Dict]:
     """
@@ -1534,8 +1401,7 @@ def export_to_json(
     strategic_insights: Optional[Dict] = None,
     ai_unavailable:     bool           = False,
 ) -> None:
-    # Load only ACTIVE promotions for website/email display
-    all_promos = load_promotions(active_only=True)
+    all_promos = load_promotions(active_only=False)
     records: List[Dict] = []
 
     for p in all_promos:
@@ -1570,36 +1436,12 @@ def export_to_json(
             'last_seen':     p.get('last_seen')     or '',
         })
 
-    # Load active products
-    all_products = get_all_active_products()
-    product_records = []
-    for p in all_products:
-        try:
-            features = json.loads(p.get('features', '[]')) if isinstance(p.get('features'), str) else p.get('features', [])
-        except:
-            features = []
-        product_records.append({
-            'bank_id':       p.get('bank_id', ''),
-            'bank_name':     p.get('bank_name', ''),
-            'product_name':  p.get('product_name', ''),
-            'category':      p.get('category', ''),
-            'subcategory':   p.get('subcategory', ''),
-            'description':   p.get('description', ''),
-            'features':      features if isinstance(features, list) else [],
-            'interest_rate': p.get('interest_rate', ''),
-            'fees':          p.get('fees', ''),
-            'eligibility':   p.get('eligibility', ''),
-            'url':           p.get('url', ''),
-            'first_seen_at': p.get('first_seen_at', ''),
-        })
-
     # ★ FIX: sanitise insights so all list fields are real arrays, not strings
     clean_insights = _sanitize_insights(strategic_insights)
 
     output: Dict[str, Any] = {
         'updated':    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'promotions': records,
-        'products':   product_records,
     }
     if clean_insights:
         output['strategic_insights'] = clean_insights
@@ -1610,16 +1452,296 @@ def export_to_json(
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    # All loaded promotions are active (filtered by load_promotions)
-    active_non_bau = sum(1 for r in records if not r['is_bau'])
-    active_bau     = sum(1 for r in records if r['is_bau'])
-    # Count expired from separate query for reference
-    with _db_connection() as conn:
-        expired_count = conn.execute('SELECT COUNT(*) FROM promotions WHERE active = 0').fetchone()[0]
+    active_non_bau = sum(1 for r in records if r['active'] and not r['is_bau'])
+    bau_n          = sum(1 for r in records if r['is_bau'])
+    expired_n      = sum(1 for r in records if not r['active'])
     insights_tag   = ' +insights' if clean_insights else ''
-    ai_tag         = ' [AI unavailable - cached]' if ai_unavailable else ''
+    ai_tag         = ' [AI unavailable — cached]' if ai_unavailable else ''
     print(
         f'  [FILE] data.json -> {active_non_bau} active non-BAU '
-        f'(+{active_bau} BAU), {expired_count} expired'
+        f'(+{bau_n} BAU), {expired_n} expired'
         f'{insights_tag}{ai_tag} -> {output_path}'
+    )
+
+
+# ── 10. Products database functions ─────────────────────────────────────────────
+
+def save_products(
+    bank_id: str,
+    bank_name: str,
+    products: List[Dict],
+    today_str: str = None,
+) -> Dict:
+    """Save products to database with upsert logic."""
+    today = today_str or _hkt_today()
+    stats = {'new': 0, 'updated': 0, 'skipped': 0}
+
+    with _db_connection() as conn:
+        try:
+            for p in products:
+                product_name = (p.get('product_name') or '').strip()
+                category = (p.get('category') or '').strip()
+
+                if not product_name or not category:
+                    stats['skipped'] += 1
+                    continue
+
+                # Check for existing product
+                existing = conn.execute(
+                    "SELECT id FROM products WHERE bank_id = ? AND product_name = ?",
+                    (bank_id, product_name)
+                ).fetchone()
+
+                features_str = ''
+                features = p.get('features', [])
+                if isinstance(features, list):
+                    features_str = '|'.join(str(f) for f in features if f)
+                elif isinstance(features, str):
+                    features_str = features
+
+                if existing:
+                    conn.execute("""
+                        UPDATE products SET
+                            bank_name   = ?,
+                            category    = ?,
+                            description = COALESCE(NULLIF(?, ''), description),
+                            highlight   = COALESCE(NULLIF(?, ''), highlight),
+                            features    = COALESCE(NULLIF(?, ''), features),
+                            fees        = COALESCE(NULLIF(?, ''), fees),
+                            min_amount  = COALESCE(NULLIF(?, ''), min_amount),
+                            currency    = COALESCE(NULLIF(?, ''), currency),
+                            url         = COALESCE(NULLIF(?, ''), url),
+                            tc_link     = COALESCE(NULLIF(?, ''), tc_link),
+                            is_active   = 1,
+                            last_seen   = ?
+                        WHERE id = ?
+                    """, (
+                        bank_name,
+                        category,
+                        p.get('description', ''),
+                        p.get('highlight', ''),
+                        features_str,
+                        p.get('fees', ''),
+                        p.get('min_amount', ''),
+                        p.get('currency', ''),
+                        p.get('url', ''),
+                        p.get('tc_link', ''),
+                        today,
+                        existing['id'],
+                    ))
+                    stats['updated'] += 1
+                else:
+                    conn.execute("""
+                        INSERT INTO products
+                            (bank_id, bank_name, product_name, category, description,
+                             highlight, features, fees, min_amount, currency, url, tc_link,
+                             is_active, created_at, first_seen_at, last_seen)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
+                    """, (
+                        bank_id, bank_name, product_name, category,
+                        p.get('description', ''),
+                        p.get('highlight', ''),
+                        features_str,
+                        p.get('fees', ''),
+                        p.get('min_amount', ''),
+                        p.get('currency', ''),
+                        p.get('url', ''),
+                        p.get('tc_link', ''),
+                        today, today, today,
+                    ))
+                    stats['new'] += 1
+
+            conn.commit()
+            print(
+                f"  [{bank_id}] products saved -> "
+                f"new:{stats['new']}  updated:{stats['updated']}  skipped:{stats['skipped']}"
+            )
+            return stats
+
+        except Exception as exc:
+            conn.rollback()
+            print(f'  [ERR] save_products error: {exc}')
+            raise
+
+
+def get_active_products() -> List[Dict[str, Any]]:
+    """Get all active products."""
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute(
+                'SELECT * FROM products WHERE is_active = 1 ORDER BY bank_id ASC, category ASC'
+            ).fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_active_products error: {exc}')
+            return []
+
+
+def get_new_products_today() -> List[Dict[str, Any]]:
+    """Get products first seen today."""
+    today = _hkt_today()
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute('''
+                SELECT * FROM products
+                WHERE is_active = 1
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) = ?
+                ORDER BY bank_id ASC, category ASC
+            ''', (today,)).fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_new_products_today error: {exc}')
+            return []
+
+
+def get_new_products_last_n_days(days: int = 6) -> List[Dict[str, Any]]:
+    """Get products first seen in the last N days (excluding today)."""
+    today = _hkt_today()
+    since = _hkt_n_days_ago(days)
+
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute('''
+                SELECT * FROM products
+                WHERE is_active = 1
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) >= ?
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) < ?
+                ORDER BY COALESCE(first_seen_at, created_at) DESC, bank_id ASC
+            ''', (since, today)).fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_new_products_last_n_days error: {exc}')
+            return []
+
+
+def get_products_by_bank(bank_id: str) -> List[Dict[str, Any]]:
+    """Get all active products for a specific bank."""
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute(
+                'SELECT * FROM products WHERE bank_id = ? AND is_active = 1 ORDER BY category ASC',
+                (bank_id,)
+            ).fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_products_by_bank error: {exc}')
+            return []
+
+
+def get_product_stats() -> Dict[str, Any]:
+    """Get product statistics by category and bank."""
+    with _db_connection() as conn:
+        try:
+            total = conn.execute('SELECT COUNT(*) FROM products WHERE is_active = 1').fetchone()[0]
+
+            # By category
+            by_category = {}
+            for row in conn.execute(
+                'SELECT category, COUNT(*) as cnt FROM products WHERE is_active = 1 GROUP BY category'
+            ).fetchall():
+                by_category[row['category']] = row['cnt']
+
+            # By bank
+            by_bank = {}
+            for row in conn.execute(
+                'SELECT bank_name, COUNT(*) as cnt FROM products WHERE is_active = 1 GROUP BY bank_name'
+            ).fetchall():
+                by_bank[row['bank_name']] = row['cnt']
+
+            # New today
+            new_today = conn.execute('''
+                SELECT COUNT(*) FROM products
+                WHERE is_active = 1
+                  AND DATE(COALESCE(first_seen_at, created_at)) = ?
+            ''', (_hkt_today(),)).fetchone()[0]
+
+            # New this week
+            since = _hkt_n_days_ago(6)
+            new_week = conn.execute('''
+                SELECT COUNT(*) FROM products
+                WHERE is_active = 1
+                  AND DATE(COALESCE(first_seen_at, created_at)) >= ?
+            ''', (since,)).fetchone()[0]
+
+            return {
+                'total_products': total,
+                'by_category': by_category,
+                'by_bank': by_bank,
+                'new_today': new_today,
+                'new_this_week': new_week,
+            }
+        except Exception as exc:
+            print(f'  [ERR] get_product_stats error: {exc}')
+            return {}
+
+
+def mark_products_stale(bank_ids_scraped: List[str], today_str: str = None) -> int:
+    """Mark products as inactive if not seen in this scrape."""
+    if not bank_ids_scraped:
+        return 0
+    today_str = today_str or _hkt_today()
+    total = 0
+
+    with _db_connection() as conn:
+        try:
+            for bank_id in bank_ids_scraped:
+                cur = conn.execute('''
+                    UPDATE products SET is_active = 0
+                    WHERE bank_id = ?
+                      AND is_active = 1
+                      AND DATE(last_seen) < ?
+                ''', (bank_id, today_str))
+                total += cur.rowcount
+            conn.commit()
+            if total:
+                print(f'  [CLEANUP] {total} product(s) marked inactive')
+            return total
+        except Exception as exc:
+            conn.rollback()
+            print(f'  [ERR] mark_products_stale error: {exc}')
+            return 0
+
+
+def export_products_to_json(output_path: str) -> None:
+    """Export products to JSON file."""
+    products = get_active_products()
+    records = []
+
+    for p in products:
+        features = []
+        features_str = p.get('features', '')
+        if features_str:
+            features = [f.strip() for f in features_str.split('|') if f.strip()]
+
+        records.append({
+            'id':            p.get('id'),
+            'bank_id':       p.get('bank_id',     ''),
+            'bank_name':     p.get('bank_name',   ''),
+            'product_name':  p.get('product_name', ''),
+            'category':      p.get('category',    ''),
+            'description':   p.get('description', ''),
+            'highlight':     p.get('highlight',   ''),
+            'features':      features,
+            'fees':          p.get('fees',        ''),
+            'min_amount':    p.get('min_amount',  ''),
+            'currency':      p.get('currency',    ''),
+            'url':           p.get('url',         ''),
+            'tc_link':       p.get('tc_link',     ''),
+            'is_active':     bool(p.get('is_active', 1)),
+            'created_at':    p.get('created_at',    ''),
+            'first_seen_at': p.get('first_seen_at', ''),
+            'last_seen':     p.get('last_seen',     ''),
+        })
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    stats = get_product_stats()
+    output = {
+        'updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'products': records,
+        'stats': stats,
+    }
+
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(output, f, ensure_ascii=False, indent=2)
+
+    print(
+        f'  [FILE] products.json -> {len(records)} products '
+        f'({stats.get("by_category", {})}) -> {output_path}'
     )

@@ -1,2 +1,0 @@
-[    1569ms] [WARNING] 已设置yuyanId，其他 id 将不生效 @ https://gw.alipayobjects.com/os/lib/alipay/yuyan-monitor-sdk/1.1.0/dist/index.umd.min.js:0
-[    1810ms] [WARNING] [YuyanMonitor]获取服务端配置失败：Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ https://gw.alipayobjects.com/os/lib/alipay/yuyan-monitor-sdk/1.1.0/dist/index.umd.min.js:0

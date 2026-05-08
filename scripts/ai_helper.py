@@ -22,14 +22,14 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# Claude API configuration (via Anthropic SDK)
+# Poe API configuration
 try:
-    from anthropic import Anthropic
+    import fastapi_poe as fp
 except ImportError:
-    Anthropic = None
+    fp = None
 
 AI_AVAILABLE = False
-_ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '').strip()
+_POE_API_KEY = os.environ.get('POE_API_KEY', '').strip()
 
 # Fallback models list
 MODELS_TO_TRY = [
@@ -98,6 +98,30 @@ _NON_BANK_CONTENT_PATTERNS: list[str] = [
     'approved charitable donation',
     'inland revenue ordinance',
     'bank of china (hong kong) account number 012-875',
+    # Scam alerts and security notices are NOT promotions
+    'beware of scam',
+    'beware of bogus',
+    'bogus call',
+    'scam alert',
+    'fraud alert',
+    'security alert',
+    '防騙',
+    '詐騙',
+    '提防騙案',
+    '假冒',
+    '偽冒',
+    # Service information is NOT a promotion
+    '24x7 service',
+    '24x7 banking',
+    '24/7 service',
+    'customer service hour',
+    'service hour',
+    'branch hour',
+    'opening hour',
+    'business hour',
+    '大埔',
+    '捐款收據',
+    '慈善捐款',
 ]
 
 _NON_BANK_DOMAINS: list[str] = [
@@ -140,15 +164,15 @@ def _filter_bank_relevant_promotions(promos: list, bank_name: str) -> list:
                 else f'non-bank domain in tc_link "{bad_domain}"'
             )
             print(
-                f'  [BLOCK] Non-bank filter REMOVED [{bank_name}]: '
-                f'"{p.get("name") or p.get("title")}" - {reason}'
+                f'  🚫 Non-bank filter REMOVED [{bank_name}]: '
+                f'"{p.get("name") or p.get("title")}" — {reason}'
             )
             removed += 1
         else:
             filtered.append(p)
 
     if removed:
-        print(f'  [BLOCK] Non-bank filter: {removed} non-bank promotion(s) removed for {bank_name}')
+        print(f'  🚫 Non-bank filter: {removed} non-bank promotion(s) removed for {bank_name}')
     return filtered
 
 
@@ -169,13 +193,23 @@ Today's Date: TODAY_DATE_PLACEHOLDER
 ║                                                                      ║
 ║  2. Do NOT merge multiple promotions into one entry.                ║
 ║                                                                      ║
-║  3. name and highlight must be in English.                          ║
+║  3. name, highlight, and description must be in English.            ║
 ║                                                                      ║
 ║  4. For start_date / end_date: look for any date mentioned near     ║
 ║     the promotion. Always use YYYY-MM-DD format.                    ║
 ║     Use null only if truly absent.                                  ║
 ║                                                                      ║
-║  5. is_bau: set true ONLY for permanent product features with       ║
+║  5. ⚠️  DESCRIPTION MUST BE 3+ SENTENCES — be detailed!            ║
+║     Include: (1) what the benefit is, (2) who is eligible,          ║
+║     (3) key terms/conditions, (4) how to redeem.                    ║
+║     Example: "Earn 2% cashback on all overseas spending with your   ║
+║     ZA Card. This offer is valid for both new and existing          ║
+║     customers who have activated their card before 31 Dec 2026.     ║
+║     Cashback is capped at HKD 500 per month and will be credited    ║
+║     to your account within 5 working days after the transaction.    ║
+║     No registration required — simply use your card overseas."      ║
+║                                                                      ║
+║  6. is_bau: set true ONLY for permanent product features with       ║
 ║     NO end date and NO special eligibility condition, e.g.:         ║
 ║       ✅ BAU: "Free Instant FPS Transfers" (always available)       ║
 ║       ✅ BAU: "Multi-Currency Savings Account" (product feature)    ║
@@ -233,6 +267,12 @@ Today's Date: TODAY_DATE_PLACEHOLDER
 ║        • Content from a non-bank URL (gov.hk, charity sites, etc) ║
 ║        • A CSR / social-responsibility notice that is NOT a        ║
 ║          financial benefit offered to the bank's own customers     ║
+║        • ⚠️ SCAM ALERTS & SECURITY NOTICES — these are NOT promos ║
+║          (e.g. "Beware of Scams", "Beware of Bogus Calls",         ║
+║           "Fraud Alert", "Security Alert", "防騙", "提防騙案",     ║
+║           "假冒", "偽冒", "詐騙")                                   ║
+║        • Service hours / branch hours (e.g. "24x7 Service",        ║
+║           "Customer Service Hours", "Business Hours")              ║
 ║        If the content is from a government or charity website,     ║
 ║        ignore it completely — return [] for that section.          ║
 ║                                                                      ║
@@ -249,151 +289,28 @@ Today's Date: TODAY_DATE_PLACEHOLDER
 ALLOWED CATEGORY TAGS (Chinese, pick 1-3 per promotion):
   迎新 / 消費 / 投資 / 旅遊 / 保險 / 貸款 / 存款 / 外匯 / 推薦 / 新資金 / Others
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DETAILED EXTRACTION REQUIREMENTS FOR EACH FIELD:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
 
-For EVERY promotion, extract COMPREHENSIVE details:
-
-1. NAME: Full descriptive English name including:
-   - Specific cash amounts (e.g., "HKD 800 Cash Reward")
-   - Percentage rates (e.g., "Up to 3.88% p.a.")
-   - Partner names (e.g., "Trip.com x Mox Credit Card")
-   - Time periods if relevant (e.g., "Summer 2026 Promotion")
-
-2. DESCRIPTION (2-3 DETAILED sentences - THIS IS CRITICAL):
-   - WHAT: What exactly is being offered (cashback, bonus, fee waiver)
-   - WHO: Who is eligible (new customers, existing users, minimum age)
-   - HOW MUCH: Specific amounts, percentages, maximum caps
-   - WHEN: Validity period, deadline, campaign dates
-   - CONDITIONS: Minimum spend, required actions, exclusions
-   - EXAMPLE: "New Mox Card holders can earn HKD 300 cashback after spending
-     HKD 3,000 within the first 30 days of account opening. This promotion
-     is exclusive to first-time Mox customers and runs until 31 Dec 2026."
-
-3. HIGHLIGHT: One-line summary starting with an emoji:
-   - 💰 for cash rewards: "💰 Earn HKD 300 welcome bonus"
-   - 🎯 for discounts: "🎯 Get 8% off on Trip.com bookings"
-   - 📈 for rates: "📈 Enjoy up to 3.88% p.a. interest"
-   - 🆓 for freebies: "🆓 Zero platform fees for 90 days"
-   - ✈️ for travel: "✈️ Collect 2 Asia Miles per USD 1 spent"
-
-4. QUOTA/ELIGIBILITY (be specific):
-   - Customer type: "New customers only" / "Existing customers eligible"
-   - Age requirements: "Aged 18 or above"
-   - Residency: "HKID holders only"
-   - Income: "Minimum monthly income HKD 15,000"
-   - Limits: "First 500 applicants" / "While stocks last"
-   - Cap: "Maximum 1,000 redemptions"
-
-5. COST/MINIMUM SPEND (exact figures):
-   - Minimum spend: "Spend HKD 3,000 to qualify"
-   - Required deposit: "Deposit HKD 50,000 for 3 months"
-   - Entry fee: "Free to enter" / "HKD 100 application fee"
-   - Tiered spending: "Tier 1: HKD 3,000; Tier 2: HKD 10,000"
-
-6. PERIOD: Clear validity period:
-   - Specific dates: "15 Mar 2026 to 30 Jun 2026"
-   - From-start: "From 1 Apr 2026 to 31 Dec 2026"
-   - Ongoing: "Ongoing (no end date)"
-
-7. TC_LINK: Direct link to terms & conditions page
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EXAMPLES OF HIGH-QUALITY EXTRACTIONS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-EXAMPLE 1 (Cashback Promotion):
-Text: "Mox Credit Card Cashback - Earn 10% cashback on dining and entertainment,
-plus 1% on all other purchases. New customers get HKD 300 sign-up bonus after
-spending HKD 3,000 in the first month. No annual fee for the first year.
-Valid until further notice."
-
-Extract:
+Schema for each object:
 {{
-  "name": "Mox Credit Card 10% Dining Cashback + HKD 300 Welcome Bonus",
-  "types": ["消費", "迎新"],
-  "is_bau": false,
-  "start_date": null,
-  "end_date": null,
-  "period": "Ongoing",
-  "highlight": "💰 Earn 10% cashback on dining + HKD 300 welcome bonus",
-  "description": "Mox Credit Card offers 10% unlimited cashback on dining and entertainment
-purchases, plus 1% on all other spending. New cardholders receive HKD 300 bonus
-after completing HKD 3,000 spending within the first 30 days. No annual fee for
-the first year, then HKD 500/year thereafter. Available to Hong Kong residents
-aged 18+ with valid HKID.",
-  "quota": "New customers only (first-time Mox Card holders)",
-  "cost": "Minimum spend HKD 3,000 within 30 days to unlock HKD 300 bonus",
-  "tc_link": "URL_PLACEHOLDER"
+  "name":        "Full descriptive English name of the promotion",
+  "types":       ["category1", "category2"],
+  "is_bau":      false,
+  "start_date":  "YYYY-MM-DD or null",
+  "end_date":    "YYYY-MM-DD or null",
+  "period":      "Human-readable period, e.g. '1 Jan 2025 to 31 Mar 2025' or 'Ongoing'",
+  "highlight":   "One-line key benefit starting with an emoji",
+  "description": "REQUIRED: 3 or more detailed sentences describing this promotion. Include: (1) what the benefit is, (2) who is eligible, (3) any key terms or conditions, (4) how to redeem. Be specific with amounts, percentages, and dates.",
+  "quota":       "Eligibility or quota info (e.g. First 1000 customers / New customers only / No cap)",
+  "cost":        "Minimum spend or required cost, or Free",
+  "tc_link":     "URL_PLACEHOLDER"
 }}
-
-EXAMPLE 2 (Time-Limited Deposit Promotion):
-Text: "livi GoSave 3.88% Promotion - Open a GoSave account and enjoy 3.88% p.a.
-interest rate on deposits up to HKD 500,000. Promotional rate valid for 6 months
-from account opening. Minimum deposit HKD 10,000. Existing livi customers eligible.
-Offer ends 30 June 2026."
-
-Extract:
-{{
-  "name": "livi GoSave 3.88% p.a. Promotional Interest Rate (6 Months)",
-  "types": ["存款", "新資金"],
-  "is_bau": false,
-  "start_date": "2026-01-01",
-  "end_date": "2026-06-30",
-  "period": "1 Jan 2026 to 30 Jun 2026",
-  "highlight": "📈 Earn 3.88% p.a. on GoSave deposits for 6 months",
-  "description": "livi bank offers 3.88% p.a. promotional interest rate on GoSave fixed
-deposit accounts. The promotional rate applies to deposits up to HKD 500,000 for
-a tenure of 6 months from account opening. Minimum initial deposit of HKD 10,000
-required. Early withdrawal will result in forfeiture of promotional interest.
-Available to existing livi customers and new users.",
-  "quota": "Existing and new livi customers aged 18+",
-  "cost": "Minimum deposit HKD 10,000; Lock-in period: 6 months",
-  "tc_link": "URL_PLACEHOLDER"
-}}
-
-EXAMPLE 3 (Investment Fee Waiver):
-Text: "ZA Bank Fund Investment - Invest in over 50 featured funds with zero
-subscription fees. Normally 2-3% fee waived for all funds. Plus get priority
-access to new fund launches. Promotion valid until 31 July 2026."
-
-Extract:
-{{
-  "name": "ZA Bank Zero-Fee Fund Investment Platform (50+ Funds)",
-  "types": ["投資"],
-  "is_bau": false,
-  "start_date": null,
-  "end_date": "2026-07-31",
-  "period": "Ongoing until 31 Jul 2026",
-  "highlight": "🆓 Zero subscription fees on 50+ investment funds",
-  "description": "ZA Bank provides commission-free access to over 50 curated investment
-funds including equity, bond, and balanced portfolios. Standard subscription fees
-of 2-3% are completely waived, saving investors significant costs. Features
-include automated portfolio rebalancing, real-time fund performance tracking,
-and priority allocation for new fund offerings. Suitable for both beginner and
-experienced investors.",
-  "quota": "All ZA Bank account holders (no minimum balance requirement)",
-  "cost": "Free (zero subscription fees during promotional period)",
-  "tc_link": "URL_PLACEHOLDER"
-}}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 WEBSITE TEXT TO ANALYSE:
 ────────────────────────────────────────────────────────────────────────
 TEXT_PLACEHOLDER
 ────────────────────────────────────────────────────────────────────────
-
-REMEMBER:
-- Return ONLY the JSON array starting with [ and ending with ]
-- NO markdown fences, NO explanations, NO additional text
-- Extract ALL promotions you find - don't skip any
-- Include SPECIFIC numbers, amounts, percentages, dates
-- Write DETAILED descriptions (2-3 sentences minimum)
-- If a field has no information, use empty string "" or null for dates
-- For ongoing promotions with no end date, set end_date to null
-
+Remember: return ONLY the JSON array starting with [ and ending with ].
 If the text is entirely from a government or charity website, return [].
 If you see any mention of taipofire.gov.hk, wang fuk court, hab033,
 cefs.gov.hk, or tax deduction for donation — skip that content entirely."""
@@ -429,104 +346,107 @@ def _build_prompt(bank_name: str, url: str, text: str) -> str:
     return prompt
 
 
-# ── Claude API core ────────────────────────────────────────────────────────────────
+# ── Poe API core ────────────────────────────────────────────────────────────────
 
-def _init_claude() -> bool:
-    """Initialize Claude API client."""
+def _init_poe() -> bool:
+    """Initialize Poe API client."""
     global AI_AVAILABLE
 
-    if Anthropic is None:
-        logger.error('anthropic package not installed. Run: pip install anthropic')
-        print('[ERROR] anthropic package not installed. Run: pip install anthropic')
+    if fp is None:
+        logger.error('fastapi-poe package not installed. Run: pip install fastapi-poe')
+        print('[ERROR] fastapi-poe package not installed. Run: pip install fastapi-poe')
         return False
 
-    api_key = _get_anthropic_key()
+    api_key = _get_poe_key()
     if not api_key:
-        logger.error('ANTHROPIC_API_KEY not set')
-        print('[ERROR] ANTHROPIC_API_KEY not set in environment')
+        logger.error('POE_API_KEY not set')
+        print('[ERROR] POE_API_KEY not set in environment')
         return False
 
     try:
         AI_AVAILABLE = True
-        logger.info('Claude API initialized')
-        print('[OK] Claude API ready')
+        logger.info(f'Poe API initialized')
+        print(f'[OK] Poe API ready')
         return True
     except Exception as exc:
-        logger.error(f'Failed to initialize Claude client: {exc}')
-        print(f'[ERROR] Claude init failed: {exc}')
+        logger.error(f'Failed to initialize Poe client: {exc}')
+        print(f'[ERROR] Poe init failed: {exc}')
         AI_AVAILABLE = False
         return False
 
 
-def _get_anthropic_key():
-    return os.environ.get('ANTHROPIC_API_KEY', '').strip()
+def _get_poe_key():
+    return os.environ.get('POE_API_KEY', '').strip()
 
 
-def _call(messages: list, label: str = '') -> str:
-    """Call Claude API directly, or use autonomous mode if no API key."""
+async def _async_call(messages: list, label: str = '') -> str:
+    """Async call to Poe API using Claude bot."""
     global AI_AVAILABLE
 
-    # Check for autonomous mode (Claude Code built-in)
-    from claude_bridge import is_autonomous_mode, request_ai_analysis
-
-    if is_autonomous_mode():
-        print(f'  [AUTONOMOUS] Claude Code mode active - no API needed')
-        # In autonomous mode, return a marker that Claude Code will intercept
-        # For now, return empty to indicate AI unavailable (fallback to manual)
-        return ''
-
     if not AI_AVAILABLE:
-        if Anthropic is not None and _ANTHROPIC_API_KEY:
-            _init_claude()
+        if fp is not None and _POE_API_KEY:
+            _init_poe()
         if not AI_AVAILABLE:
             return ''
 
     t = time.monotonic()
     try:
-        client = Anthropic(api_key=_ANTHROPIC_API_KEY)
+        # Get the last user message content
+        user_content = messages[-1]['content'] if messages else ''
 
-        # Convert messages format if needed
-        system_message = "You are a helpful AI assistant for HK virtual bank promotions tracking."
-
-        result = client.messages.create(
-            model="claude-3-7-sonnet-20250219",
-            max_tokens=4096,
-            system=system_message,
-            messages=messages,
-        )
+        result = ''
+        async for chunk in fp.get_bot_response(
+            messages=[fp.ProtocolMessage(role=m['role'], content=m['content']) for m in messages],
+            bot_name='claude-3.7-sonnet',
+            api_key=_POE_API_KEY,
+        ):
+            result += chunk.text
 
         elapsed = time.monotonic() - t
         tag = f' [{label}]' if label else ''
-        response_text = result.content[0].text
-        logger.info(f'Claude API call{tag} -> {len(response_text)} chars in {elapsed:.1f}s')
-        print(f'  [DEBUG] AI (claude-3.7-sonnet){tag} -> {len(response_text)} chars in {elapsed:.1f}s')
-        if len(response_text) < 50:
-            print(f'  [DEBUG] Full response: {repr(response_text)}')
-        return response_text
+        logger.info(f'Poe API call{tag} → {len(result)} chars in {elapsed:.1f}s')
+        print(f'  [DEBUG] AI (claude-3.7-sonnet){tag} → {len(result)} chars in {elapsed:.1f}s')
+        if len(result) < 50:
+            print(f'  [DEBUG] Full response: {repr(result)}')
+        return result
     except Exception as exc:
-        logger.error(f'Claude API call error: {type(exc).__name__}: {exc}')
-        print(f'  [ERR] Claude API call error: {exc}')
+        logger.error(f'Poe API call error: {type(exc).__name__}: {exc}')
+        print(f'  [ERR] Poe API call error: {exc}')
+        return ''
+
+
+def _call(messages: list, label: str = '') -> str:
+    """Synchronous wrapper for Poe API calls."""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(_async_call(messages, label))
+        finally:
+            loop.close()
+    except Exception as exc:
+        logger.error(f'Sync wrapper error: {type(exc).__name__}: {exc}')
         return ''
 
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 def init_ai() -> bool:
-    """Initialize AI using Claude API."""
+    """Initialize AI using Poe API (Claude bots)."""
     try:
-        if Anthropic is None:
-            print('[ERR] anthropic package not installed. Run: pip install anthropic')
+        if fp is None:
+            print('[ERR] fastapi-poe package not installed. Run: pip install fastapi-poe')
             AI_AVAILABLE = False
             return False
 
-        api_key = _get_anthropic_key()
+        api_key = _get_poe_key()
         if not api_key:
-            print('[WARNING] ANTHROPIC_API_KEY not set - AI disabled')
-            print('   Set it with: export ANTHROPIC_API_KEY=your-key-here')
+            print('[WARNING] POE_API_KEY not set - AI disabled')
+            print('   Set it with: export POE_API_KEY=your-key-here')
             AI_AVAILABLE = False
             return False
 
-        return _init_claude()
+        return _init_poe()
     except Exception as exc:
         print(f'[ERROR] AI init failed: {exc}')
         AI_AVAILABLE = False
@@ -622,7 +542,7 @@ def _apply_bau_overrides(promos: list, bank_id: str) -> list:
         if any(override in title for override in all_overrides):
             if not p.get('is_bau'):
                 p['is_bau'] = True
-                print(f'    [BAU] BAU override: {p.get("name") or p.get("title")}')
+                print(f'    🔒 BAU override: {p.get("name") or p.get("title")}')
     return promos
 
 
@@ -774,7 +694,7 @@ def _validate_best_for_evidence(best_for: list) -> list:
             validated.append(entry)
 
     if reject_count:
-        print(f'  [BLOCK] Evidence gate total: {reject_count} vague winner(s) nullified')
+        print(f'  🚫 Evidence gate total: {reject_count} vague winner(s) nullified')
     return validated
 
 
@@ -957,10 +877,10 @@ def _validate_stock_trading_winners(best_for: list) -> list:
 
                 if competitor_cost_200 > za_cost_200:
                     print(
-                        f'  [OVERRIDE] US stock total-cost OVERRIDE [{cat}]: '
-                        f'"{bank}" @ USD {per_share}/share x 200 = USD {competitor_cost_200:.2f} '
+                        f'  🔄 US stock total-cost OVERRIDE [{cat}]: '
+                        f'"{bank}" @ USD {per_share}/share × 200 = USD {competitor_cost_200:.2f} '
                         f'vs ZA Bank/EleBank USD {za_cost_200:.2f} platform fee. '
-                        f'ZA Bank is cheaper above {breakeven:.0f} shares - overriding.'
+                        f'ZA Bank is cheaper above {breakeven:.0f} shares → overriding.'
                     )
                     best_for[i] = {
                         **entry,
@@ -1025,7 +945,7 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                         }
             else:
                 print(
-                    f'  [OVERRIDE] Stock trading OVERRIDE [{cat}]: '
+                    f'  🔄 Stock trading OVERRIDE [{cat}]: '
                     f'"{bank}" charges commission (rate unclear). '
                     f'ZA Bank $0 commission is safer default.'
                 )
@@ -1075,7 +995,7 @@ def _validate_stock_trading_winners(best_for: list) -> list:
                     ),
                 }
             print(
-                f'  [INFO] HK stock winner kept [{cat}]: '
+                f'  ℹ️  HK stock winner kept [{cat}]: '
                 f'"{bank}" charges commission + $0 platform. '
                 f'EleBank (HKD {_ELEBANK_HK_TOTAL_COST:.0f}) and '
                 f'ZA Bank (HKD {_ZA_HK_PLATFORM_FEE_HKD:.0f}) offer lower total cost.'
@@ -1090,7 +1010,7 @@ def _validate_stock_trading_winners(best_for: list) -> list:
             best_for[i] = {**best_for[i], 'similar_banks': added_similar}
 
     if overrides:
-        print(f'  [OVERRIDE] Stock trading total-cost override: {overrides} winner(s) updated')
+        print(f'  🔄 Stock trading total-cost override: {overrides} winner(s) updated')
     return best_for
 
 
@@ -1138,14 +1058,14 @@ def _cross_check_best_for_from_strengths(
         )
 
         print(
-            f'  [FILL] Strength cross-check FILLED [{cat}] -> {best_bank}: '
+            f'  🔁 Strength cross-check FILLED [{cat}] → {best_bank}: '
             f'"{best_detail[:80]}"'
         )
         best_for[i] = {**entry, 'bank': best_bank, 'detail': best_detail, 'is_bau': is_bau_guess}
         filled += 1
 
     if filled:
-        print(f'  [FILL] Cross-check: {filled} slot(s) filled from bank_analysis.strengths')
+        print(f'  🔁 Cross-check: {filled} slot(s) filled from bank_analysis.strengths')
 
     result['best_for'] = best_for
     return result
@@ -1179,30 +1099,160 @@ def analyze_promotions(
                     bau_count = sum(1 for p in parsed if p.get('is_bau'))
                     logger.info(f'Successfully extracted {len(results)} promotions for {bank_name} ({bau_count} BAU)')
                     print(
-                        f'  [INFO] Text -> {len(results)} promotions for {bank_name} '
+                        f'  📝 Text → {len(results)} promotions for {bank_name} '
                         f'({bau_count} BAU)'
                     )
                     break
                 else:
                     logger.warning(f'AI returned empty result for {bank_name} on attempt {attempt + 1}')
                     if attempt == 0:
-                        print(f'  [RETRY] Retry AI for {bank_name}...')
+                        print(f'  🔄 Retry AI for {bank_name}...')
             except Exception as exc:
                 logger.error(f'AI extraction error for {bank_name}: {type(exc).__name__}: {exc}')
                 if attempt == 0:
-                    safe_exc = str(exc).encode('ascii', 'replace').decode('ascii')
-                    print(f'  [WARN] AI error for {bank_name}: {safe_exc} - retrying...')
+                    print(f'  ⚠️  AI error for {bank_name}: {exc} — retrying...')
         else:
             logger.error(f'All AI attempts failed for {bank_name}')
-            print(f'  [ERR] Both attempts failed for {bank_name}')
+            print(f'  ❌ Both attempts failed for {bank_name}')
     else:
-        print(f'  [WARN] Text too short ({len(clean)} chars) for {bank_name}')
+        print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name}')
 
     results = _stamp(results, bank_id, bank_name, default_url)
     results = _apply_bau_overrides(results, bank_id)
     results = _filter_bank_relevant_promotions(results, bank_name)
 
-    print(f'  [OK] Total: {len(results)} promotions for {bank_name}')
+    print(f'  ✅ Total: {len(results)} promotions for {bank_name}')
+    return results
+
+
+# ── Product extraction ──────────────────────────────────────────────────────────
+
+_PRODUCT_PROMPT_TMPL = """\
+You are a specialist at extracting bank PRODUCT information from website text.
+
+Bank: BANK_NAME_PLACEHOLDER
+Source URL: URL_PLACEHOLDER
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  PRODUCT EXTRACTION RULES                                           ║
+║                                                                      ║
+║  1. Extract ALL financial products offered by the bank.             ║
+║     Products include: trading platforms, savings accounts,          ║
+║     time deposits, credit cards, loans, investment funds, etc.      ║
+║                                                                      ║
+║  2. DO NOT extract promotions — only permanent products/services.   ║
+║     Promotions have end dates; products are always available.       ║
+║                                                                      ║
+║  3. Categorize each product into ONE of these categories:           ║
+║     • US Stock       — US stock trading platform                    ║
+║     • HK Stock       — HK stock trading platform                    ║
+║     • Investment Funds — Fund subscription/investment platform      ║
+║     • Crypto Trading — Cryptocurrency/virtual asset trading         ║
+║     • Credit Card    — Credit card products                         ║
+║     • Loans          — Personal loans, tax loans, instalment loans  ║
+║     • Saving/Current Deposit — Savings/current account products     ║
+║     • Time Deposit   — Time/fixed deposit products                  ║
+║                                                                      ║
+║  4. For each product, provide:                                      ║
+║     • product_name: Full English name of the product                ║
+║     • category: One of the 8 categories above                      ║
+║     • description: 3+ detailed sentences about the product          ║
+║       Include: features, fees, eligibility, how to apply           ║
+║     • highlight: One-line key benefit starting with an emoji        ║
+║     • features: List of key features (strings)                      ║
+║     • fees: Fee structure description                               ║
+║     • min_amount: Minimum deposit/investment amount                 ║
+║     • currency: Supported currencies (comma-separated)              ║
+║                                                                      ║
+║  5. ⛔ DO NOT EXTRACT:                                              ║
+║     • Promotions with end dates                                     ║
+║     • Scam alerts / security notices                                ║
+║     • Service hour information                                      ║
+║     • Generic bank information                                      ║
+║                                                                      ║
+║  6. If a bank offers both US and HK stock trading, extract as       ║
+║     TWO separate products with different categories.                ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
+
+Schema for each object:
+{{
+  "product_name": "Full English name of the product",
+  "category":     "One of: US Stock, HK Stock, Investment Funds, Crypto Trading, Credit Card, Loans, Saving/Current Deposit, Time Deposit",
+  "description":  "REQUIRED: 3+ detailed sentences describing the product features, fees, eligibility, and how to use it.",
+  "highlight":    "One-line key benefit starting with an emoji",
+  "features":     ["feature1", "feature2", "feature3"],
+  "fees":         "Fee structure description",
+  "min_amount":   "Minimum amount required",
+  "currency":     "HKD, USD, etc."
+}}
+
+WEBSITE TEXT TO ANALYSE:
+────────────────────────────────────────────────────────────────────────
+TEXT_PLACEHOLDER
+────────────────────────────────────────────────────────────────────────
+Remember: return ONLY the JSON array starting with [ and ending with ].
+If no products found, return []."""
+
+
+def _build_product_prompt(bank_name: str, url: str, text: str) -> str:
+    return (
+        _PRODUCT_PROMPT_TMPL
+        .replace('BANK_NAME_PLACEHOLDER', bank_name)
+        .replace('URL_PLACEHOLDER',       url)
+        .replace('TEXT_PLACEHOLDER',      text)
+    )
+
+
+def analyze_products(
+    bank_id:     str,
+    bank_name:   str,
+    text:        str = '',
+    default_url: str = '',
+) -> list:
+    """Extract products from bank website text using AI."""
+
+    if not AI_AVAILABLE:
+        return []
+
+    clean = _trim_text(text.strip() if text else '')
+    results = []
+
+    if len(clean) >= 200:
+        prompt = _build_product_prompt(bank_name=bank_name, url=default_url, text=clean)
+
+        for attempt in range(2):
+            try:
+                raw = _call([{'role': 'user', 'content': prompt}], label=f'{bank_id}_products')
+                parsed = _parse_array(raw)
+                if parsed:
+                    results = parsed
+                    logger.info(f'Successfully extracted {len(results)} products for {bank_name}')
+                    print(f'  📦 Text → {len(results)} products for {bank_name}')
+                    break
+                else:
+                    logger.warning(f'AI returned empty result for {bank_name} products on attempt {attempt + 1}')
+                    if attempt == 0:
+                        print(f'  🔄 Retry product extraction for {bank_name}...')
+            except Exception as exc:
+                logger.error(f'Product extraction error for {bank_name}: {type(exc).__name__}: {exc}')
+                if attempt == 0:
+                    print(f'  ⚠️  Product extraction error for {bank_name}: {exc} — retrying...')
+        else:
+            logger.error(f'All product extraction attempts failed for {bank_name}')
+            print(f'  ❌ Product extraction failed for {bank_name}')
+    else:
+        print(f'  ⚠️  Text too short ({len(clean)} chars) for {bank_name} products')
+
+    # Stamp with bank info
+    for p in results:
+        p['bank_id'] = bank_id
+        p['bank_name'] = bank_name
+        p.setdefault('url', default_url)
+        p.setdefault('tc_link', default_url)
+
+    print(f'  ✅ Total: {len(results)} products for {bank_name}')
     return results
 
 
@@ -1299,7 +1349,7 @@ Titles to evaluate (0-indexed):
             raw = _call([{'role': 'user', 'content': prompt}], label=f'dedup/{bank_name}')
             if not raw:
                 if attempt == 0:
-                    print(f'  [RETRY] Retry ai_dedup_titles for {bank_name}...')
+                    print(f'  🔄 Retry ai_dedup_titles for {bank_name}...')
                     continue
                 return {}
             raw  = re.sub(r'^```[a-z]*\n?', '', raw.strip())
@@ -1311,13 +1361,13 @@ Titles to evaluate (0-indexed):
                 for dup in g.get('duplicate_indices', [])
             }
             if dup_map:
-                print(f'  [AI] ai_dedup_titles [{bank_name}]: {len(dup_map)} duplicate(s)')
+                print(f'  🤖 ai_dedup_titles [{bank_name}]: {len(dup_map)} duplicate(s)')
             return dup_map
         except Exception as exc:
             if attempt == 0:
-                print(f'  [WARN] ai_dedup_titles [{bank_name}] attempt 1 failed: {exc!r} - retrying')
+                print(f'  ⚠️  ai_dedup_titles [{bank_name}] attempt 1 failed: {exc!r} — retrying')
             else:
-                print(f'  [WARN] ai_dedup_titles [{bank_name}]: {exc!r} - skipping')
+                print(f'  ⚠️  ai_dedup_titles [{bank_name}]: {exc!r} — skipping')
                 return {}
     return {}
 
@@ -1408,7 +1458,7 @@ No explanation. No markdown. No code fences."""
             )
             if not raw:
                 if attempt == 0:
-                    print(f'  [RETRY] Retry ai_match_against_existing for {bank_name}...')
+                    print(f'  🔄 Retry ai_match_against_existing for {bank_name}...')
                     continue
                 return {}
             raw  = re.sub(r'^```[a-z]*\n?', '', raw.strip())
@@ -1422,15 +1472,15 @@ No explanation. No markdown. No code fences."""
             msg = (
                 f'{len(result_map)} match(es)'
                 if result_map else
-                '0 matches - all appear genuinely new'
+                '0 matches — all appear genuinely new'
             )
-            print(f'  [AI] ai_match_against_existing [{bank_name}]: {msg}')
+            print(f'  🤖 ai_match_against_existing [{bank_name}]: {msg}')
             return result_map
         except Exception as exc:
             if attempt == 0:
-                print(f'  [WARN] ai_match_against_existing [{bank_name}] attempt 1: {exc!r} - retrying')
+                print(f'  ⚠️  ai_match_against_existing [{bank_name}] attempt 1: {exc!r} — retrying')
             else:
-                print(f'  [WARN] ai_match_against_existing [{bank_name}]: {exc!r} - skipping')
+                print(f'  ⚠️  ai_match_against_existing [{bank_name}]: {exc!r} — skipping')
                 return {}
     return {}
 
@@ -1474,7 +1524,7 @@ _SPARSE_THRESHOLD = 3
 def _diagnose_input_data(promotions_by_bank: dict) -> dict[str, list[str]]:
     print()
     print('=' * 70)
-    print('[STATS]  INSIGHTS INPUT DIAGNOSTIC')
+    print('📊  INSIGHTS INPUT DIAGNOSTIC')
     print('=' * 70)
 
     bank_tag_map: dict[str, list[str]] = {}
@@ -1496,15 +1546,15 @@ def _diagnose_input_data(promotions_by_bank: dict) -> dict[str, list[str]]:
         tag_display = ', '.join(
             t for t in sorted(all_tags)
             if 1 < len(t) <= 12 and t not in ('', 'others', 'general')
-        ) or '[WARN] NONE'
+        ) or '⚠️  NONE'
 
         sparse_flag = (
-            '  [WARN] SPARSE — may cause None slots'
+            '  ⚠️  SPARSE — may cause None slots'
             if len(promos) < _SPARSE_THRESHOLD
-            else '  [OK]'
+            else '  ✅'
         )
         print(
-            f'  [STATS] {bank:<20}: {len(non_bau_promos):>2} active'
+            f'  📊 {bank:<20}: {len(non_bau_promos):>2} active'
             f' + {len(bau_promos):>2} BAU'
             f' = {len(promos):>2} total'
             f'  | tags: {tag_display[:55]}'
@@ -1534,9 +1584,9 @@ def _diagnose_input_data(promotions_by_bank: dict) -> dict[str, list[str]]:
                     break
 
         if covered_by:
-            print(f'    [OK] {cat_name:<42} -> {", ".join(covered_by)}')
+            print(f'    ✅ {cat_name:<42} → {", ".join(covered_by)}')
         else:
-            print(f'    [ERR] {cat_name:<42} -> NO DATA - will output None')
+            print(f'    ❌ {cat_name:<42} → NO DATA — will output None')
 
     print('=' * 70)
     print()
@@ -1550,7 +1600,7 @@ def _check_sparse_banks(promotions_by_bank: dict) -> list[str]:
     ]
     if sparse:
         print(
-            f'  [WARN] SPARSE BANKS: {sparse} (each has < {_SPARSE_THRESHOLD} promos)\n'
+            f'  ⚠️  SPARSE BANKS: {sparse} (each has < {_SPARSE_THRESHOLD} promos)\n'
             f'     Pass db_fetch_fn to generate_strategic_insights() to auto-supplement.'
         )
     return sparse
@@ -1568,10 +1618,10 @@ def supplement_from_db(
         try:
             db_promos = db_fetch_fn(bank)
         except Exception as exc:
-            print(f'  [WARN] supplement_from_db: DB fetch failed for "{bank}": {exc}')
+            print(f'  ⚠️  supplement_from_db: DB fetch failed for "{bank}": {exc}')
             continue
         if not db_promos:
-            print(f'  [WARN] supplement_from_db: no DB rows for "{bank}"')
+            print(f'  ⚠️  supplement_from_db: no DB rows for "{bank}"')
             continue
 
         existing_titles = {
@@ -1589,12 +1639,12 @@ def supplement_from_db(
         promotions_by_bank[bank] = promos
         supplemented_total += added
         print(
-            f'  [MERGE] supplement_from_db: "{bank}" '
-            f'{"added " + str(added) + " from DB -> now " + str(len(promos)) + " total" if added else "no new titles found in DB"}'
+            f'  🔄 supplement_from_db: "{bank}" '
+            f'{"added " + str(added) + " from DB → now " + str(len(promos)) + " total" if added else "no new titles found in DB"}'
         )
 
     if supplemented_total:
-        print(f'  [MERGE] supplement_from_db: {supplemented_total} DB row(s) merged total')
+        print(f'  🔄 supplement_from_db: {supplemented_total} DB row(s) merged total')
     return promotions_by_bank
 
 
@@ -1605,7 +1655,7 @@ def generate_strategic_insights(
     db_fetch_fn=None,
 ) -> Optional[dict]:
     if not AI_AVAILABLE:
-        print('[WARN] AI not available - skipping strategic insights')
+        print('⚠️  AI not available — skipping strategic insights')
         return None
 
     _diagnose_input_data(promotions_by_bank)
@@ -1614,11 +1664,11 @@ def generate_strategic_insights(
     if sparse_banks:
         if db_fetch_fn is not None:
             promotions_by_bank = supplement_from_db(promotions_by_bank, db_fetch_fn)
-            print('  [STATS] POST-SUPPLEMENT DIAGNOSTIC:')
+            print('  📊 POST-SUPPLEMENT DIAGNOSTIC:')
             _diagnose_input_data(promotions_by_bank)
         else:
             print(
-                '  [WARN] Sparse banks found but no db_fetch_fn provided.\n'
+                '  ⚠️  Sparse banks found but no db_fetch_fn provided.\n'
                 '     Pass db_fetch_fn=get_promotions_by_bank_name to auto-supplement.'
             )
 
@@ -1635,7 +1685,7 @@ def generate_strategic_insights(
         )
 
     if not bank_summaries:
-        print('[WARN] No promotions data - skipping strategic insights')
+        print('⚠️  No promotions data — skipping strategic insights')
         return None
 
     promotions_text = '\n\n'.join(bank_summaries)
@@ -1889,12 +1939,12 @@ Return this EXACT JSON structure (no markdown, no code fences):
 
     raw = _call([{'role': 'user', 'content': prompt}], label='insights')
     if not raw:
-        print('[ERR] Strategic insights: empty response from AI')
+        print('❌ Strategic insights: empty response from AI')
         return None
 
     result = _parse_object(raw)
     if result is None:
-        print('[ERR] Strategic insights: JSON parse failed')
+        print('❌ Strategic insights: JSON parse failed')
         return None
 
     # ── Post-processing pipeline ──────────────────────────────────────────────
@@ -1925,263 +1975,12 @@ Return this EXACT JSON structure (no markdown, no code fences):
             if (b.get('bank') or '').lower() in ('none', '', 'n/a')
         ]
         print(
-            f'  [WARN] {none_wins} best_for slot(s) still None after all fixes: {none_cats}\n'
+            f'  ⚠️  {none_wins} best_for slot(s) still None after all fixes: {none_cats}\n'
             f'     ↳ Check diagnostic above — these categories had no input data.'
         )
 
     print(
-        f'[OK] Strategic insights generated '
+        f'✅ Strategic insights generated '
         f'({bau_wins} BAU winner(s), {none_wins} None slot(s))'
     )
     return result
-
-
-# ── Product Extraction ───────────────────────────────────────────────────────
-
-def extract_products(bank_id: str, bank_name: str, text: str) -> list[dict]:
-    """
-    Extract core banking products from scraped website text.
-
-    Products include:
-    - Deposit products (savings accounts, time deposits, multi-currency accounts)
-    - Card products (debit cards, credit cards)
-    - Investment products (US/HK stock trading, fund investment, crypto trading)
-    - Loan products (personal loans, mortgage loans)
-
-    Returns a list of product dicts with fields:
-    - product_name: Name of the product
-    - category: One of 'deposit', 'card', 'investment', 'loan'
-    - subcategory: More specific type (e.g., 'savings', 'stocks', 'funds')
-    - description: Brief description
-    - features: List of key features
-    - interest_rate: Interest rate if applicable
-    - fees: Fee structure
-    - eligibility: Eligibility criteria
-    - url: Source URL
-    """
-    if not AI_AVAILABLE or len(text.strip()) < 500:
-        logger.warning(f'Skipping product extraction for {bank_name}: insufficient text or AI unavailable')
-        return []
-
-    # Text is already cleaned by scraper, use as-is
-    prompt = f"""You are a banking product analyst. Extract all CORE BANKING PRODUCTS from the following bank website content.
-
-TARGET BANK: {bank_name}
-
-PRODUCT CATEGORIES TO IDENTIFY:
-1. DEPOSIT PRODUCTS: Savings accounts, time deposits, multi-currency accounts, high-yield accounts, fixed deposits
-2. CARD PRODUCTS: Debit cards, credit cards, prepaid cards, virtual cards
-3. INVESTMENT PRODUCTS: Stock trading (US/HK), fund investment, cryptocurrency trading, bond investment, robo-advisory
-4. LOAN PRODUCTS: Personal loans, mortgage loans, business loans, car loans, education loans
-
-EXTRACTION RULES:
-- Focus on PERMANENT product offerings, NOT time-limited promotions
-- A product is a core banking service that exists continuously (e.g., "High Yield Savings Account")
-- A promotion is a temporary offer (e.g., "0.5% extra interest for new accounts this month")
-- If you see both, extract the underlying PRODUCT and note any promotional features separately
-- Each product should be unique - don't list the same product twice with different names
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DETAILED EXTRACTION REQUIREMENTS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-For EVERY product, extract COMPREHENSIVE details including:
-
-1. PRODUCT NAME: Clear, specific product name (not generic terms)
-
-2. CATEGORY & SUBCATEGORY:
-   - deposit: savings, time-deposit, multi-currency, high-yield, fixed-deposit
-   - card: debit-card, credit-card, prepaid-card, virtual-card
-   - investment: stocks, funds, crypto, bonds, robo-advisor
-   - loan: personal-loan, mortgage, business-loan, car-loan, education-loan
-
-3. DESCRIPTION (2-3 detailed sentences):
-   - What the product is and who it's for
-   - Key benefits and unique selling points
-   - Specific numbers: rates, limits, percentages where available
-
-4. FEATURES (list 3-7 specific features):
-   - Interest rates or returns (e.g., "Up to 3.88% p.a.")
-   - Fee structures (e.g., "$0 commission", "No annual fee")
-   - Limits and thresholds (e.g., "No minimum deposit")
-   - Accessibility (e.g., "24/7 mobile banking", "Instant transfers")
-   - Special conditions (e.g., "Available to HK ID holders only")
-   - Partner services (e.g., "Integration with The Club rewards")
-
-5. INTEREST RATE (if applicable):
-   - Exact rate: "3.88% p.a." or "Up to 3.88% p.a."
-   - Rate conditions: "For first $500,000 balance" or "With monthly salary transfer"
-   - If tiered: "1.8% on first HKD 100k, 3.88% on next HKD 400k"
-   - Empty string if N/A (cards/investments)
-
-6. FEES (detailed breakdown):
-   - Monthly/annual fees: "HKD 50/month" or "No annual fee"
-   - Transaction fees: "HKD 15 per withdrawal"
-   - Trading fees: "$0 commission + HKD 18 platform fee"
-   - Penalties: "Early withdrawal penalty: 7 days interest"
-   - Empty string if free or N/A
-
-7. ELIGIBILITY (specific requirements):
-   - Age: "18 years or older"
-   - Residency: "HK residents with valid HKID"
-   - Income: "Minimum monthly income HKD 15,000"
-   - Employment: "Full-time employed or self-employed"
-   - Credit: "Good credit standing required"
-   - Empty string if standard (HK residents 18+)
-
-8. MINIMUM REQUIREMENTS (if applicable):
-   - Initial deposit: "Minimum initial deposit HKD 10,000"
-   - Balance: "Minimum balance HKD 5,000 to avoid fees"
-   - Transfer amount: "Minimum transfer HKD 100"
-
-9. URL: Source page URL for reference
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EXAMPLES OF DETAILED EXTRACTION:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-GOOD EXAMPLE 1 (Deposit Product):
-Text: "liviSave Preferential Savings Rate - Enjoy up to 3.88% p.a. on your GoSave account.
-No minimum deposit required. Open an account in just 3 minutes with your HKID.
-Perfect for parking spare cash with instant access. Available to Hong Kong residents aged 18+."
-
-Extract:
-{{
-  "product_name": "liviSave Preferential Savings Account",
-  "category": "deposit",
-  "subcategory": "high-yield",
-  "description": "High-yield savings account offering preferential interest rates up to 3.88% p.a.
-Designed for flexible savings with no lock-in period and instant access to funds.",
-  "features": [
-    "Up to 3.88% p.a. preferential interest rate",
-    "No minimum deposit requirement",
-    "Account opening in 3 minutes",
-    "Instant access to funds anytime",
-    "Managed via livi mobile app"
-  ],
-  "interest_rate": "Up to 3.88% p.a.",
-  "fees": "",
-  "eligibility": "Hong Kong residents aged 18+ with valid HKID",
-  "url": ""
-}}
-
-GOOD EXAMPLE 2 (Investment Product):
-Text: "EleBank Stock Trading - Trade HK and US stocks with zero commission.
-HK stocks: $0 commission + HKD 15 platform fee per order.
-US stocks: USD 0.0049/share commission + USD 0.005/share platform fee, minimum USD 1.99 per order.
-Access real-time market data and trade 24/7 through the EleBank app."
-
-Extract:
-{{
-  "product_name": "EleBank Stock Trading",
-  "category": "investment",
-  "subcategory": "stocks",
-  "description": "Commission-free stock trading service for HK and US equities with competitive
-platform fees. Access global markets through a single integrated platform with real-time quotes.",
-  "features": [
-    "$0 commission on HK stock trades",
-    "HKD 15 platform fee per HK stock order",
-    "USD 0.0099/share total cost for US stocks",
-    "Minimum USD 1.99 per US stock order",
-    "24/7 trading via mobile app",
-    "Real-time market data included"
-  ],
-  "interest_rate": "",
-  "fees": "HK stocks: HKD 15/order; US stocks: USD 0.0099/share (min USD 1.99/order)",
-  "eligibility": "Existing EleBank account holders",
-  "url": ""
-}}
-
-GOOD EXAMPLE 3 (Loan Product):
-Text: "ZA Bank Personal Loan - Borrow from HKD 5,000 to HKD 500,000 at competitive APR from 8.8%.
-Flexible repayment terms from 6 to 60 months. Quick approval in 1 business day.
-No collateral or guarantor required for loans up to HKD 200,000."
-
-Extract:
-{{
-  "product_name": "ZA Bank Personal Loan",
-  "category": "loan",
-  "subcategory": "personal-loan",
-  "description": "Unsecured personal loan with flexible amounts from HKD 5,000 to HKD 500,000
-and competitive interest rates. Suitable for various personal financing needs with
-quick approval and no collateral requirement.",
-  "features": [
-    "Loan amounts: HKD 5,000 to HKD 500,000",
-    "APR from 8.8% (variable based on credit assessment)",
-    "Repayment terms: 6 to 60 months",
-    "Quick approval within 1 business day",
-    "No collateral required up to HKD 200,000",
-    "No guarantor needed"
-  ],
-  "interest_rate": "From 8.8% APR (variable)",
-  "fees": "Processing fee: HKD 500 (deducted from loan amount)",
-  "eligibility": "HK residents aged 18-65 with regular income, subject to credit approval",
-  "url": ""
-}}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-CRITICAL INSTRUCTIONS:
-- Extract ACTUAL products with REAL details from the website content
-- Include specific numbers, rates, fees, and eligibility criteria
-- Do NOT invent information - only extract what's explicitly stated
-- If a field has no information, use empty string ""
-- For investment products, specify exact markets (HK stocks, US stocks, specific crypto pairs)
-- For cards, mention card type (Visa/Mastercard), rewards program, annual fees
-- For loans, mention APR ranges, loan terms, maximum amounts
-- Return ONLY valid JSON array - no markdown, no code fences, no explanation
-
-WEBSITE CONTENT TO ANALYZE:
-{text[:40000]}
-
-Return ONLY a valid JSON array of product objects — NO other text, NO markdown fences, NO explanation."""
-
-    try:
-        raw = _call([{'role': 'user', 'content': prompt}], label=f'products/{bank_name}')
-        if not raw:
-            print(f'  [WARN] Product extraction: empty response for {bank_name}')
-            return []
-
-        # Try parsing as array first (expected format), then object
-        result = _parse_array(raw)
-        if not result:
-            # Fallback to object parsing for legacy responses
-            obj = _parse_object(raw)
-            if obj and isinstance(obj, dict):
-                result = obj.get('products', [])
-            else:
-                print(f'  [WARN] Product extraction: JSON parse failed for {bank_name}')
-                print(f'  First 200 chars: {raw[:200]}')
-                return []
-
-        if not isinstance(result, list):
-            print(f'  [WARN] Product extraction: expected list, got {type(result)} for {bank_name}')
-            return []
-
-        # Add bank info and validate structure
-        products = []
-        for p in result:
-            if not isinstance(p, dict):
-                continue
-            products.append({
-                'product_name': p.get('product_name', '').strip(),
-                'category': p.get('category', '').strip().lower(),
-                'subcategory': p.get('subcategory', '').strip(),
-                'description': p.get('description', '').strip(),
-                'features': p.get('features', []),
-                'interest_rate': str(p.get('interest_rate', '')).strip(),
-                'fees': str(p.get('fees', '')).strip(),
-                'eligibility': str(p.get('eligibility', '')).strip(),
-                'url': p.get('url', '').strip(),
-            })
-
-        valid_categories = {'deposit', 'card', 'investment', 'loan'}
-        products = [p for p in products if p['product_name'] and p['category'] in valid_categories]
-
-        print(f'  [INFO] Product extraction: {len(products)} products found for {bank_name}')
-        return products
-
-    except Exception as exc:
-        logger.error(f'Product extraction error for {bank_name}: {exc}')
-        print(f'  [WARN] Product extraction error for {bank_name}: {exc}')
-        return []
