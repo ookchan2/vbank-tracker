@@ -1,0 +1,439 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e10]:
+        - text: ZA Bank 提醒市民要時刻保持警覺，以免不法之徒借機行騙。若接到來自銀行職員來電時，應核實來電者身份，切勿對可疑人士透露個人和銀行帳戶資料、密碼等敏感資訊。如對任何宣稱來自眾安銀行的電郵或來電存有疑問，請致電我們的防騙熱線 3665 3660 核實。詳情請
+        - link "按此" [ref=e11] [cursor=pointer]:
+          - /url: /fake-call
+        - text: 。
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - link "logo" [ref=e20] [cursor=pointer]:
+            - /url: /
+            - img "logo" [ref=e21]
+          - generic [ref=e22]:
+            - generic [ref=e24] [cursor=pointer]: 個人銀行
+            - generic [ref=e26] [cursor=pointer]: 商業銀行
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e30] [cursor=pointer]: 銀行服務
+            - generic [ref=e32] [cursor=pointer]: ZA Card
+            - generic [ref=e34] [cursor=pointer]: 借貸
+            - generic [ref=e36] [cursor=pointer]: 投資
+            - link "保險" [ref=e39] [cursor=pointer]:
+              - /url: /hk/insurance
+            - generic [ref=e40] [cursor=pointer]:
+              - link "幫助中心" [ref=e42]:
+                - /url: /faqs/Individuals
+              - text: "|"
+            - link "Blog" [ref=e45] [cursor=pointer]:
+              - /url: https://blog.za.group/hk
+          - generic [ref=e46]:
+            - generic [ref=e48] [cursor=pointer]: 下載 ZA Bank App
+            - generic [ref=e50] [cursor=pointer]:
+              - text: 登記開戶
+              - img [ref=e51]
+          - img "国际化" [ref=e55] [cursor=pointer]
+    - generic [ref=e58]:
+      - generic [ref=e61]:
+        - generic [ref=e63]:
+          - generic [ref=e65]:
+            - text: 香港第一數字銀行
+            - superscript [ref=e66]: "1"
+            - text: 從今天為未來增值
+          - generic [ref=e68]: 一間銀行，理財、投資、消費，全面掌控
+          - link "立即開戶" [ref=e73] [cursor=pointer]:
+            - /url: https://bank.za.group/hk/account-open
+        - img [ref=e77]
+      - generic [ref=e90]:
+        - generic [ref=e92]:
+          - img [ref=e93]
+          - generic [ref=e94]:
+            - generic [ref=e95]: 24 x 7 全天候服務
+            - generic [ref=e96]: 銀行服務，從此無分日夜，隨時 on call
+        - generic [ref=e98]:
+          - img [ref=e99]
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - text: 最快 2 分鐘開戶
+              - superscript [ref=e102]: "2"
+            - generic [ref=e103]: 零存款門檻
+        - generic [ref=e105]:
+          - img [ref=e106]
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - text: 支持香港居民及訪港旅客
+              - superscript [ref=e109]: "3"
+              - text: 在港線上開戶
+            - generic [ref=e110]: 輕鬆管理財務需要
+      - generic [ref=e111]:
+        - paragraph [ref=e125]: 百萬用戶信心之選
+        - img [ref=e132]
+        - generic [ref=e140]:
+          - generic [ref=e141]: App Store
+          - generic [ref=e142]: "4.8"
+          - generic [ref=e143]:
+            - text: 分
+            - superscript [ref=e144]: "4"
+          - generic [ref=e145]: 用戶好評
+          - img [ref=e146]
+        - generic [ref=e154]:
+          - text: 作為香港第一數字銀行
+          - superscript [ref=e155]: "1"
+          - text: ，我們憑藉安全、便捷的服務，贏得每一位用戶的信任。你的信賴，是我們不斷進步的最大動力。
+        - generic [ref=e163]:
+          - generic [ref=e164]:
+            - img [ref=e165]
+            - generic [ref=e166]: NextGen 年度數字銀行
+            - generic [ref=e167]:
+              - text: 此前已連續兩年榮獲
+              - text: 「年度虛擬銀行 -- 零售銀行」
+          - generic [ref=e168]:
+            - img [ref=e169]
+            - generic [ref=e170]: 《財富》亞洲 15 強數字銀行
+            - generic [ref=e171]:
+              - text: 亞洲金融科技創新者排行榜
+              - text: 香港唯一數字銀行入圍
+          - generic [ref=e172]:
+            - img [ref=e173]
+            - generic [ref=e174]: 香港最佳數字銀行
+            - generic [ref=e175]: 首家獲獎數字銀行
+      - generic [ref=e180]:
+        - generic [ref=e181]: 一個 App，理財、消費、 投資，全面掌控
+        - generic [ref=e183]:
+          - generic [ref=e184]:
+            - generic [ref=e186]:
+              - generic [ref=e187]: 一個賬戶，管理全球資產
+              - list [ref=e188]:
+                - listitem [ref=e189]:
+                  - generic [ref=e190]: 多幣種儲蓄：輕鬆持有港元、人民幣、美元、英鎊、新加坡元、歐羅、加拿大元、澳元、日圓、紐西蘭元、瑞士法郎共 11 種貨幣。
+                - listitem [ref=e191]:
+                  - generic [ref=e192]: 靈活資產配置：配合活期及定期存款，24 x 7 隨時以心水匯率兌換貨幣，捕捉每個市場機遇，輕鬆增值。
+                - listitem [ref=e193]:
+                  - generic [ref=e194]: 享高息活期：專為儲蓄而設的錢罌，讓你隨存隨取 0 費用。
+                - listitem [ref=e195]:
+                  - generic [ref=e196]:
+                    - text: 全港免費提款：憑 ZA Card 於全港超過 3,000 部 Visa ATM 免費提取現金
+                    - superscript [ref=e197]: "5"
+                    - text: 。
+              - link "了解更多" [ref=e200] [cursor=pointer]:
+                - /url: https://bank.za.group/hk/deposit
+                - text: 了解更多
+                - img [ref=e201]
+            - img [ref=e205]
+          - generic [ref=e206]:
+            - generic [ref=e208]:
+              - generic [ref=e209]: 全方位投資平台
+              - list [ref=e210]:
+                - listitem [ref=e211]:
+                  - generic [ref=e212]:
+                    - text: 股票︰0 佣 0 存倉費買入股票，平台費低至港股每單 HKD 18 或美股 USD 1.99。仲可享 StockBack 股票回贈計劃
+                    - superscript [ref=e213]: "6"
+                    - text: 。成功買入股票，即送股票回贈，一邊投資一邊賺獎賞。
+                - listitem [ref=e214]:
+                  - generic [ref=e215]:
+                    - text: 加密貨幣：直接用 HKD 或 USD 銀行存款，24 x 7 無間斷交易。新開戶首 90 日更可享 $0 平台費優惠
+                    - superscript [ref=e216]: "7"
+                    - text: 。
+                - listitem [ref=e217]:
+                  - generic [ref=e218]:
+                    - text: 基金：ZA Bank 所有基金 0% 認購費
+                    - superscript [ref=e219]: "8"
+                    - text: ，而且不設上限，等你嘅資金 100% 投入市場 —— 少一筆費用，多一分發揮空間。
+              - link "了解更多" [ref=e222] [cursor=pointer]:
+                - /url: https://bank.za.group/hk/hkstock
+                - text: 了解更多
+                - img [ref=e223]
+              - link "重要風險聲明" [ref=e226] [cursor=pointer]:
+                - /url: "#explain"
+            - img [ref=e229]
+          - generic [ref=e230]:
+            - generic [ref=e232]:
+              - generic [ref=e233]:
+                - text: ZA Card
+                - text: 消費送股票 獎賞你話事
+              - list [ref=e234]:
+                - listitem [ref=e235]:
+                  - generic [ref=e236]:
+                    - generic [ref=e237]:
+                      - text: 全港首創 StockBack x ZA Card
+                      - superscript [ref=e238]: "9"
+                      - text: ︰
+                    - text: 碌卡唔再只係儲積分，而係直接拎股票。輕鬆儲起股票，用日常消費建立你嘅回贈組合。
+                - listitem [ref=e239]:
+                  - generic [ref=e240]:
+                    - text: 消費玩「最勁抽」： 贏高達 200% 回贈
+                    - superscript [ref=e241]: "10"
+                    - text: ，亦可以收集百萬勁抽券，挑戰瓜分 100 萬
+                    - superscript [ref=e242]: "11"
+                    - text: 。
+                - listitem [ref=e243]:
+                  - generic [ref=e244]: 自訂卡號：全港首創，卡面最後 6 位數字由你話事。
+                - listitem [ref=e245]:
+                  - generic [ref=e246]: 無年費，無隱藏收費： 一張真正屬於你嘅 Visa 扣賬卡，支援 Apple Pay 及 Google Pay。
+              - link "了解更多" [ref=e249] [cursor=pointer]:
+                - /url: https://bank.za.group/hk/za-card
+                - text: 了解更多
+                - img [ref=e250]
+            - img [ref=e254]
+          - generic [ref=e255]:
+            - generic [ref=e257]:
+              - generic [ref=e258]: FPS 免費即時跨行過數
+              - list [ref=e259]:
+                - listitem [ref=e260]:
+                  - generic [ref=e261]: 免費即時跨行過數，交卡數、繳稅、Scan QR code 繳費一 App 搞掂。
+                - listitem [ref=e262]:
+                  - generic [ref=e263]: 只需手機號碼就能透過轉數快（FPS）收取港元、人民幣。
+                - listitem [ref=e264]:
+                  - generic [ref=e265]: 轉賬首頁設有「常用收款人」欄位，轉賬體驗更方便。
+                - listitem [ref=e266]:
+                  - generic [ref=e267]: 一鍵派發群組利是，唔使逐個輸入收款人，慳時又慳力！
+              - link "了解更多" [ref=e270] [cursor=pointer]:
+                - /url: https://bank.za.group/hk/transfer
+                - text: 了解更多
+                - img [ref=e271]
+            - img [ref=e275]
+          - generic [ref=e276]:
+            - generic [ref=e278]:
+              - generic [ref=e279]:
+                - text: 跨境匯款至
+                - text: 全球 140+ 個國家同地區
+              - list [ref=e280]:
+                - listitem [ref=e281]:
+                  - generic [ref=e282]: 跨境支付通：內地香港雙向過數，即刻過賬，不收手續費。
+                - listitem [ref=e283]:
+                  - generic [ref=e284]: Wise：用 Wise 港元支付，海外匯款極速到賬，快人一步。
+                - listitem [ref=e285]:
+                  - generic [ref=e286]:
+                    - text: SWIFT 電匯：用 SWIFT 電匯至全球 140+ 個國家同地區，免收本行手續費
+                    - superscript [ref=e287]: "12"
+                    - text: 。
+              - link "了解更多" [ref=e290] [cursor=pointer]:
+                - /url: https://bank.za.group/hk/ZARemit
+                - text: 了解更多
+                - img [ref=e291]
+            - img [ref=e295]
+          - generic [ref=e296]:
+            - generic [ref=e298]:
+              - generic [ref=e299]:
+                - text: 靈活貸款，
+                - text: 最快 90 秒即知結果
+                - superscript [ref=e300]: 13a
+              - list [ref=e301]:
+                - listitem [ref=e302]:
+                  - generic [ref=e303]:
+                    - text: 快批大額：申請流程簡單，貸款額高達 HKD 1,000,000
+                    - superscript [ref=e304]: 13b
+                    - text: ，實際年利率低至 1.30%
+                    - superscript [ref=e305]: 13c
+                    - text: 。
+                - listitem [ref=e306]:
+                  - generic [ref=e307]: 方案夠全面：提供分期貸款、信用卡賬單分期及結餘轉戶等各種貸款產品，滿足不同財務所需。
+                - listitem [ref=e308]:
+                  - generic [ref=e309]: 勝在優惠多：不時推出各種貸款優惠，令你周轉成本更低。
+              - link "了解更多" [ref=e312] [cursor=pointer]:
+                - /url: https://bank.za.group/hk/loan
+                - text: 了解更多
+                - img [ref=e313]
+            - img [ref=e317]
+          - generic [ref=e318]:
+            - generic [ref=e320]:
+              - generic [ref=e321]:
+                - text: 手機投保，
+                - text: 最快 3 分鐘
+                - superscript [ref=e322]: "14"
+                - text: 全面守護
+              - list [ref=e323]:
+                - listitem [ref=e324]:
+                  - generic [ref=e325]:
+                    - text: 簡單方便：聯乘 ZA Insure，最快 3 分鐘
+                    - superscript [ref=e326]: "14"
+                    - text: 手機極速完成投保。
+                - listitem [ref=e327]:
+                  - generic [ref=e328]: 產品夠全面： 涵蓋人壽、危疾、自願醫保等多種選擇，一站式滿足保障需求。
+                - listitem [ref=e329]:
+                  - generic [ref=e330]: 全程數碼化：透過全面數碼化體驗，申請計劃或提出索償，從此輕鬆簡單。
+              - link "了解更多" [ref=e333] [cursor=pointer]:
+                - /url: https://bank.za.group/hk/insurance
+                - text: 了解更多
+                - img [ref=e334]
+            - img [ref=e338]
+      - generic [ref=e345]:
+        - generic [ref=e346]:
+          - generic [ref=e347]: 極致安全
+          - generic [ref=e348]:
+            - text: ZA Bank App 支援生物識別，每次登入及進行交易，都只需輕輕以面容或指紋辨識解鎖。每筆高風險交易均有即時推送通知，發現未經授權交易可以一鍵鎖卡及提出
+            - link "交易爭議" [ref=e349] [cursor=pointer]:
+              - /url: https://bank.za.group/hk/dispute-chargeback
+            - text: 。我們以保護私穩作大前提，打造智能管理平台，為用戶提供最嚴密的保障。
+        - img [ref=e350]
+      - generic [ref=e357]:
+        - img [ref=e358]
+        - generic [ref=e360]:
+          - img [ref=e361]
+          - generic [ref=e362]:
+            - paragraph [ref=e363]: ZA Bank 以「做壞規矩 做好銀行」為核心品牌精神，展示我們勇於發展「Banking for Web3」願景，致力為用戶做到最好的決心。
+            - paragraph [ref=e364]: 做多一點就叫做壞規矩？ZA Bank 絕不認同。「規矩」可能是一些大家習以為常的事，但在 ZA Bank，沒有任何事情是理所當然。立身於科技發展的大趨勢，我們銳意藉數字銀行的技術優勢回應用戶所需，為用戶做壞「規矩」，從而帶來嶄新的銀行產品和服務體驗。
+            - paragraph [ref=e365]: 哪怕今日作出的改變看似微不足道，未來亦能成為好的慣例，持續革新用戶對銀行「好」的定義，讓廣大用戶受惠。因此，我們敢於做多一點，以多款首創的產品和服務和前所未見的方便 App 介面「做好銀行」。
+        - img [ref=e366]
+      - generic [ref=e372]:
+        - generic [ref=e374]: 1. 作為香港首間數字銀行，截至 2025 年 6 月 30 日，ZA Bank 的用戶存款及淨利潤均為香港 8 間數字銀行之中最高。資料來源︰8 間數字銀行中期業績報告。
+        - generic [ref=e376]: 2. 開立戶口所需的時間取決於實際情況而定。一般而言，在無需提交額外資料的情況下，用戶最快可於 2 分鐘內完成戶口開立。
+        - generic [ref=e378]: 3. ZA Bank 僅為香港境內的訪港旅客提供銀行服務，滿足用戶在港消費、理財等真實金融需求。
+        - generic [ref=e380]: ^ 數據截至 2025 年 6 月 30 日。
+        - generic [ref=e382]: 4. 截至 2025 年 12 月 15 日的 App Store 評分。
+        - generic [ref=e384]: 5. 海外提款可能會被收取手續費。
+        - generic [ref=e386]:
+          - text: 6.「股票最勁抽」推廣期為 2026 年 2 月 1 日至 2026 年 6月 30 日（包括首尾兩日）。參加者於推廣期內成功買入股票後，可獲得一次「股票最勁抽」機會，所有「股票最勁抽」機會由 ZA Bank 派發起 24 小時內有效，到期即失效。若參加者的美股買入交易之平台費收費為低於 USD 2 / 筆，或港股買入交易之平台費收費為低於 HKD 20 / 筆，參加者將不獲「股票最勁抽」機會。參加者的 ZA Bank App 的版本須在 3.8.9 以上，方能獲得「股票最勁抽」機會。於每一次「股票最勁抽」機會中，參加者只能獲得「指定股票兌換券」的獎賞，可兌換按美股市值排行前 100 的股票。「股票最勁抽」推廣受其
+          - link "條款及細則" [ref=e387] [cursor=pointer]:
+            - /url: https://bank-invest.za.group/agreement/html/zh_HK/1001728
+          - text: 約束。
+        - generic [ref=e389]:
+          - text: 7. 推廣期由 2026 年 2 月 1 日起至 2026 年 6 月 30 日（包括首尾兩日），首次成功開通 ZA Bank 加密貨幣交易服務的用戶，於開通後首 90 天進行加密貨幣交易可享無上限 $0 平台費優惠，受
+          - link "條款及細則" [ref=e390] [cursor=pointer]:
+            - /url: https://bank-invest.za.group/agreement/html/zh_HK/1002099
+          - text: 約束。
+        - generic [ref=e392]:
+          - text: 8. 由即日起至 2026 年 7 月 31 日（包括首尾兩日），已開通 ZA Bank 基金交易服務的零售銀行用戶認購基金可享 0% 基金認購費優惠，以及所有基金的贖回費豁免。優惠受其
+          - link "條款及細則" [ref=e393] [cursor=pointer]:
+            - /url: https://bank-invest.za.group/agreement/html/zh_HK/1001923
+          - text: 約束。
+        - generic [ref=e395]:
+          - text: 9.「StockBack x ZA Card」推廣活動：推廣期為 2025 年 11 月 3 日至 2026 年 6 月 30 日（包含首尾兩天）。參加者於推廣期內使用 ZA Card 支付的每筆合資格簽賬，而交易金額不少於 HKD 10 才能獲得一次 StockBack 機會，且不可同時獲得涉及 ZA Coin 獎賞的其他 ZA Card 推廣之獎賞。所有 StockBack 機會的有效時間為 48 小時。參加者於每一次 StockBack 機會中可從活動頁面上 「StockBack」機器展示的 6 隻股票中選擇其中一隻股票作為其股票回贈獎賞，該獎賞金額為有關交易簽賬金額的 1% 或根據 ZA Bank 不定期推出的限時推廣活動中獲得更高的回贈金額。參加者必須在選擇獎賞後的 90 個曆日內持有有效的投資賬戶及已開通對應投資交易服務後方有獎賞的擁有權及可接收獎賞，否則獎賞將失效及視為被放棄，ZA Bank 不會補發獎賞。「StockBack x ZA Card」推廣活動受
+          - link "條款及細則" [ref=e396] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/html/zh_HK/1002233
+          - text: 約束。
+        - generic [ref=e398]: 10. 消費之合資格簽賬交易金額需不少於 HKD 10 才能獲得「最勁抽」機會，且不可同時享有其他 ZA Card 回贈優惠。所有機會的有效時間為 48 小時。 每一次的「最勁抽」機會，將有機會給予高達簽賬額之 200% 回贈獎賞或其他指定獎賞。每個獎賞的中獎率並非平均分佈。回贈以 ZA Coin 形式發放。ZA Coin 是由眾安國際金融服務有限公司營運的第三方獎勵計劃。每筆交易的獎賞上限為 1,000,000 ZA Coin（或 HKD 10,000）。受條款及細則約束。
+        - generic [ref=e400]: 11. 於活動推廣期內，用戶參與最勁抽或完成指定任務後有機會獲得百萬勁抽券，每輪活動所派發的百萬勁抽券數量上限為100萬張。ZA Bank 將於每輪活動結束後，透過電腦系統以隨機方式從 HKD 100 萬張百萬勁抽券中，抽出 100 張中獎百萬勁抽券。用戶每持有一張中獎券將會獲得 HKD 10,000 現金獎賞或其他等值之獎賞。百萬勁抽全新版活動 受條款及細則約束 。 * 此亦適用於 ZA Credit 用戶。借定唔借？還得到先好借！
+        - generic [ref=e402]:
+          - text: 12. 海外匯款的 SWIFT 電匯服務豁免 ZA Bank 手續費。其他可能涉及的費用，請參考
+          - link "個人銀行收費服務" [ref=e403] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/pdf/zh_HK/1000181
+          - text: 簡介。
+        - generic [ref=e405]: 13a. 該審批結果為初步審核結果。用戶需提交相關文件而獲得最終審核結果。實際時間因人而異。一般來説，在資料準備充足的情況下，全新用戶最快可於 90 秒内在 ZA Bank 網站完成申請並獲得初步審核結果，而現有用戶於登入 ZA Bank App 後，於「貸款」頁發起申請到獲取初步審核結果最快可於 30 秒内完成。
+        - generic [ref=e407]: 13b. 最終批核之貸款金額、利率及還款期視乎個別情況及本行的最終審批而異。
+        - generic [ref=e409]: 13c. 實際年利率 1.30% 是根據貸款額 HKD 1,000,000，還款期 12 個月及月平息為 0.0584% 為例計算。其他還款期的適用月平息、實際年利率，可參閲貸款申請中時顯示的利率及每月還款表。實際年利率是採用香港銀行公會所載的有關指引計算，並已被約至小數後兩個位。實際年利率是一個參考利率，以年化利率展示出包括銀行產品的基本利率及其他費用與收費（如適用）。
+        - generic [ref=e411]: 14. 具體完成投保時間因人而異。一般而言，在資料準備充足的情況下，用戶最快可於 3 分鐘内完成投保。
+        - generic [ref=e414]: 重要風險聲明
+        - generic [ref=e416]: 投資涉及風險。投資產品價格可升可跌，甚至變成毫無價值。過往表現並非日後表現的指標。投資未必一定能夠賺取利潤，亦可能會招致損失。此平台的資料只供參考，並不構成及不應被視為任何建議、推銷、游說客戶認購或出售任何投資產品。投資者應根據本身投資經驗、投資目標、財務狀況及承擔風險程度等因素去衡量是否適合投資於該產品上。若有需要，請諮詢獨立專業建議。投資者作出任何投資決定前，應詳細閱讀有關之章則及條件，投資產品認購章程及其風險披露聲明。本平台之內容並未經證監會或任何香港的監管機構審閱。 ZA Bank 以代理人身份辦理你的指示。投資產品由第三方提供。若因銷售過程或處理有關交易產生合資格爭議 (定義見金融糾紛調解計劃的金融糾紛調解中心的職權範圍)，ZA Bank 會與你進行金融糾紛調解計劃程序；然而，對於有關產品的合約條款的任何爭議，應由第三方產品發行人與你直接解決。ZA Bank 無意讓任何人於任何受限制或未獲法律或法規授權分發或使用此平台的司法管轄區、國家或地區內，分發或使用此平台。如你並非身處香港，我們或未獲授權於你身處或居住的國家或地區向你提供產品及服務。
+        - generic [ref=e418]: 加密貨幣風險聲明
+        - generic [ref=e420]: 投資涉及風險。虛擬資產是一種新的資產類別，以嶄新的技術開發, 涉及與收購、存儲、轉讓和使用相關的不可預見的風險。虛擬資產的價格可能高度波動，投資者在決定投資虛擬資產時應格外謹慎。虛擬資產價格可升可跌，甚至變成毫無價值。過往表現並非日後表現的指標。投資未必一定能夠賺取利潤，亦可能會招致損失。此平台的資料只供參考，並不構成及不應被視為任何建議、推銷、游說客戶認購或出售任何投資產品。投資者應根據本身投資經驗、投資目標、財務狀況及承擔風險程度等因素去衡量是否適合投資於該產品上。若有需要，請諮詢獨立專業建議。投資者作出任何投資決定前，應詳細閱讀有關之條款及細則及其風險披露聲明。若因銷售過程或處理有關交易產生合資格爭議 (定義見金融糾紛調解計劃的金融糾紛調解中心的職權範圍)，ZA Bank 會與你進行金融糾紛調解計劃程序。ZA Bank 無意讓任何人於任何受限制或未獲法律或法規授權分發或使用此平台的司法管轄區、國家或地區內，分發或使用此平台。如你並非身處香港，我們或未獲授權於你身處或居住的國家或地區向你提供產品及服務。
+        - generic [ref=e422]:
+          - text: 保險代理及保險公司之重要注意事項
+          - text: 眾安人壽有限公司（業務名稱 ZA Insure）已獲香港特別行政區保險業監管局授權經營及監管。
+          - text: 眾安銀行有限公司（“ZA Bank”）為 ZA Insure 之授權保險代理商（牌照號碼 GA1009）。
+          - text: 以上保險產品均不是 ZA Bank 的產品、也不是銀行存款或銀行儲蓄計劃，及僅可在香港特別行政區內出售。部分保費用於支付保險和相關費用。投保人須承受 ZA Insure 的信貸風險。
+          - text: 對於你與 ZA Bank 因由 ZA Bank 以保險公司代理人身分銷售的任何保險產品及有關交易而產生的合資格爭議（定義見金融糾紛調解計劃的金融糾紛調解中心職權範圍），ZA Bank 須與你進行金融糾紛調解計劃程序。而有關 ZA Insure 保險產品的合約條款若有任何爭議，ZA Bank 會盡力提供協助。
+          - text: ZA Insure 的保險產品的申請以 ZA Insure 的核保及接納為準。作出決定之前，請仔細閱讀 ZA Insure 提供的產品資料，包括產品小冊子和保單條款，以確保你了解相關保險計劃的特點、風險、除外責任、限制以及完整的條款和條件。
+          - text: ZA Insure 將因應潛在的保單持有人及／或受保人於網上申請期間所提供的資料保留接受或拒絕任何有關 ZA Insure 的指定保險產品之申請的權利。
+      - generic [ref=e428]:
+        - generic [ref=e429]:
+          - text: 開戶最快 2 分鐘
+          - superscript [ref=e430]: "&"
+          - text: 即開即用
+        - generic [ref=e431]: 想知銀行體驗可以去到有幾好，行動最實際，即刻開戶就可以親身感受到！
+        - generic [ref=e432]:
+          - generic [ref=e433]:
+            - img [ref=e435] [cursor=pointer]
+            - img [ref=e437] [cursor=pointer]
+            - link [ref=e438] [cursor=pointer]:
+              - /url: https://cdn.zaticdn.com/bank/app/android.apk
+              - img [ref=e439]
+          - img [ref=e440]
+    - generic [ref=e441]:
+      - generic [ref=e443]:
+        - generic [ref=e444]:
+          - generic [ref=e445]: 關於我們
+          - generic [ref=e446]:
+            - link "關於 ZA Bank" [ref=e448] [cursor=pointer]:
+              - /url: /hk/hkno1digitalbank
+            - link "新聞中心" [ref=e450] [cursor=pointer]:
+              - /url: /hk/about-us#index=news
+            - link "企業管治" [ref=e452] [cursor=pointer]:
+              - /url: /hk/about-us#index=board
+            - link "監管披露" [ref=e454] [cursor=pointer]:
+              - /url: /hk/about-us#index=supervision
+            - link "財務報告" [ref=e456] [cursor=pointer]:
+              - /url: /hk/about-us#index=finance
+        - generic [ref=e457]:
+          - generic [ref=e458]: 常用連結
+          - generic [ref=e459]:
+            - link "銀行收費表" [ref=e461] [cursor=pointer]:
+              - /url: /rates-list
+            - link "幫助" [ref=e463] [cursor=pointer]:
+              - /url: https://bank.za.group/faqs/Individuals
+            - link "保安提示" [ref=e465] [cursor=pointer]:
+              - /url: /security-tips
+            - link "防止金融犯罪資訊中心" [ref=e467] [cursor=pointer]:
+              - /url: /financial
+            - link "條款及細則" [ref=e469] [cursor=pointer]:
+              - /url: /terms
+            - link "下載中心" [ref=e471] [cursor=pointer]:
+              - /url: /hk/tabledown
+            - link "重要通知" [ref=e473] [cursor=pointer]:
+              - /url: /important-notice
+            - link "開放銀行" [ref=e475] [cursor=pointer]:
+              - /url: https://developer.bank.za.group/hk/
+            - link "產品資料概要" [ref=e477] [cursor=pointer]:
+              - /url: /kfs
+        - generic [ref=e478]:
+          - generic [ref=e479]: 服務與諮詢
+          - generic [ref=e480]:
+            - link "bank.opinion@za.group" [ref=e482] [cursor=pointer]:
+              - /url: mailto:bank.opinion@za.group
+            - generic [ref=e483]: +852 3665 3665
+            - generic [ref=e485]: 線上客服
+            - link "聯繫我們" [ref=e487] [cursor=pointer]:
+              - /url: /consulting-feedback
+            - link "銀行業人才起動計劃申请" [ref=e489] [cursor=pointer]:
+              - /url: /banking-talent-programme
+            - link "無障礙聲明" [ref=e491] [cursor=pointer]:
+              - /url: /accessibility
+            - link "舉報渠道" [ref=e493] [cursor=pointer]:
+              - /url: https://cdn.zaticdn.com/if/zaif-cps-seagull-service/20231226/ZAB_WB_statement_1.0_45002.pdf
+        - generic [ref=e494]:
+          - generic [ref=e495]:
+            - generic [ref=e496]:
+              - link "facebook-logo" [ref=e497] [cursor=pointer]:
+                - /url: https://www.facebook.com/zabankhk
+                - img "facebook-logo" [ref=e498]
+              - link "linkedin-logo" [ref=e499] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/za-international
+                - img "linkedin-logo" [ref=e500]
+              - img "weChart" [ref=e502] [cursor=pointer]
+            - generic [ref=e504]:
+              - link "繁" [ref=e506] [cursor=pointer]:
+                - /url: /
+              - text: "|"
+              - link "EN" [ref=e508] [cursor=pointer]:
+                - /url: /en
+          - generic [ref=e509]:
+            - generic [ref=e511]:
+              - generic [ref=e512]:
+                - button "ios-download" [ref=e513] [cursor=pointer]:
+                  - img "ios-download" [ref=e514]
+                - button "android-download" [ref=e515] [cursor=pointer]:
+                  - img "android-download" [ref=e516]
+                - link "apk" [ref=e517] [cursor=pointer]:
+                  - /url: https://cdn.zaticdn.com/bank/app/android.apk
+                  - img "apk" [ref=e518]
+              - img "qr-code" [ref=e519]
+            - img "DPSsimplified" [ref=e522] [cursor=pointer]
+            - list [ref=e523]:
+              - listitem [ref=e524]: · Apple為Apple Inc.商標，已於美國及其他國家╱地區註冊。App Store為Apple Inc.之服務商標。
+              - listitem [ref=e525]: · Google Play™為Google LLC之商標。
+      - generic [ref=e526]:
+        - generic [ref=e527]:
+          - generic [ref=e528]: 本網站由眾安銀行有限公司編製及發布。版權所有 © 2026 眾安銀行有限公司
+          - generic [ref=e529]:
+            - link "網站使用條款" [ref=e530] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000379
+            - text: "|"
+            - link "私隱政策" [ref=e531] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000442
+            - text: "|"
+            - link "收集個人資料通知" [ref=e532] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000378
+        - generic [ref=e533]: "*作為香港首間開業的數字銀行，截至 2024 年 6 月 30 日，ZA Bank 的用戶數量及存款均為香港 8 間數字銀行之中最高。資料來源︰8 間數字銀行中期業績報告。"
+    - img "kf-icon" [ref=e538] [cursor=pointer]
+  - alert [ref=e539]

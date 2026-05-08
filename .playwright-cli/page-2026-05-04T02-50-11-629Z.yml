@@ -1,0 +1,211 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "logo" [ref=e5] [cursor=pointer]:
+        - /url: /home?lang=zh_hk
+        - img "logo" [ref=e6]
+      - navigation [ref=e7]:
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link "關於我們" [ref=e10] [cursor=pointer]:
+              - /url: /home?lang=zh_hk
+          - listitem [ref=e11]:
+            - link "最新優惠" [ref=e12] [cursor=pointer]:
+              - /url: /fund-promotion?lang=zh_hk
+          - listitem [ref=e13]:
+            - link "產品介紹" [ref=e14] [cursor=pointer]:
+              - /url: /dzd?lang=zh_hk
+          - listitem [ref=e15]:
+            - link "重要信息" [ref=e16] [cursor=pointer]:
+              - /url: /notice?lang=zh_hk
+          - listitem [ref=e17]:
+            - link "幫助和支援" [ref=e18] [cursor=pointer]:
+              - /url: /questions?lang=zh_hk
+          - listitem [ref=e19]:
+            - link "登入商業銀行" [ref=e20] [cursor=pointer]:
+              - /url: https://business.antbank.hk/page/login?lang=zh_hk
+          - listitem [ref=e21]:
+            - generic [ref=e23] [cursor=pointer]: EN
+  - generic [ref=e25]:
+    - generic [ref=e27]:
+      - img [ref=e28]
+      - generic [ref=e31]:
+        - generic [ref=e32]: 全新服務
+        - heading "全新Ant Bank 投資基金平台登陸啦!" [level=1] [ref=e33]
+        - generic [ref=e34]: 與全球頂尖基金公司攜手合作，嚴選優質基金，為你打造全方位、一站式嘅理財平台。螞蟻銀行仲無收任何平台費而家開戶仲有限時優惠！無論係認購定贖回，費用都全免¹！真正$0 成本投資，唔好諗啦! 快啲把握機會係螞蟻基金平台 $1可以投資 $1可以創造未來 。
+        - generic [ref=e35] [cursor=pointer]: 立即體驗
+        - generic [ref=e38]: 投資涉及風險 ¹優惠受條款及細則約束。
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - img "exclamation-circle" [ref=e44]:
+            - img [ref=e45]
+          - text: 重要風險披露聲明
+        - generic [ref=e48]: 投資涉及風險。投資產品的價格可升可跌，甚至變成毫無價值。過往表現並非日後表現的指標。投資未必一定能夠賺取利潤，亦可能會招致損失。此平台的資料只供參考，並不構成及不應被視為任何建議，推銷，游說客戶認購或出售任何投資產品。投資產品不等同於銀行存款，且不受香港的存款保障計劃保障資格的存款。投資者應根據本身的投資經驗、投資目標、財務狀況及承擔風險程度等因素去衡量是否適合投資於該產品上。若有需要，請諮詢獨立專業建議。 若因銷售過程或處理有關交易產生合資格爭議（定義見金融糾紛調解計劃的金融糾紛調解中心的職權範圍），本銀行會與您進行金融糾紛調解計劃程序； 然而，對於有關產品的合約條款的任何爭議，應由第三方產品發行人與您直接解決。 本行無意讓任何人於任何本行受限制或未獲法律或法規授權分發或使用此平台的司法管轄區、國家或地區內，分發或使用本網站資料。若您並非身處香港， 本銀行或未獲授權於您身處或居住的國家或地區向您提供產品及服務。
+      - generic [ref=e49]:
+        - heading "全新Ant Bank 投資基金平台幫緊你" [level=2] [ref=e50]
+        - generic [ref=e51]:
+          - img [ref=e53]
+          - generic [ref=e54]:
+            - generic [ref=e55]: 螞蟻基金投資平台概覽
+            - generic [ref=e56]: 透過全面的基金交易平台，以簡易的交易流程和輕鬆的入場門檻幫你投資基金。不論你想嬴過通脹、簡單收息還是想獲取高回報,螞蟻基金投資平台總有一個合適你的投資選擇。
+            - generic [ref=e57]:
+              - img [ref=e58]
+              - text: 輕鬆挑選合適產品為理財升級
+            - generic [ref=e59]:
+              - img [ref=e60]
+              - text: 基金101助你了解基金必備知識
+    - generic [ref=e64]:
+      - heading "基金服務概覽" [level=2] [ref=e65]
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - img [ref=e69]
+          - generic [ref=e70]: 限時活動¹
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - generic [ref=e73]: 認購同贖回全程
+              - generic [ref=e74]: 零收費
+            - generic [ref=e75]: 免平台費 收費更低，貨幣基金免費認購
+        - generic [ref=e76]:
+          - img [ref=e78]
+          - generic [ref=e79]:
+            - generic [ref=e80]:
+              - generic [ref=e81]: 最快
+              - generic [ref=e82]: 1分鐘開立
+              - generic [ref=e83]: 投資賬戶²
+            - generic [ref=e84]: 簡易開戶，即開即用，無需入息證明
+        - generic [ref=e85]:
+          - img [ref=e87]
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]: 最低
+              - generic [ref=e91]: 只需港幣$1
+              - generic [ref=e92]: 可以買基金!
+            - generic [ref=e93]: 最低認購低至港幣$1，想買幾多自己話事
+        - generic [ref=e94]:
+          - img [ref=e96]
+          - generic [ref=e97]:
+            - generic [ref=e99]: 全方位投資
+            - generic [ref=e100]: 對科技、ESG有興趣？ 定想簡單收息，一樣有得揀
+        - generic [ref=e101]:
+          - img [ref=e103]
+          - generic [ref=e104]: 全新登場
+          - generic [ref=e105]:
+            - generic [ref=e107]: 基金定投
+            - generic [ref=e108]: 定期定額投資功能，分散風險，降低市場波動性
+      - generic [ref=e109]: ¹優惠受條款及細則約束 ²1分鐘為最快開戶時間，實際開戶時間受個別情況而定
+    - generic [ref=e113]:
+      - heading "基金101" [level=2] [ref=e114]
+      - generic [ref=e115]:
+        - generic [ref=e116]:
+          - generic [ref=e117] [cursor=pointer]: 甚麼是基金?
+          - generic [ref=e118] [cursor=pointer]: 基金特性
+          - generic [ref=e119] [cursor=pointer]: 考慮因素
+          - generic [ref=e120] [cursor=pointer]: 基金種類
+          - generic [ref=e121] [cursor=pointer]: 基金定投
+        - generic [ref=e122]:
+          - img [ref=e123]
+          - generic [ref=e125]:
+            - generic [ref=e126]: 基金：
+            - generic [ref=e127]: 基金是一種投資工具，由一眾投資者共同投資至一個包括股票、債券、以及其他金融產品的投資組合。利用其專業知識，基金經理及該基金公司的投資團隊代投資者將資金投放至最合適產品。
+        - generic [ref=e128]: "*免責聲明：以上所提供的資訊僅供參考，並不構成對任何投資產品或服務的優惠、招攬、推薦、評論或保證、並不應被視為法律建議、投資建議或稅務建議。本文提及的投資產品或服務不應視為定期存款的等同物或替代品。"
+    - generic [ref=e132]:
+      - heading "如何使用基金服務" [level=2] [ref=e133]
+      - generic [ref=e134]:
+        - generic [ref=e135]:
+          - generic [ref=e136] [cursor=pointer]: 申請
+          - generic [ref=e137] [cursor=pointer]: 下單
+          - generic [ref=e138] [cursor=pointer]: 查看交易
+        - generic [ref=e139]:
+          - generic [ref=e140]: 申請資格
+          - generic [ref=e141]:
+            - generic [ref=e142]:
+              - img [ref=e143]
+              - generic [ref=e144]: 需年滿18歲
+            - generic [ref=e145]:
+              - img [ref=e146]
+              - generic [ref=e147]: 非居住或國籍是美國或加拿大
+            - generic [ref=e148]:
+              - img [ref=e149]
+              - generic [ref=e150]: 開戶時身在香港
+        - generic [ref=e151]:
+          - generic [ref=e152]:
+            - generic [ref=e153]:
+              - generic [ref=e154] [cursor=pointer]:
+                - generic [ref=e155]: "1"
+                - generic [ref=e156]: 登入銀行APP或AlipayHK小程式
+              - generic [ref=e157] [cursor=pointer]:
+                - generic [ref=e158]: "2"
+                - generic [ref=e159]: 申請投資賬戶及填寫風險評測
+              - generic [ref=e160] [cursor=pointer]:
+                - generic [ref=e161]: "3"
+                - generic [ref=e162]: 完成並成功開戶
+            - generic [ref=e163] [cursor=pointer]: 立即申請
+          - img [ref=e165]
+    - generic [ref=e169]:
+      - generic [ref=e170]: 常見問題
+      - list [ref=e171]:
+        - listitem [ref=e172]:
+          - generic [ref=e174] [cursor=pointer]: 認購基金後，需要多久才會收到基金單位?
+          - paragraph [ref=e176]: 一般而言，基金公司在收到認購指示後的1至3個工作日內會確認交易，在3至5個工作日內分配基金單位。相比之下，貨幣基金的結算速度通常較快。每筆交易的實際交易確認及結算日期將取決於基金公司而定。
+        - listitem [ref=e177]:
+          - generic [ref=e179] [cursor=pointer]: 在螞蟻銀行認購/贖回基金有什麼收費?
+          - paragraph [ref=e181]: 我們將按照個別基金認購章程列明的有關收費來徵收費用︰ · 認購費 – 最高為0.80% （貨幣基金的認購費可獲豁免） · 贖回費 – 豁免 · 平台費 – 豁免 · 管理費及其他費用將直接由基金公司收取 *不同基金的認購費和贖回費可能有所差異，具體取決於各個基金公司的規定。如需了解更多關於費用的詳細信息，請查閱相關的基金銷售文件及產品資料概要。
+        - listitem [ref=e182]:
+          - generic [ref=e184] [cursor=pointer]: 訪港旅客可否開立投資賬戶?
+          - paragraph [ref=e186]: 可以，但前提是已經提交螞蟻銀行的銀行賬戶的開立申請或已有螞蟻銀行的賬戶，接著就可以提交投資賬戶的開立申請，但前提是提交投資賬戶申請時必須要身處香港境內。
+        - listitem [ref=e187]:
+          - generic [ref=e189] [cursor=pointer]: 什麼時候可以再次做風險評估？
+          - paragraph [ref=e191]: 進行任何投資買賣前，投資者可透過螞蟻銀行應用程式或AlipayHK內的螞蟻銀行小程序的基金頁面完成風險評估問卷以獲取自己的風險接受程度作參考。個人風險承受能力亦會因應投資目標、財務狀況、年齡、投資經驗等因素而轉變，所以投資者應定期更新有關風險接受程度的紀錄。投資者每年最多可進行一共5次風險評估。如投資者認購基金，投資者需每年最少完成1次風險評估。
+        - listitem [ref=e192]:
+          - generic [ref=e194] [cursor=pointer]: 基金是否有最低認購金額？
+          - paragraph [ref=e196]: 基金最低認購金額為港幣$1。不同基金的最低認購金額可能存在差異，具體詳情及交易規範請查看各基金的詳細說明。
+        - listitem [ref=e197]:
+          - generic [ref=e199] [cursor=pointer]: 基金定投
+          - generic [ref=e201]:
+            - paragraph [ref=e202]: 如何開始定投基金? 於螞蟻銀行應用程序或AlipayHK螞蟻銀行小程序進入理財頻道，點擊【基金】，點擊【基金定投】，點擊【選基金】，您可在基金名單中按自身投資需要揀選適合你的基金產品及計劃。
+            - paragraph [ref=e203]: 定投最低要投多少 ？ 最低定投金額為 $1，讓你隨時開始。
+            - paragraph [ref=e204]: 定投計劃可以更改或暫停嗎？ 可於螞蟻銀行應用程序或AlipayHK螞蟻銀行小程序進入理財頻道，點擊【基金】，點擊【基金定投】，點擊【我的定投】，就您想更改或暫停的基金計劃進行修改指示。
+  - contentinfo [ref=e206]:
+    - generic [ref=e207]:
+      - link "logo" [ref=e208] [cursor=pointer]:
+        - /url: /home?lang=zh_hk
+        - img "logo" [ref=e209]
+      - generic [ref=e210]:
+        - list [ref=e212]:
+          - listitem [ref=e213]: 網站地圖
+          - listitem [ref=e214]:
+            - link "關於我們" [ref=e215] [cursor=pointer]:
+              - /url: /home?lang=zh_hk
+          - listitem [ref=e216]:
+            - link "最新優惠" [ref=e217] [cursor=pointer]:
+              - /url: /paylater-welcome-offer?lang=zh_hk
+          - listitem [ref=e218]:
+            - link "產品介紹" [ref=e219] [cursor=pointer]:
+              - /url: /dzd?lang=zh_hk
+          - listitem [ref=e220]:
+            - link "重要信息" [ref=e221] [cursor=pointer]:
+              - /url: /notice?lang=zh_hk
+          - listitem [ref=e222]:
+            - link "幫助和支援" [ref=e223] [cursor=pointer]:
+              - /url: /questions?lang=zh_hk
+        - generic [ref=e224]:
+          - generic [ref=e225]: 聯絡我們
+          - generic [ref=e226]: +852 2325 0303
+          - generic [ref=e227]: customeropinion@antbank.hk
+          - generic [ref=e228]:
+            - link "appStore" [ref=e229] [cursor=pointer]:
+              - /url: https://apps.apple.com/us/app/%E8%9E%9E%E8%9F%BB%E9%8A%80%E8%A1%8C-%E9%A6%99%E6%B8%AF/id1494094567
+              - img "appStore" [ref=e230]
+            - link "GooglePaly" [ref=e231] [cursor=pointer]:
+              - /url: market://details?id=com.alipay.antbank.hk.portal
+              - img "GooglePaly" [ref=e232]
+            - img "apk" [ref=e234] [cursor=pointer]
+        - generic [ref=e235]:
+          - link [ref=e236] [cursor=pointer]:
+            - /url: https://cpas.icac.hk/ZH/Home
+          - link [ref=e237] [cursor=pointer]:
+            - /url: /article?category=notice&id=notice_a_2021-07-06&lang=zh_hk
+          - link [ref=e238] [cursor=pointer]:
+            - /url: https://www.dps.org.hk/index.html
+      - paragraph [ref=e241]: ©2025 版權由螞蟻銀行（香港）有限公司擁有

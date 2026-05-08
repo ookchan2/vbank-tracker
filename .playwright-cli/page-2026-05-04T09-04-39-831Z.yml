@@ -1,0 +1,247 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - link "logo" [ref=e13] [cursor=pointer]:
+          - /url: /
+          - img "logo" [ref=e14]
+        - generic [ref=e15]:
+          - generic [ref=e17] [cursor=pointer]: 個人銀行
+          - generic [ref=e19] [cursor=pointer]: 商業銀行
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e23] [cursor=pointer]: 銀行服務
+          - generic [ref=e25] [cursor=pointer]: ZA Card
+          - generic [ref=e27] [cursor=pointer]: 借貸
+          - generic [ref=e29] [cursor=pointer]: 投資
+          - link "保險" [ref=e32] [cursor=pointer]:
+            - /url: /hk/insurance
+          - generic [ref=e33] [cursor=pointer]:
+            - link "幫助中心" [ref=e35]:
+              - /url: /faqs/Individuals
+            - text: "|"
+          - link "Blog" [ref=e38] [cursor=pointer]:
+            - /url: https://blog.za.group/hk
+        - generic [ref=e39]:
+          - generic [ref=e41] [cursor=pointer]: 下載 ZA Bank App
+          - generic [ref=e43] [cursor=pointer]:
+            - text: 登記開戶
+            - img [ref=e44]
+        - img "国际化" [ref=e48] [cursor=pointer]
+    - generic [ref=e50]:
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - text: 6 週年 StockBack
+          - superscript [ref=e55]: "*"
+          - text: 6 重賞
+          - superscript [ref=e56]: "1"
+          - text: 總值 HKD 600 萬股票獎賞
+          - text: 人人有份！
+        - generic [ref=e57]: 活動已於 2026 年 4 月 21 日完結。「6 周年獎賞」 Stockback 排行榜活動最終排名，將於推廣期後 30 個工作天內確認並公布。
+        - link "立即參與" [ref=e59] [cursor=pointer]:
+          - /url: "#StockCardModule"
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - text: HKD 200 未夠？
+          - text: 5 招拎盡 StockBack* 獎賞！
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - text: 第 1 招︰人人有份
+                - text: 入 App 即抽 StockBack*
+              - list [ref=e74]:
+                - listitem [ref=e75]:
+                  - generic [ref=e76]:
+                    - text: 登入 App 即有抽獎機會！
+                    - text: 隨時贏走高達 HKD 60,000。
+            - img [ref=e79]
+          - generic [ref=e80]:
+            - generic [ref=e82]:
+              - generic [ref=e83]:
+                - text: 第 2 招︰歲數 6 字尾
+                - text: 可獲得雙倍機會抽最高 HKD 60,000
+              - list [ref=e84]:
+                - listitem [ref=e85]:
+                  - generic [ref=e86]:
+                    - text: 歲數係「6 字尾」？（如 26, 36 歲）
+                    - text: 恭喜你！ZA 送你 2 次抽獎機會，獎賞加碼。
+            - img [ref=e89]
+          - generic [ref=e90]:
+            - generic [ref=e92]:
+              - generic [ref=e93]:
+                - text: 第 3 招︰ 碌卡賺 6%
+                - text: StockBack 回贈
+                - superscript [ref=e94]: "2"
+              - list [ref=e95]:
+                - listitem [ref=e96]:
+                  - generic [ref=e97]:
+                    - text: 活動期間，用 StockBack x ZA Card 於全港咖啡商戶消費，盡享 6% StockBack
+                    - superscript [ref=e98]: "*, 2, 3"
+                    - text: ，指定咖啡商戶更有 12% StockBack
+                    - superscript [ref=e99]: "*, 4, 5"
+                    - text: ！
+              - link "了解更多" [ref=e102] [cursor=pointer]:
+                - /url: https://bank.za.group/za-card/stockback
+                - text: 了解更多
+                - img [ref=e103]
+              - link "指定咖啡商戶" [ref=e106] [cursor=pointer]:
+                - /url: https://bank.za.group/agreement/pdf/zh_HK/1002179
+            - img [ref=e109]
+      - button "立即參與" [ref=e115] [cursor=pointer]
+      - generic [ref=e120]:
+        - generic [ref=e121]: 常見問題
+        - generic [ref=e125]:
+          - generic [ref=e127] [cursor=pointer]:
+            - generic [ref=e128]: 「6 周年獎賞」推廣活動係咩嚟？
+            - img [ref=e130]
+          - generic [ref=e135] [cursor=pointer]:
+            - generic [ref=e136]: 咩係 StockBack？
+            - img [ref=e138]
+          - generic [ref=e143] [cursor=pointer]:
+            - generic [ref=e144]: 新用戶點樣攞到 HKD 200 StockBack 獎賞？
+            - img [ref=e146]
+          - generic [ref=e151] [cursor=pointer]:
+            - generic [ref=e152]: 咩係 StockBack 機器？點樣揀股票？
+            - img [ref=e154]
+      - generic [ref=e163]:
+        - generic [ref=e164]: 開戶最快 2 分鐘，零存款門檻
+        - generic [ref=e165]: 簡單幾步，隨時隨地輕鬆開立「香港第一數字銀行」，享受嶄新的銀行體驗
+        - generic [ref=e166]:
+          - generic [ref=e167]:
+            - img [ref=e169] [cursor=pointer]
+            - img [ref=e171] [cursor=pointer]
+            - link [ref=e172] [cursor=pointer]:
+              - /url: https://cdn.zaticdn.com/bank/app/android.apk
+              - img [ref=e173]
+          - img [ref=e174]
+      - generic [ref=e180]:
+        - generic [ref=e182]:
+          - text: "* StockBack 是指 ZA Bank 用戶通過 StockBack x ZA Card 機器所獲得的股票回贈。除了以 StockBack x ZA Card 消費，用戶可經「6 周年」活動以更多方式獲得 StockBack。"
+          - link "「StockBack x ZA Card」推廣活動" [ref=e183] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/html/zh_HK/1002233
+          - text: 及
+          - link "ZA Bank 6 周年獎賞活動" [ref=e184] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/html/zh_HK/1002445
+          - text: 受其相關的條款及細則約束。
+          - text: 1.「6 周年獎賞」推廣活動：推廣期為 2026 年 4 月 1 日至 2026 年 4 月 21 日（包含首尾兩天）。活動共分為 6 個部分：(1)「最高 HKD 60,000 StockBack 抽獎」；(2)「用戶年齡『六字尾』額外獎賞」；(3)「6% StockBack 回贈」；(4)「做任務獲 StockBack」；(5)「新用戶 StockBack 獎賞」；(6)「StockBack 排行榜獎賞」。第 1 至 5 部分的獎賞均以「StockBack x ZA Card」的股票回贈形式發放，參加者須於獲得獎賞後 48 小時內在 ZA Bank App 內完成選股，逾期將失效且不獲補發。參加者必須持有有效的 ZA Card 及投資賬戶方可接收獎賞。詳情請參閱「6 周年獎賞」推廣活動
+          - link "條款及細則" [ref=e185] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/html/zh_HK/1002445
+          - text: 。
+          - text: 2. ZA Bank Limited「6 周年咖啡回贈優惠推廣」 - 6% 股票回贈﹕推廣期為 2026 年 4 月 1 日至 2026 年 4 月 21 日（包含首尾兩日）。於推廣期內，參加者以 ZA Card於本地咖啡商戶類別進行合資格簽賬（不包括透過 Alipay 及 WeChat Pay 所作之簽賬）滿HKD 10後，可獲股票回贈獎賞之金額為該筆交易簽賬金額的 6%（「6% 回贈」）。推廣受
+          - link "條款及細則" [ref=e186] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/pdf/zh_HK/1002433
+          - text: 約束。
+          - text: 3. 於推廣期內，每位參加者可獲得的 6% 回贈及 12% 回贈（統稱「特定回贈」）上限金額總和為 HKD 50（「特定回贈上限」）。 如參加者同時符合兩個或以上有關股票回贈獎賞的活動條件，參加者獲得之回贈將以較高者為準。例如有關交易同時符合 6% 回贈和 12% 回贈的活動條件，參加者將可獲得 12% 回贈。
+          - text: 4. ZA Bank Limited「6 周年咖啡回贈優惠推廣」 - 12% 股票回贈﹕推廣期為 2026 年 4 月 1 日至 2026 年 4 月 21 日（包含首尾兩日）。於推廣期內，參加者以 ZA Card於指定咖啡商戶進行合資格簽賬（不包括透過 Alipay 及 WeChat Pay 所作之簽賬）滿HKD 10後，可獲股票回贈獎賞之金額為該筆交易簽賬金額的 12%（「12% 回贈」）。推廣受
+          - link "條款及細則" [ref=e187] [cursor=pointer]:
+            - /url: " https://bank.za.group/agreement/pdf/zh_HK/1002433"
+          - text: 約束。
+          - text: 5. 指定咖啡商戶請參閱
+          - link "此處" [ref=e188] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/pdf/zh_HK/1002179
+          - text: 。
+          - text: 6.「StockBack 排行榜獎賞」分 3 個階段進行（第 1 階段：2026 年 4 月 1–7 日；第 2 階段：4 月 8–14 日；第 3 階段：4 月 15–21 日）。參加者可透過以下方式獲取 StockBack 分數：(a) 完成指定 ZA Quest 任務並完成選股；(b) 以 ZA Card 通過「StockBack x ZA Card」回贈計劃消費並完成選股；(c) 透過「股票最勁抽」獲得「指定股票兌換券」。每階段累積分數最高的前 1,000 名可獲排行榜獎賞：第 1–60 名獲 StockBack x ZA Card 金屬卡；第 61–1,000 名獲優先體驗 StockBack x ZA Card 實體卡。每位參加者於整個推廣期內最多可獲一（1）次排行榜獎賞。詳情請參閱「6 周年獎賞」推廣活動
+          - link "條款及細則" [ref=e189] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/html/zh_HK/1002445
+          - text: 。
+        - generic [ref=e191]:
+          - text: 此推廣適用於使用 ZA Card 以儲蓄賬戶餘額或 ZA Credit 支付的用戶。借定唔借？還得到先好借！
+          - text: 重要風險聲明：
+          - text: 投資涉及風險。股票價格可升可跌，甚至變成毫無價值。過往表現並非日後表現的指標。投資未必一定能夠賺取利潤，亦可能會招致損失。此平台的資料只供參考，並不構成及不應被視為任何建議、推銷、游說客戶認購或出售任何投資產品。投資者應根據本身投資經驗、投資目標、財務狀況及承擔風險程度等因素去衡量是否適合投資於該產品上。若有需要，請諮詢獨立專業建議。投資者作出任何投資決定前，應詳細閱讀有關之條款及細則及其風險披露聲明。若因銷售過程或處理有關交易產生合資格爭議（定義見金融糾紛調解計劃的金融糾紛調解中心的職權範圍），ZA Bank 會與你進行金融糾紛調解計劃程序。ZA Bank 無意讓任何人於任何受限制或未獲法律或法規授權分發或使用此平台的司法管轄區、國家或地區內，分發或使用此平台。如你並非身處香港，我們或未獲授權於你身處或居住的國家或地區向你提供產品及服務。
+          - text: 所有公司名稱、標誌和品牌均為其各自所有者的商標或註冊商標。使用這些名稱、標誌和品牌並不表示獲得其認可或存在任何關聯關係。標誌僅用於識別上市公司之信息展示目的。
+    - generic [ref=e192]:
+      - generic [ref=e194]:
+        - generic [ref=e195]:
+          - generic [ref=e196]: 關於我們
+          - generic [ref=e197]:
+            - link "關於 ZA Bank" [ref=e199] [cursor=pointer]:
+              - /url: /hk/hkno1digitalbank
+            - link "新聞中心" [ref=e201] [cursor=pointer]:
+              - /url: /hk/about-us#index=news
+            - link "企業管治" [ref=e203] [cursor=pointer]:
+              - /url: /hk/about-us#index=board
+            - link "監管披露" [ref=e205] [cursor=pointer]:
+              - /url: /hk/about-us#index=supervision
+            - link "財務報告" [ref=e207] [cursor=pointer]:
+              - /url: /hk/about-us#index=finance
+        - generic [ref=e208]:
+          - generic [ref=e209]: 常用連結
+          - generic [ref=e210]:
+            - link "銀行收費表" [ref=e212] [cursor=pointer]:
+              - /url: /rates-list
+            - link "幫助" [ref=e214] [cursor=pointer]:
+              - /url: https://bank.za.group/faqs/Individuals
+            - link "保安提示" [ref=e216] [cursor=pointer]:
+              - /url: /security-tips
+            - link "防止金融犯罪資訊中心" [ref=e218] [cursor=pointer]:
+              - /url: /financial
+            - link "條款及細則" [ref=e220] [cursor=pointer]:
+              - /url: /terms
+            - link "下載中心" [ref=e222] [cursor=pointer]:
+              - /url: /hk/tabledown
+            - link "重要通知" [ref=e224] [cursor=pointer]:
+              - /url: /important-notice
+            - link "開放銀行" [ref=e226] [cursor=pointer]:
+              - /url: https://developer.bank.za.group/hk/
+            - link "產品資料概要" [ref=e228] [cursor=pointer]:
+              - /url: /kfs
+        - generic [ref=e229]:
+          - generic [ref=e230]: 服務與諮詢
+          - generic [ref=e231]:
+            - link "bank.opinion@za.group" [ref=e233] [cursor=pointer]:
+              - /url: mailto:bank.opinion@za.group
+            - generic [ref=e234]: +852 3665 3665
+            - generic [ref=e236]: 線上客服
+            - link "聯繫我們" [ref=e238] [cursor=pointer]:
+              - /url: /consulting-feedback
+            - link "銀行業人才起動計劃申请" [ref=e240] [cursor=pointer]:
+              - /url: /banking-talent-programme
+            - link "無障礙聲明" [ref=e242] [cursor=pointer]:
+              - /url: /accessibility
+            - link "舉報渠道" [ref=e244] [cursor=pointer]:
+              - /url: https://cdn.zaticdn.com/if/zaif-cps-seagull-service/20231226/ZAB_WB_statement_1.0_45002.pdf
+        - generic [ref=e245]:
+          - generic [ref=e246]:
+            - generic [ref=e247]:
+              - link "facebook-logo" [ref=e248] [cursor=pointer]:
+                - /url: https://www.facebook.com/zabankhk
+                - img "facebook-logo" [ref=e249]
+              - link "linkedin-logo" [ref=e250] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/za-international
+                - img "linkedin-logo" [ref=e251]
+              - img "weChart" [ref=e253] [cursor=pointer]
+            - generic [ref=e255]:
+              - link "繁" [ref=e257] [cursor=pointer]:
+                - /url: /6th-anniversary-campaign
+              - text: "|"
+              - link "EN" [ref=e259] [cursor=pointer]:
+                - /url: /en/6th-anniversary-campaign
+          - generic [ref=e260]:
+            - generic [ref=e262]:
+              - generic [ref=e263]:
+                - button "ios-download" [ref=e264] [cursor=pointer]:
+                  - img "ios-download" [ref=e265]
+                - button "android-download" [ref=e266] [cursor=pointer]:
+                  - img "android-download" [ref=e267]
+                - link "apk" [ref=e268] [cursor=pointer]:
+                  - /url: https://cdn.zaticdn.com/bank/app/android.apk
+                  - img "apk" [ref=e269]
+              - img "qr-code" [ref=e270]
+            - list [ref=e271]:
+              - listitem [ref=e272]: · Apple為Apple Inc.商標，已於美國及其他國家╱地區註冊。App Store為Apple Inc.之服務商標。
+              - listitem [ref=e273]: · Google Play™為Google LLC之商標。
+      - generic [ref=e274]:
+        - generic [ref=e275]:
+          - generic [ref=e276]: 本網站由眾安銀行有限公司編製及發布。版權所有 © 2026 眾安銀行有限公司
+          - generic [ref=e277]:
+            - link "網站使用條款" [ref=e278] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000379
+            - text: "|"
+            - link "私隱政策" [ref=e279] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000442
+            - text: "|"
+            - link "收集個人資料通知" [ref=e280] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000378
+        - generic [ref=e281]: "*作為香港首間開業的數字銀行，截至 2024 年 6 月 30 日，ZA Bank 的用戶數量及存款均為香港 8 間數字銀行之中最高。資料來源︰8 間數字銀行中期業績報告。"
+  - alert [ref=e282]

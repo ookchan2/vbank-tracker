@@ -1,0 +1,408 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - link "Mox Logo" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - img "Mox Logo" [ref=e11]
+        - img "Standard Chartered" [ref=e13]
+      - generic [ref=e14]:
+        - navigation [ref=e16]:
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - link "Mox+" [ref=e19] [cursor=pointer]:
+                - /url: /MoxPlus-Updates/
+            - listitem [ref=e20]:
+              - link "Travel Playbook" [ref=e21] [cursor=pointer]:
+                - /url: /all-round-travel-playbook/
+            - listitem [ref=e22]:
+              - button "Features" [ref=e23] [cursor=pointer]
+              - list:
+                - listitem:
+                  - link "Mox Credit Card":
+                    - /url: /features/mox-credit/
+                - listitem:
+                  - link "Mox Invest":
+                    - /url: /features/mox-invest/
+                - listitem:
+                  - link "Mox Insure":
+                    - /url: /features/mox-insure/
+                - listitem:
+                  - link "Smart Banking":
+                    - /url: /features/smart-banking/
+                - listitem:
+                  - link "Smart Borrowing":
+                    - /url: /features/smart-borrowing/
+                - listitem:
+                  - link "Instant Loan":
+                    - /url: /promotions/instant-loan/
+                - listitem:
+                  - link "Smart Saving":
+                    - /url: /features/smart-saving/
+                - listitem:
+                  - link "Smart Spending":
+                    - /url: /features/smart-spending/
+                - listitem:
+                  - link "Mox FX":
+                    - /url: /features/mox-fx/
+                - listitem:
+                  - link "Mox at a glance":
+                    - /url: /features/mox-at-a-glance/
+            - listitem [ref=e24]:
+              - link "Promotions" [ref=e25] [cursor=pointer]:
+                - /url: /promotions/
+            - listitem [ref=e26]:
+              - link "About us" [ref=e27] [cursor=pointer]:
+                - /url: /about-us/
+            - listitem [ref=e28]:
+              - link "FAQ" [ref=e29] [cursor=pointer]:
+                - /url: /faqs/
+        - button "Get Mox" [ref=e30] [cursor=pointer]
+        - img [ref=e35] [cursor=pointer]
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - link "Mox":
+                    - /url: /
+                    - img "Mox"
+                  - generic:
+                    - img "Standard Chartered"
+              - generic:
+                - button
+      - generic:
+        - generic:
+          - generic:
+            - list:
+              - listitem:
+                - link "Mox+":
+                  - /url: /MoxPlus-Updates/
+              - listitem:
+                - link "Travel Playbook":
+                  - /url: /all-round-travel-playbook/
+              - listitem:
+                - button "Features"
+                - list:
+                  - listitem:
+                    - link "Mox Credit Card":
+                      - /url: /features/mox-credit/
+                  - listitem:
+                    - link "Mox Invest":
+                      - /url: /features/mox-invest/
+                  - listitem:
+                    - link "Mox Insure":
+                      - /url: /features/mox-insure/
+                  - listitem:
+                    - link "Smart Banking":
+                      - /url: /features/smart-banking/
+                  - listitem:
+                    - link "Smart Borrowing":
+                      - /url: /features/smart-borrowing/
+                  - listitem:
+                    - link "Instant Loan":
+                      - /url: /promotions/instant-loan/
+                  - listitem:
+                    - link "Smart Saving":
+                      - /url: /features/smart-saving/
+                  - listitem:
+                    - link "Smart Spending":
+                      - /url: /features/smart-spending/
+                  - listitem:
+                    - link "Mox FX":
+                      - /url: /features/mox-fx/
+                  - listitem:
+                    - link "Mox at a glance":
+                      - /url: /features/mox-at-a-glance/
+              - listitem:
+                - link "Promotions":
+                  - /url: /promotions/
+              - listitem:
+                - link "About us":
+                  - /url: /about-us/
+              - listitem:
+                - link "FAQ":
+                  - /url: /faqs/
+  - generic [ref=e40]:
+    - generic [ref=e47]:
+      - heading "Get up to HKD1,700 when you join Mox with “MOXTRIP25” – plus up to 2% CashBack on any Trip.com bookings!" [level=2] [ref=e52]
+      - generic [ref=e60]:
+        - paragraph [ref=e61]: Earn before you fly! Start cashing in now when you’re planning your next getaway – From now until 30 June 2026, open a Mox Account with code “MOXTRIP25”¹, apply for a Mox Credit Card², and complete a few simple tasks to pocket up to HKD1,700 in cash rewards.
+        - paragraph [ref=e62]: And that’s not all – every time you book on Trip.com, you can earn up to 2% CashBack³ with your Mox Credit Card. Travel smarter, earn more!
+    - generic [ref=e66]:
+      - generic [ref=e70]:
+        - img [ref=e72]
+        - 'img "Welcome reward 1: Get HKD200 for just signing up" [ref=e74]'
+      - generic [ref=e77]:
+        - 'heading "Welcome reward 1: Get HKD200 for just signing up" [level=4] [ref=e78]'
+        - generic [ref=e80]:
+          - paragraph [ref=e81]: Kick things off with a win – from now till 30 June 2026, sign up with “MOXTRIP25”, apply for a Mox Credit Card, and we’ll drop HKD200 cash* straight into your account!
+          - paragraph [ref=e82]: It only takes a few minutes to sign up – Why wait?
+          - paragraph [ref=e83]: "*Whether your Mox Credit application is successful or not, you’ll still get the HKD200 within 15 days of completing your Mox Account setup."
+    - generic [ref=e87]:
+      - generic [ref=e91]:
+        - img [ref=e93]
+        - 'img "Welcome reward 2: Spend HKD1,000 on Trip.com, get HKD1,000 back!" [ref=e95]'
+      - generic [ref=e98]:
+        - 'heading "Welcome reward 2: Spend HKD1,000 on Trip.com, get HKD1,000 back!" [level=4] [ref=e99]'
+        - generic [ref=e101]:
+          - paragraph [ref=e102]: Spend HKD1,000 or more on Trip.com with your newly approved Mox Credit Card within 60 days – and we’ll cover the bill with a HKD1,000 cash reward!
+          - paragraph [ref=e103]: Your reward will be credited directly to your Mox Account once your eligible transactions are settled.
+    - generic [ref=e107]:
+      - generic [ref=e111]:
+        - img [ref=e113]
+        - 'img "Welcome reward 3: Earn up to HKD500 deposit reward – like getting 3% savings interest!" [ref=e115]'
+      - generic [ref=e118]:
+        - 'heading "Welcome reward 3: Earn up to HKD500 deposit reward – like getting 3% savings interest!" [level=4] [ref=e119]'
+        - generic [ref=e121]:
+          - paragraph [ref=e122]: Why let your money nap when it can hustle for you? Within the first 7 days of opening your account, deposit and keep HKD50,000 or more in your HKD savings account for 60 days and you can earn HKD250.
+          - paragraph [ref=e123]: "Or go bigger: deposit and maintain HKD100,000 or more for 60 days to get HKD500 – that's like enjoying a bonus 3% p.a. interest rate!"
+    - generic [ref=e127]:
+      - generic [ref=e131]:
+        - img [ref=e133]
+        - img "Exclusive Trip.com hotel & flight discounts⁵˙⁶" [ref=e135]
+      - generic [ref=e138]:
+        - heading "Exclusive Trip.com hotel & flight discounts⁵˙⁶" [level=4] [ref=e139]
+        - generic [ref=e141]:
+          - paragraph [ref=e142]:
+            - text: Simply book hotels or flights via the designated Trip.com page using the link below, pay with your Mox Credit Card, and enter the promo code to enjoy exclusive discounts.
+            - strong [ref=e143]: "Hotel Offers:"
+          - list [ref=e144]:
+            - listitem [ref=e145]:
+              - paragraph [ref=e146]: 6% discount on hotel bookings* with no spending requirement.
+            - listitem [ref=e147]:
+              - paragraph [ref=e148]: (New Trip.com customers only) 8% discount on hotel bookings* with no spending requirement.
+          - paragraph [ref=e149]:
+            - strong [ref=e150]: "Flight Offers#:"
+          - list [ref=e151]:
+            - listitem [ref=e152]:
+              - paragraph [ref=e153]: (New Trip.com customers only) HKD100 off for orders over HKD3,000
+            - listitem [ref=e154]:
+              - paragraph [ref=e155]: HKD100 off for orders over HKD4,000
+            - listitem [ref=e156]:
+              - paragraph [ref=e157]: HKD200 off for orders over HKD8,000
+          - text: "*Applicable to room rates and taxes only."
+          - text: "#Applicable to adult ticket fares only, excluding taxes and other surcharges."
+          - text: "Promotion period: From now until 31 December 2026"
+          - text: "Valid for hotel stays and flight departures: From now until 15 January 2027."
+    - generic [ref=e161]:
+      - generic [ref=e165]:
+        - img [ref=e167]
+        - img "Travel Pick & Go Insurance" [ref=e169]
+      - generic [ref=e172]:
+        - heading "Travel Pick & Go Insurance" [level=4] [ref=e173]
+        - generic [ref=e175]:
+          - paragraph [ref=e176]:
+            - strong [ref=e177]: Design your journey. Define your safety.
+          - paragraph [ref=e178]: Travel Pick & Go customises your coverage to fit your unique travel style and get additional coverage on top of the basic cover for only HKD2/day with up to 5 add-ons selection for double peace of mind.
+          - paragraph [ref=e179]: "Exclusive to Mox customers: Enjoy a discount of up to 40% when you purchase Travel Pick & Go."
+          - figure [ref=e180]:
+            - table [ref=e182]:
+              - rowgroup [ref=e183]:
+                - row "Plan Basic Value Max" [ref=e184]:
+                  - cell "Plan" [ref=e185]:
+                    - strong [ref=e186]: Plan
+                  - cell "Basic" [ref=e187]:
+                    - strong [ref=e188]: Basic
+                  - cell "Value" [ref=e189]:
+                    - strong [ref=e190]: Value
+                  - cell "Max" [ref=e191]:
+                    - strong [ref=e192]: Max
+                - row "Discount 20% 30% 40%" [ref=e193]:
+                  - cell "Discount" [ref=e194]
+                  - cell "20%" [ref=e195]
+                  - cell "30%" [ref=e196]
+                  - cell "40%" [ref=e197]
+          - paragraph [ref=e198]:
+            - link "Learn more" [ref=e199] [cursor=pointer]:
+              - /url: /mox-insure-travel-pick-and-go
+    - button "Book now" [ref=e205] [cursor=pointer]:
+      - generic [ref=e206]: Book now
+    - generic [ref=e209]:
+      - heading "Not a Mox customer yet?" [level=5] [ref=e210]
+      - paragraph [ref=e213]: Open a Mox Account in a few minutes and add your digital Mox Card to Apple Pay / Google Pay via “Add to wallet”. In this way, you can spend right away while your physical Mox Card is still on its way to you.
+      - button "Download Now" [ref=e215] [cursor=pointer]:
+        - generic [ref=e216]: Download Now
+    - generic [ref=e220]:
+      - paragraph [ref=e221]:
+        - strong [ref=e222]: To borrow or not to borrow? Borrow only if you can repay!
+      - paragraph [ref=e223]:
+        - text: ¹
+        - link "“MOXTRIP25” Invitation Code Promotion Terms and Conditions" [ref=e224] [cursor=pointer]:
+          - /url: https://mox.com/static/MOXTRIP25-Invitation-Code-Promotion.pdf
+        - text: apply.
+      - paragraph [ref=e225]:
+        - text: ²Please refer to the
+        - link "Mox Credit Schedule" [ref=e226] [cursor=pointer]:
+          - /url: https://mox.com/legal-documents/general-terms-and-conditions/schedule-3/
+        - text: (also referred to as ‘Schedule 3 to the General Terms and Conditions’) and the
+        - link "Mox Credit Key Facts Statements" [ref=e227] [cursor=pointer]:
+          - /url: https://mox.com/legal-documents/key-fact-statements/mox-card-with-credit/
+        - text: for further details.
+      - paragraph [ref=e228]:
+        - text: ³Please refer to the
+        - link "Rewards for Cards Schedule" [ref=e229] [cursor=pointer]:
+          - /url: https://mox.com/legal-documents/general-terms-and-conditions/terms-and-conditions-for-rewards-for-cards-issued-by-mox/
+        - text: "for further details. From 2 April 2026 to 30 June 2026, when you make an eligible Mox Credit Card transaction, if you (a) have completed an Eligible Payroll Transaction of HKD25,000 or more; and/or (b) you have Mox+ (\"Unlocking Criteria\"), then you may earn unlimited 2% CashBack or HKD4 = 1 Asia Mile on the amount of the eligible Mox Credit Card transaction based on your selected Spending Rewards Scheme. From 1 July 2026, if you have satisfied either one of the Unlocking Criteria at the time you make an eligible Mox Credit Card transaction, you will earn unlimited 2% CashBack or HKD5 = 1 Asia Mile on the amount of the eligible Mox Credit Card transaction based on your selected Spending Rewards Scheme. If you have not satisfied the Unlocking Criteria at the time you make an eligible Mox Credit Card transaction, you may still earn unlimited 1% CashBack or HKD10 = 1 Asia Mile on the amount of the eligible Mox Credit Card transaction. “Eligible Payroll Transaction” means a transaction where your employer pays your salary into your Mox Account via FPS, and the transaction is displayed as ‘Salary’ in the Mox app. For the avoidance of doubt, standing instructions or other local electronic transfers are not considered ‘Eligible Payroll Transactions’. Based on your selected Spending Rewards Scheme, you will be eligible to receive: (i) 2% CashBack; or (ii) HKD4 =1 Asia Mile (until 30 June 2026) or HKD5 =1 Asia Mile (from 1 July 2026) during the period beginning on and from the day you complete the Eligible Payroll Transaction and ending on the last day of the next calendar month."
+      - paragraph [ref=e230]:
+        - text: ⁵
+        - link "Mox Credit X Trip.com Hotel and Flight Offer Terms and Conditions" [ref=e231] [cursor=pointer]:
+          - /url: https://hk.trip.com/sale/w/6031/moxcredit.html?locale=en_hk&curr=hkd&allianceid=3472246&sid=16740704
+        - text: apply.
+      - paragraph [ref=e232]:
+        - text: ⁶
+        - link "Mox Disclaimer" [ref=e233] [cursor=pointer]:
+          - /url: https://mox.com/legal-documents/mox-disclaimer/
+        - text: applies.
+      - paragraph [ref=e234]:
+        - text: ⁷We will charge a spending rewards switching fee of HKD50 unless we waive this fee if you have Mox+. Please refer to the
+        - link "Mox Credit Key Facts Statements" [ref=e235] [cursor=pointer]:
+          - /url: https://mox.com/legal-documents/key-fact-statements/mox-card-with-credit/
+        - text: and
+        - link "Mox+ Benefits Table" [ref=e236] [cursor=pointer]:
+          - /url: https://mox.com/static/260402_Mox_Plus_Benefits_Table.pdf
+        - text: for further details.
+      - paragraph [ref=e237]:
+        - text: ⁸FX fees refer to the foreign exchange handling fee and the cross-border access fee. Please refer to the
+        - link "0% Foreign Currencies and Overseas Merchant Spending Fees Promotion Terms and Conditions" [ref=e238] [cursor=pointer]:
+          - /url: https://mox.com/static/0_Foreign_Currencies_and_Overseas_Merchant_Spending_Fees_Promotion_TnC.pdf
+        - text: for further details.
+  - contentinfo [ref=e239]:
+    - generic [ref=e241]:
+      - link "Mox" [ref=e243] [cursor=pointer]:
+        - /url: /
+        - img "Mox" [ref=e244]
+      - generic [ref=e246]:
+        - generic [ref=e247]: in partnership with
+        - link "PCCW" [ref=e248] [cursor=pointer]:
+          - /url: http://www.pccw.com/
+          - img "PCCW" [ref=e249]
+        - link "HKT" [ref=e250] [cursor=pointer]:
+          - /url: https://www.hkt.com/?language=en_US
+          - img "HKT" [ref=e251]
+        - link "Trip.com" [ref=e252] [cursor=pointer]:
+          - /url: https://www.trip.com/?locale=en_xx
+          - img "Trip.com" [ref=e253]
+      - link "Standard Chartered" [ref=e255] [cursor=pointer]:
+        - /url: https://www.sc.com/hk/
+        - img "Standard Chartered" [ref=e256]
+      - generic [ref=e259]:
+        - paragraph [ref=e260]: Features
+        - paragraph [ref=e261]:
+          - link "Mox Credit Card" [ref=e262] [cursor=pointer]:
+            - /url: /features/mox-credit/
+        - paragraph [ref=e263]:
+          - link "Mox Invest" [ref=e264] [cursor=pointer]:
+            - /url: /features/mox-invest/
+        - paragraph [ref=e265]:
+          - link "Mox Insure" [ref=e266] [cursor=pointer]:
+            - /url: /features/mox-insure/
+        - paragraph [ref=e267]:
+          - link "Smart Banking" [ref=e268] [cursor=pointer]:
+            - /url: /features/smart-banking/
+        - paragraph [ref=e269]:
+          - link "Smart Borrowing" [ref=e270] [cursor=pointer]:
+            - /url: /features/smart-borrowing/
+        - paragraph [ref=e271]:
+          - link "Instant Loan" [ref=e272] [cursor=pointer]:
+            - /url: /promotions/instant-loan/
+        - paragraph [ref=e273]:
+          - link "Smart Saving" [ref=e274] [cursor=pointer]:
+            - /url: /features/smart-saving/
+        - paragraph [ref=e275]:
+          - link "Smart Spending" [ref=e276] [cursor=pointer]:
+            - /url: /features/smart-spending/
+        - paragraph [ref=e277]:
+          - link "Mox FX" [ref=e278] [cursor=pointer]:
+            - /url: /features/mox-fx/
+        - paragraph [ref=e279]:
+          - link "Mox at a glance" [ref=e280] [cursor=pointer]:
+            - /url: /features/mox-at-a-glance/
+      - generic [ref=e281]:
+        - paragraph [ref=e282]: The Bank
+        - paragraph [ref=e283]:
+          - link "Promotions" [ref=e284] [cursor=pointer]:
+            - /url: /promotions/
+        - paragraph [ref=e285]:
+          - link "About us" [ref=e286] [cursor=pointer]:
+            - /url: /about-us/
+        - paragraph [ref=e287]:
+          - link "Media" [ref=e288] [cursor=pointer]:
+            - /url: /media/
+        - paragraph [ref=e289]:
+          - link "Careers" [ref=e290] [cursor=pointer]:
+            - /url: /careers/
+        - paragraph [ref=e291]:
+          - link "FAQ" [ref=e292] [cursor=pointer]:
+            - /url: /faqs/
+      - generic [ref=e293]:
+        - paragraph [ref=e294]: Useful links
+        - paragraph [ref=e295]:
+          - link "Legal documents" [ref=e296] [cursor=pointer]:
+            - /url: /legal-documents/
+        - paragraph [ref=e297]:
+          - link "Privacy" [ref=e298] [cursor=pointer]:
+            - /url: /legal-documents/privacy/
+        - paragraph [ref=e299]:
+          - link "Cookie policy" [ref=e300] [cursor=pointer]:
+            - /url: /legal-documents/cookie-policy/
+        - paragraph [ref=e301]:
+          - link "Regulatory disclosures" [ref=e302] [cursor=pointer]:
+            - /url: /regulatory-disclosures/
+        - paragraph [ref=e303]:
+          - link "Security tips" [ref=e304] [cursor=pointer]:
+            - /url: /security-tips/
+        - paragraph [ref=e305]:
+          - link "Submit a vulnerability" [ref=e306] [cursor=pointer]:
+            - /url: /submit-a-vulnerability/
+        - paragraph [ref=e307]:
+          - link "Important notices" [ref=e308] [cursor=pointer]:
+            - /url: /important-notices/
+        - paragraph [ref=e309]:
+          - link "Open Banking" [ref=e310] [cursor=pointer]:
+            - /url: /open-banking/
+        - paragraph [ref=e311]:
+          - link "Sitemap" [ref=e312] [cursor=pointer]:
+            - /url: /sitemap/
+      - generic [ref=e313]:
+        - paragraph [ref=e314]: Contact us
+        - paragraph [ref=e315]:
+          - link "Send us a message" [ref=e316] [cursor=pointer]:
+            - /url: /contact-us/
+        - paragraph [ref=e317]:
+          - link "+852 2888 8228" [ref=e318] [cursor=pointer]:
+            - /url: tel:+85228888228
+        - paragraph [ref=e319]:
+          - link "care@mox.com" [ref=e320] [cursor=pointer]:
+            - /url: mailto:care@mox.com
+        - paragraph [ref=e321]:
+          - link "Employment Verification" [ref=e322] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+        - paragraph [ref=e323]:
+          - link "askhr@sc.com" [ref=e324] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+      - generic [ref=e325]:
+        - generic:
+          - generic:
+            - link:
+              - /url: https://www.facebook.com/moxbankhk/
+            - link:
+              - /url: https://www.instagram.com/moxbank/
+            - link:
+              - /url: https://www.linkedin.com/company/mox-bank/
+            - link:
+              - /url: https://www.youtube.com/channel/UC41ce2iw3ytvBbJCwlF3iiw/featured
+        - generic [ref=e326]:
+          - generic [ref=e328]:
+            - img "apple-store" [ref=e332] [cursor=pointer]
+            - img "google-play" [ref=e336] [cursor=pointer]
+          - generic [ref=e339]:
+            - paragraph [ref=e340]:
+              - text: The above are the only authorized channels for downloading Mox App. To protect your information, please do not download our app via other channels.
+              - link "Click here for further information." [ref=e341] [cursor=pointer]:
+                - /url: /security-tips/
+            - paragraph [ref=e342]: App Store and the Apple logo are trademarks or registered trademarks of Apple Inc., registered in the United States and other countries. Google Play and the Google Play logo are trademarks or registered trademarks of Google LLC, registered in the United States and other countries.
+        - button [ref=e344] [cursor=pointer]
+      - generic [ref=e346]: ©2026 Mox Bank. All rights reserved

@@ -1,0 +1,68 @@
+[    3123ms] [WARNING] A preload for 'https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Medium.ttf' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://bank.za.group/en/promotion:32
+[    3123ms] [WARNING] A preload for 'https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Bold.ttf' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://bank.za.group/en/promotion:32
+[    3123ms] [WARNING] A preload for 'https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Medium.ttf' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://bank.za.group/en/promotion:32
+[    3123ms] [WARNING] A preload for 'https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Regular.ttf' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://bank.za.group/en/promotion:32
+[    8249ms] [LOG] useInterceptPage needCheck:  false @ https://cdn.zaticdn.com/bank/za-bank-portal-web/prd/_next/static/chunks/pages/_app-31743c5a-21265c7847a2cf04c6bf.js:0
+[    8254ms] [LOG] [ZaTracker] 获取现有追踪器实例 undefined @ https://cdn.zaticdn.com/bank/za-bank-portal-web/prd/_next/static/chunks/za-autotrack-0b4b65d9-d175e7528e57e0e9515e.js:0
+[    8257ms] [LOG] [ZaTracker] 初始化SDK {project_id: web_002, server_url: https://zaip-innergw.zajourney.com, prefix: autotrack_, check_host: false, heatmap: Object} @ https://cdn.zaticdn.com/bank/za-bank-portal-web/prd/_next/static/chunks/za-autotrack-0b4b65d9-d175e7528e57e0e9515e.js:0
+[    8499ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://bank.za.group/_next/data/1776928311848-7d5f0538/en/promotion.json:0
+[    8866ms] [ERROR] 获取pro-did异常 Subscription not active @ https://cdn.zaticdn.com/bank/za-bank-portal-web/prd/_next/static/chunks/za-libs-e409b138-0a6635d907b92adcee87.js:0
+[    8873ms] [LOG] [ZaTracker] 检查host true https://bank.za.group https://bank.za.group @ https://cdn.zaticdn.com/bank/za-bank-portal-web/prd/_next/static/chunks/za-autotrack-0b4b65d9-d175e7528e57e0e9515e.js:0
+[    8876ms] [LOG] [ZaTracker] validateCurrentPageSelectors start @ https://cdn.zaticdn.com/bank/za-bank-portal-web/prd/_next/static/chunks/za-autotrack-0b4b65d9-d175e7528e57e0e9515e.js:0
+[    8878ms] [LOG] [ZaTracker] SDK初始化完成 @ https://cdn.zaticdn.com/bank/za-bank-portal-web/prd/_next/static/chunks/za-autotrack-0b4b65d9-d175e7528e57e0e9515e.js:0
+[    9248ms] [LOG] [ZaTracker] 当前路径无埋点配置需要验证 @ https://cdn.zaticdn.com/bank/za-bank-portal-web/prd/_next/static/chunks/za-autotrack-0b4b65d9-d175e7528e57e0e9515e.js:0
+[   11829ms] [LOG] 当前环境模式: prd-bank @ https://zaip-aic.za.group/?accessId=1649389871786&tenantID=1545312220000942&color=pcDefault&supportLanguage=23&language=2&channelId=pc&visitorId=b0fbc6d6a4c3584be740be64379171d9&mode=ananProduction:90
+[   11831ms] [LOG] [seraph]:  SDK 初始化 {seraphId: 16c51763a23c4160, env: prd, H5Version: 1.0.0, SERAPH_URL: https://webmon-prd.zajourney.com, debug: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   11840ms] [LOG] [seraph]:  PV: {"from":"","to":"https://zaip-aic.za.group/?accessId=1649389871786&tenantID=1545312220000942&color=pcDefault&supportLanguage=23&language=2&channelId=pc&visitorId=b0fbc6d6a4c3584be740be64379171d9&mode=ananProduction","category":"pv","type":"init","pvId":"7da09ff3bf993e422e8ab3f98cd856129cf3"} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   12070ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://anan.zhongan.io/web/api/v2/bot/head/wrapper:0
+[   12077ms] Uncaught (in promise) Error: Error: Network Error
+    at <anonymous> (https://zaip-aic.za.group/zaznkf.js?date=1777880632448:7:50564)
+[   12351ms] [LOG] [FST] cacheTrees： [] @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   12352ms] [TIMEEND] getFST耗时: 1.674072265625 ms @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   12490ms] [LOG] [seraph]:  请求信息 {method: POST, msg: , url: https://offlineapp.za.group/offlinelog/api/report/web, cbTime: 458, async: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14008ms] [LOG] >>>popstate @ https://cdn.zaticdn.com/if/zamp-common-package/tracker/online/index.js:0
+[   14217ms] [LOG] [seraph]:  PV: {"from":"https://zaip-aic.za.group/?accessId=1649389871786&tenantID=1545312220000942&color=pcDefault&supportLanguage=23&language=2&channelId=pc&visitorId=b0fbc6d6a4c3584be740be64379171d9&mode=ananProduction","to":"https://zaip-aic.za.group/?accessId=1649389871786&tenantID=1545312220000942&color=pcDefault&supportLanguage=23&language=2&channelId=pc&visitorId=b0fbc6d6a4c3584be740be64379171d9&mode=ananProduction#/","category":"pv","type":"hashchange","pvId":"0a380c1800e57a4ea10ba6149d8fbd89e0a1"} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14218ms] [LOG] [FST] hashchange事件触发 @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14218ms] [LOG] >>>hashchange @ https://cdn.zaticdn.com/if/zamp-common-package/tracker/online/index.js:0
+[   14615ms] [TIMEEND] getValidMutations: 4.43896484375 ms @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14616ms] [LOG] [FST] 是否为首屏内有效变动： true [MutationRecord] @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14667ms] [LOG] [seraph]:  请求信息 {method: POST, msg: , url: https://offlineapp.za.group/offlinelog/api/report/web, cbTime: 657, async: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14713ms] Error: No native APIs found.
+    at e.value (https://zaip-aic.za.group/standard/index.bab03.async.js:6:222945)
+    at https://zaip-aic.za.group/standard/index.bab03.async.js:6:222495
+    at new Promise (<anonymous>)
+    at e.value (https://zaip-aic.za.group/standard/index.bab03.async.js:6:222412)
+    at k (https://zaip-aic.za.group/standard/index.bab03.async.js:6:227088)
+    at t.value (https://zaip-aic.za.group/standard/index.bab03.async.js:35:714216)
+    at pu (https://zaip-aic.za.group/standard/vendor.af3a2.async.js:17:83371)
+    at Ns (https://zaip-aic.za.group/standard/vendor.af3a2.async.js:17:101074)
+    at t.unstable_runWithPriority (https://zaip-aic.za.group/standard/index.bab03.async.js:72:3362)
+    at Qo (https://zaip-aic.za.group/standard/vendor.af3a2.async.js:17:45192)
+[   14677ms] [LOG] [seraph]:  请求信息 {method: POST, msg: , url: https://zaip-aic.za.group/web/api/v2/bot/hi, cbTime: 613, async: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14782ms] [LOG] [FST] cacheTrees： [Object] @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14793ms] [LOG] [FST] 最后dom元素及资源： {ts: 2962.7999999970198, records: Array(1)} {ts: 0, element: undefined} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14794ms] [TIMEEND] getFST耗时: 11.98779296875 ms @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14794ms] [LOG] [FST] 最终首屏时间：: 252 @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14795ms] [LOG] [FST] routerStartTime 2710.7000000029802 @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14801ms] [LOG] [seraph]:  请求信息 {method: get, msg: , url: https://zaip-aic.za.group/web/api/v2/bot/navigation?queryType=0, cbTime: 271, async: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   14808ms] [LOG] [seraph]:  请求信息 {method: get, msg: , url: https://zaip-aic.za.group/web/api/v5/customer/chat…?tenantID=1545312220000942&accessId=1649389871786, cbTime: 270, async: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   15401ms] [LOG] [seraph]:  report data = {resourceMetrics: Object, resourceLogs: Object} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   16222ms] [LOG] [seraph]:  请求信息 {method: get, msg: , url: https://zaip-aic.za.group/web/api/v5/customer/chat…89871786&pageSize=20&pageNum=1&date=1777880635131, cbTime: 680, async: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   16436ms] [LOG] [seraph]:  请求信息 {method: get, msg: , url: https://zaip-aic.za.group/web/api/v4/synctime/gettime, cbTime: 79, async: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   16489ms] [LOG] [seraph]:  请求信息 {method: get, msg: , url: https://zaip-aic.za.group/web/api/v5/customer/audit/guide/questions?tenantId=1545312220000942, cbTime: 27, async: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   16516ms] [LOG] [seraph]:  请求信息 {method: post, msg: , url: https://zaip-aic.za.group/web/api/v4.9/customer/leavemessage/queryConfig, cbTime: 61, async: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   17862ms] [LOG] >>>load @ https://cdn.zaticdn.com/if/zamp-common-package/tracker/online/index.js:0
+[   17867ms] [LOG] [seraph]:  report data = {resourceMetrics: null, resourceLogs: Object} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   17970ms] [LOG] [seraph]:  report data = {resourceMetrics: Object, resourceLogs: Object} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   18158ms] [LOG] [seraph]:  请求信息 {method: POST, msg: , url: https://offlineapp.za.group/offlinelog/api/report/web, cbTime: 295, async: true} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   18159ms] [LOG] [seraph]:  report data = {resourceMetrics: null, resourceLogs: Object} @ https://cdn.zaticdn.com/if/zamp-common-package/monitor/2.3.7/index.js:0
+[   21558ms] [WARNING] The resource https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Bold.ttf was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://bank.za.group/en/promotion:0
+[   21558ms] [WARNING] The resource https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Regular.ttf was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://bank.za.group/en/promotion:0
+[   21558ms] [WARNING] The resource https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Medium.ttf was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://bank.za.group/en/promotion:0
+[   29952ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://bank.za.group/_next/data/1776928311848-7d5f0538/hk/promotion.json:0
+[   33326ms] [WARNING] The resource https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Bold.ttf was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://bank.za.group/en/promotion:0
+[   33326ms] [WARNING] The resource https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Regular.ttf was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://bank.za.group/en/promotion:0
+[   33326ms] [WARNING] The resource https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Medium.ttf was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://bank.za.group/en/promotion:0
+[   37815ms] [WARNING] The resource https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Bold.ttf was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://bank.za.group/en/promotion:0
+[   37816ms] [WARNING] The resource https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Regular.ttf was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://bank.za.group/en/promotion:0
+[   37816ms] [WARNING] The resource https://cdn.zaticdn.com/if/za-group-portal-web/Quicksand-Medium.ttf was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://bank.za.group/en/promotion:0

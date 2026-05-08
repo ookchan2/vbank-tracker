@@ -10,8 +10,8 @@
 import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
-import { hktToday, hktNDaysAgo } from '../utils/hkt';
-import { isNonBankContent } from '../utils/filters';
+import { hktToday, hktNDaysAgo } from '../utils/hkt.js';
+import { isNonBankContent } from '../utils/filters.js';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'promotions.db');
 

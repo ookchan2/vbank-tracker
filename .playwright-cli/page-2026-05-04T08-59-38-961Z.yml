@@ -1,0 +1,322 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - link "logo" [ref=e13] [cursor=pointer]:
+          - /url: /
+          - img "logo" [ref=e14]
+        - generic [ref=e15]:
+          - generic [ref=e17] [cursor=pointer]: 個人銀行
+          - generic [ref=e19] [cursor=pointer]: 商業銀行
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e23] [cursor=pointer]: 銀行服務
+          - generic [ref=e25] [cursor=pointer]: ZA Card
+          - generic [ref=e27] [cursor=pointer]: 借貸
+          - generic [ref=e29] [cursor=pointer]: 投資
+          - link "保險" [ref=e32] [cursor=pointer]:
+            - /url: /hk/insurance
+          - generic [ref=e33] [cursor=pointer]:
+            - link "幫助中心" [ref=e35]:
+              - /url: /faqs/Individuals
+            - text: "|"
+          - link "Blog" [ref=e38] [cursor=pointer]:
+            - /url: https://blog.za.group/hk
+        - generic [ref=e39]:
+          - generic [ref=e41] [cursor=pointer]: 下載 ZA Bank App
+          - generic [ref=e43] [cursor=pointer]:
+            - text: 登記開戶
+            - img [ref=e44]
+        - img "国际化" [ref=e48] [cursor=pointer]
+    - generic [ref=e53]:
+      - generic [ref=e56]:
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - generic [ref=e60]: ZA 卡數師
+            - generic [ref=e61]: 集中清卡數 賺現金獎賞
+          - generic [ref=e63]:
+            - text: 由即日起至 2026 年 6 月 30 日，申請 ZA 卡數師時輸入優惠碼 [SURPRISE]，成功提取信用卡賬單分期計劃就額外送錢入你袋，輕鬆即賺高達 HKD 2,000
+            - superscript [ref=e64]: "1"
+            - text: ！
+          - generic [ref=e65]:
+            - link "立即申請" [ref=e69] [cursor=pointer]:
+              - /url: https://bank.za.group/hk/loan-application?product=BT
+            - button "下載 App 申請" [ref=e71] [cursor=pointer]
+          - generic [ref=e72]:
+            - paragraph [ref=e73]:
+              - link "信用卡賬單分期計劃條款及細則" [ref=e74] [cursor=pointer]:
+                - /url: https://bank.za.group/agreement/html/zh_HK/1000483
+              - text: ｜
+              - link "產品資料概要" [ref=e75] [cursor=pointer]:
+                - /url: https://bank.za.group/agreement/html/zh_HK/1000478
+            - paragraph [ref=e76]:
+              - text: 受
+              - link "條款及細則" [ref=e77] [cursor=pointer]:
+                - /url: https://bank.za.group/agreement/html/zh_HK/1000223
+              - text: 約束。借定唔借？還得到先好借！
+        - img [ref=e81]
+      - generic [ref=e86]:
+        - generic [ref=e87]: 信用卡賬單分期計劃
+        - generic [ref=e88]: 集中卡數 無需利疊利
+        - generic [ref=e89]:
+          - generic [ref=e90] [cursor=pointer]: 服務費用
+          - generic [ref=e91] [cursor=pointer]: 優惠條款及細則
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - img [ref=e95]
+            - generic [ref=e96]: 貸款額高達月薪 21 倍
+            - generic [ref=e97]:
+              - text: 分期總金額可達月薪 21 倍
+              - superscript [ref=e98]: "2"
+              - text: ，還能讓你提取現金，週轉就更輕鬆！
+          - generic [ref=e99]:
+            - img [ref=e101]
+            - generic [ref=e102]: 一口氣找多張信用卡
+            - generic [ref=e103]: 相比其他機構，我們可以為你一次過還清多張信用卡賬單，無需逐次申請。
+          - generic [ref=e104]:
+            - img [ref=e106]
+            - generic [ref=e107]: 還款期長達 72 個月
+            - generic [ref=e108]:
+              - text: 我們考慮到你的貸款所需，為你提供長達 72 個月還款期
+              - superscript [ref=e109]: "2"
+              - text: ，慢慢還，更輕鬆！
+          - generic [ref=e110]:
+            - img [ref=e112]
+            - generic [ref=e113]: 30 日延遲還款
+            - generic [ref=e114]:
+              - text: 成功提取 ZA 卡數師後， 30 日後才會開始首次還款
+              - superscript [ref=e115]: "3"
+              - text: ，讓你從卡數中唞啖氣。
+          - generic [ref=e116]:
+            - img [ref=e118]
+            - generic [ref=e119]: 90 秒就即知審批結果
+            - generic [ref=e120]:
+              - text: 全新用戶只需 90 秒
+              - superscript [ref=e121]: "4"
+              - text: ，即可得知貸款初步審批結果，自然不用心掛掛。
+      - generic [ref=e126]:
+        - generic [ref=e127]: 還款計算機
+        - generic [ref=e128]:
+          - generic [ref=e129]:
+            - generic [ref=e130]:
+              - generic [ref=e135]:
+                - generic [ref=e136]: 信用卡賬單總金額 (HKD)
+                - textbox [ref=e137]: 1,000,000
+                - generic [ref=e139]:
+                  - generic "滑动输入条" [ref=e144]:
+                    - img [ref=e146]
+                  - generic [ref=e151]:
+                    - generic [ref=e152]: 5,000
+                    - generic [ref=e153]: 1,000,000
+              - generic [ref=e158]:
+                - generic [ref=e159]: 還款期 (月)
+                - generic [ref=e160]: 12個月
+                - generic [ref=e162]:
+                  - generic "滑动输入条" [ref=e167]:
+                    - img [ref=e169]
+                  - generic [ref=e174]:
+                    - generic [ref=e175]: "3"
+                    - generic [ref=e176]: "6"
+                    - generic [ref=e177]: "9"
+                    - generic [ref=e178]: "12"
+                    - generic [ref=e179]: "18"
+                    - generic [ref=e180]: "24"
+                    - generic [ref=e181]: "36"
+                    - generic [ref=e182]: "42"
+                    - generic [ref=e183]: "48"
+                    - generic [ref=e184]: "54"
+                    - generic [ref=e185]: "60"
+                    - generic [ref=e186]: "66"
+                    - generic [ref=e187]: "72"
+            - generic [ref=e190]:
+              - generic [ref=e191]:
+                - generic [ref=e192]:
+                  - text: 每月還款額 (HKD)
+                  - img [ref=e194] [cursor=pointer]
+                - generic [ref=e196]: 86,023.33
+              - generic [ref=e197]:
+                - generic [ref=e198]: 每月手續費 (%)
+                - text: ：
+                - generic [ref=e199]: 0.27%
+                - img [ref=e201] [cursor=pointer]
+              - generic [ref=e203]:
+                - generic [ref=e204]: 實際年利率 (%)
+                - text: ：
+                - generic [ref=e205]: 6.07%
+                - img [ref=e207] [cursor=pointer]
+          - generic [ref=e212]:
+            - generic [ref=e213]: 還款計劃表
+            - img [ref=e215]
+        - generic [ref=e218]:
+          - text: 註
+          - text: 還款計算機所顯示的結果僅供參考。
+          - text: 本行會按照客戶的實際貸款金額, 信貸評級及其他因素而釐定貸款審批結果。
+      - generic [ref=e223]:
+        - generic [ref=e224]: 簡單 4 步還清卡數
+        - generic [ref=e225]:
+          - generic [ref=e226]:
+            - generic [ref=e227] [cursor=pointer]:
+              - generic [ref=e228]: "1"
+              - generic [ref=e229]: 填寫資料
+            - generic [ref=e230] [cursor=pointer]:
+              - generic [ref=e231]: "2"
+              - generic [ref=e232]: 獲得初步審批结果
+            - generic [ref=e233] [cursor=pointer]:
+              - generic [ref=e234]: "3"
+              - generic [ref=e235]: 補充資料及上傳文件
+            - generic [ref=e236] [cursor=pointer]:
+              - generic [ref=e237]: "4"
+              - generic [ref=e238]: 確認申請計劃及直接放款到你的信用卡賬戶
+          - generic [ref=e242]:
+            - img [ref=e246]
+            - img [ref=e250]
+            - img [ref=e254]
+            - img [ref=e258]
+      - generic [ref=e263]:
+        - generic [ref=e264]: 申請資格及所需文件
+        - generic [ref=e265]:
+          - generic [ref=e266]: 申請資格
+          - generic [ref=e267]:
+            - generic [ref=e268]:
+              - img [ref=e270]
+              - generic [ref=e271]: 持有香港身份證
+            - generic [ref=e272]:
+              - img [ref=e274]
+              - generic [ref=e275]: 年滿 18 歲或以上
+            - generic [ref=e276]:
+              - img [ref=e278]
+              - generic [ref=e279]: 月收入 HKD 8,000 或以上
+        - generic [ref=e280]:
+          - generic [ref=e281]: 所需文件
+          - generic [ref=e282]:
+            - generic [ref=e283]:
+              - img [ref=e285]
+              - generic [ref=e286]: 收入證明
+            - generic [ref=e287]:
+              - img [ref=e289]
+              - generic [ref=e290]: 住址證明
+            - generic [ref=e291]:
+              - img [ref=e293]
+              - generic [ref=e294]: 其他文件，如工作簽證 (視乎需要)
+      - generic [ref=e299]:
+        - generic [ref=e300]: 常見問題
+        - generic [ref=e302]:
+          - generic [ref=e304]:
+            - generic [ref=e306] [cursor=pointer]:
+              - generic [ref=e307]: 信用卡賬單分期計劃支持哪些信用卡？
+              - img [ref=e309]
+            - generic [ref=e314] [cursor=pointer]:
+              - generic [ref=e315]: 信用卡賬單分期計劃獲批後要多久才入賬到我的信用卡賬戶？
+              - img [ref=e317]
+            - generic [ref=e322] [cursor=pointer]:
+              - generic [ref=e323]: 申請信用卡賬單分期計劃前需先開立銀行戶口嗎？
+              - img [ref=e325]
+          - link "更多常見問題" [ref=e329] [cursor=pointer]:
+            - /url: https://bank.za.group/hk/faqs/Individuals/Loan/Card_Statement_Instalment
+            - generic [ref=e330]: 更多常見問題
+            - img [ref=e331]
+      - generic [ref=e338]:
+        - paragraph [ref=e341]:
+          - text: 1. 於 2026 年 6 月 30 日或之前，在信用卡賬單分期計劃申請過程中輸入指定優惠碼可領取 3 張貸款現金券，適用於不同貸款額。憑券成功提取還款期 18 個月或以上，以及貸款額 HKD 200,000 – HKD 399,999、HKD 400,000 – HKD 799,999 或 HKD 800,000 或以上的信用卡賬單分期計劃，完成 7 天冷靜期後可分別獲得 HKD 588、HKD 688 及 HKD 2,000 現金獎賞。現金券在貸款流程中輸入優惠碼起 14 天内有效。受
+          - link "條款及細則" [ref=e343] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/html/zh_HK/1000223
+          - text: 約束。
+        - paragraph [ref=e346]: 2. 最終批核之貸款金額、利率及還款期視乎個別情況及本行的最終審批而異。
+        - paragraph [ref=e349]: 3. 信用卡賬單分期計劃的提取日與每月還款日相同，例子：如於 2021 年 8 月 1 日成功提取，首個還款日將為 2021 年 9 月 1 日。用戶平均於 30 天後才開始還款。
+        - paragraph [ref=e352]: 4. 該審批結果為初步審核結果。用戶需提交相關文件而獲得最終審核結果。實際時間因人而異。一般來説，在資料準備充足的情況下，全新客戶最快可於 90 秒内在 ZA Bank 網站完成申請並獲得初步審核結果，而現有客戶於登入 ZA Bank App 後，於「貸款」頁發起申請到獲取初步審核結果最快可於 30 秒内完成。最終批核之貸款利率及金額視乎個別情況及本行的最終審批而異。
+    - generic [ref=e353]:
+      - generic [ref=e355]:
+        - generic [ref=e356]:
+          - generic [ref=e357]: 關於我們
+          - generic [ref=e358]:
+            - link "關於 ZA Bank" [ref=e360] [cursor=pointer]:
+              - /url: /hk/hkno1digitalbank
+            - link "新聞中心" [ref=e362] [cursor=pointer]:
+              - /url: /hk/about-us#index=news
+            - link "企業管治" [ref=e364] [cursor=pointer]:
+              - /url: /hk/about-us#index=board
+            - link "監管披露" [ref=e366] [cursor=pointer]:
+              - /url: /hk/about-us#index=supervision
+            - link "財務報告" [ref=e368] [cursor=pointer]:
+              - /url: /hk/about-us#index=finance
+        - generic [ref=e369]:
+          - generic [ref=e370]: 常用連結
+          - generic [ref=e371]:
+            - link "銀行收費表" [ref=e373] [cursor=pointer]:
+              - /url: /rates-list
+            - link "幫助" [ref=e375] [cursor=pointer]:
+              - /url: https://bank.za.group/faqs/Individuals
+            - link "保安提示" [ref=e377] [cursor=pointer]:
+              - /url: /security-tips
+            - link "防止金融犯罪資訊中心" [ref=e379] [cursor=pointer]:
+              - /url: /financial
+            - link "條款及細則" [ref=e381] [cursor=pointer]:
+              - /url: /terms
+            - link "下載中心" [ref=e383] [cursor=pointer]:
+              - /url: /hk/tabledown
+            - link "重要通知" [ref=e385] [cursor=pointer]:
+              - /url: /important-notice
+            - link "開放銀行" [ref=e387] [cursor=pointer]:
+              - /url: https://developer.bank.za.group/hk/
+            - link "產品資料概要" [ref=e389] [cursor=pointer]:
+              - /url: /kfs
+        - generic [ref=e390]:
+          - generic [ref=e391]: 服務與諮詢
+          - generic [ref=e392]:
+            - link "bank.opinion@za.group" [ref=e394] [cursor=pointer]:
+              - /url: mailto:bank.opinion@za.group
+            - generic [ref=e395]: +852 3665 3665
+            - generic [ref=e397]: 線上客服
+            - link "聯繫我們" [ref=e399] [cursor=pointer]:
+              - /url: /consulting-feedback
+            - link "銀行業人才起動計劃申请" [ref=e401] [cursor=pointer]:
+              - /url: /banking-talent-programme
+            - link "無障礙聲明" [ref=e403] [cursor=pointer]:
+              - /url: /accessibility
+            - link "舉報渠道" [ref=e405] [cursor=pointer]:
+              - /url: https://cdn.zaticdn.com/if/zaif-cps-seagull-service/20231226/ZAB_WB_statement_1.0_45002.pdf
+        - generic [ref=e406]:
+          - generic [ref=e407]:
+            - generic [ref=e408]:
+              - link "facebook-logo" [ref=e409] [cursor=pointer]:
+                - /url: https://www.facebook.com/zabankhk
+                - img "facebook-logo" [ref=e410]
+              - link "linkedin-logo" [ref=e411] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/za-international
+                - img "linkedin-logo" [ref=e412]
+              - img "weChart" [ref=e414] [cursor=pointer]
+            - generic [ref=e416]:
+              - link "繁" [ref=e418] [cursor=pointer]:
+                - /url: /statement-instalment
+              - text: "|"
+              - link "EN" [ref=e420] [cursor=pointer]:
+                - /url: /en/statement-instalment
+          - generic [ref=e421]:
+            - generic [ref=e423]:
+              - generic [ref=e424]:
+                - button "ios-download" [ref=e425] [cursor=pointer]:
+                  - img "ios-download" [ref=e426]
+                - button "android-download" [ref=e427] [cursor=pointer]:
+                  - img "android-download" [ref=e428]
+                - link "apk" [ref=e429] [cursor=pointer]:
+                  - /url: https://cdn.zaticdn.com/bank/app/android.apk
+                  - img "apk" [ref=e430]
+              - img "qr-code" [ref=e431]
+            - list [ref=e432]:
+              - listitem [ref=e433]: · Apple為Apple Inc.商標，已於美國及其他國家╱地區註冊。App Store為Apple Inc.之服務商標。
+              - listitem [ref=e434]: · Google Play™為Google LLC之商標。
+      - generic [ref=e435]:
+        - generic [ref=e436]:
+          - generic [ref=e437]: 本網站由眾安銀行有限公司編製及發布。版權所有 © 2026 眾安銀行有限公司
+          - generic [ref=e438]:
+            - link "網站使用條款" [ref=e439] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000379
+            - text: "|"
+            - link "私隱政策" [ref=e440] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000442
+            - text: "|"
+            - link "收集個人資料通知" [ref=e441] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000378
+        - generic [ref=e442]: "*作為香港首間開業的數字銀行，截至 2024 年 6 月 30 日，ZA Bank 的用戶數量及存款均為香港 8 間數字銀行之中最高。資料來源︰8 間數字銀行中期業績報告。"
+    - img "kf-icon" [ref=e447] [cursor=pointer]
+  - alert [ref=e448]

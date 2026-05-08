@@ -1,0 +1,11 @@
+[    5815ms] [LOG] QRcode para :   @ https://www.elebank.com/vendor/js/airstar.js?v=20210325:1653
+[    6697ms] [LOG] 公告 [30000034] 宽度计算: @ https://www.elebank.com/vendor/js/airstar.js?v=20210325:1338
+[    6697ms] [LOG]   - 容器宽度 (notice-content): 580px @ https://www.elebank.com/vendor/js/airstar.js?v=20210325:1339
+[    6697ms] [LOG]   - slide padding-left: 20px @ https://www.elebank.com/vendor/js/airstar.js?v=20210325:1340
+[    6697ms] [LOG]   - 实际可用宽度: 560px @ https://www.elebank.com/vendor/js/airstar.js?v=20210325:1341
+[    6697ms] [LOG]   - 文本宽度: 994px @ https://www.elebank.com/vendor/js/airstar.js?v=20210325:1342
+[    6697ms] [LOG]   - 是否滚动: 是 @ https://www.elebank.com/vendor/js/airstar.js?v=20210325:1343
+[    6697ms] [LOG]   - 文本内容: "天星銀行已全新升級為「象象銀行」。本次僅為品牌升級，您的賬戶、資產、交易及服務均不受任何影響，賬號、銀行卡及手機銀行均正常使用，無需重新辦理。" @ https://www.elebank.com/vendor/js/airstar.js?v=20210325:1344
+[    6698ms] [LOG]   - 文本间距 (padding-right): 120px @ https://www.elebank.com/vendor/js/airstar.js?v=20210325:1359
+[    6699ms] [LOG]   - 重置点: 1114px @ https://www.elebank.com/vendor/js/airstar.js?v=20210325:1360
+[    7138ms] Unexpected token ')'

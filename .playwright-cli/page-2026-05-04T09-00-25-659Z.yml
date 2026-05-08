@@ -1,0 +1,277 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - link "Mox Logo" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - img "Mox Logo" [ref=e11]
+        - img "Standard Chartered" [ref=e13]
+      - generic [ref=e14]:
+        - navigation [ref=e16]:
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - link "Mox+" [ref=e19] [cursor=pointer]:
+                - /url: /MoxPlus-Updates/
+            - listitem [ref=e20]:
+              - link "Travel Playbook" [ref=e21] [cursor=pointer]:
+                - /url: /all-round-travel-playbook/
+            - listitem [ref=e22]:
+              - button "Features" [ref=e23] [cursor=pointer]
+              - list:
+                - listitem:
+                  - link "Mox Credit Card":
+                    - /url: /features/mox-credit/
+                - listitem:
+                  - link "Mox Invest":
+                    - /url: /features/mox-invest/
+                - listitem:
+                  - link "Mox Insure":
+                    - /url: /features/mox-insure/
+                - listitem:
+                  - link "Smart Banking":
+                    - /url: /features/smart-banking/
+                - listitem:
+                  - link "Smart Borrowing":
+                    - /url: /features/smart-borrowing/
+                - listitem:
+                  - link "Instant Loan":
+                    - /url: /promotions/instant-loan/
+                - listitem:
+                  - link "Smart Saving":
+                    - /url: /features/smart-saving/
+                - listitem:
+                  - link "Smart Spending":
+                    - /url: /features/smart-spending/
+                - listitem:
+                  - link "Mox FX":
+                    - /url: /features/mox-fx/
+                - listitem:
+                  - link "Mox at a glance":
+                    - /url: /features/mox-at-a-glance/
+            - listitem [ref=e24]:
+              - link "Promotions" [ref=e25] [cursor=pointer]:
+                - /url: /promotions/
+            - listitem [ref=e26]:
+              - link "About us" [ref=e27] [cursor=pointer]:
+                - /url: /about-us/
+            - listitem [ref=e28]:
+              - link "FAQ" [ref=e29] [cursor=pointer]:
+                - /url: /faqs/
+        - button "Get Mox" [ref=e30] [cursor=pointer]
+        - img [ref=e35] [cursor=pointer]
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - link "Mox":
+                    - /url: /
+                    - img "Mox"
+                  - generic:
+                    - img "Standard Chartered"
+              - generic:
+                - button
+      - generic:
+        - generic:
+          - generic:
+            - list:
+              - listitem:
+                - link "Mox+":
+                  - /url: /MoxPlus-Updates/
+              - listitem:
+                - link "Travel Playbook":
+                  - /url: /all-round-travel-playbook/
+              - listitem:
+                - button "Features"
+                - list:
+                  - listitem:
+                    - link "Mox Credit Card":
+                      - /url: /features/mox-credit/
+                  - listitem:
+                    - link "Mox Invest":
+                      - /url: /features/mox-invest/
+                  - listitem:
+                    - link "Mox Insure":
+                      - /url: /features/mox-insure/
+                  - listitem:
+                    - link "Smart Banking":
+                      - /url: /features/smart-banking/
+                  - listitem:
+                    - link "Smart Borrowing":
+                      - /url: /features/smart-borrowing/
+                  - listitem:
+                    - link "Instant Loan":
+                      - /url: /promotions/instant-loan/
+                  - listitem:
+                    - link "Smart Saving":
+                      - /url: /features/smart-saving/
+                  - listitem:
+                    - link "Smart Spending":
+                      - /url: /features/smart-spending/
+                  - listitem:
+                    - link "Mox FX":
+                      - /url: /features/mox-fx/
+                  - listitem:
+                    - link "Mox at a glance":
+                      - /url: /features/mox-at-a-glance/
+              - listitem:
+                - link "Promotions":
+                  - /url: /promotions/
+              - listitem:
+                - link "About us":
+                  - /url: /about-us/
+              - listitem:
+                - link "FAQ":
+                  - /url: /faqs/
+  - generic [ref=e45]:
+    - img [ref=e48]
+    - generic [ref=e49]:
+      - generic [ref=e50]:
+        - heading "404" [level=1] [ref=e51]
+        - paragraph [ref=e52]:
+          - strong [ref=e53]: Sorry...
+          - text: The page you are looking for doesn't exist or has been moved.
+        - paragraph [ref=e54]:
+          - strong [ref=e55]: 對不起...
+          - text: 你想找的網頁已被移除。
+      - link "Go to home page" [ref=e57] [cursor=pointer]:
+        - /url: /
+  - contentinfo [ref=e58]:
+    - generic [ref=e60]:
+      - link "Mox" [ref=e62] [cursor=pointer]:
+        - /url: /
+        - img "Mox" [ref=e63]
+      - generic [ref=e65]:
+        - generic [ref=e66]: in partnership with
+        - link "PCCW" [ref=e67] [cursor=pointer]:
+          - /url: http://www.pccw.com/
+          - img "PCCW" [ref=e68]
+        - link "HKT" [ref=e69] [cursor=pointer]:
+          - /url: https://www.hkt.com/?language=en_US
+          - img "HKT" [ref=e70]
+        - link "Trip.com" [ref=e71] [cursor=pointer]:
+          - /url: https://www.trip.com/?locale=en_xx
+          - img "Trip.com" [ref=e72]
+      - link "Standard Chartered" [ref=e74] [cursor=pointer]:
+        - /url: https://www.sc.com/hk/
+        - img "Standard Chartered" [ref=e75]
+      - generic [ref=e78]:
+        - paragraph [ref=e79]: Features
+        - paragraph [ref=e80]:
+          - link "Mox Credit Card" [ref=e81] [cursor=pointer]:
+            - /url: /features/mox-credit/
+        - paragraph [ref=e82]:
+          - link "Mox Invest" [ref=e83] [cursor=pointer]:
+            - /url: /features/mox-invest/
+        - paragraph [ref=e84]:
+          - link "Mox Insure" [ref=e85] [cursor=pointer]:
+            - /url: /features/mox-insure/
+        - paragraph [ref=e86]:
+          - link "Smart Banking" [ref=e87] [cursor=pointer]:
+            - /url: /features/smart-banking/
+        - paragraph [ref=e88]:
+          - link "Smart Borrowing" [ref=e89] [cursor=pointer]:
+            - /url: /features/smart-borrowing/
+        - paragraph [ref=e90]:
+          - link "Instant Loan" [ref=e91] [cursor=pointer]:
+            - /url: /promotions/instant-loan/
+        - paragraph [ref=e92]:
+          - link "Smart Saving" [ref=e93] [cursor=pointer]:
+            - /url: /features/smart-saving/
+        - paragraph [ref=e94]:
+          - link "Smart Spending" [ref=e95] [cursor=pointer]:
+            - /url: /features/smart-spending/
+        - paragraph [ref=e96]:
+          - link "Mox FX" [ref=e97] [cursor=pointer]:
+            - /url: /features/mox-fx/
+        - paragraph [ref=e98]:
+          - link "Mox at a glance" [ref=e99] [cursor=pointer]:
+            - /url: /features/mox-at-a-glance/
+      - generic [ref=e100]:
+        - paragraph [ref=e101]: The Bank
+        - paragraph [ref=e102]:
+          - link "Promotions" [ref=e103] [cursor=pointer]:
+            - /url: /promotions/
+        - paragraph [ref=e104]:
+          - link "About us" [ref=e105] [cursor=pointer]:
+            - /url: /about-us/
+        - paragraph [ref=e106]:
+          - link "Media" [ref=e107] [cursor=pointer]:
+            - /url: /media/
+        - paragraph [ref=e108]:
+          - link "Careers" [ref=e109] [cursor=pointer]:
+            - /url: /careers/
+        - paragraph [ref=e110]:
+          - link "FAQ" [ref=e111] [cursor=pointer]:
+            - /url: /faqs/
+      - generic [ref=e112]:
+        - paragraph [ref=e113]: Useful links
+        - paragraph [ref=e114]:
+          - link "Legal documents" [ref=e115] [cursor=pointer]:
+            - /url: /legal-documents/
+        - paragraph [ref=e116]:
+          - link "Privacy" [ref=e117] [cursor=pointer]:
+            - /url: /legal-documents/privacy/
+        - paragraph [ref=e118]:
+          - link "Cookie policy" [ref=e119] [cursor=pointer]:
+            - /url: /legal-documents/cookie-policy/
+        - paragraph [ref=e120]:
+          - link "Regulatory disclosures" [ref=e121] [cursor=pointer]:
+            - /url: /regulatory-disclosures/
+        - paragraph [ref=e122]:
+          - link "Security tips" [ref=e123] [cursor=pointer]:
+            - /url: /security-tips/
+        - paragraph [ref=e124]:
+          - link "Submit a vulnerability" [ref=e125] [cursor=pointer]:
+            - /url: /submit-a-vulnerability/
+        - paragraph [ref=e126]:
+          - link "Important notices" [ref=e127] [cursor=pointer]:
+            - /url: /important-notices/
+        - paragraph [ref=e128]:
+          - link "Open Banking" [ref=e129] [cursor=pointer]:
+            - /url: /open-banking/
+        - paragraph [ref=e130]:
+          - link "Sitemap" [ref=e131] [cursor=pointer]:
+            - /url: /sitemap/
+      - generic [ref=e132]:
+        - paragraph [ref=e133]: Contact us
+        - paragraph [ref=e134]:
+          - link "Send us a message" [ref=e135] [cursor=pointer]:
+            - /url: /contact-us/
+        - paragraph [ref=e136]:
+          - link "+852 2888 8228" [ref=e137] [cursor=pointer]:
+            - /url: tel:+85228888228
+        - paragraph [ref=e138]:
+          - link "care@mox.com" [ref=e139] [cursor=pointer]:
+            - /url: mailto:care@mox.com
+        - paragraph [ref=e140]:
+          - link "Employment Verification" [ref=e141] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+        - paragraph [ref=e142]:
+          - link "askhr@sc.com" [ref=e143] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+      - generic [ref=e144]:
+        - generic:
+          - generic:
+            - link:
+              - /url: https://www.facebook.com/moxbankhk/
+            - link:
+              - /url: https://www.instagram.com/moxbank/
+            - link:
+              - /url: https://www.linkedin.com/company/mox-bank/
+            - link:
+              - /url: https://www.youtube.com/channel/UC41ce2iw3ytvBbJCwlF3iiw/featured
+        - generic [ref=e145]:
+          - generic [ref=e147]:
+            - img "apple-store" [ref=e151] [cursor=pointer]
+            - img "google-play" [ref=e155] [cursor=pointer]
+          - generic [ref=e158]:
+            - paragraph [ref=e159]:
+              - text: The above are the only authorized channels for downloading Mox App. To protect your information, please do not download our app via other channels.
+              - link "Click here for further information." [ref=e160] [cursor=pointer]:
+                - /url: /security-tips/
+            - paragraph [ref=e161]: App Store and the Apple logo are trademarks or registered trademarks of Apple Inc., registered in the United States and other countries. Google Play and the Google Play logo are trademarks or registered trademarks of Google LLC, registered in the United States and other countries.
+        - button [ref=e163] [cursor=pointer]
+      - generic [ref=e165]: ©2026 Mox Bank. All rights reserved

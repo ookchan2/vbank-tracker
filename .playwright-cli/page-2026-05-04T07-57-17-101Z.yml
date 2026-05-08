@@ -1,0 +1,250 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - link "logo" [ref=e13] [cursor=pointer]:
+          - /url: /
+          - img "logo" [ref=e14]
+        - generic [ref=e15]:
+          - generic [ref=e17] [cursor=pointer]: 個人銀行
+          - generic [ref=e19] [cursor=pointer]: 商業銀行
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e23] [cursor=pointer]: 銀行服務
+          - generic [ref=e25] [cursor=pointer]: ZA Card
+          - generic [ref=e27] [cursor=pointer]: 借貸
+          - generic [ref=e29] [cursor=pointer]: 投資
+          - link "保險" [ref=e32] [cursor=pointer]:
+            - /url: /hk/insurance
+          - generic [ref=e33] [cursor=pointer]:
+            - link "幫助中心" [ref=e35]:
+              - /url: /faqs/Individuals
+            - text: "|"
+          - link "Blog" [ref=e38] [cursor=pointer]:
+            - /url: https://blog.za.group/hk
+        - generic [ref=e39]:
+          - generic [ref=e41] [cursor=pointer]: 下載 ZA Bank App
+          - generic [ref=e43] [cursor=pointer]:
+            - text: 登記開戶
+            - img [ref=e44]
+        - img "国际化" [ref=e48] [cursor=pointer]
+    - generic [ref=e51]:
+      - generic:
+        - generic:
+          - generic [ref=e52]:
+            - button "背景蒙层"
+          - generic [ref=e56]:
+            - img [ref=e58] [cursor=pointer]
+            - generic [ref=e61]: 重要風險聲明
+            - generic [ref=e63]: 投資涉及風險。投資產品價格可升可跌，甚至變成毫無價值。過往表現並非日後表現的指標。投資未必一定能夠賺取利潤，亦可能會招致損失。此平台的資料只供參考，並不構成及不應被視為任何建議、推銷、游說客戶認購或出售任何投資產品。投資者應根據本身投資經驗、投資目標、財務狀況及承擔風險程度等因素去衡量是否適合投資於該產品上。若有需要，請諮詢獨立專業建議。投資者作出任何投資決定前，應詳細閱讀有關之章則及條件，投資產品認購章程及其風險披露聲明。本平台之內容並未經證監會或任何香港的監管機構審閱。 ZA Bank 以代理人身份辦理你的指示。投資產品由第三方提供。若因銷售過程或處理有關交易產生合資格爭議 (定義見金融糾紛調解計劃的金融糾紛調解中心的職權範圍)，ZA Bank 會與你進行金融糾紛調解計劃程序；然而，對於有關產品的合約條款的任何爭議，應由第三方產品發行人與你直接解決。ZA Bank 無意讓任何人於任何受限制或未獲法律或法規授權分發或使用此平台的司法管轄區、國家或地區內，分發或使用此平台。如你並非身處香港，我們或未獲授權於你身處或居住的國家或地區向你提供產品及服務。
+      - generic [ref=e67]:
+        - generic [ref=e72]:
+          - generic [ref=e74]:
+            - generic [ref=e76]:
+              - text: ZA Bank 買基金
+              - text: 步向財自不是夢
+            - generic [ref=e78]: ZA Bank 繼續「做壞規矩」，推出基金投資服務
+            - button "下載 ZA Bank App" [ref=e82] [cursor=pointer]
+          - img [ref=e86]
+        - generic [ref=e91]:
+          - generic [ref=e93]:
+            - generic [ref=e95]:
+              - text: 你知道有幾多位
+              - text: 基金用戶在賺錢嗎？
+            - generic [ref=e97]: 查看 ZA Bank 基金服務報告 探索投資趨勢
+            - link "查看詳情" [ref=e102] [cursor=pointer]:
+              - /url: https://bank.za.group/invest/hk/annual-report?hide_app_bar=true
+          - img [ref=e106]
+      - generic [ref=e114]:
+        - generic [ref=e115]: ZA Bank 基金投資服務
+        - generic [ref=e119] [cursor=pointer]:
+          - generic:
+            - img
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - generic [ref=e128]:
+            - generic [ref=e129]: 做好平台
+            - list [ref=e130]:
+              - listitem [ref=e131]:
+                - generic [ref=e132]: 所有基金 0% 認購費*，助你善用一分一毫
+          - img [ref=e135]
+        - generic [ref=e136]:
+          - generic [ref=e138]:
+            - generic [ref=e139]: 做好體驗
+            - list [ref=e140]:
+              - listitem [ref=e141]:
+                - generic [ref=e142]:
+                  - text: 開通投資戶口後即可認購基金。由開戶到認購，最快 1 分鐘完成
+                  - superscript [ref=e143]: "1"
+          - img [ref=e146]
+        - generic [ref=e147]:
+          - generic [ref=e149]:
+            - generic [ref=e150]: 做好產品
+            - list [ref=e151]:
+              - listitem [ref=e152]:
+                - generic [ref=e153]: 隨你選擇多款基金主題，由科技、消費、天然資源、健康到 ESG 一應俱全
+          - img [ref=e156]
+        - generic [ref=e157]:
+          - generic [ref=e159]:
+            - generic [ref=e160]: 做好信譽
+            - list [ref=e161]:
+              - listitem [ref=e162]:
+                - generic [ref=e163]: 夥拍全球多間頂尖的基金公司，包括聯博、安聯、富達、富蘭克林鄧普頓、泰康、瑞銀等等，呈獻優質基金品牌的產品。
+          - img [ref=e166]
+        - generic [ref=e167]:
+          - generic [ref=e169]:
+            - generic [ref=e170]: 開始你的投資之旅
+            - list [ref=e171]:
+              - listitem [ref=e172]:
+                - generic [ref=e173]: 隨時隨地用 ZA Bank 的基金投資服務，自主投資。
+          - img [ref=e176]
+      - generic [ref=e181]:
+        - generic [ref=e182]: 頂尖基金公司
+        - generic [ref=e183]: 夥拍全球多間頂尖的基金公司，呈獻優質基金品牌的產品。
+        - generic [ref=e185]:
+          - img [ref=e188] [cursor=pointer]
+          - img [ref=e191] [cursor=pointer]
+          - img [ref=e194] [cursor=pointer]
+          - img [ref=e197] [cursor=pointer]
+          - img [ref=e200] [cursor=pointer]
+          - img [ref=e203] [cursor=pointer]
+      - generic [ref=e208]:
+        - generic [ref=e209]: 常見問題
+        - generic [ref=e211]:
+          - generic [ref=e213]:
+            - generic [ref=e215] [cursor=pointer]:
+              - generic [ref=e216]: 怎樣認購基金？
+              - img [ref=e218]
+            - generic [ref=e223] [cursor=pointer]:
+              - generic [ref=e224]: 怎樣贖回基金？
+              - img [ref=e226]
+            - generic [ref=e231] [cursor=pointer]:
+              - generic [ref=e232]: 贖回基金後多久才會收到贖回款項？
+              - img [ref=e234]
+            - generic [ref=e239] [cursor=pointer]:
+              - generic [ref=e240]: 基金報價是當日的交易價格嗎？
+              - img [ref=e242]
+          - link "更多問題" [ref=e246] [cursor=pointer]:
+            - /url: https://za.group/hk/help-center
+            - generic [ref=e247]: 更多問題
+            - img [ref=e248]
+      - generic [ref=e255]:
+        - generic [ref=e257]:
+          - text: 1. 開立投資賬戶所需的時間取決於實際情況而定。一般而言，在無需提交額外資料的情況下，現有 ZA Bank 用戶最快可於 1 分鐘內開通投資賬戶並完成認購基金。
+          - text: 2.如需要了解更多投資服務的條款及細則，請按
+          - link "「投資服務條款及細則」" [ref=e258] [cursor=pointer]:
+            - /url: https://bank-invest.za.group/agreement/pdf/zh_HK/1000302
+          - text: 。
+          - text: "*由即日起至 2026 年7 月 31 日（包括首尾兩日），已開通 ZA Bank 基金交易服務的零售銀行用戶認購基金可享 0% 基金認購費優惠，以及所有基金的贖回費豁免。優惠受其"
+          - link "「條款及細則」" [ref=e259] [cursor=pointer]:
+            - /url: https://bank-invest.za.group/agreement/html/zh_HK/1001923
+          - text: 約束。
+        - generic [ref=e261]:
+          - text: 基金的主要風險
+          - text: ·投資者應閱讀基金的銷售文件，以了解風險因素的進一步詳情。
+          - text: ·股票風險：股票市場可能大幅波動，而股價可能急升急跌，並將直接影響基金的資產淨值，當股票市場極為反覆，基金的資產淨值可能大幅波動。
+          - text: ·固定收益證券風險：固定收益證券的價值將會受到利率及貨幣匯率波動以及發行人信貸質素變化而轉變。投資於固定收益證券或須承受個别發行人不履行付款或其他責任的信貸風險。
+          - text: ·新興市場風險：投資於新興和較落後市場或須承受重大風險，包括政治和經濟風險、法律及監管風險、市場及結算風險、執行及交易對手方風險及貨幣風險。
+          - text: ·國家/行業風險：個別基金可顯著投資於單一國家或行業，因而承受較高的資金集中風險；其價格波動及流動性風險會高於奉行較多元化投資政策的基金。
+          - text: ·滙率風險：如投資收益並非以港元計算，投資者需要承受滙率波動的風險。
+        - generic [ref=e263]:
+          - text: "免責聲明:"
+          - text: 本平台只列出ZA Bank分銷的香港證券及期貨事務監察委員會(「證監會」)認可的基金。證監會認可不等如對該基金作出推介或認許，亦不是對該基金的商業利弊或表現作出保證，更不代表該基金適合所有投資者，或認許該基金適合任何個別投資者或任何類別的投資者。本平台之內容並未經證監會或任何香港的監管機構審閱。本平台只供個人作非商業用途及僅供一般資料及參考之用，用戶不得以任何方式將任何資料發放予他人。本平台所載資料只供參考及並不構成對任何人士提出任何金融產品交易的招攬、邀請或建議，亦不應視作構成對將來走勢的任何預測。投資者不應單憑本平台之內容而作出投資決定。
+        - generic [ref=e265]:
+          - text: 重要風險聲明
+          - text: 投資涉及風險。投資產品價格可升可跌，甚至變成毫無價值。過往表現並非日後表現的指標。投資未必一定能夠賺取利潤，亦可能會招致損失。此平台的資料只供參考，並不構成及不應被視為任何建議、推銷、游說客戶認購或出售任何投資產品。投資者應根據本身投資經驗、投資目標、財務狀況及承擔風險程度等因素去衡量是否適合投資於該產品上。若有需要，請諮詢獨立專業建議。投資者作出任何投資決定前，應詳細閱讀有關之章則及條件，投資產品認購章程及其風險披露聲明。本平台之內容並未經證監會或任何香港的監管機構審閱。 ZA Bank 以代理人身份辦理你的指示。投資產品由第三方提供。若因銷售過程或處理有關交易產生合資格爭議 (定義見金融糾紛調解計劃的金融糾紛調解中心的職權範圍)，ZA Bank 會與你進行金融糾紛調解計劃程序；然而，對於有關產品的合約條款的任何爭議，應由第三方產品發行人與你直接解決。ZA Bank 無意讓任何人於任何受限制或未獲法律或法規授權分發或使用此平台的司法管轄區、國家或地區內，分發或使用此平台。如你並非身處香港，我們或未獲授權於你身處或居住的國家或地區向你提供產品及服務。
+    - generic [ref=e266]:
+      - generic [ref=e268]:
+        - generic [ref=e269]:
+          - generic [ref=e270]: 關於我們
+          - generic [ref=e271]:
+            - link "關於 ZA Bank" [ref=e273] [cursor=pointer]:
+              - /url: /hk/hkno1digitalbank
+            - link "新聞中心" [ref=e275] [cursor=pointer]:
+              - /url: /hk/about-us#index=news
+            - link "企業管治" [ref=e277] [cursor=pointer]:
+              - /url: /hk/about-us#index=board
+            - link "監管披露" [ref=e279] [cursor=pointer]:
+              - /url: /hk/about-us#index=supervision
+            - link "財務報告" [ref=e281] [cursor=pointer]:
+              - /url: /hk/about-us#index=finance
+        - generic [ref=e282]:
+          - generic [ref=e283]: 常用連結
+          - generic [ref=e284]:
+            - link "銀行收費表" [ref=e286] [cursor=pointer]:
+              - /url: /rates-list
+            - link "幫助" [ref=e288] [cursor=pointer]:
+              - /url: https://bank.za.group/faqs/Individuals
+            - link "保安提示" [ref=e290] [cursor=pointer]:
+              - /url: /security-tips
+            - link "防止金融犯罪資訊中心" [ref=e292] [cursor=pointer]:
+              - /url: /financial
+            - link "條款及細則" [ref=e294] [cursor=pointer]:
+              - /url: /terms
+            - link "下載中心" [ref=e296] [cursor=pointer]:
+              - /url: /hk/tabledown
+            - link "重要通知" [ref=e298] [cursor=pointer]:
+              - /url: /important-notice
+            - link "開放銀行" [ref=e300] [cursor=pointer]:
+              - /url: https://developer.bank.za.group/hk/
+            - link "產品資料概要" [ref=e302] [cursor=pointer]:
+              - /url: /kfs
+        - generic [ref=e303]:
+          - generic [ref=e304]: 服務與諮詢
+          - generic [ref=e305]:
+            - link "bank.opinion@za.group" [ref=e307] [cursor=pointer]:
+              - /url: mailto:bank.opinion@za.group
+            - generic [ref=e308]: +852 3665 3665
+            - generic [ref=e310]: 線上客服
+            - link "聯繫我們" [ref=e312] [cursor=pointer]:
+              - /url: /consulting-feedback
+            - link "銀行業人才起動計劃申请" [ref=e314] [cursor=pointer]:
+              - /url: /banking-talent-programme
+            - link "無障礙聲明" [ref=e316] [cursor=pointer]:
+              - /url: /accessibility
+            - link "舉報渠道" [ref=e318] [cursor=pointer]:
+              - /url: https://cdn.zaticdn.com/if/zaif-cps-seagull-service/20231226/ZAB_WB_statement_1.0_45002.pdf
+        - generic [ref=e319]:
+          - generic [ref=e320]:
+            - generic [ref=e321]:
+              - link "facebook-logo" [ref=e322] [cursor=pointer]:
+                - /url: https://www.facebook.com/zabankhk
+                - img "facebook-logo" [ref=e323]
+              - link "linkedin-logo" [ref=e324] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/za-international
+                - img "linkedin-logo" [ref=e325]
+              - img "weChart" [ref=e327] [cursor=pointer]
+            - generic [ref=e329]:
+              - link "繁" [ref=e331] [cursor=pointer]:
+                - /url: /fund
+              - text: "|"
+              - link "EN" [ref=e333] [cursor=pointer]:
+                - /url: /en/fund
+          - generic [ref=e334]:
+            - generic [ref=e336]:
+              - generic [ref=e337]:
+                - button "ios-download" [ref=e338] [cursor=pointer]:
+                  - img "ios-download" [ref=e339]
+                - button "android-download" [ref=e340] [cursor=pointer]:
+                  - img "android-download" [ref=e341]
+                - link "apk" [ref=e342] [cursor=pointer]:
+                  - /url: https://cdn.zaticdn.com/bank/app/android.apk
+                  - img "apk" [ref=e343]
+              - img "qr-code" [ref=e344]
+            - list [ref=e345]:
+              - listitem [ref=e346]: · Apple為Apple Inc.商標，已於美國及其他國家╱地區註冊。App Store為Apple Inc.之服務商標。
+              - listitem [ref=e347]: · Google Play™為Google LLC之商標。
+      - generic [ref=e348]:
+        - generic [ref=e349]:
+          - generic [ref=e350]: 本網站由眾安銀行有限公司編製及發布。版權所有 © 2026 眾安銀行有限公司
+          - generic [ref=e351]:
+            - link "網站使用條款" [ref=e352] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000379
+            - text: "|"
+            - link "私隱政策" [ref=e353] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000442
+            - text: "|"
+            - link "收集個人資料通知" [ref=e354] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000378
+        - generic [ref=e355]: "*作為香港首間開業的數字銀行，截至 2024 年 6 月 30 日，ZA Bank 的用戶數量及存款均為香港 8 間數字銀行之中最高。資料來源︰8 間數字銀行中期業績報告。"
+  - alert [ref=e356]

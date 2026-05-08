@@ -6,7 +6,7 @@
  */
 
 import { query, type Query, type SDKMessage, type SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
-import { callAnthropicDirect, shouldUseDirectAPI } from './direct-ai';
+import { callAnthropicDirect, shouldUseDirectAPI } from './direct-ai.js';
 
 export interface AgentQueryOptions {
   prompt: string;
@@ -179,7 +179,7 @@ export async function warmup(): Promise<void> {
   // Check if we should use direct API
   if (shouldUseDirectAPI()) {
     _useDirectApi = true;
-    console.log('  ℹ️  Using direct Anthropic API (ANTHROPIC_API_KEY detected or GitHub Actions)');
+    console.log('  ℹ️  Using Poe API with claude-sonnet-3.7 (POE_API_KEY detected)');
     return;
   }
 

@@ -1,0 +1,131 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - link "logo" [ref=e13] [cursor=pointer]:
+          - /url: /
+          - img "logo" [ref=e14]
+        - generic [ref=e15]:
+          - generic [ref=e17] [cursor=pointer]: Personal
+          - generic [ref=e19] [cursor=pointer]: Business
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e23] [cursor=pointer]: Banking
+          - generic [ref=e25] [cursor=pointer]: ZA Card
+          - generic [ref=e27] [cursor=pointer]: Borrowing
+          - generic [ref=e29] [cursor=pointer]: Invest
+          - link "Insurance" [ref=e32] [cursor=pointer]:
+            - /url: /en/insurance
+          - generic [ref=e33] [cursor=pointer]:
+            - link "Help Center" [ref=e35]:
+              - /url: /en/faqs/Individuals
+            - text: "|"
+          - link "Blog" [ref=e38] [cursor=pointer]:
+            - /url: https://blog.za.group/en
+        - generic [ref=e39]:
+          - generic [ref=e41] [cursor=pointer]: Get our app
+          - generic [ref=e43] [cursor=pointer]:
+            - text: Get an Account
+            - img [ref=e44]
+        - img "国际化" [ref=e48] [cursor=pointer]
+    - generic [ref=e50]:
+      - img "404" [ref=e51]
+      - paragraph [ref=e52]: Something went wrong. Please try again.
+      - link "Back" [ref=e53] [cursor=pointer]:
+        - /url: /en
+    - generic [ref=e54]:
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - generic [ref=e59]: About Us
+          - generic [ref=e60]:
+            - link "About ZA Bank" [ref=e62] [cursor=pointer]:
+              - /url: /en/hkno1digitalbank
+            - link "News Centre" [ref=e64] [cursor=pointer]:
+              - /url: /en/about-us#index=news
+            - link "Corporate Governance" [ref=e66] [cursor=pointer]:
+              - /url: /en/about-us#index=board
+            - link "Regulatory Disclosures" [ref=e68] [cursor=pointer]:
+              - /url: /en/about-us#index=supervision
+            - link "Financial Reports" [ref=e70] [cursor=pointer]:
+              - /url: /en/about-us#index=finance
+        - generic [ref=e71]:
+          - generic [ref=e72]: Useful Links
+          - generic [ref=e73]:
+            - link "Fees & Charges" [ref=e75] [cursor=pointer]:
+              - /url: /en/rates-list
+            - link "Support" [ref=e77] [cursor=pointer]:
+              - /url: https://bank.za.group/en/faqs/Individuals
+            - link "Security Tips" [ref=e79] [cursor=pointer]:
+              - /url: /en/security-tips
+            - link "Financial Crime Prevention Information Centre" [ref=e81] [cursor=pointer]:
+              - /url: /en/financial
+            - link "Terms and Conditions" [ref=e83] [cursor=pointer]:
+              - /url: /en/terms
+            - link "Download Centre" [ref=e85] [cursor=pointer]:
+              - /url: /en/tabledown
+            - link "Important Notices" [ref=e87] [cursor=pointer]:
+              - /url: /en/important-notice
+            - link "Open Banking" [ref=e89] [cursor=pointer]:
+              - /url: https://developer.bank.za.group/en/
+            - link "Key Facts Statement" [ref=e91] [cursor=pointer]:
+              - /url: /en/kfs
+        - generic [ref=e92]:
+          - generic [ref=e93]: Service & Consulting
+          - generic [ref=e94]:
+            - link "bank.opinion@za.group" [ref=e96] [cursor=pointer]:
+              - /url: mailto:bank.opinion@za.group
+            - generic [ref=e97]: +852 3665 3665
+            - generic [ref=e99]: Online Live Chat
+            - link "Contact Us" [ref=e101] [cursor=pointer]:
+              - /url: /en/consulting-feedback
+            - link "Banking Talent Programme Application" [ref=e103] [cursor=pointer]:
+              - /url: /en/banking-talent-programme
+            - link "Accessibility statement" [ref=e105] [cursor=pointer]:
+              - /url: /en/accessibility
+            - link "Whistleblowing Channel" [ref=e107] [cursor=pointer]:
+              - /url: https://cdn.zaticdn.com/if/zaif-cps-seagull-service/20231226/ZAB_WB_statement_1.0_45002.pdf
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - link "facebook-logo" [ref=e111] [cursor=pointer]:
+                - /url: https://www.facebook.com/zabankhk
+                - img "facebook-logo" [ref=e112]
+              - link "linkedin-logo" [ref=e113] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/za-international
+                - img "linkedin-logo" [ref=e114]
+              - img "weChart" [ref=e116] [cursor=pointer]
+            - generic [ref=e118]:
+              - link "繁" [ref=e120] [cursor=pointer]:
+                - /url: /promotion
+              - text: "|"
+              - link "EN" [ref=e122] [cursor=pointer]:
+                - /url: /en/promotion
+          - generic [ref=e123]:
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - button "ios-download" [ref=e127] [cursor=pointer]:
+                  - img "ios-download" [ref=e128]
+                - button "android-download" [ref=e129] [cursor=pointer]:
+                  - img "android-download" [ref=e130]
+                - link "apk" [ref=e131] [cursor=pointer]:
+                  - /url: https://cdn.zaticdn.com/bank/app/android.apk
+                  - img "apk" [ref=e132]
+              - img "qr-code" [ref=e133]
+            - list [ref=e134]:
+              - listitem [ref=e135]: · Apple is a trademark of Apple Inc., registered in the U.S.and other countries. App Store is a service mark of Apple Inc.
+              - listitem [ref=e136]: · Google Play™ is a Trademark of Google LLC.
+      - generic [ref=e137]:
+        - generic [ref=e138]:
+          - generic [ref=e139]: This website is prepared and issued by ZA Bank Limited. All Rights Reserved © 2026 ZA Bank Limited
+          - generic [ref=e140]:
+            - link "Conditions of Use of Website" [ref=e141] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/en_US/1000379
+            - text: "|"
+            - link "Privacy Policy" [ref=e142] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/en_US/1000442
+            - text: "|"
+            - link "Personal Information Collection Statement" [ref=e143] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/en_US/1000378
+        - generic [ref=e144]: "*As the first digital bank to launch in Hong Kong, ZA Bank had the highest number of users and customer deposits among the city’s eight digital banks as of 30 June 2024. Source: Interim reports of 8 digital banks."
+    - img "kf-icon" [ref=e149] [cursor=pointer]
+  - alert [ref=e150]

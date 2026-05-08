@@ -5,10 +5,10 @@
  * @author Alfie
  */
 
-import { runAgent, type AgentResult } from './client';
-import { type PageText } from './scraper';
-import { BANK_CONFIGS, type BankConfig } from '../config/banks';
-import { hktToday } from '../utils/hkt';
+import { runAgent, type AgentResult } from './client.js';
+import { type PageText } from './scraper.js';
+import { BANK_CONFIGS, type BankConfig } from '../config/banks.js';
+import { hktToday } from '../utils/hkt.js';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 

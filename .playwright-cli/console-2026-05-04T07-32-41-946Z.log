@@ -1,0 +1,2 @@
+[     163ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://www.welab.bank/en/feature/:0
+[     792ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 2564735157096041. @ https://connect.facebook.net/en_US/fbevents.js:181

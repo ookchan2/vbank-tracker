@@ -5,8 +5,8 @@
  * @author Alfie
  */
 
-import { runAgent, type AgentResult } from './client';
-import type { RawPromotion } from './scraper';
+import { runAgent, type AgentResult } from './client.js';
+import type { RawPromotion } from './scraper.js';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

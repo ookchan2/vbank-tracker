@@ -1,0 +1,460 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - link "Mox Logo" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - img "Mox Logo" [ref=e11]
+        - img "Standard Chartered" [ref=e13]
+      - generic [ref=e14]:
+        - navigation [ref=e16]:
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - link "Mox+" [ref=e19] [cursor=pointer]:
+                - /url: /MoxPlus-Updates/
+            - listitem [ref=e20]:
+              - link "Travel Playbook" [ref=e21] [cursor=pointer]:
+                - /url: /all-round-travel-playbook/
+            - listitem [ref=e22]:
+              - button "Features" [ref=e23] [cursor=pointer]
+              - list:
+                - listitem:
+                  - link "Mox Credit Card":
+                    - /url: /features/mox-credit/
+                - listitem:
+                  - link "Mox Invest":
+                    - /url: /features/mox-invest/
+                - listitem:
+                  - link "Mox Insure":
+                    - /url: /features/mox-insure/
+                - listitem:
+                  - link "Smart Banking":
+                    - /url: /features/smart-banking/
+                - listitem:
+                  - link "Smart Borrowing":
+                    - /url: /features/smart-borrowing/
+                - listitem:
+                  - link "Instant Loan":
+                    - /url: /promotions/instant-loan/
+                - listitem:
+                  - link "Smart Saving":
+                    - /url: /features/smart-saving/
+                - listitem:
+                  - link "Smart Spending":
+                    - /url: /features/smart-spending/
+                - listitem:
+                  - link "Mox FX":
+                    - /url: /features/mox-fx/
+                - listitem:
+                  - link "Mox at a glance":
+                    - /url: /features/mox-at-a-glance/
+            - listitem [ref=e24]:
+              - link "Promotions" [ref=e25] [cursor=pointer]:
+                - /url: /promotions/
+            - listitem [ref=e26]:
+              - link "About us" [ref=e27] [cursor=pointer]:
+                - /url: /about-us/
+            - listitem [ref=e28]:
+              - link "FAQ" [ref=e29] [cursor=pointer]:
+                - /url: /faqs/
+        - button "Get Mox" [ref=e30] [cursor=pointer]
+        - img [ref=e35] [cursor=pointer]
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - link "Mox":
+                    - /url: /
+                    - img "Mox"
+                  - generic:
+                    - img "Standard Chartered"
+              - generic:
+                - button
+      - generic:
+        - generic:
+          - generic:
+            - list:
+              - listitem:
+                - link "Mox+":
+                  - /url: /MoxPlus-Updates/
+              - listitem:
+                - link "Travel Playbook":
+                  - /url: /all-round-travel-playbook/
+              - listitem:
+                - button "Features"
+                - list:
+                  - listitem:
+                    - link "Mox Credit Card":
+                      - /url: /features/mox-credit/
+                  - listitem:
+                    - link "Mox Invest":
+                      - /url: /features/mox-invest/
+                  - listitem:
+                    - link "Mox Insure":
+                      - /url: /features/mox-insure/
+                  - listitem:
+                    - link "Smart Banking":
+                      - /url: /features/smart-banking/
+                  - listitem:
+                    - link "Smart Borrowing":
+                      - /url: /features/smart-borrowing/
+                  - listitem:
+                    - link "Instant Loan":
+                      - /url: /promotions/instant-loan/
+                  - listitem:
+                    - link "Smart Saving":
+                      - /url: /features/smart-saving/
+                  - listitem:
+                    - link "Smart Spending":
+                      - /url: /features/smart-spending/
+                  - listitem:
+                    - link "Mox FX":
+                      - /url: /features/mox-fx/
+                  - listitem:
+                    - link "Mox at a glance":
+                      - /url: /features/mox-at-a-glance/
+              - listitem:
+                - link "Promotions":
+                  - /url: /promotions/
+              - listitem:
+                - link "About us":
+                  - /url: /about-us/
+              - listitem:
+                - link "FAQ":
+                  - /url: /faqs/
+  - generic [ref=e40]:
+    - generic [ref=e47]:
+      - heading "Save Big‼️ Curated Gifts with an Exclusive Discount" [level=2] [ref=e52]
+      - paragraph [ref=e61]: Mox Zone brings you a special selection of New Year spirits, home essentials, and popular tech gear¹˙². Pay with your Mox Credit Card³ for members-only discounts, and treat your loved ones without the usual price tag.
+    - generic [ref=e65]:
+      - generic [ref=e69]:
+        - img [ref=e71]
+        - 'img "⭐Featured product: Hibiki 100th Anniversary Suntory Whisky as low as HKD5,388" [ref=e73]'
+      - generic [ref=e76]:
+        - 'heading "⭐Featured product: Hibiki 100th Anniversary Suntory Whisky as low as HKD5,388" [level=4] [ref=e77]'
+        - generic [ref=e79]:
+          - paragraph [ref=e80]: A century in a bottle. This rare blend unites whiskies aged over 17 years with precious Yamazaki Mizunara oak cask malt over 30 years and mellow Chita grain whisky, creating deep notes of sweet citrus and subtle tartness with a long, memorable finish.
+          - paragraph [ref=e81]: The bottle is art itself, wrapped in Japanese calligraphy ("みをむすぶ") symbolizing a tie to the future and wishes for happiness. More than a gift—it's a legacy.
+          - generic [ref=e82]: Original price HKD6,888
+          - text: Mox exclusive price HKD5,388
+          - text: "🎊Party Must-Have: HKD580 for 6 bottles"
+          - text: Get 6 bottles of select fine wines for just HKD580. Limited spots available — while stocks last!
+    - generic [ref=e86]:
+      - generic [ref=e90]:
+        - img [ref=e92]
+        - img "Exclusive discounts on 100+ hot tech picks all year round" [ref=e94]
+      - generic [ref=e97]:
+        - heading "Exclusive discounts on 100+ hot tech picks all year round" [level=4] [ref=e98]
+        - generic [ref=e100]:
+          - paragraph [ref=e101]: "Mox Zone has handpicked some of the hottest tech gear for you – and with your Mox Credit Card, you’ll unlock exclusive discounts. Check this out:"
+          - list [ref=e102]:
+            - listitem [ref=e103]:
+              - strong [ref=e104]: Medicube x Crayon Shinchan Age-R Booster Pro 6-in-1 Facial Beauty Device
+          - paragraph [ref=e105]
+          - generic [ref=e106]: Original price HKD4,900
+          - text: Mox exclusive price as low as HKD2,309
+          - paragraph
+          - list [ref=e107]:
+            - listitem [ref=e108]:
+              - strong [ref=e109]: Philips - RO Water Dispenser ADD6920GY/90
+          - paragraph [ref=e110]
+          - generic [ref=e111]: Original price HKD4,288
+          - text: Mox exclusive price HKD2,399
+          - paragraph
+          - list [ref=e112]:
+            - listitem [ref=e113]:
+              - strong [ref=e114]: Dreame V18S Aqua Wet and Dry Vacuum
+          - paragraph [ref=e115]
+          - generic [ref=e116]: Original price HKD3,699
+          - text: Mox exclusive price HKD2,899
+          - paragraph
+          - list [ref=e117]:
+            - listitem [ref=e118]:
+              - strong [ref=e119]: PlayStation®5 console (Slim)
+          - paragraph [ref=e120]
+          - generic [ref=e121]: Original price HKD3,780
+          - text: Mox exclusive price HKD3,580
+          - paragraph
+          - list [ref=e122]:
+            - listitem [ref=e123]:
+              - strong [ref=e124]: Marshall ACTON III Bluetooth Speaker
+          - paragraph [ref=e125]
+          - generic [ref=e126]: Original price HKD2,499
+          - text: Mox exclusive price HKD1,899
+          - paragraph
+    - generic [ref=e130]:
+      - generic [ref=e134]:
+        - img [ref=e136]
+        - img "Don’t wait! Link your Mox Card to The Club account⁴ today and start unlocking perks!" [ref=e138]
+      - generic [ref=e141]:
+        - heading "Don’t wait! Link your Mox Card to The Club account⁴ today and start unlocking perks!" [level=4] [ref=e142]
+        - generic [ref=e144]:
+          - paragraph [ref=e145]:
+            - strong [ref=e146]: "Step 1: Link your card"
+          - paragraph [ref=e147]: Open the Mox app → Click ‘Mox Rewards’ → Click ‘Clubpoints’ → Click "Link now" → Follow the instructions to easily link your Mox Card to The Club membership, and you’re ready to enjoy your Privilege Pass.
+          - paragraph [ref=e148]:
+            - strong [ref=e149]: "Step 2: Receive your Privilege Pass activation info⁶"
+          - paragraph [ref=e150]: "Once activated, you’ll be notified in 3 ways:"
+          - list [ref=e151]:
+            - listitem [ref=e152]:
+              - paragraph [ref=e153]: Reminders section on The Club app homepage after login
+            - listitem [ref=e154]:
+              - paragraph [ref=e155]: Via the “Exclusive Rewards" section in The Club Member Information page
+            - listitem [ref=e156]:
+              - paragraph [ref=e157]: By Email or SMS from The Club
+    - generic [ref=e161]:
+      - generic [ref=e165]:
+        - img [ref=e167]
+        - img "Grab it early, enjoy it sooner – shop your faves now on Mox Zone!" [ref=e169]
+      - generic [ref=e172]:
+        - heading "Grab it early, enjoy it sooner – shop your faves now on Mox Zone!" [level=4] [ref=e173]
+        - generic [ref=e175]:
+          - paragraph [ref=e176]: "2 ways to check out Mox Zone:"
+          - paragraph [ref=e177]: 💻On The Club website Click on the below button to head directly to the designated page on The Club
+          - paragraph [ref=e178]: 🤳🏻On The Club App Download The Club App from the App Store or Google Play
+    - button "Visit The Club website now" [ref=e184] [cursor=pointer]:
+      - generic [ref=e185]: Visit The Club website now
+    - generic [ref=e189]:
+      - generic [ref=e193]:
+        - img [ref=e195]
+        - img "What’s more? Earn up to 2% unlimited CashBack or unlimited HKD4=1 mile⁵" [ref=e197]
+      - generic [ref=e200]:
+        - heading "What’s more? Earn up to 2% unlimited CashBack or unlimited HKD4=1 mile⁵" [level=4] [ref=e201]
+        - paragraph [ref=e204]: Simply keep HKD250,000 eligible balance in your Mox Account (excluding Time Deposits). You can enjoy unlimited 2% CashBack or switch anytime⁶ to earn unlimited HKD4 = 1 mile with your Mox Credit Card to maximize the value of every spend.
+    - generic [ref=e206]:
+      - heading "Not a Mox customer yet? Open an account now with invitation code \"CLUBLINK\"⁷" [level=2] [ref=e211]
+      - generic [ref=e219]:
+        - paragraph [ref=e220]: Use your Mox Credit Card at The Club and earn more than just CashBack! From now until 30 June 2026, open a Mox Account and apply for a Mox Credit Card with invitation code “CLUBLINK” to get up to HKD2,100 in cash rewards!
+        - paragraph [ref=e221]:
+          - link "Discover the details now" [ref=e222] [cursor=pointer]:
+            - /url: https://mox.com/promotions/CLUBLINK/
+    - generic [ref=e227]:
+      - generic [ref=e228]: Earn Cash Rewards now – simply enter the Invitation Code below when you open a Mox Account.
+      - generic [ref=e230]: Invitation Code
+      - generic [ref=e232]:
+        - generic [ref=e233]: CLUBLINK
+        - generic [ref=e234] [cursor=pointer]: Copy
+      - generic [ref=e235]: The application process is simple!
+      - generic [ref=e236]: "Here’s how to open an account and redeem your reward:"
+      - generic [ref=e237]:
+        - strong [ref=e239]: "1"
+        - generic [ref=e240]: Download Mox app
+        - img [ref=e242]
+      - generic [ref=e243]:
+        - strong [ref=e245]: "2"
+        - generic [ref=e246]: Enter the invitation Code “CLUBLINK” when you open a Mox Account
+      - generic [ref=e248]:
+        - strong [ref=e250]: "3"
+        - generic [ref=e251]: To make scanning your identity card easier, we recommend placing it on a dark surface and ensuring sufficient lighting. After successful scanning the front of your identity card, flip it over and scan the back.
+        - img [ref=e253]
+      - generic [ref=e254]:
+        - strong [ref=e256]: "4"
+        - generic [ref=e257]: When taking a selfie, please keep your phone at a horizontal angle for easier facial recognition. Avoid having other people in the background when taking a selfie.
+        - img [ref=e259]
+      - generic [ref=e260]:
+        - strong [ref=e262]: "5"
+        - generic [ref=e263]: After you’ve successfully opened your Mox Account by 30 June 2026 and complete the spending requirement on Mox Credit Card during the promotion period, the Cash Rewards will be all yours!
+        - img [ref=e265]
+    - generic [ref=e267]:
+      - heading "Frequently Asked Questions" [level=2] [ref=e269]
+      - generic [ref=e273]:
+        - button "I’ve replaced my expired Mox Card. How do I update my Mox Card details at The Club? Arrow" [ref=e274] [cursor=pointer]:
+          - generic [ref=e275]: I’ve replaced my expired Mox Card. How do I update my Mox Card details at The Club?
+          - img "Arrow" [ref=e277]
+        - generic [ref=e280]:
+          - paragraph [ref=e281]: "You can update your Mox Card details at The Club using one of two methods:"
+          - paragraph [ref=e282]:
+            - strong [ref=e283]: "Method 1: Remove the old card before shopping and add the new card during payment"
+          - list [ref=e284]:
+            - listitem [ref=e285]: On The Club homepage, click “Profile” to access the “Member Profile” page.
+            - listitem [ref=e286]: Under “Settings”, select “My Credit Card”.
+            - listitem [ref=e287]: Click the “trash bin” icon to remove the existing Mox Card.
+            - listitem [ref=e288]: Start shopping and add your new Mox Card details when making a new purchase.
+          - paragraph [ref=e289]:
+            - strong [ref=e290]: "Method 2: Add the new card directly during checkout"
+          - list [ref=e291]:
+            - listitem [ref=e292]: At checkout, select “Mox”. Ignore the previously linked Mox Card, click “+ use another Credit Card”, and then click “Preview Order” to proceed.
+            - listitem [ref=e293]: Click “Place Order” to access the credit card details page.
+            - listitem [ref=e294]: Enter your new Mox Card details to complete the transaction.
+    - generic [ref=e298]:
+      - paragraph [ref=e299]:
+        - strong [ref=e300]: To borrow or not to borrow? Borrow only if you can repay!
+      - paragraph [ref=e301]:
+        - text: ^
+        - link "\"The Club x Mox” Instant Discount Promotion Terms and Conditions" [ref=e302] [cursor=pointer]:
+          - /url: https://www.theclub.com.hk/en/mox-zone.html?utm_source=&utm_medium=website&utm_campaign=2025_mox-zone_traffic
+        - text: apply. Quota is limited, first come, first served.
+      - paragraph [ref=e303]:
+        - text: ¹
+        - link "“Mox Zone Designated Products Offer” Terms and Conditions" [ref=e304] [cursor=pointer]:
+          - /url: https://www.theclub.com.hk/en/mox-zone.html?utm_source=&utm_medium=website&utm_campaign=2025_mox-zone_traffic
+        - text: apply. Quota is limited, first come, first served.
+      - paragraph [ref=e305]:
+        - text: ²
+        - link "Mox Disclaimer" [ref=e306] [cursor=pointer]:
+          - /url: /static/230818_Mox_Disclaimer.pdf
+        - text: applies.
+      - paragraph [ref=e307]: ³The Mox Credit Schedule, the Rewards for Cards Schedule and the Mox Credit Key Facts Statement apply (each of which can be found in the Mox app and/or on our website).
+      - paragraph [ref=e308]:
+        - text: ⁴
+        - link "The Club Membership – Mox Card linkage terms and conditions" [ref=e309] [cursor=pointer]:
+          - /url: https://mox.com/static/260423_The_Club_Membership_Mox_Linkage_Terms_and_Conditions.pdf
+        - text: apply.
+      - paragraph [ref=e310]:
+        - text: ⁵Please refer to the
+        - link "Rewards for Cards Schedule" [ref=e311] [cursor=pointer]:
+          - /url: https://mox.com/legal-documents/general-terms-and-conditions/terms-and-conditions-for-rewards-for-cards-issued-by-mox/
+        - text: "for further details. From 2 April 2026 to 30 June 2026, when you make an eligible Mox Credit Card transaction, if you (a) have completed an Eligible Payroll Transaction of HKD25,000 or more; and/or (b) you have Mox+ (\"Unlocking Criteria\"), then you may earn unlimited 2% CashBack or HKD4 = 1 Asia Mile on the amount of the eligible Mox Credit Card transaction based on your selected Spending Rewards Scheme. From 1 July 2026, if you have satisfied either one of the Unlocking Criteria at the time you make an eligible Mox Credit Card transaction, you will earn unlimited 2% CashBack or HKD5 = 1 Asia Mile on the amount of the eligible Mox Credit Card transaction based on your selected Spending Rewards Scheme. If you have not satisfied the Unlocking Criteria at the time you make an eligible Mox Credit Card transaction, you may still earn unlimited 1% CashBack or HKD10 = 1 Asia Mile on the amount of the eligible Mox Credit Card transaction. “Eligible Payroll Transaction” means a transaction where your employer pays your salary into your Mox Account via FPS, and the transaction is displayed as ‘Salary’ in the Mox app. For the avoidance of doubt, standing instructions or other local electronic transfers are not considered ‘Eligible Payroll Transactions’. Based on your selected Spending Rewards Scheme, you will be eligible to receive: (i) 2% CashBack; or (ii) HKD4 =1 Asia Mile (until 30 June 2026) or HKD5 =1 Asia Mile (from 1 July 2026) during the period beginning on and from the day you complete the Eligible Payroll Transaction and ending on the last day of the next calendar month."
+      - paragraph [ref=e312]:
+        - text: ⁶We will charge a spending rewards switching fee of HKD50 unless we waive this fee if you have Mox+. Please refer to the
+        - link "Mox Credit Key Facts Statements" [ref=e313] [cursor=pointer]:
+          - /url: https://mox.com/legal-documents/key-fact-statements/mox-card-with-credit/
+        - text: and
+        - link "Mox+ Benefits Table" [ref=e314] [cursor=pointer]:
+          - /url: https://mox.com/static/260402_Mox_Plus_Benefits_Table.pdf
+        - text: for further details.
+      - paragraph [ref=e315]:
+        - text: ⁷
+        - link "CLUBLINK Invitation Code Promotion Terms and Conditions" [ref=e316] [cursor=pointer]:
+          - /url: /static/CLUBLINK_TnCs.pdf
+        - text: apply. Quota is limited, first come, first served.
+  - contentinfo [ref=e317]:
+    - generic [ref=e319]:
+      - link "Mox" [ref=e321] [cursor=pointer]:
+        - /url: /
+        - img "Mox" [ref=e322]
+      - generic [ref=e324]:
+        - generic [ref=e325]: in partnership with
+        - link "PCCW" [ref=e326] [cursor=pointer]:
+          - /url: http://www.pccw.com/
+          - img "PCCW" [ref=e327]
+        - link "HKT" [ref=e328] [cursor=pointer]:
+          - /url: https://www.hkt.com/?language=en_US
+          - img "HKT" [ref=e329]
+        - link "Trip.com" [ref=e330] [cursor=pointer]:
+          - /url: https://www.trip.com/?locale=en_xx
+          - img "Trip.com" [ref=e331]
+      - link "Standard Chartered" [ref=e333] [cursor=pointer]:
+        - /url: https://www.sc.com/hk/
+        - img "Standard Chartered" [ref=e334]
+      - generic [ref=e337]:
+        - paragraph [ref=e338]: Features
+        - paragraph [ref=e339]:
+          - link "Mox Credit Card" [ref=e340] [cursor=pointer]:
+            - /url: /features/mox-credit/
+        - paragraph [ref=e341]:
+          - link "Mox Invest" [ref=e342] [cursor=pointer]:
+            - /url: /features/mox-invest/
+        - paragraph [ref=e343]:
+          - link "Mox Insure" [ref=e344] [cursor=pointer]:
+            - /url: /features/mox-insure/
+        - paragraph [ref=e345]:
+          - link "Smart Banking" [ref=e346] [cursor=pointer]:
+            - /url: /features/smart-banking/
+        - paragraph [ref=e347]:
+          - link "Smart Borrowing" [ref=e348] [cursor=pointer]:
+            - /url: /features/smart-borrowing/
+        - paragraph [ref=e349]:
+          - link "Instant Loan" [ref=e350] [cursor=pointer]:
+            - /url: /promotions/instant-loan/
+        - paragraph [ref=e351]:
+          - link "Smart Saving" [ref=e352] [cursor=pointer]:
+            - /url: /features/smart-saving/
+        - paragraph [ref=e353]:
+          - link "Smart Spending" [ref=e354] [cursor=pointer]:
+            - /url: /features/smart-spending/
+        - paragraph [ref=e355]:
+          - link "Mox FX" [ref=e356] [cursor=pointer]:
+            - /url: /features/mox-fx/
+        - paragraph [ref=e357]:
+          - link "Mox at a glance" [ref=e358] [cursor=pointer]:
+            - /url: /features/mox-at-a-glance/
+      - generic [ref=e359]:
+        - paragraph [ref=e360]: The Bank
+        - paragraph [ref=e361]:
+          - link "Promotions" [ref=e362] [cursor=pointer]:
+            - /url: /promotions/
+        - paragraph [ref=e363]:
+          - link "About us" [ref=e364] [cursor=pointer]:
+            - /url: /about-us/
+        - paragraph [ref=e365]:
+          - link "Media" [ref=e366] [cursor=pointer]:
+            - /url: /media/
+        - paragraph [ref=e367]:
+          - link "Careers" [ref=e368] [cursor=pointer]:
+            - /url: /careers/
+        - paragraph [ref=e369]:
+          - link "FAQ" [ref=e370] [cursor=pointer]:
+            - /url: /faqs/
+      - generic [ref=e371]:
+        - paragraph [ref=e372]: Useful links
+        - paragraph [ref=e373]:
+          - link "Legal documents" [ref=e374] [cursor=pointer]:
+            - /url: /legal-documents/
+        - paragraph [ref=e375]:
+          - link "Privacy" [ref=e376] [cursor=pointer]:
+            - /url: /legal-documents/privacy/
+        - paragraph [ref=e377]:
+          - link "Cookie policy" [ref=e378] [cursor=pointer]:
+            - /url: /legal-documents/cookie-policy/
+        - paragraph [ref=e379]:
+          - link "Regulatory disclosures" [ref=e380] [cursor=pointer]:
+            - /url: /regulatory-disclosures/
+        - paragraph [ref=e381]:
+          - link "Security tips" [ref=e382] [cursor=pointer]:
+            - /url: /security-tips/
+        - paragraph [ref=e383]:
+          - link "Submit a vulnerability" [ref=e384] [cursor=pointer]:
+            - /url: /submit-a-vulnerability/
+        - paragraph [ref=e385]:
+          - link "Important notices" [ref=e386] [cursor=pointer]:
+            - /url: /important-notices/
+        - paragraph [ref=e387]:
+          - link "Open Banking" [ref=e388] [cursor=pointer]:
+            - /url: /open-banking/
+        - paragraph [ref=e389]:
+          - link "Sitemap" [ref=e390] [cursor=pointer]:
+            - /url: /sitemap/
+      - generic [ref=e391]:
+        - paragraph [ref=e392]: Contact us
+        - paragraph [ref=e393]:
+          - link "Send us a message" [ref=e394] [cursor=pointer]:
+            - /url: /contact-us/
+        - paragraph [ref=e395]:
+          - link "+852 2888 8228" [ref=e396] [cursor=pointer]:
+            - /url: tel:+85228888228
+        - paragraph [ref=e397]:
+          - link "care@mox.com" [ref=e398] [cursor=pointer]:
+            - /url: mailto:care@mox.com
+        - paragraph [ref=e399]:
+          - link "Employment Verification" [ref=e400] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+        - paragraph [ref=e401]:
+          - link "askhr@sc.com" [ref=e402] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+      - generic [ref=e403]:
+        - generic:
+          - generic:
+            - link:
+              - /url: https://www.facebook.com/moxbankhk/
+            - link:
+              - /url: https://www.instagram.com/moxbank/
+            - link:
+              - /url: https://www.linkedin.com/company/mox-bank/
+            - link:
+              - /url: https://www.youtube.com/channel/UC41ce2iw3ytvBbJCwlF3iiw/featured
+        - generic [ref=e404]:
+          - generic [ref=e406]:
+            - img "apple-store" [ref=e410] [cursor=pointer]
+            - img "google-play" [ref=e414] [cursor=pointer]
+          - generic [ref=e417]:
+            - paragraph [ref=e418]:
+              - text: The above are the only authorized channels for downloading Mox App. To protect your information, please do not download our app via other channels.
+              - link "Click here for further information." [ref=e419] [cursor=pointer]:
+                - /url: /security-tips/
+            - paragraph [ref=e420]: App Store and the Apple logo are trademarks or registered trademarks of Apple Inc., registered in the United States and other countries. Google Play and the Google Play logo are trademarks or registered trademarks of Google LLC, registered in the United States and other countries.
+        - button [ref=e422] [cursor=pointer]
+      - generic [ref=e424]: ©2026 Mox Bank. All rights reserved

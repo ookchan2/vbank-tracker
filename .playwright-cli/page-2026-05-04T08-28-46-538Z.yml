@@ -1,0 +1,196 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - img [ref=e6] [cursor=pointer]
+      - img [ref=e11] [cursor=pointer]
+      - generic [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: 繁
+        - img [ref=e17]
+    - generic [ref=e20]:
+      - link [ref=e22] [cursor=pointer]:
+        - /url: /zh_HK/
+        - img [ref=e23]
+      - generic [ref=e24]:
+        - navigation [ref=e25]:
+          - list [ref=e26]:
+            - listitem [ref=e27]:
+              - link "livi Personal" [ref=e28] [cursor=pointer]:
+                - /url: /zh_HK/features/livisave.html
+            - listitem [ref=e29]:
+              - link "livi Business" [ref=e30] [cursor=pointer]:
+                - /url: /zh_HK/business/Business-Instalment-Loan.html
+            - listitem [ref=e31]:
+              - link "隨你賞" [ref=e32] [cursor=pointer]:
+                - /url: /zh_HK/happiness/livi-Rewards.html
+            - listitem [ref=e33]:
+              - link "創新動向" [ref=e34] [cursor=pointer]:
+                - /url: /zh_HK/Innovation.html
+            - listitem [ref=e35]:
+              - link "我們的故事" [ref=e36] [cursor=pointer]:
+                - /url: /zh_HK/our-story.html
+            - listitem [ref=e37]:
+              - link "協助及支援" [ref=e38] [cursor=pointer]:
+                - /url: /zh_HK/help/faqs.html
+        - link "下載App" [ref=e39] [cursor=pointer]:
+          - /url: /zh_HK/download-app.html
+  - main [ref=e40]:
+    - paragraph [ref=e43]:
+      - generic [ref=e44]: 捐款致謝及稅務扣除安排
+      - text: 政府衷心感謝各界對「大埔宏福苑援助基金」的慷慨支持，並希望向捐款人發出感謝信表達謝意。如欲收取感謝信，請到此網站登記：
+      - link "https://eform.cefs.gov.hk/form/hab033/tc/" [ref=e45] [cursor=pointer]:
+        - /url: https://eform.cefs.gov.hk/form/hab033/tc/
+      - text: 為方便市民處理稅務扣除，政府亦為捐款至「大埔宏福苑援助基金」的捐款人作出特別安排。
+      - text: 凡五萬港元或以下的捐款，若以轉賬方式過戶至「大埔宏福苑援助基金」戶口，捐款人可不用申領捐款收據亦可作稅務扣除申請，惟捐款人必須保留有關捐款記錄，如銀行轉賬交易單據、存款單、自動櫃員機收據、網上交易記錄、銀行月結單等，證明捐款由捐款人賬戶直接存入「大埔宏福苑援助基金」賬戶，以便日後被稅務局抽查時可呈交查驗。
+      - text: 詳情請瀏覽：
+      - link "https://www.taipofire.gov.hk/chi/taxdeduction.html" [ref=e46] [cursor=pointer]:
+        - /url: https://www.taipofire.gov.hk/chi/taxdeduction.html
+    - generic [ref=e49]:
+      - heading "liviSave 輕鬆開戶儲蓄" [level=1] [ref=e50]:
+        - text: liviSave
+        - text: 輕鬆開戶儲蓄
+      - paragraph [ref=e51]: liviSave 讓儲蓄更有價值。存錢到 liviSave 可享特惠儲蓄存款年利率*，不設最低結餘門檻。用手機隨時隨地開戶，100%線上完成，簡單快捷，無需繁複資料。立即開戶，輕鬆儲更多！
+      - paragraph [ref=e52]: "*受條款及細則約束。"
+      - link "了解更多" [ref=e54] [cursor=pointer]:
+        - /url: ../zh_HK/features/livisave.html
+    - generic [ref=e57]:
+      - generic [ref=e60]:
+        - generic [ref=e66]:
+          - generic [ref=e69]:
+            - heading "liviSave 儲蓄靈活自主" [level=1] [ref=e70]:
+              - text: liviSave
+              - text: 儲蓄靈活自主
+            - paragraph [ref=e71]: 不設最低存款結餘要求、不設手續費。開設liviSave，照顧你消費和儲蓄所需。
+            - link "了解更多" [ref=e74] [cursor=pointer]:
+              - /url: /zh_HK/features/livisave.html
+          - generic [ref=e77]:
+            - img [ref=e85]
+            - img
+        - generic [ref=e91]:
+          - generic [ref=e94]:
+            - heading [level=1] [ref=e95]: 消費簡便快捷
+            - paragraph [ref=e96]: 用二維碼消費，於全港購物商戶享受輕鬆、快捷的安全購物體驗。
+            - link [ref=e99] [cursor=pointer]:
+              - /url: /zh_HK/features/qr-payment.html
+              - text: 了解更多
+          - generic [ref=e102]:
+            - img [ref=e110]
+            - img
+        - generic [ref=e116]:
+          - generic [ref=e119]:
+            - heading [level=1] [ref=e120]: 即時輕鬆轉賬
+            - paragraph [ref=e121]: 用「轉數快」隨時隨地迅速完成轉賬。
+            - link [ref=e124] [cursor=pointer]:
+              - /url: /zh_HK/features/transfer.html
+              - text: 了解更多
+          - generic [ref=e127]:
+            - img [ref=e135]
+            - img
+      - button [disabled] [ref=e136] [cursor=pointer]:
+        - img [ref=e137]
+      - button [ref=e140] [cursor=pointer]:
+        - img [ref=e141]
+    - generic [ref=e151]:
+      - img "This is Title" [ref=e154]
+      - generic [ref=e156]:
+        - heading "我們的故事" [level=1] [ref=e157]
+        - generic [ref=e158]: 我們致力提供安全可靠的銀行體驗，讓你的日常生活更具價值，充滿喜悅。
+        - link "了解更多" [ref=e160] [cursor=pointer]:
+          - /url: /zh_HK/our-story.html
+    - generic [ref=e164]:
+      - generic [ref=e166]:
+        - heading "交易安心無憂" [level=1] [ref=e167]
+        - paragraph [ref=e168]: 你在livi的資金和交易均受到多重保障，讓你完全掌握每一筆交易；透過通知提示，讓你對戶口狀況瞭如指掌。以指紋或臉部識別登入，格外安全放心。
+      - img [ref=e171]
+  - generic [ref=e174]:
+    - paragraph [ref=e175]:
+      - text: 本網站使用 Cookies以改善本服務，並為閣下提供更佳體驗。閣下可以通過點擊本網站所載之
+      - link "私隱政策" [ref=e176] [cursor=pointer]:
+        - /url: ../pdf/tc/pps.pdf
+      - text: 詳細閱讀。如閣下繼續瀏覽，即表示了解及同意我們使用 Cookies、及接受有關條款和細則及私隱政策。
+    - link "同意" [ref=e178] [cursor=pointer]:
+      - /url: javascript:void(0)
+  - contentinfo [ref=e179]:
+    - generic [ref=e180]:
+      - generic [ref=e181]:
+        - img [ref=e182]
+        - generic [ref=e183]:
+          - heading "率先體驗 livi！" [level=3] [ref=e184]
+          - paragraph [ref=e185]: 只需沖一杯咖啡的時間，即可開戶。
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - generic [ref=e188]:
+                - link [ref=e189] [cursor=pointer]:
+                  - /url: https://apps.apple.com/hk/app/id1481532757
+                  - img [ref=e190]
+                - link [ref=e191] [cursor=pointer]:
+                  - /url: https://play.google.com/store/apps/details?id=com.livibank.hk
+                  - img [ref=e192]
+                - link [ref=e193] [cursor=pointer]:
+                  - /url: https://cdn.livibank.com/apk/livibank.apk
+                  - img [ref=e194]
+              - generic "https://www.livibank.com/QRCode.html" [ref=e195]:
+                - img "Scan me!" [ref=e196]
+            - list [ref=e197]:
+              - listitem [ref=e198]: Apple 和 Apple 標誌是 Apple Inc. 在美國和其他國家或地區註冊的商標。App Store是 Apple Inc. 的服務商標。
+              - listitem [ref=e199]: Google Play 和 Google Play 標誌均為 Google LLC 的商標。
+              - listitem [ref=e200]: 屏幕顯示僅供參考及說明。
+        - generic [ref=e201]:
+          - generic [ref=e202]:
+            - heading "相關鏈接" [level=6] [ref=e203]
+            - link "重要消息" [ref=e204] [cursor=pointer]:
+              - /url: /zh_HK/important-notices.html
+            - link "保安提示" [ref=e205] [cursor=pointer]:
+              - /url: /zh_HK/security-tips.html
+            - link "服務條款" [ref=e206] [cursor=pointer]:
+              - /url: /zh_HK/conditions-for-services.html
+            - link "私隱政策聲明" [ref=e207] [cursor=pointer]:
+              - /url: /pdf/zh_HK/pps.pdf
+            - link "一般資訊" [ref=e208] [cursor=pointer]:
+              - /url: /pdf/zh_HK/general-info.pdf
+            - link "服務收費" [ref=e209] [cursor=pointer]:
+              - /url: /zh_HK/Fee-and-Charges.html
+            - link "API 開放平台" [ref=e210] [cursor=pointer]:
+              - /url: https://developer.livibank.com/
+            - link "負責任借貸" [ref=e211] [cursor=pointer]:
+              - /url: /zh_HK/Responsible-Borrowing.html
+            - link "產品資料概要" [ref=e212] [cursor=pointer]:
+              - /url: /zh_HK/Key-Facts-Statements.html
+            - link "銀行營運守則" [ref=e213] [cursor=pointer]:
+              - /url: https://www.hkab.org.hk/tc/industry-guidelines/code-of-bank
+            - link "爭議交易表格和退款" [ref=e214] [cursor=pointer]:
+              - /url: /pdf/features/livi-dispute-form.pdf
+          - generic [ref=e215]:
+            - heading "公司資訊" [level=6] [ref=e216]
+            - link "新聞中心" [ref=e217] [cursor=pointer]:
+              - /url: /zh_HK/media-centre.html
+            - link "監管披露" [ref=e218] [cursor=pointer]:
+              - /url: /zh_HK/regulatory-and-financial-reports.html?category=regulatory-disclosure
+            - link "財務報告" [ref=e219] [cursor=pointer]:
+              - /url: /zh_HK/regulatory-and-financial-reports.html?category=financial-reports
+            - link "氣候相關策略和披露" [ref=e220] [cursor=pointer]:
+              - /url: /pdf/Climate-related-Strategy-and-Disclosures/Climate-related-Strategy-and-Disclosures-TC.pdf
+            - link "舉報系統" [ref=e221] [cursor=pointer]:
+              - /url: https://clearviewconnects.com/
+          - generic [ref=e222]:
+            - heading "聯絡我們" [level=6] [ref=e223]
+            - link "+852 2929 2998" [ref=e224] [cursor=pointer]:
+              - /url: tel:+85229292998
+            - link "livicare@livibank.com" [ref=e225] [cursor=pointer]:
+              - /url: mailto:livicare@livibank.com
+            - generic [ref=e226]:
+              - link [ref=e227] [cursor=pointer]:
+                - /url: https://www.facebook.com/livibankhk/
+                - img [ref=e228]
+              - link [ref=e230] [cursor=pointer]:
+                - /url: https://www.instagram.com/livibank/
+                - img [ref=e231]
+              - link [ref=e233] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/livibank/
+                - img [ref=e234]
+              - link [ref=e236] [cursor=pointer]:
+                - /url: javascript:void(0)
+                - img [ref=e237]
+            - link [ref=e240] [cursor=pointer]:
+              - /url: https://www.dps.org.hk/index.html
+              - img [ref=e241]
+      - paragraph [ref=e243]: © Livi Bank Limited. All Rights Reserved.

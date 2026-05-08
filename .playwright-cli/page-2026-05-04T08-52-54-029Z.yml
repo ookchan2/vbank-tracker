@@ -1,0 +1,194 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - img [ref=e6] [cursor=pointer]
+      - img [ref=e11] [cursor=pointer]
+      - generic [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: EN
+        - img [ref=e17]
+    - generic [ref=e20]:
+      - link [ref=e22] [cursor=pointer]:
+        - /url: /
+        - img [ref=e23]
+      - generic [ref=e24]:
+        - navigation [ref=e25]:
+          - list [ref=e26]:
+            - listitem [ref=e27]:
+              - link "livi Personal" [ref=e28] [cursor=pointer]:
+                - /url: /features/livisave.html
+            - listitem [ref=e29]:
+              - link "livi Business" [ref=e30] [cursor=pointer]:
+                - /url: /business/Business-Instalment-Loan.html
+            - listitem [ref=e31]:
+              - link "Happiness" [ref=e32] [cursor=pointer]:
+                - /url: /happiness/livi-Rewards.html
+            - listitem [ref=e33]:
+              - link "Innovation" [ref=e34] [cursor=pointer]:
+                - /url: /Innovation.html
+            - listitem [ref=e35]:
+              - link "Our Story" [ref=e36] [cursor=pointer]:
+                - /url: /our-story.html
+            - listitem [ref=e37]:
+              - link "Help" [ref=e38] [cursor=pointer]:
+                - /url: /help/faqs.html
+        - link "Download App" [ref=e39] [cursor=pointer]:
+          - /url: /download-app.html
+  - main [ref=e40]:
+    - paragraph [ref=e43]:
+      - generic [ref=e44]: Donation Acknowledgement and Tax Deduction Arrangements
+      - text: The Government sincerely thanks the public for their generous donation to the Support Fund for Wang Fuk Court in Tai Po and would like to issue letters of appreciation to donors to express its gratitude. If you wish to receive the letter, please register via the website -
+      - link "https://eform.cefs.gov.hk/form/hab033/en/" [ref=e45] [cursor=pointer]:
+        - /url: https://eform.cefs.gov.hk/form/hab033/en
+      - text: The Government has also made special arrangement to facilitate tax deduction for donors who have made donations directly to the Support Fund for Wang Fuk Court in Tai Po.
+      - text: Donations made to the Support Fund for Wang Fuk Court in Tai Po through bank transfer with an amount of HK$50,000 or below will be eligible for tax deductions without the requirement of official receipts. Donors are however required to retain the relevant donation records, such as bank transfer slips, deposit slips, automated teller machine (ATM) receipts, online transaction records, monthly bank statements etc., to demonstrate donation has been made directly from the donors’ bank account to the bank accounts of the Support Fund for Wang Fuk Court in Tai Po for review by the Inland Revenue Department when required.
+      - text: For details, please visit
+      - link "https://www.taipofire.gov.hk/eng/taxdeduction.html" [ref=e46] [cursor=pointer]:
+        - /url: https://www.taipofire.gov.hk/eng/taxdeduction.html
+    - generic [ref=e49]:
+      - heading "liviSave - Open an account & Save with ease" [level=1] [ref=e50]
+      - paragraph [ref=e51]: Grow your money with liviSave. Add funds to liviSave and earn with a preferential savings rate*, no minimum deposit required. Opening an account is 100% online, quick, and easy—no complicated documents needed. Join us anytime, anywhere on your app, and start saving today!
+      - paragraph [ref=e52]: "*Terms and Conditions apply."
+      - link "Learn More" [ref=e54] [cursor=pointer]:
+        - /url: ../features/livisave.html
+    - generic [ref=e57]:
+      - generic [ref=e60]:
+        - generic [ref=e66]:
+          - generic [ref=e69]:
+            - heading "liviSave" [level=1] [ref=e70]
+            - paragraph [ref=e71]: No fees. No minimum deposit. Open a liviSave account for all your paying and saving needs.
+            - link "Learn More" [ref=e74] [cursor=pointer]:
+              - /url: /features/livisave.html
+          - generic [ref=e77]:
+            - img [ref=e85]
+            - img
+        - generic [ref=e91]:
+          - generic [ref=e94]:
+            - heading [level=1] [ref=e95]: Pay with livi
+            - paragraph [ref=e96]: Fast and secure QR Payment accepted by merchants all across Hong Kong.
+            - link [ref=e99] [cursor=pointer]:
+              - /url: /features/qr-payment.html
+              - text: Learn More
+          - generic [ref=e102]:
+            - img [ref=e110]
+            - img
+        - generic [ref=e116]:
+          - generic [ref=e119]:
+            - heading [level=1] [ref=e120]: Instant Transfers
+            - paragraph [ref=e121]: Fast and free transfers to anyone at any time with FPS.
+            - link [ref=e124] [cursor=pointer]:
+              - /url: /features/transfer.html
+              - text: Learn More
+          - generic [ref=e127]:
+            - img [ref=e135]
+            - img
+      - button [disabled] [ref=e136] [cursor=pointer]:
+        - img [ref=e137]
+      - button [ref=e140] [cursor=pointer]:
+        - img [ref=e141]
+    - generic [ref=e151]:
+      - img "This is Title" [ref=e154]
+      - generic [ref=e156]:
+        - heading "Our Story" [level=1] [ref=e157]
+        - generic [ref=e158]: We’re focused on building a trustworthy and secure bank that brings everyday delights and rewards to our customers.
+        - link "Read More" [ref=e160] [cursor=pointer]:
+          - /url: our-story.html
+    - generic [ref=e164]:
+      - generic [ref=e166]:
+        - heading "Trusted Transactions" [level=1] [ref=e167]
+        - paragraph [ref=e168]: Your money and transactions are protected by layers of security. All transactions are trackable. You will receive notifications about all account activities and you can choose to use fingerprint or face recognition to login to your account.
+      - img [ref=e171]
+  - generic [ref=e174]:
+    - paragraph [ref=e175]:
+      - text: This website uses cookies to help us to provide you with a good experience and allow us to improve the service. Read our
+      - link "Privacy Policy Statement" [ref=e176] [cursor=pointer]:
+        - /url: ../pdf/en/pps.pdf
+      - link [ref=e177] [cursor=pointer]:
+        - /url: https://www.livibank.com/pdf/en/pics.pdf
+      - text: to learn more. By continuing to browse, you understand and agree to our use of Cookies, Terms & Conditions and Privacy Policy.
+    - link "Accept" [ref=e179] [cursor=pointer]:
+      - /url: javascript:void(0)
+  - contentinfo [ref=e180]:
+    - generic [ref=e181]:
+      - generic [ref=e182]:
+        - img [ref=e183]
+        - generic [ref=e184]:
+          - heading "Join livi Today!" [level=3] [ref=e185]
+          - paragraph [ref=e186]: Sign up in the time it takes to make a coffee.
+          - generic [ref=e187]:
+            - generic [ref=e188]:
+              - generic [ref=e189]:
+                - link [ref=e190] [cursor=pointer]:
+                  - /url: https://apps.apple.com/hk/app/id1481532757
+                  - img [ref=e191]
+                - link [ref=e192] [cursor=pointer]:
+                  - /url: https://play.google.com/store/apps/details?id=com.livibank.hk
+                  - img [ref=e193]
+                - link [ref=e194] [cursor=pointer]:
+                  - /url: https://cdn.livibank.com/apk/livibank.apk
+                  - img [ref=e195]
+              - generic "https://www.livibank.com/QRCode.html" [ref=e196]:
+                - img "Scan me!" [ref=e197]
+            - list [ref=e198]:
+              - listitem [ref=e199]: Apple and the Apple logo are trademarks of Apple Inc, registered in the U.S. and other countries. App Store is a service mark of Apple Inc.
+              - listitem [ref=e200]: Google Play and the Google Play logo are trademarks of Google Inc.
+              - listitem [ref=e201]: Screen displays are for reference and illustration purposes only.
+        - generic [ref=e202]:
+          - generic [ref=e203]:
+            - heading "Useful Links" [level=6] [ref=e204]
+            - link "Important Notices" [ref=e205] [cursor=pointer]:
+              - /url: /important-notices.html
+            - link "Security Tips" [ref=e206] [cursor=pointer]:
+              - /url: /security-tips.html
+            - link "Conditions For Services" [ref=e207] [cursor=pointer]:
+              - /url: /conditions-for-services.html
+            - link "Privacy Policy Statement" [ref=e208] [cursor=pointer]:
+              - /url: /pdf/en/pps.pdf
+            - link "General Information" [ref=e209] [cursor=pointer]:
+              - /url: /pdf/en/general-info.pdf
+            - link "Fees & Charges" [ref=e210] [cursor=pointer]:
+              - /url: /Fee-and-Charges.html
+            - link "Open API Portal" [ref=e211] [cursor=pointer]:
+              - /url: https://developer.livibank.com/
+            - link "Responsible Borrowing" [ref=e212] [cursor=pointer]:
+              - /url: /Responsible-Borrowing.html
+            - link "Key Facts Statements" [ref=e213] [cursor=pointer]:
+              - /url: /Key-Facts-Statements.html
+            - link "The Code of Banking Practice" [ref=e214] [cursor=pointer]:
+              - /url: https://www.hkab.org.hk/en/industry-guidelines/code-of-bank
+            - link "Transaction Dispute Form and Chargeback" [ref=e215] [cursor=pointer]:
+              - /url: /pdf/features/livi-dispute-form.pdf
+          - generic [ref=e216]:
+            - heading "Company" [level=6] [ref=e217]
+            - link "Media Centre" [ref=e218] [cursor=pointer]:
+              - /url: /media-centre.html
+            - link "Regulatory Disclosures" [ref=e219] [cursor=pointer]:
+              - /url: /regulatory-and-financial-reports.html?category=regulatory-disclosure
+            - link "Financial Reports" [ref=e220] [cursor=pointer]:
+              - /url: /regulatory-and-financial-reports.html?category=financial-reports
+            - link "Climate-related Strategy and Disclosures" [ref=e221] [cursor=pointer]:
+              - /url: /pdf/Climate-related-Strategy-and-Disclosures/Climate-related-Strategy-and-Disclosures-EN.pdf
+            - link "Whistleblowing" [ref=e222] [cursor=pointer]:
+              - /url: https://clearviewconnects.com/
+          - generic [ref=e223]:
+            - heading "Contact" [level=6] [ref=e224]
+            - link "+852 29292998" [ref=e225] [cursor=pointer]:
+              - /url: tel:+85229292998
+            - link "livicare@livibank.com" [ref=e226] [cursor=pointer]:
+              - /url: mailto:livicare@livibank.com
+            - generic [ref=e227]:
+              - link [ref=e228] [cursor=pointer]:
+                - /url: https://www.facebook.com/livibankhk/
+                - img [ref=e229]
+              - link [ref=e231] [cursor=pointer]:
+                - /url: https://www.instagram.com/livibank/
+                - img [ref=e232]
+              - link [ref=e234] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/livibank/
+                - img [ref=e235]
+              - link [ref=e237] [cursor=pointer]:
+                - /url: javascript:void(0)
+                - img [ref=e238]
+            - link [ref=e241] [cursor=pointer]:
+              - /url: https://www.dps.org.hk/index_EN.html
+              - img [ref=e242]
+      - paragraph [ref=e244]: © Livi Bank Limited. All Rights Reserved.

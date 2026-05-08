@@ -12,7 +12,7 @@ import { config as dotenvConfig } from 'dotenv';
 
 dotenvConfig({ path: path.join(process.cwd(), '.env') });
 
-import { BANK_CONFIGS } from './config/banks';
+import { BANK_CONFIGS } from './config/banks.js';
 import {
   initDb,
   startNewRun,
@@ -39,18 +39,18 @@ import {
   exportToJson,
   getPromotionsByBankName,
   closeDb,
-} from './db/database';
-import { warmup, isAgentUnavailable } from './agent/client';
-import { scrapeBank, type ScrapedBank, type RawPromotion } from './agent/scraper';
-import { extractBankProducts, type ExtractedProducts } from './agent/products';
-import { aiDedupTitles, applyDedup } from './agent/dedup';
-import { aiDedupProducts, applyProductDedup, aiMatchProductsAgainstExisting, type DbProduct } from './agent/product_dedup';
-import { aiMatchAgainstExisting, type DbPromotion } from './agent/matcher';
-import { generateStrategicInsights } from './agent/insights';
-import { generateProductComparisons, type ProductsByBank } from './agent/product_comparison';
-import { buildHtmlEmail, sendEmail, saveHtmlFallback } from './email/emailer';
-import { hktToday, hktNow } from './utils/hkt';
-import { canonicalBankName, BANK_NAME_LEGACY_ALIASES } from './utils/filters';
+} from './db/database.js';
+import { warmup, isAgentUnavailable } from './agent/client.js';
+import { scrapeBank, type ScrapedBank, type RawPromotion } from './agent/scraper.js';
+import { extractBankProducts, type ExtractedProducts } from './agent/products.js';
+import { aiDedupTitles, applyDedup } from './agent/dedup.js';
+import { aiDedupProducts, applyProductDedup, aiMatchProductsAgainstExisting, type DbProduct } from './agent/product_dedup.js';
+import { aiMatchAgainstExisting, type DbPromotion } from './agent/matcher.js';
+import { generateStrategicInsights } from './agent/insights.js';
+import { generateProductComparisons, type ProductsByBank } from './agent/product_comparison.js';
+import { buildHtmlEmail, sendEmail, saveHtmlFallback } from './email/emailer.js';
+import { hktToday, hktNow } from './utils/hkt.js';
+import { canonicalBankName, BANK_NAME_LEGACY_ALIASES } from './utils/filters.js';
 
 // ── Paths ────────────────────────────────────────────────────────────────────
 

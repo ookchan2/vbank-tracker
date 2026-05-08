@@ -1,0 +1,441 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e10]:
+        - text: ZA Bank reminds the public to stay vigilant and guard against criminals who may take advantage of the situation to commit fraud. If you receive a phone call from someone claiming to be a bank staff member, you should verify the caller’s identity and never disclose personal information, bank account details, passwords or any other sensitive data to suspicious individuals. If you are suspicious of an e-mail or a bogus call that claims to come from ZA Bank, please call our anti-fraud hotline 3665 3660 to verify. For more information, please click
+        - link "here" [ref=e11] [cursor=pointer]:
+          - /url: /en/fake-call
+        - text: .
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - link "logo" [ref=e20] [cursor=pointer]:
+            - /url: /
+            - img "logo" [ref=e21]
+          - generic [ref=e22]:
+            - generic [ref=e24] [cursor=pointer]: Personal
+            - generic [ref=e26] [cursor=pointer]: Business
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e30] [cursor=pointer]: Banking
+            - generic [ref=e32] [cursor=pointer]: ZA Card
+            - generic [ref=e34] [cursor=pointer]: Borrowing
+            - generic [ref=e36] [cursor=pointer]: Invest
+            - link "Insurance" [ref=e39] [cursor=pointer]:
+              - /url: /en/insurance
+            - generic [ref=e40] [cursor=pointer]:
+              - link "Help Center" [ref=e42]:
+                - /url: /en/faqs/Individuals
+              - text: "|"
+            - link "Blog" [ref=e45] [cursor=pointer]:
+              - /url: https://blog.za.group/en
+          - generic [ref=e46]:
+            - generic [ref=e48] [cursor=pointer]: Get our app
+            - generic [ref=e50] [cursor=pointer]:
+              - text: Get an Account
+              - img [ref=e51]
+          - img "国际化" [ref=e55] [cursor=pointer]
+    - generic [ref=e58]:
+      - generic [ref=e61]:
+        - generic [ref=e63]:
+          - generic [ref=e65]:
+            - text: Hong Kong's No.1 Digital Bank
+            - superscript [ref=e66]: ¹
+            - text: ":"
+            - text: Banking that is truly designed for you
+          - generic [ref=e68]: Manage your finances, investments and spending all at one bank.
+          - link "Open an account" [ref=e73] [cursor=pointer]:
+            - /url: https://bank.za.group/en/account-open
+        - img [ref=e77]
+      - generic [ref=e90]:
+        - generic [ref=e92]:
+          - img [ref=e93]
+          - generic [ref=e94]:
+            - generic [ref=e95]: 24 x 7 service
+            - generic [ref=e96]: Our banking services are always available, no matter the time of day
+        - generic [ref=e98]:
+          - img [ref=e99]
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - text: Open an account in as fast as 2 minutes
+              - superscript [ref=e102]: "2"
+            - generic [ref=e103]: Zero deposit requirement
+        - generic [ref=e105]:
+          - img [ref=e106]
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - text: HK residents and visitors in HK
+              - superscript [ref=e109]: ³
+              - text: can open an account online!
+            - generic [ref=e110]: Manage your financial needs at ease
+      - generic [ref=e111]:
+        - paragraph [ref=e125]: Trusted by over 1 million users
+        - img [ref=e132]
+        - generic [ref=e140]:
+          - generic [ref=e141]: Rated
+          - generic [ref=e142]: "4.8"
+          - generic [ref=e143]:
+            - text: on App Store
+            - superscript [ref=e144]: "4"
+          - generic [ref=e145]: with User Acclaim
+          - img [ref=e146]
+        - generic [ref=e154]:
+          - text: As Hong Kong's No.1 Digital Bank
+          - superscript [ref=e155]: ¹
+          - text: ", we have earned the trust of every user through our secure and convenient services."
+          - text: Your trust in us is our greatest motivation to keep on improving and forging new paths ahead!
+        - generic [ref=e163]:
+          - generic [ref=e164]:
+            - img [ref=e165]
+            - generic [ref=e166]:
+              - text: NextGen Digital Bank of the Year
+              - text: Triple A Digital Awards 2025
+              - text: The Asset
+            - generic [ref=e167]: Three consecutive wins
+          - generic [ref=e168]:
+            - img [ref=e169]
+            - generic [ref=e170]:
+              - text: Top 15 digital banks in Asia
+              - text: Fintech Innovators Asia 2024
+              - text: Fortune
+            - generic [ref=e171]: The only HK digital bank on the list
+          - generic [ref=e172]:
+            - img [ref=e173]
+            - generic [ref=e174]:
+              - text: Best Digital Retail Bank -
+              - text: Hong Kong SAR, China
+              - text: Global Retail Banking Innovation Awards 2025
+              - text: The Digital Banker
+            - generic [ref=e175]: First bank in HK to be awarded in this category
+      - generic [ref=e180]:
+        - generic [ref=e181]: Manage your finances, investments and spending via one app
+        - generic [ref=e183]:
+          - generic [ref=e184]:
+            - generic [ref=e186]:
+              - generic [ref=e187]: One account to manage your global assets
+              - list [ref=e188]:
+                - listitem [ref=e189]:
+                  - generic [ref=e190]: "Multi-currency savings: Hold 11 different currencies, including HKD, CNY, USD, GBP, SGD, EUR, CAD, AUD, JPY, NZD, and CHF with ease."
+                - listitem [ref=e191]:
+                  - generic [ref=e192]: "Flexible asset allocation: With savings and time deposits, you can exchange currencies 24 x 7 at your preferred rates, seize market opportunity, and grow your wealth."
+                - listitem [ref=e193]:
+                  - generic [ref=e194]: "Enjoy high-interest savings: A dedicated savings pot designed for your needs - deposit and withdraw anytime with zero fees."
+                - listitem [ref=e195]:
+                  - generic [ref=e196]:
+                    - text: "Free cash withdrawals throughout Hong Kong: Withdraw cash for free at over 3,000 Visa ATMs across Hong Kong with your ZA Card"
+                    - superscript [ref=e197]: "5"
+                    - text: .
+              - link "Learn more" [ref=e200] [cursor=pointer]:
+                - /url: https://bank.za.group/en/deposit
+                - text: Learn more
+                - img [ref=e201]
+            - img [ref=e205]
+          - generic [ref=e206]:
+            - generic [ref=e208]:
+              - generic [ref=e209]: Your one-stop investment platform
+              - list [ref=e210]:
+                - listitem [ref=e211]:
+                  - generic [ref=e212]:
+                    - text: "Stocks: Trade stocks with 0 brokerage, 0 custody fees, and platform fee as low as USD 1.99/ HKD 18 per transaction! And enjoy our stock rebate program StockBack. Get stocks for free after successfully purchasing the stocks"
+                    - superscript [ref=e213]: "6"
+                    - text: .
+                - listitem [ref=e214]:
+                  - generic [ref=e215]:
+                    - text: "Crypto: Trade 24 x 7 directly with your HKD or USD deposits. New customers can enjoy $0 platform fee for the first 90 days after account opening"
+                    - superscript [ref=e216]: "7"
+                    - text: .
+                - listitem [ref=e217]:
+                  - generic [ref=e218]:
+                    - text: "Funds: Enjoy 0% subscription fees on ALL funds"
+                    - superscript [ref=e219]: "8"
+                    - text: with no cap! Let 100% of your money go into the market.
+              - link "Learn more" [ref=e222] [cursor=pointer]:
+                - /url: https://bank.za.group/en/hkstock
+                - text: Learn more
+                - img [ref=e223]
+              - link "Important risk statement" [ref=e226] [cursor=pointer]:
+                - /url: "#explain"
+            - img [ref=e229]
+          - generic [ref=e230]:
+            - generic [ref=e232]:
+              - generic [ref=e233]: "ZA Card: Spend to earn stocks and choose reward"
+              - list [ref=e234]:
+                - listitem [ref=e235]:
+                  - generic [ref=e236]:
+                    - generic [ref=e237]:
+                      - text: Hong Kong's first StockBack x ZA Card
+                      - superscript [ref=e238]: "9"
+                      - text: ":"
+                    - text: Spending with your card is no longer just about saving up points, but directly getting shares! You can easily accumulate stocks and build your personalised reward package via your daily spending!
+                - listitem [ref=e239]:
+                  - generic [ref=e240]:
+                    - text: "Spend to participate in PowerDraw: Win up to a 200% rebate"
+                    - superscript [ref=e241]: "10"
+                    - text: ", along with a chance to share HKD 1 million"
+                    - superscript [ref=e242]: "11"
+                    - text: as you receive MillionTix via PowerDraw!
+                - listitem [ref=e243]:
+                  - generic [ref=e244]: "Custom card number: We're the first in Hong Kong to allow you to choose the last 6 digits on your card face!"
+                - listitem [ref=e245]:
+                  - generic [ref=e246]: "No annual or hidden fees: A Visa debit card that truly belongs to you, and supports Apple Pay and Google Pay."
+              - link "Learn more" [ref=e249] [cursor=pointer]:
+                - /url: https://bank.za.group/en/za-card
+                - text: Learn more
+                - img [ref=e250]
+            - img [ref=e254]
+          - generic [ref=e255]:
+            - generic [ref=e257]:
+              - generic [ref=e258]: "FPS: Free instant transfers"
+              - list [ref=e259]:
+                - listitem [ref=e260]:
+                  - generic [ref=e261]: Free instant transfers, card payments, tax payments, and scan-to-pay all in one app.
+                - listitem [ref=e262]:
+                  - generic [ref=e263]: Receive HKD and CNY with just your mobile phone number via FPS.
+                - listitem [ref=e264]:
+                  - generic [ref=e265]: Use the Frequent Payee section on the Transfer page for quick and easy transfers.
+                - listitem [ref=e266]:
+                  - generic [ref=e267]: Send Group Lai See with one tap and no need to enter recipient individually!
+              - link "Learn more" [ref=e270] [cursor=pointer]:
+                - /url: https://bank.za.group/en/transfer
+                - text: Learn more
+                - img [ref=e271]
+            - img [ref=e275]
+          - generic [ref=e276]:
+            - generic [ref=e278]:
+              - generic [ref=e279]: Global transfers to over 140+ countries and regions
+              - list [ref=e280]:
+                - listitem [ref=e281]:
+                  - generic [ref=e282]: "Payment Connect: Send money between Chinese Mainland and Hong Kong in real-time, with zero fees."
+                - listitem [ref=e283]:
+                  - generic [ref=e284]: "Wise: HKD payments with express remittance by Wise arrive faster than ever!"
+                - listitem [ref=e285]:
+                  - generic [ref=e286]:
+                    - text: "SWIFT: Transfer directly to 140+ countries and regions via SWIFT with zero ZA Bank fee"
+                    - superscript [ref=e287]: "12"
+                    - text: .
+              - link "Learn more" [ref=e290] [cursor=pointer]:
+                - /url: https://bank.za.group/en/ZARemit
+                - text: Learn more
+                - img [ref=e291]
+            - img [ref=e295]
+          - generic [ref=e296]:
+            - generic [ref=e298]:
+              - generic [ref=e299]:
+                - text: Flexible loans with approval results in as fast as 90 seconds
+                - superscript [ref=e300]: 13a
+              - list [ref=e301]:
+                - listitem [ref=e302]:
+                  - generic [ref=e303]:
+                    - text: "Fast approval, large loan amount: Simple application process, with a loan amount up to HKD 1,000,000"
+                    - superscript [ref=e304]: 13b
+                    - text: ", and an annualised percentage rate as low as 1.30%"
+                    - superscript [ref=e305]: 13c.
+                    - text: .
+                - listitem [ref=e306]:
+                  - generic [ref=e307]: "All-rounded solutions: We offer a range of products, including Instalment Loan, Card Statement Instalment, and Debt Consolidation to meet different financial needs."
+                - listitem [ref=e308]:
+                  - generic [ref=e309]: "Market-beating loan offers: Frequently rolls out loan deals to reduce your borrowing costs further."
+              - link "Learn more" [ref=e312] [cursor=pointer]:
+                - /url: https://bank.za.group/en/loan
+                - text: Learn more
+                - img [ref=e313]
+            - img [ref=e317]
+          - generic [ref=e318]:
+            - generic [ref=e320]:
+              - generic [ref=e321]:
+                - text: Protect yourself fully with smart insurance in as fast as 3 minutes
+                - superscript [ref=e322]: "14"
+              - list [ref=e323]:
+                - listitem [ref=e324]:
+                  - generic [ref=e325]:
+                    - text: "Simple and easy: Get insured in as fast as 3 minutes"
+                    - superscript [ref=e326]: "14"
+                    - text: via your smartphone.
+                - listitem [ref=e327]:
+                  - generic [ref=e328]: "Comprehensive coverage: Choose from life insurance, critical illness insurance, and Voluntary Health Insurance Scheme (VHIS) and other options! We're your one-stop shop to meet your every need!"
+                - listitem [ref=e329]:
+                  - generic [ref=e330]: "Fully digital process: Apply for a plan or file a claim easily via a fully digital experience."
+              - link "Learn more" [ref=e333] [cursor=pointer]:
+                - /url: https://bank.za.group/en/insurance
+                - text: Learn more
+                - img [ref=e334]
+            - img [ref=e338]
+      - generic [ref=e345]:
+        - generic [ref=e346]:
+          - generic [ref=e347]: Extreme Security
+          - generic [ref=e348]:
+            - text: Unlock ZA Bank App biometrically with your face or fingerprint, every time you log in or perform a transaction. Instantly receive a notification for every high-risk transaction. Lock your ZA Card with one tap if you discover an unauthorised payment, and raise a
+            - link "transaction dispute" [ref=e349] [cursor=pointer]:
+              - /url: https://bank.za.group/hk/dispute-chargeback
+            - text: to avoid any losses. Finally, we aim to protect your privacy, and to create a smart management platform with a high level of protection for all users.
+        - img [ref=e350]
+      - generic [ref=e357]:
+        - img [ref=e358]
+        - generic [ref=e360]:
+          - img [ref=e361]
+          - paragraph [ref=e363]:
+            - text: ZA Bank’s core brand spirit of "Your Future Bank for Now" demonstrates our dedication to prioritise “Banking for Web3” and provide the best for our users.
+            - text: As Hong Kong continues to digitalise across all fronts, we are determined to harness the technological advantages of digital banking to meet our users' needs. We will become their "Future Bank for Now” by bringing brand-new banking products and a service experience ahead of the competition.
+            - text: Even if the steps we take today may seem insignificant, they will lead us to further innovations and allow us to bring more of the future into the present for our users. As such, we will always strive to bring ground-breaking products, services, and a first-class app interface for a user-friendly experience.
+        - img [ref=e364]
+      - generic [ref=e370]:
+        - generic [ref=e372]: "1. As the first digital bank to launch in Hong Kong, ZA Bank had the highest customer deposits and net profit among the city’s eight digital banks as of 30 June 2025. Source: Interim reports of 8 digital banks."
+        - generic [ref=e374]: 2. The time needed for account opening is subject to actual circumstances. In general, provided that no extra information is required, an user can open an account in as fast as 2 minutes.
+        - generic [ref=e376]: 3. To cater to everyone's financial needs, such as spending and wealth management, ZA Bank is offering exclusive banking services in Hong Kong.
+        - generic [ref=e378]: ^ Data is as of 30 June 2025.
+        - generic [ref=e380]: 4. App Store rating as of 15 December, 2025.
+        - generic [ref=e382]: 5. Overseas cash withdrawal may incur handling fees.
+        - generic [ref=e384]:
+          - text: 6. "Stock PowerDraw" Promotion is valid from 1 February 2026 to 30 June 2026, both dates inclusive. Participants who complete a purchase transaction in stocks during the Promotion Period will receive one "Stock PowerDraw" chance. All "Stock PowerDraw" chances will only be valid for 24 hours from issuance by ZA Bank to the Participant and will be forfeited after expiry. If the platform fee for the US stocks purchase transaction is less than USD 2 per transaction, or less than HKD 20 per transaction for HK stocks purchase transaction, Participants will not receive any "Stock PowerDraw" chance. Participants must have the ZA Bank App with version 3.8.9 or above in order to be eligible for the "Stock PowerDraw" chance. In each "Stock PowerDraw" chance, Participants can only receive rewards in the form of "Designated Stock Redemption Coupons", which can be redeemed for stocks ranked in the top 100 by market value in the US stocks market.
+          - link "Terms and conditions" [ref=e385] [cursor=pointer]:
+            - /url: https://bank-invest.za.group/agreement/html/en_US/1001728
+          - text: apply.
+        - generic [ref=e387]:
+          - text: 7. From 1 February 2026 till 30 June 2026 (both dates inclusive), customers who have successfully activated crypto trading services for the first time with ZA Bank can enjoy a 0 platform fee offer on crypto trading transaction which is executed within the period of first 90 days upon activation of the service, with no cap.
+          - link "Terms and conditions" [ref=e388] [cursor=pointer]:
+            - /url: https://bank-invest.za.group/agreement/html/en_US/1002099
+          - text: apply.
+        - generic [ref=e390]:
+          - text: 8. From now until 31 July 2026 (both dates inclusive), retail banking users who have activated the investment fund trading services with ZA Bank can enjoy 0% fund subscription fee offer and redemption fee waivers for all funds.
+          - link "Terms and conditions" [ref=e391] [cursor=pointer]:
+            - /url: https://bank-invest.za.group/agreement/html/en_US/1001923
+          - text: apply.
+        - generic [ref=e393]:
+          - text: "9. \"StockBack x ZA Card\" Promotion: The promotion period is from 3 November 2025 to 30 June 2026, both dates inclusive. Each eligible transaction with the transaction amount of not less than HKD 10 by participants who use ZA Card to spend during the promotion period will be entitled to one (1) StockBack Chance, and will not be entitled to any rewards of other ZA Card promotions that involve ZA Coin. All StockBack Chances will be valid for 48 hours. For each StockBack Chance, participants can select one of the six (6) stocks on the StockBack machine on the campaign page as their stock rebate (“StockBack Rewards”), and the amount of reward will be 1% of the transaction amount or a higher rebate amount under limited-time promotions launched by ZA Bank from time to time. Participants must hold a valid investment account and have activated the corresponding investment trading services within 90 calendar days after selecting the StockBack Rewards in order to obtain ownership of and receive the rewards. Otherwise, the rewards will be forfeited and deemed as waived, and ZA Bank will not reissue the rewards. “StockBack x ZA Card”Promotion is subject to its"
+          - link "Terms and conditions" [ref=e394] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/html/en_US/1002233
+          - text: .
+        - generic [ref=e396]: 10. Each eligible spending transaction of no less than HKD 10 will be entitled to 1 PowerDraw Chance ("Chance"), and will not be entitled to other ZA Card rebate offers. All Chances are valid for 48 hours. Each Chance may give a rebate up to 200% of the transaction amount or other designated rewards. Probability of each reward is not evenly distributed. Rebate is in a form of ZA Coin. ZA Coin is a third-party reward scheme operated by ZA International Financial Services Limited. The rebate is capped at 1,000,000 ZA Coin (or HKD 10,000) per transaction. Terms and Conditions apply.
+        - generic [ref=e398]:
+          - text: 11. During the promotion period, users have the chance to get MillionTix by participating in PowerDraw or completing specific quests. The maximum of 1 million MillionTix is to be distributed in each round. ZA Bank will randomly draw 100 winning MillionTix from 1 million MillionTix via a computer system. Users will receive an HKD 10,000 cash reward or other reward of equivalent value for each winning ticket they hold.Millionaire PowerDraw New Edition is subject to its Terms and conditions.
+          - text: "* This also applies to ZA Credit users. To borrow or not to borrow? Borrow only if you can repay!"
+        - generic [ref=e400]:
+          - text: 12. You will not be charged for a ZA Bank handling fee via SWIFT Global Transfer service. For other fees that may apply, please refer to the
+          - link "Fees and Charges Guide for Individual Customers" [ref=e401] [cursor=pointer]:
+            - /url: https://bank.za.group/agreement/pdf/en_US/1000181
+          - text: .
+        - generic [ref=e403]: 13a. This approval result is preliminary. Users are required to submit relevant documents for review before receiving the final result and approval. The actual completion time varies across individuals. In general, provided that all required information is in order, a new-to-bank applicant can get the preliminary approval result in as fast as 90 seconds. An existing bank user can get the preliminary approval result in as fast as 30 seconds from starting an application in the Loan tab after logging into the app.
+        - generic [ref=e405]: 13b. The final approved loan amount, interest rate and tenor may vary depending on the individual circumstances and the final assessment of the bank.
+        - generic [ref=e407]: 13c. The Annualised Percentage Rate (“APR”) of 1.30% is calculated based on an example where the loan amount is HKD 1,000,000, with a repayment tenor of 12 months and a monthly flat rate of 0.0584%. Please refer to the interest rate & monthly repayment table shown during the loan application for the applicable monthly flat rate and APR of other tenors. The APR is calculated using the method specified in relevant guidelines issued by the Hong Kong Associations of Banks and is rounded up or down to the nearest two decimal places. The APR is a reference rate, which includes the basic interest rates and other fees and charges (if applicable) of a product expressed as an annualised rate.
+        - generic [ref=e409]: 14. The whole application time may vary. In general, when the required information is fully prepared, the insurance application can be completed within 3 minutes.
+        - generic [ref=e412]: Important risk statement
+        - generic [ref=e414]: Investment involves risks. The price of investment products may fluctuate or even become worthless. Past performance is not an indicator of future performance. Losses may be incurred rather than making a profit as a result of investment. The information in this platform is for reference only and does not constitute and should not be regarded as any recommendation, offer or solicitation to purchase or sell any investment products. You should carefully and independently consider whether the investment products are suitable for you in light of your investment experience, objectives, financial position and risk profile. Independent professional advice should be obtained if necessary. Please read the relevant terms and conditions together with the offering document and risk disclosure statements of the investment product before making any investment decisions. The information in this platform has not been reviewed by SFC or any regulatory authority in Hong Kong. ZA Bank is acting as your agent to handle the transaction. The investment product is provided by a third-party but not ZA Bank. In respect of eligible dispute (as defined in the terms of reference for the Financial Dispute Resolution Centre in relation to the Financial Dispute Resolution Scheme) out of the selling process or processing of the related transaction, ZA Bank will enter a Financial Dispute Resolution Scheme process with you. However, any disputes over the contractual terms of the product should be resolved directly between you and the third-party product issuer. The platform is not intended for distribution or use by any person in any jurisdiction, country or region where the distribution or use of this material is restricted and would not be permitted by law or regulation. If you are outside of Hong Kong, we may not be authorised to offer or provide you with the products and services available in the country or region where you are located or resident.
+        - generic [ref=e416]: Crypto Disclaimer
+        - generic [ref=e418]: Investment involves risks. Virtual asset is a new asset class and developed on the basis of new technology, involving unanticipated risks associated with acquisition, storage, transfer and use. Prices of virtual assets could be highly volatile and investors are reminded to pay extra caution when deciding to invest in virtual assets. The price of virtual assets may fluctuate or even become worthless. Past performance is not an indicator of future performance. Losses may be incurred rather than making a profit as a result of investment. The information in this platform is for reference only and does not constitute and should not be regarded as any recommendation, offer or solicitation to purchase or sell any investment products. You should carefully and independently consider whether the investment products are suitable for you in light of your investment experience, objectives, financial position and risk profile. Independent professional advice should be obtained if necessary. Please read the relevant terms and conditions together with risk disclosure statements before making any investment decisions. In respect of eligible dispute (as defined in the terms of reference for the Financial Dispute Resolution Centre in relation to the Financial Dispute Resolution Scheme) out of the selling process or processing of the related transaction, ZA Bank will enter a Financial Dispute Resolution Scheme process with you. The platform is not intended for distribution or use by any person in any jurisdiction, country or region where the distribution or use of this material is restricted and would not be permitted by law or regulation. If you are outside of Hong Kong, we may not be authorised to offer or provide you with the products and services available in the country or region where you are located or resident.
+        - generic [ref=e420]: To borrow or not to borrow? Borrow only if you can repay!
+        - generic [ref=e422]:
+          - text: Important notes from the insurance agent and the insurer
+          - text: ZA Life Limited (with business name as "ZA Insure") is authorised and regulated by Insurance Authority of the Hong Kong SAR.
+          - text: ZA Bank Limited ("ZA Bank") is a licensed insurance agency (license number GA1009) authorised by ZA Insure.
+          - text: All the above insurance product(s) are not products of ZA Bank, bank deposits or bank savings plans. Part of the premium pays for the insurance and related costs. Policyholder is subject to the credit risk of ZA Insure. This product is intended for sale in the jurisdiction of Hong Kong SAR only.
+          - text: In respect of an eligible dispute (as defined in the Terms of Reference for the Financial Dispute Resolution Centre in relation to the Financial Dispute Resolution Scheme) arising between ZA Bank and you out of the selling process or processing of the related transaction, ZA Bank is required to enter into a Financial Dispute Resolution Scheme process with you. Any disputes over the contractual terms of the ZA Insure's insurance products, ZA Bank will make every effort to provide assistance.
+          - text: All insurance applications are subject to the underwriting requirements and acceptance of ZA Insure. Before making a decision, please review carefully the product materials issued by ZA Insure, including the Product Brochure and the Policy Provisions, to ensure you understand the features, risks, exclusions, restrictions and the full terms and conditions of the relevant insurance plan.
+          - text: Depending on the information provided by the potential policyholder and/or the life insured during the online application, ZA Insure reserves the ultimate right to accept or reject any such online application for the selected insurance products offered by ZA Insure.
+      - generic [ref=e428]:
+        - generic [ref=e429]:
+          - text: Open an account in as fast as 2 minutes
+          - superscript [ref=e430]: "2"
+        - generic [ref=e431]: Open an account now if you want to experience a whole new way of banking!
+        - generic [ref=e432]:
+          - generic [ref=e433]:
+            - img [ref=e435] [cursor=pointer]
+            - img [ref=e437] [cursor=pointer]
+            - link [ref=e438] [cursor=pointer]:
+              - /url: https://cdn.zaticdn.com/bank/app/android.apk
+              - img [ref=e439]
+          - img [ref=e440]
+    - generic [ref=e441]:
+      - generic [ref=e443]:
+        - generic [ref=e444]:
+          - generic [ref=e445]: About Us
+          - generic [ref=e446]:
+            - link "About ZA Bank" [ref=e448] [cursor=pointer]:
+              - /url: /en/hkno1digitalbank
+            - link "News Centre" [ref=e450] [cursor=pointer]:
+              - /url: /en/about-us#index=news
+            - link "Corporate Governance" [ref=e452] [cursor=pointer]:
+              - /url: /en/about-us#index=board
+            - link "Regulatory Disclosures" [ref=e454] [cursor=pointer]:
+              - /url: /en/about-us#index=supervision
+            - link "Financial Reports" [ref=e456] [cursor=pointer]:
+              - /url: /en/about-us#index=finance
+        - generic [ref=e457]:
+          - generic [ref=e458]: Useful Links
+          - generic [ref=e459]:
+            - link "Fees & Charges" [ref=e461] [cursor=pointer]:
+              - /url: /en/rates-list
+            - link "Support" [ref=e463] [cursor=pointer]:
+              - /url: https://bank.za.group/en/faqs/Individuals
+            - link "Security Tips" [ref=e465] [cursor=pointer]:
+              - /url: /en/security-tips
+            - link "Financial Crime Prevention Information Centre" [ref=e467] [cursor=pointer]:
+              - /url: /en/financial
+            - link "Terms and Conditions" [ref=e469] [cursor=pointer]:
+              - /url: /en/terms
+            - link "Download Centre" [ref=e471] [cursor=pointer]:
+              - /url: /en/tabledown
+            - link "Important Notices" [ref=e473] [cursor=pointer]:
+              - /url: /en/important-notice
+            - link "Open Banking" [ref=e475] [cursor=pointer]:
+              - /url: https://developer.bank.za.group/en/
+            - link "Key Facts Statement" [ref=e477] [cursor=pointer]:
+              - /url: /en/kfs
+        - generic [ref=e478]:
+          - generic [ref=e479]: Service & Consulting
+          - generic [ref=e480]:
+            - link "bank.opinion@za.group" [ref=e482] [cursor=pointer]:
+              - /url: mailto:bank.opinion@za.group
+            - generic [ref=e483]: +852 3665 3665
+            - generic [ref=e485]: Online Live Chat
+            - link "Contact Us" [ref=e487] [cursor=pointer]:
+              - /url: /en/consulting-feedback
+            - link "Banking Talent Programme Application" [ref=e489] [cursor=pointer]:
+              - /url: /en/banking-talent-programme
+            - link "Accessibility statement" [ref=e491] [cursor=pointer]:
+              - /url: /en/accessibility
+            - link "Whistleblowing Channel" [ref=e493] [cursor=pointer]:
+              - /url: https://cdn.zaticdn.com/if/zaif-cps-seagull-service/20231226/ZAB_WB_statement_1.0_45002.pdf
+        - generic [ref=e494]:
+          - generic [ref=e495]:
+            - generic [ref=e496]:
+              - link "facebook-logo" [ref=e497] [cursor=pointer]:
+                - /url: https://www.facebook.com/zabankhk
+                - img "facebook-logo" [ref=e498]
+              - link "linkedin-logo" [ref=e499] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/za-international
+                - img "linkedin-logo" [ref=e500]
+              - img "weChart" [ref=e502] [cursor=pointer]
+            - generic [ref=e504]:
+              - link "繁" [ref=e506] [cursor=pointer]:
+                - /url: /
+              - text: "|"
+              - link "EN" [ref=e508] [cursor=pointer]:
+                - /url: /en
+          - generic [ref=e509]:
+            - generic [ref=e511]:
+              - generic [ref=e512]:
+                - button "ios-download" [ref=e513] [cursor=pointer]:
+                  - img "ios-download" [ref=e514]
+                - button "android-download" [ref=e515] [cursor=pointer]:
+                  - img "android-download" [ref=e516]
+                - link "apk" [ref=e517] [cursor=pointer]:
+                  - /url: https://cdn.zaticdn.com/bank/app/android.apk
+                  - img "apk" [ref=e518]
+              - img "qr-code" [ref=e519]
+            - img "DPSsimplified" [ref=e522] [cursor=pointer]
+            - list [ref=e523]:
+              - listitem [ref=e524]: · Apple is a trademark of Apple Inc., registered in the U.S.and other countries. App Store is a service mark of Apple Inc.
+              - listitem [ref=e525]: · Google Play™ is a Trademark of Google LLC.
+      - generic [ref=e526]:
+        - generic [ref=e527]:
+          - generic [ref=e528]: This website is prepared and issued by ZA Bank Limited. All Rights Reserved © 2026 ZA Bank Limited
+          - generic [ref=e529]:
+            - link "Conditions of Use of Website" [ref=e530] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/en_US/1000379
+            - text: "|"
+            - link "Privacy Policy" [ref=e531] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/en_US/1000442
+            - text: "|"
+            - link "Personal Information Collection Statement" [ref=e532] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/en_US/1000378
+        - generic [ref=e533]: "*As the first digital bank to launch in Hong Kong, ZA Bank had the highest number of users and customer deposits among the city’s eight digital banks as of 30 June 2024. Source: Interim reports of 8 digital banks."
+  - alert [ref=e534]

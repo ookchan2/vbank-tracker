@@ -7,9 +7,9 @@
  * @author Alfie
  */
 
-import { runAgent, type AgentResult } from './client';
-import { hktToday } from '../utils/hkt';
-import { canonicalBankName } from '../utils/filters';
+import { runAgent, type AgentResult } from './client.js';
+import { hktToday } from '../utils/hkt.js';
+import { canonicalBankName } from '../utils/filters.js';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

@@ -1,12 +1,12 @@
 /**
- * Direct Anthropic API client for AI extraction.
- * Used as fallback when Agent SDK is not available (e.g., in GitHub Actions).
+ * Poe API client for AI extraction.
+ * Uses Claude-3.5-Sonnet via Poe API for best balance of quality and speed.
+ * Note: Poe uses simplified model names like 'claude-sonnet-3.7' instead of full Anthropic IDs.
  * @author Claude
  */
 
-import Anthropic from '@anthropic-ai/sdk';
-
-const client = new Anthropic();
+import { generateText } from 'ai';
+import { poe } from 'ai-sdk-provider-poe';
 
 export interface DirectAIResult {
   success: boolean;
@@ -18,7 +18,8 @@ export interface DirectAIResult {
 }
 
 /**
- * Call Anthropic API directly for structured extraction.
+ * Call Poe API with Claude-3.5-Sonnet for structured extraction.
+ * Uses 'claude-sonnet-3.7' which is the closest to Claude-3.5-Sonnet on Poe.
  */
 export async function callAnthropicDirect(
   prompt: string,
@@ -29,46 +30,35 @@ export async function callAnthropicDirect(
   const t0 = Date.now();
 
   try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: maxTokens,
+    const { text, usage } = await generateText({
+      model: poe('claude-sonnet-3.7'),
+      maxOutputTokens: maxTokens,
       temperature: 0.1,
       system: systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+      prompt,
     });
 
-    const textBlock = response.content.find(b => b.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
-      return { success: false, errors: ['No text response from API'] };
-    }
-
-    const resultText = textBlock.text;
-
-    // Calculate approximate cost (Claude Sonnet 4 pricing)
-    const inputTokens = response.usage.input_tokens;
-    const outputTokens = response.usage.output_tokens;
+    // Calculate approximate cost (Claude 3.5 Sonnet pricing via Poe)
+    // Input: ~$3/1M tokens, Output: ~$15/1M tokens
+    const inputTokens = usage.inputTokens ?? 0;
+    const outputTokens = usage.outputTokens ?? 0;
     const costUsd = (inputTokens / 1_000_000 * 3 + outputTokens / 1_000_000 * 15);
 
     // Try to parse as JSON
     let structuredOutput = null;
     try {
       // Try direct parse first
-      structuredOutput = JSON.parse(resultText);
+      structuredOutput = JSON.parse(text);
     } catch {
       // Try to extract JSON from markdown code blocks
-      const jsonMatch = resultText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch) {
         try {
           structuredOutput = JSON.parse(jsonMatch[1].trim());
         } catch {
           // Try to find raw JSON array/object
-          const arrayMatch = resultText.match(/\[[\s\S]*\]/);
-          const objectMatch = resultText.match(/\{[\s\S]*\}/);
+          const arrayMatch = text.match(/\[[\s\S]*\]/);
+          const objectMatch = text.match(/\{[\s\S]*\}/);
           if (arrayMatch) {
             structuredOutput = { promotions: JSON.parse(arrayMatch[0]) };
           } else if (objectMatch) {
@@ -80,7 +70,7 @@ export async function callAnthropicDirect(
 
     return {
       success: true,
-      result: resultText,
+      result: text,
       structuredOutput,
       costUsd,
       durationMs: Date.now() - t0,
@@ -95,16 +85,12 @@ export async function callAnthropicDirect(
 }
 
 /**
- * Check if running in an environment where Agent SDK works.
- * Agent SDK requires Claude Code CLI to be installed.
+ * Check if running in an environment where Poe API should be used.
+ * Requires POE_API_KEY to be set.
  */
 export function shouldUseDirectAPI(): boolean {
-  // In GitHub Actions, Agent SDK doesn't work
-  if (process.env.GITHUB_ACTIONS === 'true') {
-    return true;
-  }
-  // If ANTHROPIC_API_KEY is set, prefer direct API
-  if (process.env.ANTHROPIC_API_KEY) {
+  // If POE_API_KEY is set, use Poe API
+  if (process.env.POE_API_KEY) {
     return true;
   }
   return false;

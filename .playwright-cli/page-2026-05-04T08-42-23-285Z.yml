@@ -1,0 +1,744 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - link "Mox Logo" [ref=e10] [cursor=pointer]:
+          - /url: /zh/
+          - img "Mox Logo" [ref=e11]
+        - img "Standard Chartered" [ref=e13]
+      - generic [ref=e14]:
+        - navigation [ref=e16]:
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - link "Mox+" [ref=e19] [cursor=pointer]:
+                - /url: /zh/MoxPlus-Updates/
+            - listitem [ref=e20]:
+              - link "旅遊攻略" [ref=e21] [cursor=pointer]:
+                - /url: /zh/all-round-travel-playbook/
+            - listitem [ref=e22]:
+              - button "服務特色" [ref=e23] [cursor=pointer]
+              - list:
+                - listitem:
+                  - link "Mox信用卡":
+                    - /url: /zh/features/mox-credit/
+                - listitem:
+                  - link "Mox Invest":
+                    - /url: /zh/features/mox-invest/
+                - listitem:
+                  - link "Mox Insure":
+                    - /url: /zh/features/mox-insure/
+                - listitem:
+                  - link "精明理財":
+                    - /url: /zh/features/smart-banking/
+                - listitem:
+                  - link "精明信貸":
+                    - /url: /zh/features/smart-borrowing/
+                - listitem:
+                  - link "「即時借」私人貸款":
+                    - /url: /zh/promotions/instant-loan/
+                - listitem:
+                  - link "精明儲蓄":
+                    - /url: /zh/features/smart-saving/
+                - listitem:
+                  - link "精明消費":
+                    - /url: /zh/features/smart-spending/
+                - listitem:
+                  - link "Mox FX":
+                    - /url: /zh/features/mox-fx/
+                - listitem:
+                  - link "Mox特色一覽":
+                    - /url: /zh/features/mox-at-a-glance/
+            - listitem [ref=e24]:
+              - link "推廣優惠":
+                - /url: /zh/promotions/
+            - listitem [ref=e25]:
+              - link "關於我們" [ref=e26] [cursor=pointer]:
+                - /url: /zh/about-us/
+            - listitem [ref=e27]:
+              - link "常見問題" [ref=e28] [cursor=pointer]:
+                - /url: /zh/faqs/
+        - button "下載Mox" [ref=e29] [cursor=pointer]
+        - img [ref=e34] [cursor=pointer]
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - link "Mox":
+                    - /url: /zh/
+                    - img "Mox"
+                  - generic:
+                    - img "Standard Chartered"
+              - generic:
+                - button
+      - generic:
+        - generic:
+          - generic:
+            - list:
+              - listitem:
+                - link "Mox+":
+                  - /url: /zh/MoxPlus-Updates/
+              - listitem:
+                - link "旅遊攻略":
+                  - /url: /zh/all-round-travel-playbook/
+              - listitem:
+                - button "服務特色"
+                - list:
+                  - listitem:
+                    - link "Mox信用卡":
+                      - /url: /zh/features/mox-credit/
+                  - listitem:
+                    - link "Mox Invest":
+                      - /url: /zh/features/mox-invest/
+                  - listitem:
+                    - link "Mox Insure":
+                      - /url: /zh/features/mox-insure/
+                  - listitem:
+                    - link "精明理財":
+                      - /url: /zh/features/smart-banking/
+                  - listitem:
+                    - link "精明信貸":
+                      - /url: /zh/features/smart-borrowing/
+                  - listitem:
+                    - link "「即時借」私人貸款":
+                      - /url: /zh/promotions/instant-loan/
+                  - listitem:
+                    - link "精明儲蓄":
+                      - /url: /zh/features/smart-saving/
+                  - listitem:
+                    - link "精明消費":
+                      - /url: /zh/features/smart-spending/
+                  - listitem:
+                    - link "Mox FX":
+                      - /url: /zh/features/mox-fx/
+                  - listitem:
+                    - link "Mox特色一覽":
+                      - /url: /zh/features/mox-at-a-glance/
+              - listitem:
+                - link "推廣優惠":
+                  - /url: /zh/promotions/
+              - listitem:
+                - link "關於我們":
+                  - /url: /zh/about-us/
+              - listitem:
+                - link "常見問題":
+                  - /url: /zh/faqs/
+  - generic [ref=e39]:
+    - heading "推廣優惠" [level=1] [ref=e44]
+    - generic [ref=e46]:
+      - link "全部" [ref=e47] [cursor=pointer]:
+        - /url: /zh/promotions/
+      - link "Invest" [ref=e48] [cursor=pointer]:
+        - /url: "?category=invest"
+      - link "存款" [ref=e49] [cursor=pointer]:
+        - /url: "?category=deposits"
+      - link "Insure" [ref=e50] [cursor=pointer]:
+        - /url: "?category=insure"
+      - link "外匯存款/匯款" [ref=e51] [cursor=pointer]:
+        - /url: "?category=fx-savings-remit"
+      - link "Mox Credit" [ref=e52] [cursor=pointer]:
+        - /url: "?category=mox-credit"
+      - link "迎新優惠" [ref=e53] [cursor=pointer]:
+        - /url: "?category=welcome-offer"
+      - link "貸款" [ref=e54] [cursor=pointer]:
+        - /url: "?category=borrowing"
+      - link "亞洲萬里通" [ref=e55] [cursor=pointer]:
+        - /url: "?category=asia-miles"
+      - link "優惠" [ref=e56] [cursor=pointer]:
+        - /url: "?category=offers"
+    - generic [ref=e58]:
+      - generic [ref=e59] [cursor=pointer]:
+        - link "任何基金，一律0%認購費" [ref=e60]:
+          - /url: /zh/promotions/invest-fund-0-fee/
+          - img "任何基金，一律0%認購費" [ref=e62]
+        - generic [ref=e63]:
+          - link "Invest 任何基金，一律0%認購費" [ref=e64]:
+            - /url: /zh/promotions/invest-fund-0-fee/
+            - generic [ref=e66]: Invest
+            - generic [ref=e67]: 任何基金，一律0%認購費
+          - generic [ref=e68]:
+            - link "Mox Invest 為你簡化投資第一步：即日起至2026年6月30日，認購任何基金，一律0%認購費^。無需高門檻，小額低至HKD100/USD100即可起步。 ^您仍須支付基金的持續費用，例如年度管理費、託管費和行政費等其他費用，詳情請參考個別基金發行文件。" [ref=e69]:
+              - /url: /zh/promotions/invest-fund-0-fee/
+              - paragraph [ref=e71]: Mox Invest 為你簡化投資第一步：即日起至2026年6月30日，認購任何基金，一律0%認購費^。無需高門檻，小額低至HKD100/USD100即可起步。
+              - paragraph [ref=e73]: ^您仍須支付基金的持續費用，例如年度管理費、託管費和行政費等其他費用，詳情請參考個別基金發行文件。
+            - paragraph [ref=e74]:
+              - link "推廣期由2026年4月1日至2026年6月30日。受" [ref=e75]:
+                - /url: /zh/promotions/invest-fund-0-fee/
+              - link "Mox Invest基金 0% 認購費推廣優惠條款及細則" [ref=e76]:
+                - /url: https://mox.com/static/202604_MoxInvestFunds0FeePromotionTnC.pdf
+              - text: 約束。
+          - generic [ref=e80]: 了解更多
+      - link "用Mox信用卡交稅後，申請分期，賺高達HKD500現金獎賞💰 貸款 用Mox信用卡交稅後，申請分期，賺高達HKD500現金獎賞💰 第二期稅款倒數中！由2026年4月1日至4月30日，用Mox信用卡繳交稅單並申請「簽賬分期」，將稅單分期慢慢還，唔單止可以輕鬆啲，仲可以賺取高達HKD500現金獎賞！ 受條款及細則約束 了解更多" [ref=e82] [cursor=pointer]:
+        - /url: /zh/promotions/pay-and-split-tax/
+        - img "用Mox信用卡交稅後，申請分期，賺高達HKD500現金獎賞💰" [ref=e84]
+        - generic [ref=e85]:
+          - generic [ref=e87]: 貸款
+          - generic [ref=e88]: 用Mox信用卡交稅後，申請分期，賺高達HKD500現金獎賞💰
+          - generic [ref=e89]:
+            - paragraph [ref=e91]: 第二期稅款倒數中！由2026年4月1日至4月30日，用Mox信用卡繳交稅單並申請「簽賬分期」，將稅單分期慢慢還，唔單止可以輕鬆啲，仲可以賺取高達HKD500現金獎賞！
+            - paragraph [ref=e93]: 受條款及細則約束
+          - generic [ref=e97]: 了解更多
+      - link "「即時借」 即時為夢想鋪路：實際年利率低至1.18% 貸款 「即時借」 即時為夢想鋪路：實際年利率低至1.18% 申請全程一app搞掂，專屬實際年利率即撳即睇，一經批核現金最快一秒到手。 即日起至2026年7月31日，成功申請指定「即時借」，賺高達HKD12,888現金獎賞。 受條款及細則約束 了解更多" [ref=e99] [cursor=pointer]:
+        - /url: /zh/promotions/instant-loan/
+        - img "「即時借」 即時為夢想鋪路：實際年利率低至1.18%" [ref=e101]
+        - generic [ref=e102]:
+          - generic [ref=e104]: 貸款
+          - generic [ref=e105]: 「即時借」 即時為夢想鋪路：實際年利率低至1.18%
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - paragraph [ref=e108]: 申請全程一app搞掂，專屬實際年利率即撳即睇，一經批核現金最快一秒到手。
+              - paragraph [ref=e109]: 即日起至2026年7月31日，成功申請指定「即時借」，賺高達HKD12,888現金獎賞。
+            - paragraph [ref=e111]: 受條款及細則約束
+          - generic [ref=e115]: 了解更多
+      - link "限時快閃⚡️獨享Keeta高達HKD80折扣，全城獨家！ Mox Credit 迎新優惠 限時快閃⚡️獨享Keeta高達HKD80折扣，全城獨家！ 4月咁多假期，唔少得宅在家同屋企人朋友享受quality time！即日起至2026年4月30日，用Mox Card嗌Keeta外賣專享全城獨家高達HKD20折扣 — 全月最多可慳HKD80！仲有驚喜優惠券及迎新獎賞等緊你，原來搞home party可以又賺又輕鬆！ 了解更多" [ref=e117] [cursor=pointer]:
+        - /url: /zh/promotions/order-keeta-with-mox/
+        - img "限時快閃⚡️獨享Keeta高達HKD80折扣，全城獨家！" [ref=e119]
+        - generic [ref=e120]:
+          - generic [ref=e121]:
+            - generic [ref=e122]: Mox Credit
+            - generic [ref=e123]: 迎新優惠
+          - generic [ref=e124]: 限時快閃⚡️獨享Keeta高達HKD80折扣，全城獨家！
+          - paragraph [ref=e127]: 4月咁多假期，唔少得宅在家同屋企人朋友享受quality time！即日起至2026年4月30日，用Mox Card嗌Keeta外賣專享全城獨家高達HKD20折扣 — 全月最多可慳HKD80！仲有驚喜優惠券及迎新獎賞等緊你，原來搞home party可以又賺又輕鬆！
+          - generic [ref=e131]: 了解更多
+      - link "入手全新最強攝影旗艦手機必備優惠📷📱小米消費獎賞合共高達7%現金回贈＋0息分期💰 全新客戶更享高達HKD2,150現金獎賞 Mox Credit 迎新優惠 入手全新最強攝影旗艦手機必備優惠📷📱小米消費獎賞合共高達7%現金回贈＋0息分期💰 全新客戶更享高達HKD2,150現金獎賞 用Mox信用卡於小米香港官網或小米之家購物，累積消費滿指定金額，即享額外高達5%現金回贈（上限HKD450）及長達12個月0息分期，加埋基本獎賞2%無上限CashBack，總共可享高達7%現金回贈！ 新客戶憑邀請碼「XM1500MOX」 仲可專享迎新禮遇總值高達HKD2,150現金獎賞！ 了解更多" [ref=e133] [cursor=pointer]:
+        - /url: /zh/promotions/2026-xiaomi/
+        - img "入手全新最強攝影旗艦手機必備優惠📷📱小米消費獎賞合共高達7%現金回贈＋0息分期💰 全新客戶更享高達HKD2,150現金獎賞" [ref=e135]
+        - generic [ref=e136]:
+          - generic [ref=e137]:
+            - generic [ref=e138]: Mox Credit
+            - generic [ref=e139]: 迎新優惠
+          - generic [ref=e140]: 入手全新最強攝影旗艦手機必備優惠📷📱小米消費獎賞合共高達7%現金回贈＋0息分期💰 全新客戶更享高達HKD2,150現金獎賞
+          - generic [ref=e142]:
+            - paragraph [ref=e143]: 用Mox信用卡於小米香港官網或小米之家購物，累積消費滿指定金額，即享額外高達5%現金回贈（上限HKD450）及長達12個月0息分期，加埋基本獎賞2%無上限CashBack，總共可享高達7%現金回贈！
+            - paragraph [ref=e144]: 新客戶憑邀請碼「XM1500MOX」 仲可專享迎新禮遇總值高達HKD2,150現金獎賞！
+          - generic [ref=e148]: 了解更多
+      - generic [ref=e149] [cursor=pointer]:
+        - link "用 「MOXPAYROLL」 開戶，再轉用Mox出糧，賺高達HKD1,600現金獎賞" [ref=e150]:
+          - /url: /zh/promotions/moxpayroll/
+          - img "用 「MOXPAYROLL」 開戶，再轉用Mox出糧，賺高達HKD1,600現金獎賞" [ref=e152]
+        - generic [ref=e153]:
+          - link "迎新優惠 用 「MOXPAYROLL」 開戶，再轉用Mox出糧，賺高達HKD1,600現金獎賞" [ref=e154]:
+            - /url: /zh/promotions/moxpayroll/
+            - generic [ref=e156]: 迎新優惠
+            - generic [ref=e157]: 用 「MOXPAYROLL」 開戶，再轉用Mox出糧，賺高達HKD1,600現金獎賞
+          - generic [ref=e158]:
+            - link "由即日起至2026年6月30日，用邀請碼 「MOXPAYROLL」 開立Mox戶口並在其後30日內成功申請Mox信用卡，即賺HKD400。另外，於2026年5月及6月累積合資格出糧交易，每月可賺取HKD600，現金獎賞合共高達HKD1,600元！" [ref=e159]:
+              - /url: /zh/promotions/moxpayroll/
+              - paragraph [ref=e161]: 由即日起至2026年6月30日，用邀請碼 「MOXPAYROLL」 開立Mox戶口並在其後30日內成功申請Mox信用卡，即賺HKD400。另外，於2026年5月及6月累積合資格出糧交易，每月可賺取HKD600，現金獎賞合共高達HKD1,600元！
+            - paragraph [ref=e162]:
+              - link "此獎賞優惠只適用於過去 12 個月內未曾持有任何Mox戶口之客戶。 受" [ref=e163]:
+                - /url: /zh/promotions/moxpayroll/
+                - text: 此獎賞優惠只適用於過去 12 個月內未曾持有任何Mox戶口之客戶。
+                - text: 受
+              - link "「MOXPAYROLL」迎新推廣條款及細則" [ref=e164]:
+                - /url: https://mox.com/static/MOXPAYROLL_welcome_offer_promotion_T&C.pdf
+              - text: 約束。
+          - generic [ref=e168]: 了解更多
+      - generic [ref=e169] [cursor=pointer]:
+        - link "玩任務刮大獎💥投資、外匯、繳費即送你Mox刮刮卡🥳立即刮走總值HKD8,888 終極大獎" [ref=e170]:
+          - /url: /zh/promotions/MoxJourneyfromScratchPromotion/
+          - img "玩任務刮大獎💥投資、外匯、繳費即送你Mox刮刮卡🥳立即刮走總值HKD8,888 終極大獎" [ref=e172]
+        - generic [ref=e173]:
+          - link "Invest 玩任務刮大獎💥投資、外匯、繳費即送你Mox刮刮卡🥳立即刮走總值HKD8,888 終極大獎" [ref=e174]:
+            - /url: /zh/promotions/MoxJourneyfromScratchPromotion/
+            - generic [ref=e176]: Invest
+            - generic [ref=e177]: 玩任務刮大獎💥投資、外匯、繳費即送你Mox刮刮卡🥳立即刮走總值HKD8,888 終極大獎
+          - generic [ref=e178]:
+            - link "於推廣期內¹，挑戰任何五項簡單任務🖐，每完成一項任務，即送你一張Mox刮刮卡。完成任務越多，刮走終極大獎機會越高——總值HKD8,888（HKD8,000 SOL幣^ + HKD888現金獎賞）！🔥 *數量有限，送完即止。 投資涉及風險。" [ref=e179]:
+              - /url: /zh/promotions/MoxJourneyfromScratchPromotion/
+              - generic [ref=e180]:
+                - paragraph [ref=e181]: 於推廣期內¹，挑戰任何五項簡單任務🖐，每完成一項任務，即送你一張Mox刮刮卡。完成任務越多，刮走終極大獎機會越高——總值HKD8,888（HKD8,000 SOL幣^ + HKD888現金獎賞）！🔥
+                - paragraph [ref=e182]: "*數量有限，送完即止。"
+              - paragraph [ref=e184]: 投資涉及風險。
+            - paragraph [ref=e185]:
+              - link "受" [ref=e186]:
+                - /url: /zh/promotions/MoxJourneyfromScratchPromotion/
+              - link "Mox Invest條款及細則" [ref=e187]:
+                - /url: https://mox.com/static/260122_Mox_Invest_Schedule.pdf
+              - text: 約束。
+            - paragraph [ref=e188]:
+              - text: ¹推廣期由2026年3月16日至2026年6月15日。受
+              - link "Mox Invest Journey from Scratch" [ref=e189]:
+                - /url: https://mox.com/static/202603_MoxJourneyfromScratchPromotionTnC.pdf
+              - text: 推廣條款及細則約束。
+          - generic [ref=e193]: 了解更多
+      - link "Mox幫你嘆住賺bonus 存款 Mox幫你嘆住賺bonus Bonus到手，諗好點獎勵自己未？除咗食餐好嘅或者買禮物畀自己，你仲可以「一邊嘆、一邊賺」，儲錢嘅同時仲有機會等Mox請你食飯😍 由即日起至2026年4月30日，將你份bonus存入Mox，除咗穩賺高息，仲有機會贏走一個月「免費大餐」，每存入HKD10,000就有一次抽獎機會，存得越多，機會越大！ 受條款及細則約束。 了解更多" [ref=e195] [cursor=pointer]:
+        - /url: /zh/promotions/bonus-lucky-draw-26/
+        - img "Mox幫你嘆住賺bonus" [ref=e197]
+        - generic [ref=e198]:
+          - generic [ref=e200]: 存款
+          - generic [ref=e201]: Mox幫你嘆住賺bonus
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - paragraph [ref=e204]: Bonus到手，諗好點獎勵自己未？除咗食餐好嘅或者買禮物畀自己，你仲可以「一邊嘆、一邊賺」，儲錢嘅同時仲有機會等Mox請你食飯😍
+              - paragraph [ref=e205]: 由即日起至2026年4月30日，將你份bonus存入Mox，除咗穩賺高息，仲有機會贏走一個月「免費大餐」，每存入HKD10,000就有一次抽獎機會，存得越多，機會越大！
+            - paragraph [ref=e207]: 受條款及細則約束。
+          - generic [ref=e211]: 了解更多
+      - link "Mox x csl「全城最好」合約服務獨家優惠：上台或續約一律可享回贈高達HKD1,380，再送NowTV通行證🤳👾 Mox Credit 迎新優惠 Mox x csl「全城最好」合約服務獨家優惠：上台或續約一律可享回贈高達HKD1,380，再送NowTV通行證🤳👾 Mox x csl獨家呈獻「全城最好」合約服務獨家優惠，Mox客戶凡上台或續約後設定Mox 信用卡自動轉賬繳費，即可獨家享有HKD180月費回贈及免費Now TV beIN SPORTS Super組合通行證（價值 HKD188），令你通訊及娛樂體驗全面升級。 條款及細則約束。 了解更多" [ref=e213] [cursor=pointer]:
+        - /url: /zh/promotions/best-in-town-renewal/
+        - img "Mox x csl「全城最好」合約服務獨家優惠：上台或續約一律可享回贈高達HKD1,380，再送NowTV通行證🤳👾" [ref=e215]
+        - generic [ref=e216]:
+          - generic [ref=e217]:
+            - generic [ref=e218]: Mox Credit
+            - generic [ref=e219]: 迎新優惠
+          - generic [ref=e220]: Mox x csl「全城最好」合約服務獨家優惠：上台或續約一律可享回贈高達HKD1,380，再送NowTV通行證🤳👾
+          - generic [ref=e221]:
+            - paragraph [ref=e223]: Mox x csl獨家呈獻「全城最好」合約服務獨家優惠，Mox客戶凡上台或續約後設定Mox 信用卡自動轉賬繳費，即可獨家享有HKD180月費回贈及免費Now TV beIN SPORTS Super組合通行證（價值 HKD188），令你通訊及娛樂體驗全面升級。
+            - paragraph [ref=e225]: 條款及細則約束。
+          - generic [ref=e229]: 了解更多
+      - generic [ref=e230] [cursor=pointer]:
+        - link "Mox Insure 送你免費旅行加 「保」！✈️🆓" [ref=e231]:
+          - /url: /zh/promotions/TravelEggstraCarePromotion/
+          - img "Mox Insure 送你免費旅行加 「保」！✈️🆓" [ref=e233]
+        - generic [ref=e234]:
+          - link "Insure Mox Insure 送你免費旅行加 「保」！✈️🆓" [ref=e235]:
+            - /url: /zh/promotions/TravelEggstraCarePromotion/
+            - generic [ref=e237]: Insure
+            - generic [ref=e238]: Mox Insure 送你免費旅行加 「保」！✈️🆓
+          - generic [ref=e239]:
+            - link "於2026年3月4日到5月31日期間，投保「隨你飛旅遊保」限時送你免費任選一項「附加保障」！🎊 等我哋幫你頂住突發旅遊開支帶來嘅財務壓力，你淨係需要專心打卡。📸🥰" [ref=e240]:
+              - /url: /zh/promotions/TravelEggstraCarePromotion/
+              - paragraph [ref=e242]: 於2026年3月4日到5月31日期間，投保「隨你飛旅遊保」限時送你免費任選一項「附加保障」！🎊 等我哋幫你頂住突發旅遊開支帶來嘅財務壓力，你淨係需要專心打卡。📸🥰
+            - paragraph [ref=e243]:
+              - link "推廣期由2026年3月4日至2026年5月31日。受" [ref=e244]:
+                - /url: /zh/promotions/TravelEggstraCarePromotion/
+              - link "隨你飛旅遊保Eggstra保障升級（2026年3月至2026年5月）推廣優惠條款及細則" [ref=e245]:
+                - /url: https://mox.com/static/202603_MoxInsureTravelEggstraCarePromotion.pdf
+              - text: 約束。
+          - generic [ref=e249]: 了解更多
+      - link "時刻都掛住周圍飛？✈️ 用「MOXTRAVEL」開戶、消費及存款，獨攬高達28,500里！ 迎新優惠 時刻都掛住周圍飛？✈️ 用「MOXTRAVEL」開戶、消費及存款，獨攬高達28,500里！ 新客戶由即日起至2026年6月30日，用「MOXTRAVEL」開戶並成功申請Mox信用卡，消費及存款可賺高達28,500里數，足夠兌換來回亞洲機票！ 受「MOXTRAVEL」邀請碼推廣條款及細則約束。 借定唔借？還得到先好借！ 了解更多" [ref=e251] [cursor=pointer]:
+        - /url: /zh/promotions/MOXTRAVEL/
+        - img "時刻都掛住周圍飛？✈️ 用「MOXTRAVEL」開戶、消費及存款，獨攬高達28,500里！" [ref=e253]
+        - generic [ref=e254]:
+          - generic [ref=e256]: 迎新優惠
+          - generic [ref=e257]: 時刻都掛住周圍飛？✈️ 用「MOXTRAVEL」開戶、消費及存款，獨攬高達28,500里！
+          - generic [ref=e258]:
+            - paragraph [ref=e260]: 新客戶由即日起至2026年6月30日，用「MOXTRAVEL」開戶並成功申請Mox信用卡，消費及存款可賺高達28,500里數，足夠兌換來回亞洲機票！
+            - generic [ref=e261]:
+              - paragraph [ref=e262]: 受「MOXTRAVEL」邀請碼推廣條款及細則約束。
+              - paragraph [ref=e263]: 借定唔借？還得到先好借！
+          - generic [ref=e267]: 了解更多
+      - link "旗艦新機登場📱☄️ 於The Club購買全新Samsung S26系列專享HKD100獨家折扣 迎新優惠 Mox Credit 旗艦新機登場📱☄️ 於The Club購買全新Samsung S26系列專享HKD100獨家折扣 全新iPhone 17e 及 Samsung S26系列終於登場，Mox已為你準備限時獨家優惠⚡️ 立即把握機會賺住upgrade明星同款旗艦手機👇🏻 受條款及細則約束。 了解更多" [ref=e269] [cursor=pointer]:
+        - /url: /zh/promotions/The-Club/
+        - img "旗艦新機登場📱☄️ 於The Club購買全新Samsung S26系列專享HKD100獨家折扣" [ref=e271]
+        - generic [ref=e272]:
+          - generic [ref=e273]:
+            - generic [ref=e274]: 迎新優惠
+            - generic [ref=e275]: Mox Credit
+          - generic [ref=e276]: 旗艦新機登場📱☄️ 於The Club購買全新Samsung S26系列專享HKD100獨家折扣
+          - generic [ref=e277]:
+            - paragraph [ref=e279]: 全新iPhone 17e 及 Samsung S26系列終於登場，Mox已為你準備限時獨家優惠⚡️ 立即把握機會賺住upgrade明星同款旗艦手機👇🏻
+            - paragraph [ref=e281]: 受條款及細則約束。
+          - generic [ref=e285]: 了解更多
+      - generic [ref=e286] [cursor=pointer]:
+        - link "Uber Taxi：送你高達HKD90乘車優惠🚕🧧" [ref=e287]:
+          - /url: /zh/promotions/mox-uber-taxi-spending-reward/
+          - img "Uber Taxi：送你高達HKD90乘車優惠🚕🧧" [ref=e289]
+        - generic [ref=e290]:
+          - link "Mox Credit 迎新優惠 Uber Taxi：送你高達HKD90乘車優惠🚕🧧" [ref=e291]:
+            - /url: /zh/promotions/mox-uber-taxi-spending-reward/
+            - generic [ref=e292]:
+              - generic [ref=e293]: Mox Credit
+              - generic [ref=e294]: 迎新優惠
+            - generic [ref=e295]: Uber Taxi：送你高達HKD90乘車優惠🚕🧧
+          - generic [ref=e296]:
+            - link "新一年對自己好啲，先係真正嘅好開始！Mox為你送上Uber Taxi消費優惠，即日起至2026年4月30日，無論係周圍拜年、週末郊遊，定係出入機場，只要用Mox Card付款即享每月三程Uber Taxi HKD10乘車優惠，令你放假出行賺更多！立即領取專屬優惠碼👉🏻" [ref=e297]:
+              - /url: /zh/promotions/mox-uber-taxi-spending-reward/
+              - paragraph [ref=e299]: 新一年對自己好啲，先係真正嘅好開始！Mox為你送上Uber Taxi消費優惠，即日起至2026年4月30日，無論係周圍拜年、週末郊遊，定係出入機場，只要用Mox Card付款即享每月三程Uber Taxi HKD10乘車優惠，令你放假出行賺更多！立即領取專屬優惠碼👉🏻
+            - paragraph [ref=e300]:
+              - link "受" [ref=e301]:
+                - /url: /zh/promotions/mox-uber-taxi-spending-reward/
+              - link "Mox x Uber Taxi消費獎賞條款及細則" [ref=e302]:
+                - /url: https://mox.com/static/Mox_Uber_Taxi_Spending_Reward_TnC.pdf
+              - text: 約束。
+            - paragraph [ref=e303]: 借定唔借？還得到先好借！
+          - generic [ref=e307]: 了解更多
+      - generic [ref=e308] [cursor=pointer]:
+        - link "用Mox定存密密賺！" [ref=e309]:
+          - /url: /zh/promotions/moxdepo/
+          - img "用Mox定存密密賺！" [ref=e311]
+        - generic [ref=e312]:
+          - link "迎新優惠 用Mox定存密密賺！" [ref=e313]:
+            - /url: /zh/promotions/moxdepo/
+            - generic [ref=e315]: 迎新優惠
+            - generic [ref=e316]: 用Mox定存密密賺！
+          - generic [ref=e317]:
+            - link "由即日起至2026年6月30日，用邀請碼「MOXDEPO」開立Mox戶口，最快幾分鐘簡單開戶！在使用邀請碼當日及其後15日期間內完成開戶程序及開戶後7天內開立定期存款戶口並維持HKD250,000或以上至資金計算期完結，即可賺取HKD2,500現金獎賞。立即加入Mox！" [ref=e318]:
+              - /url: /zh/promotions/moxdepo/
+              - paragraph [ref=e320]: 由即日起至2026年6月30日，用邀請碼「MOXDEPO」開立Mox戶口，最快幾分鐘簡單開戶！在使用邀請碼當日及其後15日期間內完成開戶程序及開戶後7天內開立定期存款戶口並維持HKD250,000或以上至資金計算期完結，即可賺取HKD2,500現金獎賞。立即加入Mox！
+            - paragraph [ref=e321]:
+              - link "此獎賞優惠只適用於過去 12 個月內未曾持有任何Mox戶口之客戶。 受" [ref=e322]:
+                - /url: /zh/promotions/moxdepo/
+                - text: 此獎賞優惠只適用於過去 12 個月內未曾持有任何Mox戶口之客戶。
+                - text: 受
+              - link "「MOXDEPO」邀請碼推廣條款及細則" [ref=e323]:
+                - /url: https://mox.com/static/MOXDEPO_Promotion_TnCs.pdf
+              - text: 約束。
+          - generic [ref=e327]: 了解更多
+      - link "用「1500MOX」開戶送你高達HKD1,500現金獎賞，限時0要求解鎖2%無上限CashBack 迎新優惠 用「1500MOX」開戶送你高達HKD1,500現金獎賞，限時0要求解鎖2%無上限CashBack 新客戶由即日起至2026年6月30日，憑邀請碼「1500MOX」開戶兼申請Mox信用卡，於全港任何商戶消費達成指定要求即送你現金獎賞高達HKD1,500，仲限時0要求解鎖2%無上限CashBack或HKD4=1里，從此賺放無限制日常！ 受「1500MOX」邀請碼推廣條款及細則約束。 借定唔借？還得到先好借！ 了解更多" [ref=e329] [cursor=pointer]:
+        - /url: /zh/promotions/1500mox/
+        - img "用「1500MOX」開戶送你高達HKD1,500現金獎賞，限時0要求解鎖2%無上限CashBack" [ref=e331]
+        - generic [ref=e332]:
+          - generic [ref=e334]: 迎新優惠
+          - generic [ref=e335]: 用「1500MOX」開戶送你高達HKD1,500現金獎賞，限時0要求解鎖2%無上限CashBack
+          - generic [ref=e336]:
+            - paragraph [ref=e338]: 新客戶由即日起至2026年6月30日，憑邀請碼「1500MOX」開戶兼申請Mox信用卡，於全港任何商戶消費達成指定要求即送你現金獎賞高達HKD1,500，仲限時0要求解鎖2%無上限CashBack或HKD4=1里，從此賺放無限制日常！
+            - generic [ref=e339]:
+              - paragraph [ref=e340]: 受「1500MOX」邀請碼推廣條款及細則約束。
+              - paragraph [ref=e341]: 借定唔借？還得到先好借！
+          - generic [ref=e345]: 了解更多
+      - link "消費兼存款賞：於5間熱門商戶消費賺20%現金回贈及存款現金獎賞！ 迎新優惠 消費兼存款賞：於5間熱門商戶消費賺20%現金回贈及存款現金獎賞！ 作為Mox新客戶，用專屬邀請碼「MOXSMART」開戶，你可從熱門商戶HKTVmall、foodpanda、Uber、Keeta或淘寶消費並享全年盡享高達20%現金獎賞＋基本獎賞高達2%無上限CashBack! 另外，迎新存款仲有約12%年利率定期。賺盡每個生活日常！ 「MOXSMART」邀請碼推廣條款及細則約束。 借定唔借？還得到先好借！ 了解更多" [ref=e347] [cursor=pointer]:
+        - /url: /zh/promotions/moxsmart/
+        - img "消費兼存款賞：於5間熱門商戶消費賺20%現金回贈及存款現金獎賞！" [ref=e349]
+        - generic [ref=e350]:
+          - generic [ref=e352]: 迎新優惠
+          - generic [ref=e353]: 消費兼存款賞：於5間熱門商戶消費賺20%現金回贈及存款現金獎賞！
+          - generic [ref=e354]:
+            - paragraph [ref=e356]: 作為Mox新客戶，用專屬邀請碼「MOXSMART」開戶，你可從熱門商戶HKTVmall、foodpanda、Uber、Keeta或淘寶消費並享全年盡享高達20%現金獎賞＋基本獎賞高達2%無上限CashBack! 另外，迎新存款仲有約12%年利率定期。賺盡每個生活日常！
+            - generic [ref=e357]:
+              - paragraph [ref=e358]: 「MOXSMART」邀請碼推廣條款及細則約束。
+              - paragraph [ref=e359]: 借定唔借？還得到先好借！
+          - generic [ref=e363]: 了解更多
+      - link "Mox x csl 客戶專享「全城最好」上台買機分期獨家優惠 📲🤑 Mox Credit 迎新優惠 Mox x csl 客戶專享「全城最好」上台買機分期獨家優惠 📲🤑 上台出機優惠多到眼花？作為Mox信用卡客戶嘅你，當然唔使左計右計，自然擁有「全城最好」！ Mox x csl 獨家呈獻「全城最好」上台買機分期優惠，你唔止可享長達24個月0息分期*（亦無任何隱含收費），仲可以即時免費拎走價值高達HKD3,000嘅手機或升級至任何旗艦手機！ 條款及細則約束。 借定唔借？還得到先好借！ 了解更多" [ref=e365] [cursor=pointer]:
+        - /url: /zh/promotions/best-in-town-telco/
+        - img "Mox x csl 客戶專享「全城最好」上台買機分期獨家優惠 📲🤑" [ref=e367]
+        - generic [ref=e368]:
+          - generic [ref=e369]:
+            - generic [ref=e370]: Mox Credit
+            - generic [ref=e371]: 迎新優惠
+          - generic [ref=e372]: Mox x csl 客戶專享「全城最好」上台買機分期獨家優惠 📲🤑
+          - generic [ref=e373]:
+            - generic [ref=e374]:
+              - paragraph [ref=e375]: 上台出機優惠多到眼花？作為Mox信用卡客戶嘅你，當然唔使左計右計，自然擁有「全城最好」！
+              - paragraph [ref=e376]: Mox x csl 獨家呈獻「全城最好」上台買機分期優惠，你唔止可享長達24個月0息分期*（亦無任何隱含收費），仲可以即時免費拎走價值高達HKD3,000嘅手機或升級至任何旗艦手機！
+            - generic [ref=e377]:
+              - paragraph [ref=e378]: 條款及細則約束。
+              - paragraph [ref=e379]: 借定唔借？還得到先好借！
+          - generic [ref=e383]: 了解更多
+      - link "繳付HKT賬單賺HKD1,200現金獎賞 + 高達2%無上限CashBack 迎新優惠 繳付HKT賬單賺HKD1,200現金獎賞 + 高達2%無上限CashBack 邊個話繳費只係支出？即日起至2026年6月30日，用邀請碼 「MOXBILL26」 開戶兼申請Mox信用卡，並繳付HKT賬單，即享現金獎賞高達HKD1,200🔥 以後賬單繼續交，獎賞keep住賺！ 受MOXBILL26邀請碼推廣條款及細則約束。名額有限，先到先得，額滿即止。 了解更多" [ref=e385] [cursor=pointer]:
+        - /url: /zh/promotions/moxbill26/
+        - img "繳付HKT賬單賺HKD1,200現金獎賞 + 高達2%無上限CashBack" [ref=e387]
+        - generic [ref=e388]:
+          - generic [ref=e390]: 迎新優惠
+          - generic [ref=e391]: 繳付HKT賬單賺HKD1,200現金獎賞 + 高達2%無上限CashBack
+          - generic [ref=e392]:
+            - paragraph [ref=e394]: 邊個話繳費只係支出？即日起至2026年6月30日，用邀請碼 「MOXBILL26」 開戶兼申請Mox信用卡，並繳付HKT賬單，即享現金獎賞高達HKD1,200🔥 以後賬單繼續交，獎賞keep住賺！
+            - paragraph [ref=e396]: 受MOXBILL26邀請碼推廣條款及細則約束。名額有限，先到先得，額滿即止。
+          - generic [ref=e400]: 了解更多
+      - link "Trip.com全年獨享：低至92折＋高達2%無上限CashBack✈️🗓️ Mox Credit Trip.com全年獨享：低至92折＋高達2%無上限CashBack✈️🗓️ Mox聯同Trip.com賞你全年賺住飛，飛完繼續賺！即日起至2026年12月31日，於Trip.com用Mox Card預訂酒店或機票，可享低至92折！用Mox信用卡消費更賺額外2%無上限CashBack，等你盡情飛多幾轉！ 了解更多" [ref=e402] [cursor=pointer]:
+        - /url: /zh/promotions/Trip/
+        - img "Trip.com全年獨享：低至92折＋高達2%無上限CashBack✈️🗓️" [ref=e404]
+        - generic [ref=e405]:
+          - generic [ref=e407]: Mox Credit
+          - generic [ref=e408]: Trip.com全年獨享：低至92折＋高達2%無上限CashBack✈️🗓️
+          - paragraph [ref=e411]: Mox聯同Trip.com賞你全年賺住飛，飛完繼續賺！即日起至2026年12月31日，於Trip.com用Mox Card預訂酒店或機票，可享低至92折！用Mox信用卡消費更賺額外2%無上限CashBack，等你盡情飛多幾轉！
+          - generic [ref=e415]: 了解更多
+      - link "轉用Mox出糧，輕鬆解鎖1.5%存款額外年利率及信用卡無上限 2% CashBack Mox Credit 存款 轉用Mox出糧，輕鬆解鎖1.5%存款額外年利率及信用卡無上限 2% CashBack 立即轉用Mox出糧，為港元/美元存款解鎖1.5%額外年利率，Mox信用卡消費仲可以無上限賺 2% CashBack 或 HKD4=1 里¹，等你輕輕鬆鬆賺更多！💸轉一次出糧戶口，即可月月輕鬆賺取獎賞。 借定唔借？還得到先好借！ 了解更多" [ref=e417] [cursor=pointer]:
+        - /url: /zh/promotions/mox-payroll/
+        - img "轉用Mox出糧，輕鬆解鎖1.5%存款額外年利率及信用卡無上限 2% CashBack" [ref=e419]
+        - generic [ref=e420]:
+          - generic [ref=e421]:
+            - generic [ref=e422]: Mox Credit
+            - generic [ref=e423]: 存款
+          - generic [ref=e424]: 轉用Mox出糧，輕鬆解鎖1.5%存款額外年利率及信用卡無上限 2% CashBack
+          - generic [ref=e425]:
+            - paragraph [ref=e427]: 立即轉用Mox出糧，為港元/美元存款解鎖1.5%額外年利率，Mox信用卡消費仲可以無上限賺 2% CashBack 或 HKD4=1 里¹，等你輕輕鬆鬆賺更多！💸轉一次出糧戶口，即可月月輕鬆賺取獎賞。
+            - paragraph [ref=e429]: 借定唔借？還得到先好借！
+          - generic [ref=e433]: 了解更多
+      - link "🚀Mission Bonus Rate：利息回報層層疊，存款享高達3.5%實際年利率 存款 🚀Mission Bonus Rate：利息回報層層疊，存款享高達3.5%實際年利率 4個簡單任務等你輕鬆KO：包括出糧、投資、兌換同埋存款，完成就可以解鎖高達3.5%年利率，港元或美元存款坐享更高回報！而且任務隨你自由配搭，做得多賺得多，獎賞隨即生效至當月月底，資金潛力大躍升！ 了解更多" [ref=e435] [cursor=pointer]:
+        - /url: /zh/promotions/Mission-Bonus-Rate/
+        - img "🚀Mission Bonus Rate：利息回報層層疊，存款享高達3.5%實際年利率" [ref=e437]
+        - generic [ref=e438]:
+          - generic [ref=e440]: 存款
+          - generic [ref=e441]: 🚀Mission Bonus Rate：利息回報層層疊，存款享高達3.5%實際年利率
+          - paragraph [ref=e444]: 4個簡單任務等你輕鬆KO：包括出糧、投資、兌換同埋存款，完成就可以解鎖高達3.5%年利率，港元或美元存款坐享更高回報！而且任務隨你自由配搭，做得多賺得多，獎賞隨即生效至當月月底，資金潛力大躍升！
+          - generic [ref=e448]: 了解更多
+      - link "Mox推薦共賞計劃 迎新優惠 Mox推薦共賞計劃 多友。多賞 一薦即賺簡單直接 受條款及細則約束。 借定唔借？還得到先好借！ 了解更多" [ref=e450] [cursor=pointer]:
+        - /url: /zh/promotions/Mox-Referral-Programme/
+        - img "Mox推薦共賞計劃" [ref=e452]
+        - generic [ref=e453]:
+          - generic [ref=e455]: 迎新優惠
+          - generic [ref=e456]: Mox推薦共賞計劃
+          - generic [ref=e457]:
+            - paragraph [ref=e459]: 多友。多賞 一薦即賺簡單直接
+            - generic [ref=e460]:
+              - paragraph [ref=e461]: 受條款及細則約束。
+              - paragraph [ref=e462]: 借定唔借？還得到先好借！
+          - generic [ref=e466]: 了解更多
+      - link "用「CLUBLINK」開戶：價值高達HKD1,400！ 迎新優惠 Mox Credit 用「CLUBLINK」開戶：價值高達HKD1,400！ 即日起至2026年6月30日，新客戶憑邀請碼「CLUBLINK」開戶及將Mox Card連結至The Club帳戶並申請Mox信用卡，即送你價值高達HKD1,400獎賞！ 受CLUBLINK邀請碼推廣條款及細則約束。名額有限，先到先得，額滿即止。 了解更多" [ref=e468] [cursor=pointer]:
+        - /url: /zh/promotions/CLUBLINK/
+        - img "用「CLUBLINK」開戶：價值高達HKD1,400！" [ref=e470]
+        - generic [ref=e471]:
+          - generic [ref=e472]:
+            - generic [ref=e473]: 迎新優惠
+            - generic [ref=e474]: Mox Credit
+          - generic [ref=e475]: 用「CLUBLINK」開戶：價值高達HKD1,400！
+          - generic [ref=e476]:
+            - paragraph [ref=e478]: 即日起至2026年6月30日，新客戶憑邀請碼「CLUBLINK」開戶及將Mox Card連結至The Club帳戶並申請Mox信用卡，即送你價值高達HKD1,400獎賞！
+            - paragraph [ref=e480]: 受CLUBLINK邀請碼推廣條款及細則約束。名額有限，先到先得，額滿即止。
+          - generic [ref=e484]: 了解更多
+      - link "Mox Zone登陸The Club全年享獨家折扣 迎新優惠 Mox Credit Mox Zone登陸The Club全年享獨家折扣 為你隆重介紹Mox Zone！Mox現於The Club特設優惠專區，讓作為Mox客戶嘅你全年以專屬折扣選購過百款人氣電子產品，訂單滿HKD400或以上仲免運費添！ 名額有限，先到先得，額滿即止。 了解更多" [ref=e486] [cursor=pointer]:
+        - /url: /zh/promotions/mox-zone-at-the-club-hkt/
+        - img "Mox Zone登陸The Club全年享獨家折扣" [ref=e488]
+        - generic [ref=e489]:
+          - generic [ref=e490]:
+            - generic [ref=e491]: 迎新優惠
+            - generic [ref=e492]: Mox Credit
+          - generic [ref=e493]: Mox Zone登陸The Club全年享獨家折扣
+          - generic [ref=e494]:
+            - paragraph [ref=e496]: 為你隆重介紹Mox Zone！Mox現於The Club特設優惠專區，讓作為Mox客戶嘅你全年以專屬折扣選購過百款人氣電子產品，訂單滿HKD400或以上仲免運費添！
+            - paragraph [ref=e498]: 名額有限，先到先得，額滿即止。
+          - generic [ref=e502]: 了解更多
+      - link "開立Mox定存賺「亞洲萬里通」里數，解鎖更多目的地 存款 亞洲萬里通 開立Mox定存賺「亞洲萬里通」里數，解鎖更多目的地 開立Mox定期存款，即賺「亞洲萬里通」里數，飛轉亞洲話咁易！例如，以 HKD104,000 新資金開立 12 個月定期存款，並選擇「亞洲萬里通」里數，即賺 26,000 「亞洲萬里通」里數，夠你換張來回東京、大阪等等的經濟客艙機票。 了解更多" [ref=e504] [cursor=pointer]:
+        - /url: /zh/promotions/asia-miles-12m-or-24m-time-deposit/
+        - img "開立Mox定存賺「亞洲萬里通」里數，解鎖更多目的地" [ref=e506]
+        - generic [ref=e507]:
+          - generic [ref=e508]:
+            - generic [ref=e509]: 存款
+            - generic [ref=e510]: 亞洲萬里通
+          - generic [ref=e511]: 開立Mox定存賺「亞洲萬里通」里數，解鎖更多目的地
+          - paragraph [ref=e514]: 開立Mox定期存款，即賺「亞洲萬里通」里數，飛轉亞洲話咁易！例如，以 HKD104,000 新資金開立 12 個月定期存款，並選擇「亞洲萬里通」里數，即賺 26,000 「亞洲萬里通」里數，夠你換張來回東京、大阪等等的經濟客艙機票。
+          - generic [ref=e518]: 了解更多
+      - link "FlexiBoost享定存級高息，活存般靈活💰 存款 FlexiBoost享定存級高息，活存般靈活💰 全新儲蓄選擇🎉 立即存入新資金開立FlexiBoost高息活存儲蓄戶口，開立一刻就鎖定利率，即使市場波動都無須擔心。輕鬆見證每月的利率和儲蓄不斷增長！🚀 受條款及細則約束。 了解更多" [ref=e520] [cursor=pointer]:
+        - /url: /zh/promotions/flexiboostsavings/
+        - img "FlexiBoost享定存級高息，活存般靈活💰" [ref=e522]
+        - generic [ref=e523]:
+          - generic [ref=e525]: 存款
+          - generic [ref=e526]: FlexiBoost享定存級高息，活存般靈活💰
+          - generic [ref=e527]:
+            - paragraph [ref=e529]: 全新儲蓄選擇🎉 立即存入新資金開立FlexiBoost高息活存儲蓄戶口，開立一刻就鎖定利率，即使市場波動都無須擔心。輕鬆見證每月的利率和儲蓄不斷增長！🚀
+            - paragraph [ref=e531]: 受條款及細則約束。
+          - generic [ref=e535]: 了解更多
+      - link "Mox FX 新手賺高達HKD175現金獎賞 外匯存款/匯款 Mox FX 新手賺高達HKD175現金獎賞 無論係兌換外幣、做投資定係有匯款需要，外匯新用戶依家用Mox兌換外幣，可享高達HKD175現金獎賞🎉 受條款及細則約束。 了解更多" [ref=e537] [cursor=pointer]:
+        - /url: /zh/promotions/fx-new-users/
+        - img "Mox FX 新手賺高達HKD175現金獎賞" [ref=e539]
+        - generic [ref=e540]:
+          - generic [ref=e542]: 外匯存款/匯款
+          - generic [ref=e543]: Mox FX 新手賺高達HKD175現金獎賞
+          - generic [ref=e544]:
+            - paragraph [ref=e546]: 無論係兌換外幣、做投資定係有匯款需要，外匯新用戶依家用Mox兌換外幣，可享高達HKD175現金獎賞🎉
+            - paragraph [ref=e548]: 受條款及細則約束。
+          - generic [ref=e552]: 了解更多
+      - link "與Mox信用卡解鎖無限旅程✈️ 無限里數 + 零上限 + 0%外幣交易手續費 Mox Credit 與Mox信用卡解鎖無限旅程✈️ 無限里數 + 零上限 + 0%外幣交易手續費 Mox信用卡「亞洲萬里通」獎賞，所有消費輕鬆賺取無上限里數，令你賺得快，飛得更快。同時兼享0%外幣交易手續費，無論本地外地消費一樣抵！ 打破傳統信用卡獎賞框架，一張Mox信用卡，隨時自由轉換CashBack或里數獎賞，簽賬賺乜由你話事。 了解更多" [ref=e554] [cursor=pointer]:
+        - /url: /zh/promotions/unlimited-asia-miles/
+        - img "與Mox信用卡解鎖無限旅程✈️ 無限里數 + 零上限 + 0%外幣交易手續費" [ref=e556]
+        - generic [ref=e557]:
+          - generic [ref=e559]: Mox Credit
+          - generic [ref=e560]: 與Mox信用卡解鎖無限旅程✈️ 無限里數 + 零上限 + 0%外幣交易手續費
+          - generic [ref=e562]:
+            - paragraph [ref=e563]: Mox信用卡「亞洲萬里通」獎賞，所有消費輕鬆賺取無上限里數，令你賺得快，飛得更快。同時兼享0%外幣交易手續費，無論本地外地消費一樣抵！
+            - paragraph [ref=e564]: 打破傳統信用卡獎賞框架，一張Mox信用卡，隨時自由轉換CashBack或里數獎賞，簽賬賺乜由你話事。
+          - generic [ref=e568]: 了解更多
+      - link "全城最高無上限CashBack，Mox信用卡全方位無限賞！ Mox Credit 全城最高無上限CashBack，Mox信用卡全方位無限賞！ 只要有Mox信用卡在手，任何消費都可以無上限狂賺2% CashBack！現金獎賞越賺越有——於全港各大超市簽賬，合資格消費，更賺3%無上限CashBack，生活日常就是任賺無限！ 真正「no cap」，通通都可以邊使邊賺現金，即時計算直接存入戶口，唔使左計右計。 了解更多" [ref=e570] [cursor=pointer]:
+        - /url: /zh/promotions/unlimitedcashback/
+        - img "全城最高無上限CashBack，Mox信用卡全方位無限賞！" [ref=e572]
+        - generic [ref=e573]:
+          - generic [ref=e575]: Mox Credit
+          - generic [ref=e576]: 全城最高無上限CashBack，Mox信用卡全方位無限賞！
+          - generic [ref=e578]:
+            - paragraph [ref=e579]: 只要有Mox信用卡在手，任何消費都可以無上限狂賺2% CashBack！現金獎賞越賺越有——於全港各大超市簽賬，合資格消費，更賺3%無上限CashBack，生活日常就是任賺無限！
+            - paragraph [ref=e580]: 真正「no cap」，通通都可以邊使邊賺現金，即時計算直接存入戶口，唔使左計右計。
+          - generic [ref=e584]: 了解更多
+      - link "用「MOXTRIP25」開戶專享迎新獎賞高達HKD1,700 🤑🚀從此於Trip.com一簽即賺高達2% CashBack！ Mox Credit 迎新優惠 用「MOXTRIP25」開戶專享迎新獎賞高達HKD1,700 🤑🚀從此於Trip.com一簽即賺高達2% CashBack！ 去旅行，梗係由出發前開始賺！即日起至2026年6月30日，新客戶用邀請碼「MOXTRIP25」開戶兼申請Mox信用卡，達成指定消費及存款任務即享現金獎賞高達HKD1,700，從此於Trip.com一簽即賺高達2% CashBack！ 了解更多" [ref=e586] [cursor=pointer]:
+        - /url: /zh/promotions/moxtrip25/
+        - img "用「MOXTRIP25」開戶專享迎新獎賞高達HKD1,700 🤑🚀從此於Trip.com一簽即賺高達2% CashBack！" [ref=e588]
+        - generic [ref=e589]:
+          - generic [ref=e590]:
+            - generic [ref=e591]: Mox Credit
+            - generic [ref=e592]: 迎新優惠
+          - generic [ref=e593]: 用「MOXTRIP25」開戶專享迎新獎賞高達HKD1,700 🤑🚀從此於Trip.com一簽即賺高達2% CashBack！
+          - paragraph [ref=e596]: 去旅行，梗係由出發前開始賺！即日起至2026年6月30日，新客戶用邀請碼「MOXTRIP25」開戶兼申請Mox信用卡，達成指定消費及存款任務即享現金獎賞高達HKD1,700，從此於Trip.com一簽即賺高達2% CashBack！
+          - generic [ref=e600]: 了解更多
+      - link "用Mox信用卡於HKT消費即享HKD1,400現金獎賞！ 迎新優惠 Mox Credit 用Mox信用卡於HKT消費即享HKD1,400現金獎賞！ 即日起至2026年6月30日，用邀請碼「MOXHKT25」開戶、連結帳戶及申請Mox信用卡即送2,000 Club積分！選用HKT服務或於csl專門店、1O1O Center或csl網店以Mox信用卡單次合資格消費滿HKD1,000，即賺HKD1,000現金獎賞。獎賞總值高達HKD1,400！ 受MOXHKT25邀請碼推廣條款及細則約束。名額有限，先到先得，額滿即止。 了解更多" [ref=e602] [cursor=pointer]:
+        - /url: /zh/promotions/MOXHKT25/
+        - img "用Mox信用卡於HKT消費即享HKD1,400現金獎賞！" [ref=e604]
+        - generic [ref=e605]:
+          - generic [ref=e606]:
+            - generic [ref=e607]: 迎新優惠
+            - generic [ref=e608]: Mox Credit
+          - generic [ref=e609]: 用Mox信用卡於HKT消費即享HKD1,400現金獎賞！
+          - generic [ref=e610]:
+            - paragraph [ref=e612]: 即日起至2026年6月30日，用邀請碼「MOXHKT25」開戶、連結帳戶及申請Mox信用卡即送2,000 Club積分！選用HKT服務或於csl專門店、1O1O Center或csl網店以Mox信用卡單次合資格消費滿HKD1,000，即賺HKD1,000現金獎賞。獎賞總值高達HKD1,400！
+            - paragraph [ref=e614]: 受MOXHKT25邀請碼推廣條款及細則約束。名額有限，先到先得，額滿即止。
+          - generic [ref=e618]: 了解更多
+      - link "仲慢慢等？利息從此即刻賺！ 存款 仲慢慢等？利息從此即刻賺！ Mox為你革新定期存款的利息賺法，讓你可以即時賺取回報！ 有別於傳統銀行，Mox讓你在開始定期存款的一刻，便可即時取得利息，令生活少一樣等待、多更多精彩。現在，除港元定期存款外，你更可選擇全新的美元定期存款，同樣賺到即時利息！ 了解更多" [ref=e620] [cursor=pointer]:
+        - /url: /zh/promotions/time-deposit/
+        - img "仲慢慢等？利息從此即刻賺！" [ref=e622]
+        - generic [ref=e623]:
+          - generic [ref=e625]: 存款
+          - generic [ref=e626]: 仲慢慢等？利息從此即刻賺！
+          - generic [ref=e628]:
+            - paragraph [ref=e629]: Mox為你革新定期存款的利息賺法，讓你可以即時賺取回報！
+            - paragraph [ref=e630]: 有別於傳統銀行，Mox讓你在開始定期存款的一刻，便可即時取得利息，令生活少一樣等待、多更多精彩。現在，除港元定期存款外，你更可選擇全新的美元定期存款，同樣賺到即時利息！
+          - generic [ref=e634]: 了解更多
+      - link "0息*卡數「即時清」 貸款 0息*卡數「即時清」 想一次過輕鬆清還其他銀行或財務機構卡數？申請卡數「即時清」貸款金額HKD75,000以下，選擇3至6個月還款期，只需繳付一次性收費，並享0%利息，清數變得無比輕鬆！ *0息/0%利息是指申請卡數「即時清」計劃3-6個月還款期及貸款金額低於HKD75,000的每月收費。請注意，你需要繳付一次性收費，詳情請參考Mox app內之實際年利率及相關收費。 了解更多" [ref=e636] [cursor=pointer]:
+        - /url: /zh/promotions/instant-clear/
+        - img "0息*卡數「即時清」" [ref=e638]
+        - generic [ref=e639]:
+          - generic [ref=e641]: 貸款
+          - generic [ref=e642]: 0息*卡數「即時清」
+          - generic [ref=e643]:
+            - paragraph [ref=e645]: 想一次過輕鬆清還其他銀行或財務機構卡數？申請卡數「即時清」貸款金額HKD75,000以下，選擇3至6個月還款期，只需繳付一次性收費，並享0%利息，清數變得無比輕鬆！
+            - paragraph [ref=e647]: "*0息/0%利息是指申請卡數「即時清」計劃3-6個月還款期及貸款金額低於HKD75,000的每月收費。請注意，你需要繳付一次性收費，詳情請參考Mox app內之實際年利率及相關收費。"
+          - generic [ref=e651]: 了解更多
+      - link "2025香港人最愛出遊地點競猜大抽獎活動結果公布 優惠 2025香港人最愛出遊地點競猜大抽獎活動結果公布 了解更多" [ref=e653] [cursor=pointer]:
+        - /url: /zh/promotions/2025-hk-peoples-favorite-travel-destination-lucky-draw-winner-announcement/
+        - img "2025香港人最愛出遊地點競猜大抽獎活動結果公布" [ref=e655]
+        - generic [ref=e656]:
+          - generic [ref=e658]: 優惠
+          - generic [ref=e659]: 2025香港人最愛出遊地點競猜大抽獎活動結果公布
+          - generic [ref=e664]: 了解更多
+      - link "2025「理財人格」大抽獎活動結果公布 優惠 2025「理財人格」大抽獎活動結果公布 了解更多" [ref=e666] [cursor=pointer]:
+        - /url: /zh/promotions/2025-banking-personality-lucky-draw-winner-announcement/
+        - img "2025「理財人格」大抽獎活動結果公布" [ref=e668]
+        - generic [ref=e669]:
+          - generic [ref=e671]: 優惠
+          - generic [ref=e672]: 2025「理財人格」大抽獎活動結果公布
+          - generic [ref=e677]: 了解更多
+      - link "由你專享全年優惠！ 優惠 由你專享全年優惠！ 用Mox信用卡享盡全年優惠兼賺無上限CashBack或無上限「亞洲萬里通」 里數！ 了解更多" [ref=e679] [cursor=pointer]:
+        - /url: /zh/promotions/year-round-offers/
+        - img "由你專享全年優惠！" [ref=e681]
+        - generic [ref=e682]:
+          - generic [ref=e684]: 優惠
+          - generic [ref=e685]: 由你專享全年優惠！
+          - paragraph [ref=e688]: 用Mox信用卡享盡全年優惠兼賺無上限CashBack或無上限「亞洲萬里通」 里數！
+          - generic [ref=e692]: 了解更多
+  - contentinfo [ref=e693]:
+    - generic [ref=e695]:
+      - link "Mox" [ref=e697] [cursor=pointer]:
+        - /url: /zh/
+        - img "Mox" [ref=e698]
+      - generic [ref=e700]:
+        - generic [ref=e701]: 合作伙伴
+        - link "PCCW" [ref=e702] [cursor=pointer]:
+          - /url: http://www.pccw.com/index.page?locale=zh
+          - img "PCCW" [ref=e703]
+        - link "HKT" [ref=e704] [cursor=pointer]:
+          - /url: https://www.hkt.com/
+          - img "HKT" [ref=e705]
+        - link "Trip.com" [ref=e706] [cursor=pointer]:
+          - /url: https://hk.trip.com/?locale=zh_hk
+          - img "Trip.com" [ref=e707]
+      - link "Standard Chartered" [ref=e709] [cursor=pointer]:
+        - /url: https://www.sc.com/hk/
+        - img "Standard Chartered" [ref=e710]
+      - generic [ref=e713]:
+        - paragraph [ref=e714]: 服務特色
+        - paragraph [ref=e715]:
+          - link "Mox信用卡" [ref=e716] [cursor=pointer]:
+            - /url: /zh/features/mox-credit/
+        - paragraph [ref=e717]:
+          - link "Mox Invest" [ref=e718] [cursor=pointer]:
+            - /url: /zh/features/mox-invest/
+        - paragraph [ref=e719]:
+          - link "Mox Insure" [ref=e720] [cursor=pointer]:
+            - /url: /zh/features/mox-insure/
+        - paragraph [ref=e721]:
+          - link "精明理財" [ref=e722] [cursor=pointer]:
+            - /url: /zh/features/smart-banking/
+        - paragraph [ref=e723]:
+          - link "精明信貸" [ref=e724] [cursor=pointer]:
+            - /url: /zh/features/smart-borrowing/
+        - paragraph [ref=e725]:
+          - link "「即時借」私人貸款" [ref=e726] [cursor=pointer]:
+            - /url: /zh/promotions/instant-loan/
+        - paragraph [ref=e727]:
+          - link "精明儲蓄" [ref=e728] [cursor=pointer]:
+            - /url: /zh/features/smart-saving/
+        - paragraph [ref=e729]:
+          - link "精明消費" [ref=e730] [cursor=pointer]:
+            - /url: /zh/features/smart-spending/
+        - paragraph [ref=e731]:
+          - link "Mox FX" [ref=e732] [cursor=pointer]:
+            - /url: /zh/features/mox-fx/
+        - paragraph [ref=e733]:
+          - link "Mox特色一覽" [ref=e734] [cursor=pointer]:
+            - /url: /zh/features/mox-at-a-glance/
+      - generic [ref=e735]:
+        - paragraph [ref=e736]: 公司資訊
+        - paragraph [ref=e737]:
+          - link "推廣優惠" [ref=e738] [cursor=pointer]:
+            - /url: /zh/promotions/
+        - paragraph [ref=e739]:
+          - link "關於我們" [ref=e740] [cursor=pointer]:
+            - /url: /zh/about-us/
+        - paragraph [ref=e741]:
+          - link "新聞中心" [ref=e742] [cursor=pointer]:
+            - /url: /zh/media/
+        - paragraph [ref=e743]:
+          - link "工作機會" [ref=e744] [cursor=pointer]:
+            - /url: /zh/careers/
+        - paragraph [ref=e745]:
+          - link "常見問題" [ref=e746] [cursor=pointer]:
+            - /url: /zh/faqs/
+      - generic [ref=e747]:
+        - paragraph [ref=e748]: 有用連結
+        - paragraph [ref=e749]:
+          - link "條款及細則" [ref=e750] [cursor=pointer]:
+            - /url: /zh/legal-documents/
+        - paragraph [ref=e751]:
+          - link "私隱政策" [ref=e752] [cursor=pointer]:
+            - /url: /zh/legal-documents/privacy/
+        - paragraph [ref=e753]:
+          - link "Cookie政策" [ref=e754] [cursor=pointer]:
+            - /url: /zh/legal-documents/cookie-policy/
+        - paragraph [ref=e755]:
+          - link "監管披露" [ref=e756] [cursor=pointer]:
+            - /url: /zh/regulatory-disclosures/
+        - paragraph [ref=e757]:
+          - link "保安提示" [ref=e758] [cursor=pointer]:
+            - /url: /zh/security-tips/
+        - paragraph [ref=e759]:
+          - link "提交漏洞報告" [ref=e760] [cursor=pointer]:
+            - /url: /zh/submit-a-vulnerability/
+        - paragraph [ref=e761]:
+          - link "重要通知" [ref=e762] [cursor=pointer]:
+            - /url: /zh/important-notices/
+        - paragraph [ref=e763]:
+          - link "開放銀行服務" [ref=e764] [cursor=pointer]:
+            - /url: /zh/open-banking/
+        - paragraph [ref=e765]:
+          - link "網站地圖" [ref=e766] [cursor=pointer]:
+            - /url: /zh/sitemap/
+      - generic [ref=e767]:
+        - paragraph [ref=e768]: 聯絡我們
+        - paragraph [ref=e769]:
+          - link "留言給我們" [ref=e770] [cursor=pointer]:
+            - /url: /zh/contact-us/
+        - paragraph [ref=e771]:
+          - link "+852 2888 8228" [ref=e772] [cursor=pointer]:
+            - /url: tel:+85228888228
+        - paragraph [ref=e773]:
+          - link "care@mox.com" [ref=e774] [cursor=pointer]:
+            - /url: mailto:care@mox.com
+        - paragraph [ref=e775]:
+          - link "就業背景調查" [ref=e776] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+        - paragraph [ref=e777]:
+          - link "askhr@sc.com" [ref=e778] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+      - generic [ref=e779]:
+        - generic:
+          - generic:
+            - link:
+              - /url: https://www.facebook.com/moxbankhk/
+            - link:
+              - /url: https://www.instagram.com/moxbank/
+            - link:
+              - /url: https://hk.linkedin.com/company/mox-bank/
+            - link:
+              - /url: https://www.youtube.com/channel/UC41ce2iw3ytvBbJCwlF3iiw/featured
+        - generic [ref=e780]:
+          - generic [ref=e782]:
+            - img "apple-store" [ref=e786] [cursor=pointer]
+            - img "google-play" [ref=e790] [cursor=pointer]
+          - generic [ref=e793]:
+            - paragraph [ref=e794]:
+              - text: 上述是唯一下載Mox App的授權途徑。為保障你的個人資料私隱，請勿透過其他途徑下載我們的應用程式。
+              - link "點擊這裡了解更多網絡保安提示信息。" [ref=e795] [cursor=pointer]:
+                - /url: /zh/security-tips/
+            - paragraph [ref=e796]: App Store及Apple標誌均為Apple Inc. 所屬商標, 並已於美國及其他國家註冊。Google Play及Google Play標誌均為Google LLC 所屬商標, 並已於美國及其他國家註冊。
+        - button [ref=e798] [cursor=pointer]
+      - generic [ref=e800]: 版權所有 © 2026 Mox Bank. 保留一切權利

@@ -1,0 +1,1249 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - link "Mox Logo" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - img "Mox Logo" [ref=e11]
+        - img "Standard Chartered" [ref=e13]
+      - generic [ref=e14]:
+        - navigation [ref=e16]:
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - link "Mox+" [ref=e19] [cursor=pointer]:
+                - /url: /MoxPlus-Updates/
+            - listitem [ref=e20]:
+              - link "Travel Playbook" [ref=e21] [cursor=pointer]:
+                - /url: /all-round-travel-playbook/
+            - listitem [ref=e22]:
+              - button "Features" [ref=e23] [cursor=pointer]
+              - list:
+                - listitem:
+                  - link "Mox Credit Card":
+                    - /url: /features/mox-credit/
+                - listitem:
+                  - link "Mox Invest":
+                    - /url: /features/mox-invest/
+                - listitem:
+                  - link "Mox Insure":
+                    - /url: /features/mox-insure/
+                - listitem:
+                  - link "Smart Banking":
+                    - /url: /features/smart-banking/
+                - listitem:
+                  - link "Smart Borrowing":
+                    - /url: /features/smart-borrowing/
+                - listitem:
+                  - link "Instant Loan":
+                    - /url: /promotions/instant-loan/
+                - listitem:
+                  - link "Smart Saving":
+                    - /url: /features/smart-saving/
+                - listitem:
+                  - link "Smart Spending":
+                    - /url: /features/smart-spending/
+                - listitem:
+                  - link "Mox FX":
+                    - /url: /features/mox-fx/
+                - listitem:
+                  - link "Mox at a glance":
+                    - /url: /features/mox-at-a-glance/
+            - listitem [ref=e24]:
+              - link "Promotions" [ref=e25] [cursor=pointer]:
+                - /url: /promotions/
+            - listitem [ref=e26]:
+              - link "About us" [ref=e27] [cursor=pointer]:
+                - /url: /about-us/
+            - listitem [ref=e28]:
+              - link "FAQ" [ref=e29] [cursor=pointer]:
+                - /url: /faqs/
+        - button "Get Mox" [ref=e30] [cursor=pointer]
+        - img [ref=e35] [cursor=pointer]
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - link "Mox":
+                    - /url: /
+                    - img "Mox"
+                  - generic:
+                    - img "Standard Chartered"
+              - generic:
+                - button
+      - generic:
+        - generic:
+          - generic:
+            - list:
+              - listitem:
+                - link "Mox+":
+                  - /url: /MoxPlus-Updates/
+              - listitem:
+                - link "Travel Playbook":
+                  - /url: /all-round-travel-playbook/
+              - listitem:
+                - button "Features"
+                - list:
+                  - listitem:
+                    - link "Mox Credit Card":
+                      - /url: /features/mox-credit/
+                  - listitem:
+                    - link "Mox Invest":
+                      - /url: /features/mox-invest/
+                  - listitem:
+                    - link "Mox Insure":
+                      - /url: /features/mox-insure/
+                  - listitem:
+                    - link "Smart Banking":
+                      - /url: /features/smart-banking/
+                  - listitem:
+                    - link "Smart Borrowing":
+                      - /url: /features/smart-borrowing/
+                  - listitem:
+                    - link "Instant Loan":
+                      - /url: /promotions/instant-loan/
+                  - listitem:
+                    - link "Smart Saving":
+                      - /url: /features/smart-saving/
+                  - listitem:
+                    - link "Smart Spending":
+                      - /url: /features/smart-spending/
+                  - listitem:
+                    - link "Mox FX":
+                      - /url: /features/mox-fx/
+                  - listitem:
+                    - link "Mox at a glance":
+                      - /url: /features/mox-at-a-glance/
+              - listitem:
+                - link "Promotions":
+                  - /url: /promotions/
+              - listitem:
+                - link "About us":
+                  - /url: /about-us/
+              - listitem:
+                - link "FAQ":
+                  - /url: /faqs/
+  - generic [ref=e40]:
+    - generic [ref=e43]:
+      - generic [ref=e46]:
+        - img [ref=e48]
+        - img "Homepage KV" [ref=e50]
+      - generic [ref=e55]:
+        - heading "Over 650,000 real users* within 4 years Multiple prestigious accolades won" [level=2] [ref=e57]:
+          - generic [ref=e58]:
+            - text: Over 650,000 real users* within 4 years
+            - text: Multiple prestigious accolades won
+        - generic [ref=e59]:
+          - generic [ref=e61]:
+            - img [ref=e63]
+            - img "Over 650,000 real users* within 4 years<br/>Multiple prestigious accolades won" [ref=e65]
+          - generic [ref=e66]:
+            - paragraph [ref=e68]: One of The World’s Best Banks 2023 by Forbes
+            - paragraph [ref=e70]: Best Digital-only Bank in Hong Kong 2023 by The Asian Banker
+            - paragraph [ref=e72]: Top rated* digital banking app for Hong Kong in Apple App Store
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - img "Info" [ref=e77]
+          - paragraph [ref=e80]:
+            - strong [ref=e81]: Protect yourself from bogus phone calls
+            - text: Please be aware of bogus phone calls, fraudulent SMS messages, phishing websites and email purportedly from banks. Should you have any suspicion, please contact our Customer Care Team at +852 2888 8228 or report to the Police immediately. Please
+            - link "click here" [ref=e82] [cursor=pointer]:
+              - /url: https://mox.com/security-tips/
+            - text: for more information.
+        - img "Close" [ref=e85] [cursor=pointer]
+      - heading "Promotions" [level=3] [ref=e88]
+      - generic [ref=e89]:
+        - generic [ref=e92]:
+          - generic [ref=e95] [cursor=pointer]:
+            - link [ref=e96]:
+              - /url: /promotions/2025-banking-personality-lucky-draw-winner-announcement/
+              - img [ref=e98]
+            - generic [ref=e99]:
+              - link [ref=e101]:
+                - /url: /promotions/?category=offers
+                - text: Offers
+              - generic [ref=e102]: 2025 "Banking Personality" Lucky Draw Promotion Result Announcement
+              - generic [ref=e106]: Learn more
+          - generic [ref=e109] [cursor=pointer]:
+            - link [ref=e110]:
+              - /url: /promotions/year-round-offers/
+              - img [ref=e112]
+            - generic [ref=e113]:
+              - link [ref=e115]:
+                - /url: /promotions/?category=offers
+                - text: Offers
+              - generic [ref=e116]: Year-round offers just for you!
+              - generic [ref=e120]: Learn more
+          - generic [ref=e123] [cursor=pointer]:
+            - link "0% Fund Subscription Fee – all fees waived" [ref=e124]:
+              - /url: /promotions/invest-fund-0-fee/
+              - img "0% Fund Subscription Fee – all fees waived" [ref=e126]
+            - generic [ref=e127]:
+              - link:
+                - /url: /promotions/invest-fund-0-fee/
+              - generic [ref=e128]:
+                - link:
+                  - /url: /promotions/invest-fund-0-fee/
+                - link "Invest" [ref=e129]:
+                  - /url: /promotions/?category=invest
+              - generic [ref=e130]: 0% Fund Subscription Fee – all fees waived
+              - generic [ref=e134]: Learn more
+          - generic [ref=e137] [cursor=pointer]:
+            - link "Pay your tax with Mox Credit Card, split and earn up to HKD500 cash reward💰" [ref=e138]:
+              - /url: /promotions/pay-and-split-tax/
+              - img "Pay your tax with Mox Credit Card, split and earn up to HKD500 cash reward💰" [ref=e140]
+            - generic [ref=e141]:
+              - link:
+                - /url: /promotions/pay-and-split-tax/
+              - generic [ref=e142]:
+                - link:
+                  - /url: /promotions/pay-and-split-tax/
+                - link "Borrowing" [ref=e143]:
+                  - /url: /promotions/?category=borrowing
+              - generic [ref=e144]: Pay your tax with Mox Credit Card, split and earn up to HKD500 cash reward💰
+              - generic [ref=e148]: Learn more
+          - generic [ref=e151] [cursor=pointer]:
+            - link [ref=e152]:
+              - /url: /promotions/instant-loan/
+              - img [ref=e154]
+            - generic [ref=e155]:
+              - link [ref=e157]:
+                - /url: /promotions/?category=borrowing
+                - text: Borrowing
+              - generic [ref=e158]: Goals within reach - attractive rate as low as 1.18%
+              - generic [ref=e162]: Learn more
+          - generic [ref=e165] [cursor=pointer]:
+            - link [ref=e166]:
+              - /url: /promotions/order-keeta-with-mox/
+              - img [ref=e168]
+            - generic [ref=e169]:
+              - generic [ref=e170]:
+                - link [ref=e171]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e172]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e173]: Exclusive flash sale⚡️ Order on Keeta and enjoy up to HKD80 off
+              - generic [ref=e177]: Learn more
+          - generic [ref=e180] [cursor=pointer]:
+            - link [ref=e181]:
+              - /url: /promotions/2026-xiaomi/
+              - img [ref=e183]
+            - generic [ref=e184]:
+              - generic [ref=e185]:
+                - link [ref=e186]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e187]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e188]: "Your ultimate deal for the new flagship camera phone 📷📱: Up to 7% total cash rewards at Xiaomi + 0% Instalments 💰 New customers get up to HKD2,150 cash bonus"
+              - generic [ref=e192]: Learn more
+          - generic [ref=e195] [cursor=pointer]:
+            - link [ref=e196]:
+              - /url: /promotions/moxpayroll/
+              - img [ref=e198]
+            - generic [ref=e199]:
+              - link [ref=e201]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e202]: Join Mox with "MOXPAYROLL" and earn up to HKD1,600
+              - generic [ref=e206]: Learn more
+          - generic [ref=e209] [cursor=pointer]:
+            - link [ref=e210]:
+              - /url: /promotions/MoxJourneyfromScratchPromotion/
+              - img [ref=e212]
+            - generic [ref=e213]:
+              - link [ref=e215]:
+                - /url: /promotions/?category=invest
+                - text: Invest
+              - generic [ref=e216]: Scratch to win big💥 5 Missions = 5x The Chance to scratch & win up to reward worth HKD8,888 🥳
+              - generic [ref=e220]: Learn more
+          - generic [ref=e223] [cursor=pointer]:
+            - link [ref=e224]:
+              - /url: /promotions/bonus-lucky-draw-26/
+              - img [ref=e226]
+            - generic [ref=e227]:
+              - link [ref=e229]:
+                - /url: /promotions/?category=deposits
+                - text: Deposits
+              - generic [ref=e230]: Sit back and watch your bonus grow
+              - generic [ref=e234]: Learn more
+          - generic [ref=e237] [cursor=pointer]:
+            - link [ref=e238]:
+              - /url: /promotions/best-in-town-renewal/
+              - img [ref=e240]
+            - generic [ref=e241]:
+              - generic [ref=e242]:
+                - link [ref=e243]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e244]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e245]: "Mox x csl \"Best-in-Town\" Exclusive Plan Offer: Get up to HKD1,380 Rebates on New Sign-Ups or Renewals + a Free NowTV Pass 🤳👾"
+              - generic [ref=e249]: Learn more
+          - generic [ref=e252] [cursor=pointer]:
+            - link [ref=e253]:
+              - /url: /promotions/TravelEggstraCarePromotion/
+              - img [ref=e255]
+            - generic [ref=e256]:
+              - link [ref=e258]:
+                - /url: /promotions/?category=insure
+                - text: Insure
+              - generic [ref=e259]: We packed you a FREE add-on coverage with our Travel Pick & Go insurance! ✈️ 🆓
+              - generic [ref=e263]: Learn more
+          - generic [ref=e266] [cursor=pointer]:
+            - link [ref=e267]:
+              - /url: /promotions/MOXTRAVEL/
+              - img [ref=e269]
+            - generic [ref=e270]:
+              - link [ref=e272]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e273]: Travelling on your mind 24/7?✈️ Open Mox Account with ‘MOXTRAVEL’, spend and save to earn up to 28,500 miles!
+              - generic [ref=e277]: Learn more
+          - generic [ref=e280] [cursor=pointer]:
+            - link [ref=e281]:
+              - /url: /promotions/The-Club/
+              - img [ref=e283]
+            - generic [ref=e284]:
+              - generic [ref=e285]:
+                - link [ref=e286]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+                - link [ref=e287]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+              - generic [ref=e288]: New flagship drops 📱☄️ Get HKD100 off the new Samsung S26 series exclusively at The Club
+              - generic [ref=e292]: Learn more
+          - generic [ref=e295] [cursor=pointer]:
+            - link [ref=e296]:
+              - /url: /promotions/mox-uber-taxi-spending-reward/
+              - img [ref=e298]
+            - generic [ref=e299]:
+              - generic [ref=e300]:
+                - link [ref=e301]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e302]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e303]: "Uber Taxi Ride Offer: Up to HKD90 Off Rides 🚕🧧"
+              - generic [ref=e307]: Learn more
+          - generic [ref=e310] [cursor=pointer]:
+            - link [ref=e311]:
+              - /url: /promotions/moxdepo/
+              - img [ref=e313]
+            - generic [ref=e314]:
+              - link [ref=e316]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e317]: Save and earn with Mox! Simply fund in and earn straight away!
+              - generic [ref=e321]: Learn more
+          - generic [ref=e324] [cursor=pointer]:
+            - link [ref=e325]:
+              - /url: /promotions/1500mox/
+              - img [ref=e327]
+            - generic [ref=e328]:
+              - link [ref=e330]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e331]: Use code “1500MOX” to open an account and earn up to HKD1,500 cash reward plus 0-requirement access to 2% Unlimited CashBack
+              - generic [ref=e335]: Learn more
+          - generic [ref=e338] [cursor=pointer]:
+            - link [ref=e339]:
+              - /url: /promotions/moxsmart/
+              - img [ref=e341]
+            - generic [ref=e342]:
+              - link [ref=e344]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e345]: "Spend & Save Double Rewards : Earn 20% cash rebate from spendings across 5 hot merchants and more from savings!"
+              - generic [ref=e349]: Learn more
+          - generic [ref=e352] [cursor=pointer]:
+            - link [ref=e353]:
+              - /url: /promotions/best-in-town-telco/
+              - img [ref=e355]
+            - generic [ref=e356]:
+              - generic [ref=e357]:
+                - link [ref=e358]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e359]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e360]: "Mox x csl exclusive offer: \"Best-in-Town\" device plans with installments 📲🤑"
+              - generic [ref=e364]: Learn more
+          - generic [ref=e367] [cursor=pointer]:
+            - link [ref=e368]:
+              - /url: /promotions/moxbill26/
+              - img [ref=e370]
+            - generic [ref=e371]:
+              - link [ref=e373]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e374]: Pay your HKT bills and earn HKD1,200 cash rewards + up to 2% Unlimited CashBack
+              - generic [ref=e378]: Learn more
+          - generic [ref=e381] [cursor=pointer]:
+            - link [ref=e382]:
+              - /url: /promotions/Trip/
+              - img [ref=e384]
+            - generic [ref=e385]:
+              - link [ref=e387]:
+                - /url: /promotions/?category=mox-credit
+                - text: Mox Credit
+              - generic [ref=e388]: "Trip.com Exclusive: Up to 8% Off + Up to 2% Unlimited CashBack all year long✈️🗓️"
+              - generic [ref=e392]: Learn more
+          - generic [ref=e395] [cursor=pointer]:
+            - link [ref=e396]:
+              - /url: /promotions/mox-payroll/
+              - img [ref=e398]
+            - generic [ref=e399]:
+              - generic [ref=e400]:
+                - link [ref=e401]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e402]:
+                  - /url: /promotions/?category=deposits
+                  - text: Deposits
+              - generic [ref=e403]: Set payroll with Mox - Top up 1.5% p.a. on savings & Unlimited 2% CashBack on Mox Credit
+              - generic [ref=e407]: Learn more
+          - generic [ref=e410] [cursor=pointer]:
+            - link [ref=e411]:
+              - /url: /promotions/Mission-Bonus-Rate/
+              - img [ref=e413]
+            - generic [ref=e414]:
+              - link [ref=e416]:
+                - /url: /promotions/?category=deposits
+                - text: Deposits
+              - generic [ref=e417]: "🚀Mission Bonus Rate: Stack wins, stack rates – up to 3.5% p.a. on your deposit!"
+              - generic [ref=e421]: Learn more
+          - generic [ref=e424] [cursor=pointer]:
+            - link [ref=e425]:
+              - /url: /promotions/Mox-Referral-Programme/
+              - img [ref=e427]
+            - generic [ref=e428]:
+              - link [ref=e430]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e431]: Mox Referral Programme
+              - generic [ref=e435]: Learn more
+          - generic [ref=e438] [cursor=pointer]:
+            - link [ref=e439]:
+              - /url: /promotions/CLUBLINK/
+              - img [ref=e441]
+            - generic [ref=e442]:
+              - generic [ref=e443]:
+                - link [ref=e444]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+                - link [ref=e445]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+              - generic [ref=e446]: "Open a Mox Account with \"CLUBLINK\" and enjoy fantastic rewards: worth up to HKD 1,400 rewards!"
+              - generic [ref=e450]: Learn more
+          - generic [ref=e453] [cursor=pointer]:
+            - link [ref=e454]:
+              - /url: /promotions/mox-zone-at-the-club-hkt/
+              - img [ref=e456]
+            - generic [ref=e457]:
+              - generic [ref=e458]:
+                - link [ref=e459]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+                - link [ref=e460]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+              - generic [ref=e461]: Mox Zone is now on The Club – enjoy year-round deals
+              - generic [ref=e465]: Learn more
+          - generic [ref=e468] [cursor=pointer]:
+            - link [ref=e469]:
+              - /url: /promotions/asia-miles-12m-or-24m-time-deposit/
+              - img [ref=e471]
+            - generic [ref=e472]:
+              - generic [ref=e473]:
+                - link [ref=e474]:
+                  - /url: /promotions/?category=deposits
+                  - text: Deposits
+                - link [ref=e475]:
+                  - /url: /promotions/?category=asia-miles
+                  - text: Asia Miles
+              - generic [ref=e476]: Fly farther with Mox Asia Miles Time Deposit
+              - generic [ref=e480]: Learn more
+          - generic [ref=e483] [cursor=pointer]:
+            - link [ref=e484]:
+              - /url: /promotions/flexiboostsavings/
+              - img [ref=e486]
+            - generic [ref=e487]:
+              - link [ref=e489]:
+                - /url: /promotions/?category=deposits
+                - text: Deposits
+              - generic [ref=e490]: Unmatched flexibility and competitive rates with FlexiBoost savings💰
+              - generic [ref=e494]: Learn more
+          - generic [ref=e497] [cursor=pointer]:
+            - link [ref=e498]:
+              - /url: /promotions/fx-new-users/
+              - img [ref=e500]
+            - generic [ref=e501]:
+              - link [ref=e503]:
+                - /url: /promotions/?category=fx-savings-remit
+                - text: FX Savings / Remit
+              - generic [ref=e504]: New FX users get up to HKD175 cash rewards
+              - generic [ref=e508]: Learn more
+          - generic [ref=e511] [cursor=pointer]:
+            - link [ref=e512]:
+              - /url: /promotions/unlimited-asia-miles/
+              - img [ref=e514]
+            - generic [ref=e515]:
+              - link [ref=e517]:
+                - /url: /promotions/?category=mox-credit
+                - text: Mox Credit
+              - generic [ref=e518]: Unlock your next journey with Mox Credit Card✈️ Unlimited miles + 0 Limits + 0% FX Fees
+              - generic [ref=e522]: Learn more
+          - generic [ref=e525] [cursor=pointer]:
+            - link [ref=e526]:
+              - /url: /promotions/unlimitedcashback/
+              - img [ref=e528]
+            - generic [ref=e529]:
+              - link [ref=e531]:
+                - /url: /promotions/?category=mox-credit
+                - text: Mox Credit
+              - generic [ref=e532]: Best in town! Enjoy Unlimited CashBack with Mox Credit Card!
+              - generic [ref=e536]: Learn more
+          - generic [ref=e539] [cursor=pointer]:
+            - link [ref=e540]:
+              - /url: /promotions/moxtrip25/
+              - img [ref=e542]
+            - generic [ref=e543]:
+              - generic [ref=e544]:
+                - link [ref=e545]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e546]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e547]: Get up to HKD1,700 when you join Mox with “MOXTRIP25” – plus up to 2% CashBack on Trip.com bookings!
+              - generic [ref=e551]: Learn more
+          - generic [ref=e554] [cursor=pointer]:
+            - link [ref=e555]:
+              - /url: /promotions/MOXHKT25/
+              - img [ref=e557]
+            - generic [ref=e558]:
+              - generic [ref=e559]:
+                - link [ref=e560]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+                - link [ref=e561]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+              - generic [ref=e562]: Shop at HKT to get HKD1,400 Cash Rewards!
+              - generic [ref=e566]: Learn more
+          - generic [ref=e569] [cursor=pointer]:
+            - link [ref=e570]:
+              - /url: /promotions/time-deposit/
+              - img [ref=e572]
+            - generic [ref=e573]:
+              - link [ref=e575]:
+                - /url: /promotions/?category=deposits
+                - text: Deposits
+              - generic [ref=e576]: Say goodbye to waiting and hello to instant earnings!
+              - generic [ref=e580]: Learn more
+          - generic [ref=e583] [cursor=pointer]:
+            - link [ref=e584]:
+              - /url: /promotions/instant-clear/
+              - img [ref=e586]
+            - generic [ref=e587]:
+              - link [ref=e589]:
+                - /url: /promotions/?category=borrowing
+                - text: Borrowing
+              - generic [ref=e590]: 0% interest* Instant Clear
+              - generic [ref=e594]: Learn more
+          - generic [ref=e597] [cursor=pointer]:
+            - link [ref=e598]:
+              - /url: /promotions/2025-hk-peoples-favorite-travel-destination-lucky-draw-winner-announcement/
+              - img [ref=e600]
+            - generic [ref=e601]:
+              - link [ref=e603]:
+                - /url: /promotions/?category=offers
+                - text: Offers
+              - generic [ref=e604]: 2025 Hong Kong People’s Favorite Travel Destination Guess & Win Lucky Draw Promotion Result Announcement
+              - generic [ref=e608]: Learn more
+          - generic [ref=e611] [cursor=pointer]:
+            - link [ref=e612]:
+              - /url: /promotions/2025-banking-personality-lucky-draw-winner-announcement/
+              - img [ref=e614]
+            - generic [ref=e615]:
+              - link [ref=e617]:
+                - /url: /promotions/?category=offers
+                - text: Offers
+              - generic [ref=e618]: 2025 "Banking Personality" Lucky Draw Promotion Result Announcement
+              - generic [ref=e622]: Learn more
+          - generic [ref=e625] [cursor=pointer]:
+            - link [ref=e626]:
+              - /url: /promotions/year-round-offers/
+              - img [ref=e628]
+            - generic [ref=e629]:
+              - link [ref=e631]:
+                - /url: /promotions/?category=offers
+                - text: Offers
+              - generic [ref=e632]: Year-round offers just for you!
+              - generic [ref=e636]: Learn more
+          - generic [ref=e639] [cursor=pointer]:
+            - link [ref=e640]:
+              - /url: /promotions/invest-fund-0-fee/
+              - img [ref=e642]
+            - generic [ref=e643]:
+              - link [ref=e645]:
+                - /url: /promotions/?category=invest
+                - text: Invest
+              - generic [ref=e646]: 0% Fund Subscription Fee – all fees waived
+              - generic [ref=e650]: Learn more
+          - generic [ref=e653] [cursor=pointer]:
+            - link [ref=e654]:
+              - /url: /promotions/pay-and-split-tax/
+              - img [ref=e656]
+            - generic [ref=e657]:
+              - link [ref=e659]:
+                - /url: /promotions/?category=borrowing
+                - text: Borrowing
+              - generic [ref=e660]: Pay your tax with Mox Credit Card, split and earn up to HKD500 cash reward💰
+              - generic [ref=e664]: Learn more
+          - generic [ref=e667] [cursor=pointer]:
+            - link [ref=e668]:
+              - /url: /promotions/instant-loan/
+              - img [ref=e670]
+            - generic [ref=e671]:
+              - link [ref=e673]:
+                - /url: /promotions/?category=borrowing
+                - text: Borrowing
+              - generic [ref=e674]: Goals within reach - attractive rate as low as 1.18%
+              - generic [ref=e678]: Learn more
+          - generic [ref=e681] [cursor=pointer]:
+            - link [ref=e682]:
+              - /url: /promotions/order-keeta-with-mox/
+              - img [ref=e684]
+            - generic [ref=e685]:
+              - generic [ref=e686]:
+                - link [ref=e687]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e688]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e689]: Exclusive flash sale⚡️ Order on Keeta and enjoy up to HKD80 off
+              - generic [ref=e693]: Learn more
+          - generic [ref=e696] [cursor=pointer]:
+            - link [ref=e697]:
+              - /url: /promotions/2026-xiaomi/
+              - img [ref=e699]
+            - generic [ref=e700]:
+              - generic [ref=e701]:
+                - link [ref=e702]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e703]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e704]: "Your ultimate deal for the new flagship camera phone 📷📱: Up to 7% total cash rewards at Xiaomi + 0% Instalments 💰 New customers get up to HKD2,150 cash bonus"
+              - generic [ref=e708]: Learn more
+          - generic [ref=e711] [cursor=pointer]:
+            - link [ref=e712]:
+              - /url: /promotions/moxpayroll/
+              - img [ref=e714]
+            - generic [ref=e715]:
+              - link [ref=e717]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e718]: Join Mox with "MOXPAYROLL" and earn up to HKD1,600
+              - generic [ref=e722]: Learn more
+          - generic [ref=e725] [cursor=pointer]:
+            - link [ref=e726]:
+              - /url: /promotions/MoxJourneyfromScratchPromotion/
+              - img [ref=e728]
+            - generic [ref=e729]:
+              - link [ref=e731]:
+                - /url: /promotions/?category=invest
+                - text: Invest
+              - generic [ref=e732]: Scratch to win big💥 5 Missions = 5x The Chance to scratch & win up to reward worth HKD8,888 🥳
+              - generic [ref=e736]: Learn more
+          - generic [ref=e739] [cursor=pointer]:
+            - link [ref=e740]:
+              - /url: /promotions/bonus-lucky-draw-26/
+              - img [ref=e742]
+            - generic [ref=e743]:
+              - link [ref=e745]:
+                - /url: /promotions/?category=deposits
+                - text: Deposits
+              - generic [ref=e746]: Sit back and watch your bonus grow
+              - generic [ref=e750]: Learn more
+          - generic [ref=e753] [cursor=pointer]:
+            - link [ref=e754]:
+              - /url: /promotions/best-in-town-renewal/
+              - img [ref=e756]
+            - generic [ref=e757]:
+              - generic [ref=e758]:
+                - link [ref=e759]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e760]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e761]: "Mox x csl \"Best-in-Town\" Exclusive Plan Offer: Get up to HKD1,380 Rebates on New Sign-Ups or Renewals + a Free NowTV Pass 🤳👾"
+              - generic [ref=e765]: Learn more
+          - generic [ref=e768] [cursor=pointer]:
+            - link [ref=e769]:
+              - /url: /promotions/TravelEggstraCarePromotion/
+              - img [ref=e771]
+            - generic [ref=e772]:
+              - link [ref=e774]:
+                - /url: /promotions/?category=insure
+                - text: Insure
+              - generic [ref=e775]: We packed you a FREE add-on coverage with our Travel Pick & Go insurance! ✈️ 🆓
+              - generic [ref=e779]: Learn more
+          - generic [ref=e782] [cursor=pointer]:
+            - link [ref=e783]:
+              - /url: /promotions/MOXTRAVEL/
+              - img [ref=e785]
+            - generic [ref=e786]:
+              - link [ref=e788]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e789]: Travelling on your mind 24/7?✈️ Open Mox Account with ‘MOXTRAVEL’, spend and save to earn up to 28,500 miles!
+              - generic [ref=e793]: Learn more
+          - generic [ref=e796] [cursor=pointer]:
+            - link [ref=e797]:
+              - /url: /promotions/The-Club/
+              - img [ref=e799]
+            - generic [ref=e800]:
+              - generic [ref=e801]:
+                - link [ref=e802]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+                - link [ref=e803]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+              - generic [ref=e804]: New flagship drops 📱☄️ Get HKD100 off the new Samsung S26 series exclusively at The Club
+              - generic [ref=e808]: Learn more
+          - generic [ref=e811] [cursor=pointer]:
+            - link [ref=e812]:
+              - /url: /promotions/mox-uber-taxi-spending-reward/
+              - img [ref=e814]
+            - generic [ref=e815]:
+              - generic [ref=e816]:
+                - link [ref=e817]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e818]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e819]: "Uber Taxi Ride Offer: Up to HKD90 Off Rides 🚕🧧"
+              - generic [ref=e823]: Learn more
+          - generic [ref=e826] [cursor=pointer]:
+            - link [ref=e827]:
+              - /url: /promotions/moxdepo/
+              - img [ref=e829]
+            - generic [ref=e830]:
+              - link [ref=e832]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e833]: Save and earn with Mox! Simply fund in and earn straight away!
+              - generic [ref=e837]: Learn more
+          - generic [ref=e840] [cursor=pointer]:
+            - link [ref=e841]:
+              - /url: /promotions/1500mox/
+              - img [ref=e843]
+            - generic [ref=e844]:
+              - link [ref=e846]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e847]: Use code “1500MOX” to open an account and earn up to HKD1,500 cash reward plus 0-requirement access to 2% Unlimited CashBack
+              - generic [ref=e851]: Learn more
+          - generic [ref=e854] [cursor=pointer]:
+            - link [ref=e855]:
+              - /url: /promotions/moxsmart/
+              - img [ref=e857]
+            - generic [ref=e858]:
+              - link [ref=e860]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e861]: "Spend & Save Double Rewards : Earn 20% cash rebate from spendings across 5 hot merchants and more from savings!"
+              - generic [ref=e865]: Learn more
+          - generic [ref=e868] [cursor=pointer]:
+            - link [ref=e869]:
+              - /url: /promotions/best-in-town-telco/
+              - img [ref=e871]
+            - generic [ref=e872]:
+              - generic [ref=e873]:
+                - link [ref=e874]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e875]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e876]: "Mox x csl exclusive offer: \"Best-in-Town\" device plans with installments 📲🤑"
+              - generic [ref=e880]: Learn more
+          - generic [ref=e883] [cursor=pointer]:
+            - link [ref=e884]:
+              - /url: /promotions/moxbill26/
+              - img [ref=e886]
+            - generic [ref=e887]:
+              - link [ref=e889]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e890]: Pay your HKT bills and earn HKD1,200 cash rewards + up to 2% Unlimited CashBack
+              - generic [ref=e894]: Learn more
+          - generic [ref=e897] [cursor=pointer]:
+            - link [ref=e898]:
+              - /url: /promotions/Trip/
+              - img [ref=e900]
+            - generic [ref=e901]:
+              - link [ref=e903]:
+                - /url: /promotions/?category=mox-credit
+                - text: Mox Credit
+              - generic [ref=e904]: "Trip.com Exclusive: Up to 8% Off + Up to 2% Unlimited CashBack all year long✈️🗓️"
+              - generic [ref=e908]: Learn more
+          - generic [ref=e911] [cursor=pointer]:
+            - link [ref=e912]:
+              - /url: /promotions/mox-payroll/
+              - img [ref=e914]
+            - generic [ref=e915]:
+              - generic [ref=e916]:
+                - link [ref=e917]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e918]:
+                  - /url: /promotions/?category=deposits
+                  - text: Deposits
+              - generic [ref=e919]: Set payroll with Mox - Top up 1.5% p.a. on savings & Unlimited 2% CashBack on Mox Credit
+              - generic [ref=e923]: Learn more
+          - generic [ref=e926] [cursor=pointer]:
+            - link [ref=e927]:
+              - /url: /promotions/Mission-Bonus-Rate/
+              - img [ref=e929]
+            - generic [ref=e930]:
+              - link [ref=e932]:
+                - /url: /promotions/?category=deposits
+                - text: Deposits
+              - generic [ref=e933]: "🚀Mission Bonus Rate: Stack wins, stack rates – up to 3.5% p.a. on your deposit!"
+              - generic [ref=e937]: Learn more
+          - generic [ref=e940] [cursor=pointer]:
+            - link [ref=e941]:
+              - /url: /promotions/Mox-Referral-Programme/
+              - img [ref=e943]
+            - generic [ref=e944]:
+              - link [ref=e946]:
+                - /url: /promotions/?category=welcome-offer
+                - text: Welcome Offer
+              - generic [ref=e947]: Mox Referral Programme
+              - generic [ref=e951]: Learn more
+          - generic [ref=e954] [cursor=pointer]:
+            - link [ref=e955]:
+              - /url: /promotions/CLUBLINK/
+              - img [ref=e957]
+            - generic [ref=e958]:
+              - generic [ref=e959]:
+                - link [ref=e960]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+                - link [ref=e961]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+              - generic [ref=e962]: "Open a Mox Account with \"CLUBLINK\" and enjoy fantastic rewards: worth up to HKD 1,400 rewards!"
+              - generic [ref=e966]: Learn more
+          - generic [ref=e969] [cursor=pointer]:
+            - link [ref=e970]:
+              - /url: /promotions/mox-zone-at-the-club-hkt/
+              - img [ref=e972]
+            - generic [ref=e973]:
+              - generic [ref=e974]:
+                - link [ref=e975]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+                - link [ref=e976]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+              - generic [ref=e977]: Mox Zone is now on The Club – enjoy year-round deals
+              - generic [ref=e981]: Learn more
+          - generic [ref=e984] [cursor=pointer]:
+            - link [ref=e985]:
+              - /url: /promotions/asia-miles-12m-or-24m-time-deposit/
+              - img [ref=e987]
+            - generic [ref=e988]:
+              - generic [ref=e989]:
+                - link [ref=e990]:
+                  - /url: /promotions/?category=deposits
+                  - text: Deposits
+                - link [ref=e991]:
+                  - /url: /promotions/?category=asia-miles
+                  - text: Asia Miles
+              - generic [ref=e992]: Fly farther with Mox Asia Miles Time Deposit
+              - generic [ref=e996]: Learn more
+          - generic [ref=e999] [cursor=pointer]:
+            - link [ref=e1000]:
+              - /url: /promotions/flexiboostsavings/
+              - img [ref=e1002]
+            - generic [ref=e1003]:
+              - link [ref=e1005]:
+                - /url: /promotions/?category=deposits
+                - text: Deposits
+              - generic [ref=e1006]: Unmatched flexibility and competitive rates with FlexiBoost savings💰
+              - generic [ref=e1010]: Learn more
+          - generic [ref=e1013] [cursor=pointer]:
+            - link [ref=e1014]:
+              - /url: /promotions/fx-new-users/
+              - img [ref=e1016]
+            - generic [ref=e1017]:
+              - link [ref=e1019]:
+                - /url: /promotions/?category=fx-savings-remit
+                - text: FX Savings / Remit
+              - generic [ref=e1020]: New FX users get up to HKD175 cash rewards
+              - generic [ref=e1024]: Learn more
+          - generic [ref=e1027] [cursor=pointer]:
+            - link [ref=e1028]:
+              - /url: /promotions/unlimited-asia-miles/
+              - img [ref=e1030]
+            - generic [ref=e1031]:
+              - link [ref=e1033]:
+                - /url: /promotions/?category=mox-credit
+                - text: Mox Credit
+              - generic [ref=e1034]: Unlock your next journey with Mox Credit Card✈️ Unlimited miles + 0 Limits + 0% FX Fees
+              - generic [ref=e1038]: Learn more
+          - generic [ref=e1041] [cursor=pointer]:
+            - link [ref=e1042]:
+              - /url: /promotions/unlimitedcashback/
+              - img [ref=e1044]
+            - generic [ref=e1045]:
+              - link [ref=e1047]:
+                - /url: /promotions/?category=mox-credit
+                - text: Mox Credit
+              - generic [ref=e1048]: Best in town! Enjoy Unlimited CashBack with Mox Credit Card!
+              - generic [ref=e1052]: Learn more
+          - generic [ref=e1055] [cursor=pointer]:
+            - link [ref=e1056]:
+              - /url: /promotions/moxtrip25/
+              - img [ref=e1058]
+            - generic [ref=e1059]:
+              - generic [ref=e1060]:
+                - link [ref=e1061]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+                - link [ref=e1062]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+              - generic [ref=e1063]: Get up to HKD1,700 when you join Mox with “MOXTRIP25” – plus up to 2% CashBack on Trip.com bookings!
+              - generic [ref=e1067]: Learn more
+          - generic [ref=e1070] [cursor=pointer]:
+            - link [ref=e1071]:
+              - /url: /promotions/MOXHKT25/
+              - img [ref=e1073]
+            - generic [ref=e1074]:
+              - generic [ref=e1075]:
+                - link [ref=e1076]:
+                  - /url: /promotions/?category=welcome-offer
+                  - text: Welcome Offer
+                - link [ref=e1077]:
+                  - /url: /promotions/?category=mox-credit
+                  - text: Mox Credit
+              - generic [ref=e1078]: Shop at HKT to get HKD1,400 Cash Rewards!
+              - generic [ref=e1082]: Learn more
+          - generic [ref=e1085] [cursor=pointer]:
+            - link [ref=e1086]:
+              - /url: /promotions/time-deposit/
+              - img [ref=e1088]
+            - generic [ref=e1089]:
+              - link [ref=e1091]:
+                - /url: /promotions/?category=deposits
+                - text: Deposits
+              - generic [ref=e1092]: Say goodbye to waiting and hello to instant earnings!
+              - generic [ref=e1096]: Learn more
+          - generic [ref=e1099] [cursor=pointer]:
+            - link [ref=e1100]:
+              - /url: /promotions/instant-clear/
+              - img [ref=e1102]
+            - generic [ref=e1103]:
+              - link [ref=e1105]:
+                - /url: /promotions/?category=borrowing
+                - text: Borrowing
+              - generic [ref=e1106]: 0% interest* Instant Clear
+              - generic [ref=e1110]: Learn more
+          - generic [ref=e1113] [cursor=pointer]:
+            - link [ref=e1114]:
+              - /url: /promotions/2025-hk-peoples-favorite-travel-destination-lucky-draw-winner-announcement/
+              - img [ref=e1116]
+            - generic [ref=e1117]:
+              - link [ref=e1119]:
+                - /url: /promotions/?category=offers
+                - text: Offers
+              - generic [ref=e1120]: 2025 Hong Kong People’s Favorite Travel Destination Guess & Win Lucky Draw Promotion Result Announcement
+              - generic [ref=e1124]: Learn more
+          - generic [ref=e1127] [cursor=pointer]:
+            - link [ref=e1128]:
+              - /url: /promotions/2025-banking-personality-lucky-draw-winner-announcement/
+              - img [ref=e1130]
+            - generic [ref=e1131]:
+              - link [ref=e1133]:
+                - /url: /promotions/?category=offers
+                - text: Offers
+              - generic [ref=e1134]: 2025 "Banking Personality" Lucky Draw Promotion Result Announcement
+              - generic [ref=e1138]: Learn more
+          - generic [ref=e1141] [cursor=pointer]:
+            - link [ref=e1142]:
+              - /url: /promotions/year-round-offers/
+              - img [ref=e1144]
+            - generic [ref=e1145]:
+              - link [ref=e1147]:
+                - /url: /promotions/?category=offers
+                - text: Offers
+              - generic [ref=e1148]: Year-round offers just for you!
+              - generic [ref=e1152]: Learn more
+        - navigation [ref=e1153]:
+          - list [ref=e1154]:
+            - listitem [ref=e1155]
+            - listitem [ref=e1157]:
+              - generic [ref=e1158] [cursor=pointer]: "1"
+            - listitem [ref=e1159]:
+              - generic [ref=e1160] [cursor=pointer]: "2"
+            - listitem [ref=e1161]:
+              - generic [ref=e1162] [cursor=pointer]: "3"
+            - listitem [ref=e1163]:
+              - generic [ref=e1164] [cursor=pointer]: "4"
+            - listitem [ref=e1165]:
+              - generic [ref=e1166] [cursor=pointer]: "5"
+            - listitem [ref=e1167]:
+              - generic [ref=e1168] [cursor=pointer]: ...
+            - listitem [ref=e1169]:
+              - generic [ref=e1170] [cursor=pointer]: "26"
+            - listitem [ref=e1171]
+      - generic [ref=e1175]:
+        - generic [ref=e1180]:
+          - img [ref=e1182]
+          - img "zebra-image" [ref=e1184]
+        - generic [ref=e1187]:
+          - heading "The only bank in Hong Kong that pays you cash every day" [level=3] [ref=e1189]
+          - generic [ref=e1191]:
+            - paragraph [ref=e1192]: The world is changing, and your wealth game needs to keep up with the times.
+            - paragraph [ref=e1193]: With Mox, the interest on your savings is calculated and credited to your Mox Account daily – watch your savings grow faster as the interest keeps rolling in.
+            - paragraph [ref=e1194]: When you spend with Mox Credit⁵, your CashBack⁶ is also calculated instantly and credited daily to your Mox Account. What’s more, it’s the best in town 2% Unlimited CashBack – real cash, with no cap or category limits. Simply use your Mox Credit anytime, anywhere!
+      - generic [ref=e1198]:
+        - generic [ref=e1203]:
+          - img [ref=e1205]
+          - img "zebra-image" [ref=e1207]
+        - generic [ref=e1210]:
+          - heading "Watch your money grow with Mox" [level=3] [ref=e1212]
+          - generic [ref=e1214]:
+            - paragraph [ref=e1215]: With Mox as your wealth management partner, watch your money grow right before your eyes.
+            - paragraph [ref=e1216]:
+              - strong [ref=e1217]: "Mox Invest:"
+              - text: Mox is the 1st digital bank that allows you to trade in both HK and US stocks, including fractional shares. Break free from entry barriers and invest with low fees⁷ in stocks and fund, all with the advantage of a bank.
+            - paragraph [ref=e1218]:
+              - strong [ref=e1219]: "Savings Rate:"
+              - text: Take advantage of daily interest enjoy up to 0.5% p.a. on HKD savings. Starting 1 March 2025, for USD savings we also offer a 1% p.a. with no strings attached! Watch your savings grow every day!
+            - paragraph [ref=e1220]:
+              - strong [ref=e1221]: "Time Deposit:"
+              - text: Mox gives you rewards for your Time Deposit instantly, right at the moment you place it. Whether you prefer cash or Asia Miles, you can earn either of them instantly with Mox!
+            - paragraph [ref=e1222]: Everything you need to make your money flourish is at the tap of a button with Mox.
+      - generic [ref=e1226]:
+        - generic [ref=e1231]:
+          - img [ref=e1233]
+          - img "zebra-image" [ref=e1235]
+        - generic [ref=e1238]:
+          - heading "Mox Credit, better than a credit card" [level=3] [ref=e1240]
+          - generic [ref=e1242]:
+            - paragraph [ref=e1243]: Saving smart is great, but don’t forget to spend smart too. With Mox Credit, you’re not only enjoying Unlimited CashBack, but Mox Credit offers more than just a credit card.
+            - paragraph [ref=e1244]: "Once your credit limit is approved, you’ll unlock a realm of banking services with Mox, no extra documents or headaches required:"
+            - list [ref=e1245]:
+              - listitem [ref=e1246]: You can pay with Mox Credit via FPS, making daily transfers or paying bills, as easy as a breeze
+              - listitem [ref=e1247]: After spending, split your transactions instantly by Split Purchase or Split Your Statement, and easily manage your finance
+      - generic [ref=e1251]:
+        - generic [ref=e1256]:
+          - img [ref=e1258]
+          - img "zebra-image" [ref=e1260]
+        - generic [ref=e1263]:
+          - heading "Dream big. We’ve got your back" [level=3] [ref=e1265]
+          - generic [ref=e1267]:
+            - paragraph [ref=e1268]: "Besides smart money management, Mox has your back when you need extra cash for your dreams. Explore our instant solutions, available 24/7 with instant application decision – just a few clicks away:"
+            - list [ref=e1269]:
+              - listitem [ref=e1270]: Get extra cash with Instant Loan, money arrives in as fast as a second upon approval
+              - listitem [ref=e1271]: With Instant Clear, clear your external credit card bills from other banks or financial institutions and save as much as 94%³𝄒⁴𝄒⁵ interest charges in a few minutes
+      - generic [ref=e1275]:
+        - generic [ref=e1280]:
+          - img [ref=e1282]
+          - img "zebra-image" [ref=e1284]
+        - generic [ref=e1287]:
+          - heading "At Mox, there’s nothing you don’t know" [level=3] [ref=e1289]
+          - list [ref=e1292]:
+            - listitem [ref=e1293]: Get instant notification for every purchase, transfer, or any account activity for enhanced control and security
+            - listitem [ref=e1294]: Each transaction is clearly presented, allowing you to see at a glance
+            - listitem [ref=e1295]: Full transparency on all fees with no hidden charges
+    - generic [ref=e1300]:
+      - paragraph [ref=e1301]:
+        - strong [ref=e1302]: To borrow or not to borrow? Borrow only if you can repay!
+      - paragraph [ref=e1303]:
+        - text: Investment involves risks.
+        - link "Mox Invest Terms and Conditions" [ref=e1304] [cursor=pointer]:
+          - /url: /legal-documents/general-terms-and-conditions/schedule-4/
+        - text: apply.
+      - paragraph [ref=e1305]: "*As of 3 July 2025."
+      - paragraph [ref=e1306]:
+        - text: ¹Our General Terms and Conditions (in particular, see
+        - link "Schedule 3" [ref=e1307] [cursor=pointer]:
+          - /url: /legal-documents/general-terms-and-conditions/schedule-3/
+        - text: and the
+        - link "Mox Credit Key Facts Statement" [ref=e1308] [cursor=pointer]:
+          - /url: legal-documents/key-fact-statements/mox-card-with-credit/
+        - text: apply.
+      - paragraph [ref=e1309]:
+        - text: ²Clause 9 of
+        - link "Schedule 1" [ref=e1310] [cursor=pointer]:
+          - /url: /legal-documents/general-terms-and-conditions/schedule-1/
+        - text: (Terms and Conditions for Accounts and Card Management) to the General Terms and Conditions (which can be found in the Mox app and/or on our website) applies.
+      - paragraph [ref=e1311]: ³For details, please refer to the Fees and Charges section in the Mox app or on the Mox website.
+      - paragraph [ref=e1312]: ⁴The above illustration is calculated based on a monthly repayment of 1% of a major traditional bank credit card outstanding balance or HKD220 (whichever is higher) over a 337-month repayment period. The average monthly repayment amount quoted above is calculated based on the first 3-month repayment amount and is rounded to the nearest dollar. The Annualised Percentage Rate (“APR”) is 35.70%. The total interest expense over the whole repayment period quoted above is rounded to the nearest dollar. The above example is for reference only.
+      - paragraph [ref=e1313]: ⁵The above illustration is calculated based on a monthly flat rate of 0.32% with 48-month repayment period for Mox Instant Clear Credit Card Balance Transfer Plan (“Instant Clear”). The APR is 7.43%, and the total loan repayment amount is HKD115,360. The average monthly repayment amount and the total interest expense over the whole repayment period quoted above are rounded to the nearest dollar. The above example is for reference only.
+      - paragraph [ref=e1314]:
+        - text: ⁶For a Instant Clear of HKD20,000 into 6 monthly instalments, the Annualised Percentage Rate (APR) is 5.34%. The APR is calculated using methods specified in relevant guidelines as set out in the Code of Banking Practice. The APR is a reference rate, which includes all applicable interest rates, fees and charges of the product, expressed as an annualised rate. The APR for an Instant Clear loan is subject to Mox’s final decision on a case-by-case basis and the Mox Credit account status at the time Mox receives the Instant Clear application. Please refer to the
+        - link "Instant Clear Credit Card Balance Transfer Plan Key Facts Statement" [ref=e1315] [cursor=pointer]:
+          - /url: /legal-documents/key-fact-statements/instant-clear/
+        - text: for details.
+      - paragraph [ref=e1316]: Savings rates are subject to review according to changes in market conditions from time to time. Our savings base rate is not applicable to any deposits held in Time Deposit Account(s) and FlexiBoost Account(s).
+  - contentinfo [ref=e1317]:
+    - generic [ref=e1319]:
+      - link "Mox" [ref=e1321] [cursor=pointer]:
+        - /url: /
+        - img "Mox" [ref=e1322]
+      - generic [ref=e1324]:
+        - generic [ref=e1325]: in partnership with
+        - link "PCCW" [ref=e1326] [cursor=pointer]:
+          - /url: http://www.pccw.com/
+          - img "PCCW" [ref=e1327]
+        - link "HKT" [ref=e1328] [cursor=pointer]:
+          - /url: https://www.hkt.com/?language=en_US
+          - img "HKT" [ref=e1329]
+        - link "Trip.com" [ref=e1330] [cursor=pointer]:
+          - /url: https://www.trip.com/?locale=en_xx
+          - img "Trip.com" [ref=e1331]
+      - link "Standard Chartered" [ref=e1333] [cursor=pointer]:
+        - /url: https://www.sc.com/hk/
+        - img "Standard Chartered" [ref=e1334]
+      - generic [ref=e1337]:
+        - paragraph [ref=e1338]: Features
+        - paragraph [ref=e1339]:
+          - link "Mox Credit Card" [ref=e1340] [cursor=pointer]:
+            - /url: /features/mox-credit/
+        - paragraph [ref=e1341]:
+          - link "Mox Invest" [ref=e1342] [cursor=pointer]:
+            - /url: /features/mox-invest/
+        - paragraph [ref=e1343]:
+          - link "Mox Insure" [ref=e1344] [cursor=pointer]:
+            - /url: /features/mox-insure/
+        - paragraph [ref=e1345]:
+          - link "Smart Banking" [ref=e1346] [cursor=pointer]:
+            - /url: /features/smart-banking/
+        - paragraph [ref=e1347]:
+          - link "Smart Borrowing" [ref=e1348] [cursor=pointer]:
+            - /url: /features/smart-borrowing/
+        - paragraph [ref=e1349]:
+          - link "Instant Loan" [ref=e1350] [cursor=pointer]:
+            - /url: /promotions/instant-loan/
+        - paragraph [ref=e1351]:
+          - link "Smart Saving" [ref=e1352] [cursor=pointer]:
+            - /url: /features/smart-saving/
+        - paragraph [ref=e1353]:
+          - link "Smart Spending" [ref=e1354] [cursor=pointer]:
+            - /url: /features/smart-spending/
+        - paragraph [ref=e1355]:
+          - link "Mox FX" [ref=e1356] [cursor=pointer]:
+            - /url: /features/mox-fx/
+        - paragraph [ref=e1357]:
+          - link "Mox at a glance" [ref=e1358] [cursor=pointer]:
+            - /url: /features/mox-at-a-glance/
+      - generic [ref=e1359]:
+        - paragraph [ref=e1360]: The Bank
+        - paragraph [ref=e1361]:
+          - link "Promotions" [ref=e1362] [cursor=pointer]:
+            - /url: /promotions/
+        - paragraph [ref=e1363]:
+          - link "About us" [ref=e1364] [cursor=pointer]:
+            - /url: /about-us/
+        - paragraph [ref=e1365]:
+          - link "Media" [ref=e1366] [cursor=pointer]:
+            - /url: /media/
+        - paragraph [ref=e1367]:
+          - link "Careers" [ref=e1368] [cursor=pointer]:
+            - /url: /careers/
+        - paragraph [ref=e1369]:
+          - link "FAQ" [ref=e1370] [cursor=pointer]:
+            - /url: /faqs/
+      - generic [ref=e1371]:
+        - paragraph [ref=e1372]: Useful links
+        - paragraph [ref=e1373]:
+          - link "Legal documents" [ref=e1374] [cursor=pointer]:
+            - /url: /legal-documents/
+        - paragraph [ref=e1375]:
+          - link "Privacy" [ref=e1376] [cursor=pointer]:
+            - /url: /legal-documents/privacy/
+        - paragraph [ref=e1377]:
+          - link "Cookie policy" [ref=e1378] [cursor=pointer]:
+            - /url: /legal-documents/cookie-policy/
+        - paragraph [ref=e1379]:
+          - link "Regulatory disclosures" [ref=e1380] [cursor=pointer]:
+            - /url: /regulatory-disclosures/
+        - paragraph [ref=e1381]:
+          - link "Security tips" [ref=e1382] [cursor=pointer]:
+            - /url: /security-tips/
+        - paragraph [ref=e1383]:
+          - link "Submit a vulnerability" [ref=e1384] [cursor=pointer]:
+            - /url: /submit-a-vulnerability/
+        - paragraph [ref=e1385]:
+          - link "Important notices" [ref=e1386] [cursor=pointer]:
+            - /url: /important-notices/
+        - paragraph [ref=e1387]:
+          - link "Open Banking" [ref=e1388] [cursor=pointer]:
+            - /url: /open-banking/
+        - paragraph [ref=e1389]:
+          - link "Sitemap" [ref=e1390] [cursor=pointer]:
+            - /url: /sitemap/
+      - generic [ref=e1391]:
+        - paragraph [ref=e1392]: Contact us
+        - paragraph [ref=e1393]:
+          - link "Send us a message" [ref=e1394] [cursor=pointer]:
+            - /url: /contact-us/
+        - paragraph [ref=e1395]:
+          - link "+852 2888 8228" [ref=e1396] [cursor=pointer]:
+            - /url: tel:+85228888228
+        - paragraph [ref=e1397]:
+          - link "care@mox.com" [ref=e1398] [cursor=pointer]:
+            - /url: mailto:care@mox.com
+        - paragraph [ref=e1399]:
+          - link "Employment Verification" [ref=e1400] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+        - paragraph [ref=e1401]:
+          - link "askhr@sc.com" [ref=e1402] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+      - generic [ref=e1403]:
+        - generic:
+          - generic:
+            - link:
+              - /url: https://www.facebook.com/moxbankhk/
+            - link:
+              - /url: https://www.instagram.com/moxbank/
+            - link:
+              - /url: https://www.linkedin.com/company/mox-bank/
+            - link:
+              - /url: https://www.youtube.com/channel/UC41ce2iw3ytvBbJCwlF3iiw/featured
+        - generic [ref=e1404]:
+          - generic [ref=e1406]:
+            - img "apple-store" [ref=e1410] [cursor=pointer]
+            - img "google-play" [ref=e1414] [cursor=pointer]
+          - generic [ref=e1417]:
+            - paragraph [ref=e1418]:
+              - text: The above are the only authorized channels for downloading Mox App. To protect your information, please do not download our app via other channels.
+              - link "Click here for further information." [ref=e1419] [cursor=pointer]:
+                - /url: /security-tips/
+            - paragraph [ref=e1420]: App Store and the Apple logo are trademarks or registered trademarks of Apple Inc., registered in the United States and other countries. Google Play and the Google Play logo are trademarks or registered trademarks of Google LLC, registered in the United States and other countries.
+        - button [ref=e1422] [cursor=pointer]
+      - generic [ref=e1424]: ©2026 Mox Bank. All rights reserved

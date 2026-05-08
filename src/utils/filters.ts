@@ -44,6 +44,27 @@ const NON_BANK_PATTERNS: string[] = [
   '大埔',
   '捐款收據',
   '慈善捐款',
+  // Scam alerts and security notices are NOT promotions
+  'beware of scam',
+  'beware of bogus',
+  'bogus call',
+  'scam alert',
+  'fraud alert',
+  'security alert',
+  '防騙',
+  '詐騙',
+  '提防騙案',
+  '假冒',
+  '偽冒',
+  // Service information is NOT a promotion
+  '24x7 service',
+  '24x7 banking',
+  '24/7 service',
+  'customer service hour',
+  'service hour',
+  'branch hour',
+  'opening hour',
+  'business hour',
 ];
 
 const NON_BANK_DOMAINS: string[] = [

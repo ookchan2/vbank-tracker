@@ -4,9 +4,9 @@
  * @author Alfie
  */
 
-import { runAgent, type AgentResult } from './client';
-import type { RawProduct } from './products';
-import { PRODUCT_CATEGORIES } from './products';
+import { runAgent, type AgentResult } from './client.js';
+import type { RawProduct } from './products.js';
+import { PRODUCT_CATEGORIES } from './products.js';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 

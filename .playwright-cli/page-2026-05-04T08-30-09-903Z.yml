@@ -1,0 +1,370 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: "[Beware of Scams] Beware of bogus calls, fraudulent SMS and emails purportedly from banks. Contact us at +852 3898 6988 if you have any suspicion. You can learn some smart tips from the Hong Kong Monetary Authority website on how to prevent fraud."
+      - button "Close notice" [ref=e7] [cursor=pointer]:
+        - img [ref=e8]
+    - banner [ref=e10]:
+      - generic [ref=e11]:
+        - link "WeLab Bank_logo_en.png" [ref=e12] [cursor=pointer]:
+          - /url: /en/
+          - img "WeLab Bank_logo_en.png" [ref=e13]
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - navigation [ref=e16]:
+              - list [ref=e17]:
+                - listitem [ref=e18]:
+                  - link "Banking" [ref=e19] [cursor=pointer]:
+                    - /url: "#"
+                  - generic:
+                    - generic:
+                      - list:
+                        - listitem:
+                          - link "WeLab Global Wallet":
+                            - /url: /en/feature/welab-global-wallet/
+                        - listitem:
+                          - link "Compare the best exchange rates":
+                            - /url: /en/feature/fx-daily-leaderboard/
+                        - listitem:
+                          - link "WeLab Global Wallet Debit Card":
+                            - /url: /en/feature/debit-card/
+                        - listitem:
+                          - link "GoSave 2.0 Time Deposit":
+                            - /url: /en/feature/gosave_2/
+                        - listitem:
+                          - link "Transfer/FPS/Remittance":
+                            - /url: /en/feature/fps/
+                        - listitem:
+                          - link "Global Remittance":
+                            - /url: /en/feature/global-remittance/
+                        - listitem:
+                          - link "Onboarding":
+                            - /url: /en/feature/onboarding/
+                        - listitem:
+                          - link "Money Safe":
+                            - /url: /en/feature/moneysafe/
+                - listitem [ref=e20]:
+                  - link "Investment" [ref=e21] [cursor=pointer]:
+                    - /url: "#"
+                  - generic:
+                    - generic:
+                      - list:
+                        - listitem:
+                          - link "Digital Wealth Advisory":
+                            - /url: /en/feature/wealth/
+                        - listitem:
+                          - link "WeLab Money Plus":
+                            - /url: /en/feature/welab-money-plus/
+                        - listitem:
+                          - link "Featured Funds":
+                            - /url: /en/feature/fund/
+                - listitem [ref=e22]:
+                  - link "Loan" [ref=e23] [cursor=pointer]:
+                    - /url: "#"
+                  - generic:
+                    - generic:
+                      - list:
+                        - listitem:
+                          - link "Personal Instalment Loan":
+                            - /url: /en/feature/personal_instalment_loan/
+                        - listitem:
+                          - link "Card Debt Consolidation Loan":
+                            - /url: /en/feature/debtcon_loan/
+                        - listitem:
+                          - link "Subscribe+ for Apple Products":
+                            - /url: /en/feature/subscribe_plus/
+                        - listitem:
+                          - link "Preface – Learn Now Pay Later Program":
+                            - /url: /en/feature/preface-learn-now-pay-later/
+                        - listitem:
+                          - link "Policy Loan":
+                            - /url: /en/feature/policy_loan/
+                        - listitem:
+                          - link "Intelligent Financial Health Analysis":
+                            - /url: /en/feature/credit-view/
+                - listitem [ref=e24]:
+                  - link "Offers" [ref=e25] [cursor=pointer]:
+                    - /url: "#"
+                  - generic:
+                    - generic:
+                      - list:
+                        - listitem:
+                          - link "May Holiday \"Fun Fund Investment Reward\"":
+                            - /url: /en/feature/may-holiday-fun-fund-reward-26/
+                        - listitem:
+                          - link "\"Swipe · Earn · Win\" Easter Lucky Draw":
+                            - /url: /en/feature/dcp-easter-lucky-draw-2026/
+                        - listitem:
+                          - link "【2-in-1 Welcome Offer】Open an account and enjoy rewards worth approx. HKD 5,000":
+                            - /url: /en/feature/2-in-1-welcome-rewards-may26/
+                        - listitem:
+                          - link "Best Rate Guaranteed":
+                            - /url: /en/feature/fx-best-rate-guarantee/
+                        - listitem:
+                          - link "WeLab Global Wallet Debit Card — Year-round Offers":
+                            - /url: /en/feature/global-wallet-etb-offer-feb26/
+                        - listitem:
+                          - link "Personal Loan Promotion":
+                            - /url: /en/feature/loan-promotion/
+                        - listitem:
+                          - link "Tesla Personal Loan Offer":
+                            - /url: /en/feature/tesla-mega-combo/
+                        - listitem:
+                          - link "Personal Loan “R-Friend Referral” Campaign":
+                            - /url: /en/feature/loan_mgm/
+                - listitem [ref=e26]:
+                  - link "News & Updates" [ref=e27] [cursor=pointer]:
+                    - /url: "#"
+                  - generic:
+                    - generic:
+                      - list:
+                        - listitem:
+                          - link "Newsroom":
+                            - /url: /en/newsroom/
+                        - listitem:
+                          - link "Blog":
+                            - /url: /en/blog/
+                        - listitem:
+                          - link "Awards and Recognitions":
+                            - /url: /en/awards/
+                        - listitem:
+                          - link "Insights":
+                            - /url: /en/feature/insights/
+                        - listitem:
+                          - link "FAQ":
+                            - /url: /en/support/
+            - generic [ref=e28]:
+              - generic "Switch language" [ref=e29] [cursor=pointer]:
+                - img [ref=e30]
+              - generic:
+                - generic:
+                  - list:
+                    - listitem:
+                      - generic: 繁體中文
+                    - listitem:
+                      - generic: 简体中文
+                    - listitem:
+                      - generic: English
+          - link "Download" [ref=e33] [cursor=pointer]:
+            - /url: /en/feature/download/
+            - button "Download" [ref=e34]
+  - main [ref=e35]:
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - img "Banner" [ref=e41]
+        - generic [ref=e46]:
+          - heading "When Life Meets Intelligence" [level=1] [ref=e47]
+          - paragraph [ref=e48]
+          - paragraph [ref=e49]: Dedicated to applying AI technology to grow your wealth, simply and easily.
+      - generic [ref=e51]:
+        - img "Smart Finance, Carefree Living" [ref=e55]
+        - generic [ref=e57]:
+          - heading "Smart Finance, Carefree Living" [level=2] [ref=e59]
+          - generic [ref=e61]:
+            - paragraph [ref=e62]: “Where life meets intelligence” is at the heart of WeLab Bank – connecting Artificial Intelligence (AI) with your everyday life.
+            - paragraph [ref=e63]
+            - paragraph [ref=e64]: WeLab Bank is dedicated to providing highly personalized customer experiences using Generative AI and AI Agents. We’ve established an AI-first strategic partnership with Google, applying it to operations, product design and marketing to achieve highly personalized financial innovation.
+            - paragraph [ref=e65]
+            - paragraph [ref=e66]: Whether you need savings, loans, or investments, we aim to help you save more and earn more in the smartest, most considerate way possible. Because we believe you deserve a smarter banking experience.
+          - link "Download Now" [ref=e68] [cursor=pointer]:
+            - /url: /en/feature/download/?_branch_match_id=1509095064509814346&_branch_referrer=H4sIAAAAAAAAA8soKSkottLXL0%2FNSUzSSywo0MvJzMvWz8wrLknMydEFCtjXFaWmpRYVZealxycV5ZcXpxbZOmcU5eemAgCCsxDKPAAAAA%3D%3D
+            - generic [ref=e69]:
+              - generic [ref=e70]: Download Now
+              - img [ref=e71]
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - heading "Hong Kong’s Best Digital Bank with Global Accolades" [level=2] [ref=e77]
+          - paragraph [ref=e79]: Globally Recognized for Industry Leadership and Steller Performance
+        - generic [ref=e80]:
+          - img "EN1.png" [ref=e83]
+          - img "EN2.png" [ref=e86]
+          - img "EN3.png" [ref=e89]
+      - generic [ref=e91]:
+        - link "Smart Choices to Help You Save More and Earn More" [ref=e93] [cursor=pointer]:
+          - /url: /en/feature/download/
+          - img "Smart Choices to Help You Save More and Earn More" [ref=e94]
+        - generic [ref=e96]:
+          - heading "Smart Choices to Help You Save More and Earn More" [level=2] [ref=e98]
+          - paragraph [ref=e101]
+          - generic [ref=e102]:
+            - generic [ref=e104]:
+              - 'img "Manage: WeLab Bank offers a comprehensive and personalized banking experience. Manage your global debit cards, international transfers, and unlock your asset potential with loans – all easily handled in one App. We help you seize every opportunity to grow your wealth, freeing up your time for what truly matters." [ref=e109]'
+              - generic [ref=e111]: "Manage: WeLab Bank offers a comprehensive and personalized banking experience. Manage your global debit cards, international transfers, and unlock your asset potential with loans – all easily handled in one App. We help you seize every opportunity to grow your wealth, freeing up your time for what truly matters."
+            - generic [ref=e114]:
+              - 'img "Save: We intelligently leverage AI and technology to offer you higher deposit rates and the best FX rate* for international opportunities. Whether you’re a financial beginner or a seasoned global investor, WeLab Bank helps you cut costs, save more, and earn more." [ref=e119]'
+              - generic [ref=e121]: "Save: We intelligently leverage AI and technology to offer you higher deposit rates and the best FX rate* for international opportunities. Whether you’re a financial beginner or a seasoned global investor, WeLab Bank helps you cut costs, save more, and earn more."
+            - generic [ref=e124]:
+              - 'img "Grow: Partnering with world-leading fund companies, we bring you \"Digital Wealth Advisory\" and \"Featured Funds,\" consistently offering unlimited $0 subscription and switching fees. Allowing you to flexibly allocate your funds, build a diversified passive income stream, and make investing and wealth growth simple and stress-free." [ref=e129]'
+              - generic [ref=e131]: "Grow: Partnering with world-leading fund companies, we bring you \"Digital Wealth Advisory\" and \"Featured Funds,\" consistently offering unlimited $0 subscription and switching fees. Allowing you to flexibly allocate your funds, build a diversified passive income stream, and make investing and wealth growth simple and stress-free."
+      - generic [ref=e133]:
+        - generic [ref=e135]:
+          - heading "Global Strategic Partnerships – AI-First to Drive Financial Innovation" [level=2] [ref=e137]
+          - generic [ref=e139]:
+            - paragraph [ref=e140]: Leveraging WeLab Bank’s outstanding fintech innovation, we’ve partnered with leading technology companies including Google, Apple, Allianz Global Investors, and Tesla, using the power of fintech to give back to society. We will continue to prioritize an AI-first approach, driving the application of digital banking services, leading financial innovation, and empowering our talented team to reach new heights on the international stage.
+            - paragraph [ref=e141]
+            - paragraph [ref=e142]: Join WeLab Bank today and explore the limitless possibilities that the future of finance has to offer!
+        - img "Global Strategic Partnerships – AI-First to Drive Financial Innovation" [ref=e146]
+      - generic [ref=e148]:
+        - heading "Our Products and Services:" [level=2] [ref=e150]
+        - generic [ref=e151]:
+          - img "Our Products and Services:" [ref=e153]
+          - generic [ref=e154]:
+            - generic [ref=e157]:
+              - generic [ref=e158] [cursor=pointer]:
+                - heading "Banking:" [level=4] [ref=e159]
+                - img [ref=e161]
+              - generic [ref=e165]:
+                - paragraph [ref=e166]:
+                  - link "ＷeLab Global Wallet" [ref=e167] [cursor=pointer]:
+                    - /url: https://www.welab.bank/en/feature/welab-global-wallet/
+                - paragraph [ref=e168]:
+                  - link "Compare the best exchange rates" [ref=e169] [cursor=pointer]:
+                    - /url: https://www.welab.bank/en/feature/fx-daily-leaderboard/
+                - paragraph [ref=e170]:
+                  - link "WeLab Global Wallet Debit Card" [ref=e171] [cursor=pointer]:
+                    - /url: https://www.welab.bank/en/feature/debit-card/
+                - paragraph [ref=e172]:
+                  - link "GoSave 2.0 Time Deposit" [ref=e173] [cursor=pointer]:
+                    - /url: https://www.welab.bank/en/feature/gosave_2/
+                - paragraph [ref=e174]:
+                  - link "Transfer/FPS/Remittance" [ref=e175] [cursor=pointer]:
+                    - /url: https://www.welab.bank/en/feature/fps/
+                - paragraph [ref=e176]:
+                  - link "Global Remittance" [ref=e177] [cursor=pointer]:
+                    - /url: https://www.welab.bank/en/feature/global-remittance/
+                - paragraph [ref=e178]:
+                  - link "Onboarding" [ref=e179] [cursor=pointer]:
+                    - /url: https://www.welab.bank/en/feature/onboarding/
+                - paragraph [ref=e180]:
+                  - link "Money Safe" [ref=e181] [cursor=pointer]:
+                    - /url: https://www.welab.bank/en/feature/moneysafe/
+                - paragraph [ref=e182]
+            - generic [ref=e187] [cursor=pointer]:
+              - heading "Investment:" [level=4] [ref=e188]
+              - img [ref=e190]
+            - generic [ref=e196] [cursor=pointer]:
+              - heading "Loans:" [level=4] [ref=e197]
+              - img [ref=e199]
+      - generic [ref=e204]:
+        - paragraph [ref=e205]:
+          - text: "*The best rates in town comparison is based on the exchange rates collected from the websites, online banking or mobile banking of 28 retail banks in Hong Kong (excluding those which do not publish FX rates via the aforementioned channels) as of approximately 2:30 pm on 14 January 2026. Those rates do not include any special promotions, discounts, offers, membership programs or other preferential rates (including but not limited to volume discounts), but include any fees charged by any banks when conducting the FX transactions to facilitate the comparison. Terms and Conditions apply, please click"
+          - link "here" [ref=e206] [cursor=pointer]:
+            - /url: https://www.welab.bank/media/documents/Best_FX_Rate_Guaranteed_Offer.pdf
+          - text: for promotion details.
+        - paragraph [ref=e207]: This webpage is for information only and does not constitute any offer, solicitation, recommendation, comment or any guarantee to the purchase or sale of any investment products or services. Investment involves risk, please refer to investment product pages for details.
+        - paragraph [ref=e208]: The screen displays and images on this website are for illustrative purpose only. Please refer to the information displayed in the WeLab Bank App on the transaction day.
+        - paragraph [ref=e209]:
+          - strong [ref=e210]: To borrow or not to borrow? Borrow only if you can repay!
+  - contentinfo [ref=e211]:
+    - generic [ref=e213]:
+      - generic [ref=e214]:
+        - generic [ref=e215]:
+          - img "WeLab Bank_bw.png" [ref=e219]
+          - paragraph [ref=e220]: "(General office hour: 9:00am – 10:30pm, Mon – Sun; Loan enquiry office hour: 9:00am – 8:00pm, Mon – Fri, except public holidays)"
+          - paragraph [ref=e221]:
+            - text: Call us at
+            - link "+852 3898 6988" [ref=e222] [cursor=pointer]:
+              - /url: tel:+852 3898 6988
+          - paragraph [ref=e223]:
+            - text: Email us at
+            - link "wecare@welab.bank" [ref=e224] [cursor=pointer]:
+              - /url: mailto:wecare@welab.bank
+          - generic [ref=e226]:
+            - link "FB-bw" [ref=e227] [cursor=pointer]:
+              - /url: https://www.facebook.com/welab-bank/
+              - img "FB-bw" [ref=e231]
+            - link "icon_instagram.png" [ref=e232] [cursor=pointer]:
+              - /url: https://www.instagram.com/welab.bank/
+              - img "icon_instagram.png" [ref=e236]
+            - link "icon_linkedin.png" [ref=e237] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/welab-bank/
+              - img "icon_linkedin.png" [ref=e241]
+            - link "imgbin_wechat-computer-icons-png.png" [ref=e242] [cursor=pointer]:
+              - /url: https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzkyOTY0OTM1NA==#wechat_redirect
+              - img "imgbin_wechat-computer-icons-png.png" [ref=e246]
+          - generic [ref=e248]:
+            - generic [ref=e249]:
+              - img "QR code" [ref=e251]
+              - generic [ref=e252]:
+                - link "IOS":
+                  - /url: https://apps.apple.com/hk/app/welab-bank-hk-digital-bank/id1493956050?l=en-GB
+                  - generic:
+                    - img "IOS"
+                - link "googleplay":
+                  - /url: https://play.google.com/store/apps/details?id=welab.bank
+                  - generic:
+                    - img "googleplay"
+                - link "APK":
+                  - /url: /uploads/welab.bank-1.9.50.130.apk
+                  - generic:
+                    - img "APK"
+                - link "Huawei":
+                  - /url: https://appgallery.huawei.com/#/app/C113951037
+                  - generic:
+                    - img "Huawei"
+            - list [ref=e255]:
+              - listitem [ref=e256]: Apple and the Apple logo are trademarks of Apple Inc., registered in the U.S. and other countries.
+              - listitem [ref=e257]: App Store is a service mark of Apple Inc..
+              - listitem [ref=e258]: Android, Google Play, and the Google Play logo are trademarks of Google Inc..
+              - listitem [ref=e259]: Huawei and the Huawei logo are trademarks registered by Huawei Technologies Co., Ltd. in China and other countries.
+          - link "Deposit Protection":
+            - /url: https://www.dps.org.hk/index_EN.html
+            - generic:
+              - img "Deposit Protection"
+        - generic [ref=e262]:
+          - generic [ref=e263]:
+            - heading "Quick Links" [level=5] [ref=e264]
+            - list [ref=e265]:
+              - listitem [ref=e266]:
+                - link "Features" [ref=e267] [cursor=pointer]:
+                  - /url: /en/feature/onboarding/
+              - listitem [ref=e268]:
+                - link "Support" [ref=e269] [cursor=pointer]:
+                  - /url: /en/support/
+              - listitem [ref=e270]:
+                - link "General Service Charges" [ref=e271] [cursor=pointer]:
+                  - /url: /en/support/?support-category=bank-account&support-question=general-service-charges
+              - listitem [ref=e272]:
+                - link "Open API" [ref=e273] [cursor=pointer]:
+                  - /url: https://portal-sandbox.welab.bank/
+              - listitem [ref=e274]:
+                - link "Security Tips" [ref=e275] [cursor=pointer]:
+                  - /url: /en/legal/security-tips/
+              - listitem [ref=e276]:
+                - link "Careers" [ref=e277] [cursor=pointer]:
+                  - /url: https://www.welab.co/en/careers/
+              - listitem [ref=e278]:
+                - link "Contact Us" [ref=e279] [cursor=pointer]:
+                  - /url: /en/support/?support-category=contact-us&support-question=contact-us
+          - generic [ref=e280]:
+            - heading "Legal Bits" [level=5] [ref=e281]
+            - list [ref=e282]:
+              - listitem [ref=e283]:
+                - link "Terms and Conditions" [ref=e284] [cursor=pointer]:
+                  - /url: /en/legal/terms-and-conditions/
+              - listitem [ref=e285]:
+                - link "Regulatory Disclosures" [ref=e286] [cursor=pointer]:
+                  - /url: /en/legal/regulatory-disclosures/
+              - listitem [ref=e287]:
+                - link "Climate Related Disclosures" [ref=e288] [cursor=pointer]:
+                  - /url: /en/legal/climate-related-disclosures/
+              - listitem [ref=e289]:
+                - link "Important Notice" [ref=e290] [cursor=pointer]:
+                  - /url: /en/legal/important-notices/
+              - listitem [ref=e291]:
+                - link "Download Documents" [ref=e292] [cursor=pointer]:
+                  - /url: /en/legal/download-documents/
+          - generic [ref=e293]:
+            - heading "Our Story" [level=5] [ref=e294]
+            - list [ref=e295]:
+              - listitem [ref=e296]:
+                - link "About Us" [ref=e297] [cursor=pointer]:
+                  - /url: /en/about/
+              - listitem [ref=e298]:
+                - link "Newsroom" [ref=e299] [cursor=pointer]:
+                  - /url: /en/newsroom/
+              - listitem [ref=e300]:
+                - link "Blog" [ref=e301] [cursor=pointer]:
+                  - /url: /en/blog/
+      - paragraph [ref=e303]: Copyright © 2026 Welab Bank Limited. All Rights Reserved. Made with love in Hong Kong.
+  - alert [ref=e304]

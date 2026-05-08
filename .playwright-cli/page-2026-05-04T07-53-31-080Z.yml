@@ -1,0 +1,281 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e5]:
+      - generic [ref=e6]:
+        - link [ref=e7] [cursor=pointer]:
+          - /url: https://www.elebank.com/zh-hk
+          - img [ref=e8]
+        - generic [ref=e17]:
+          - link "個人銀行" [ref=e19] [cursor=pointer]:
+            - /url: https://www.elebank.com/zh-hk/index
+          - link "企業銀行" [ref=e21] [cursor=pointer]:
+            - /url: https://www.elebank.com/zh-hk/corporate
+          - link "推廣活動" [ref=e23] [cursor=pointer]:
+            - /url: https://www.elebank.com/zh-hk/promotion
+          - link "幫助中心" [ref=e25] [cursor=pointer]:
+            - /url: https://support.platform.elebank.com/personal/zh-hk
+          - generic [ref=e27] [cursor=pointer]: 關於我們
+        - generic [ref=e28]:
+          - link "立即下載" [ref=e29] [cursor=pointer]:
+            - /url: https://www.elebank.com/zh-hk/signup-now
+          - generic [ref=e31] [cursor=pointer]: 繁
+  - generic [ref=e34]:
+    - generic [ref=e35]: 天星銀行已全新升級為「象象銀行」
+    - generic [ref=e39]:
+      - generic [ref=e40]: 天星銀行已全新升級為「象象銀行」。本次僅為品牌升級，您的賬戶、資產、交易及服務均不受任何影響，賬號、銀行卡及手機銀行均正常使用，無需重新辦理。
+      - generic [ref=e41]: 天星銀行已全新升級為「象象銀行」。本次僅為品牌升級，您的賬戶、資產、交易及服務均不受任何影響，賬號、銀行卡及手機銀行均正常使用，無需重新辦理。
+    - link [ref=e42] [cursor=pointer]:
+      - /url: javascript:;
+  - main [ref=e43]:
+    - generic [ref=e46]:
+      - group "4 / 4" [ref=e47]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - paragraph [ref=e51]: 象象銀行Visa白金卡
+            - generic [ref=e52]: 全新功能
+          - paragraph [ref=e53]: 交易安全保障
+          - paragraph [ref=e54]: 銀盾監控｜7*24實時詐騙防護
+          - paragraph [ref=e55] [cursor=pointer]: 去了解
+      - group "1 / 4" [ref=e57]:
+        - generic [ref=e59]:
+          - paragraph [ref=e60]: 象象銀行
+          - paragraph [ref=e61]:
+            - text: 香港數字銀行
+            - generic [ref=e62]: 5分鐘開戶
+          - paragraph [ref=e63]: 象象銀行讓你跨進金融科技全新維度， 我們不斷創新「銀行」概念，創造出人人共享的星級銀行服務。不論資產與地位，與我們一直同行。
+          - paragraph [ref=e64] [cursor=pointer]:
+            - link "去了解" [ref=e65]:
+              - /url: ./about-us.html
+      - group "2 / 4" [ref=e67]:
+        - generic [ref=e69]:
+          - paragraph [ref=e70]: 啟用智安存
+          - paragraph [ref=e71]: 送你 Pacific Coffee 禮券
+          - paragraph [ref=e72]: "*受條款及細則約束"
+          - paragraph [ref=e73] [cursor=pointer]: 去了解
+      - group "3 / 4" [ref=e75]:
+        - generic [ref=e77]:
+          - paragraph [ref=e78]: 立即申請
+          - paragraph [ref=e79]: 象象銀行Visa白金卡
+          - paragraph [ref=e80]: 盡享星級服務無界限
+          - paragraph [ref=e81] [cursor=pointer]: 去了解
+      - group "4 / 4" [ref=e83]:
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - paragraph [ref=e87]: 象象銀行Visa白金卡
+            - generic [ref=e88]: 全新功能
+          - paragraph [ref=e89]: 交易安全保障
+          - paragraph [ref=e90]: 銀盾監控｜7*24實時詐騙防護
+          - paragraph [ref=e91] [cursor=pointer]: 去了解
+      - group "1 / 4" [ref=e93]:
+        - generic [ref=e95]:
+          - paragraph [ref=e96]: 象象銀行
+          - paragraph [ref=e97]:
+            - text: 香港數字銀行
+            - generic [ref=e98]: 5分鐘開戶
+          - paragraph [ref=e99]: 象象銀行讓你跨進金融科技全新維度， 我們不斷創新「銀行」概念，創造出人人共享的星級銀行服務。不論資產與地位，與我們一直同行。
+          - paragraph [ref=e100] [cursor=pointer]:
+            - link "去了解" [ref=e101]:
+              - /url: ./about-us.html
+    - generic [ref=e113]: 最快5分鐘手機開戶
+    - generic [ref=e118]:
+      - generic [ref=e120]:
+        - generic [ref=e121]: 24 x 7 網上銀行服務
+        - generic [ref=e122]: 客服專員24小時熱線服務
+      - generic [ref=e124]:
+        - generic [ref=e125]: 一站式銀行服務平台
+        - generic [ref=e126]: 包括轉賬、存款、貸款、外幣兌換、等都能一App完成
+      - generic [ref=e128]:
+        - generic [ref=e129]: 免費享受服務
+        - generic [ref=e130]: 無賬戶管理費，無最低存款額
+      - generic [ref=e132]:
+        - generic [ref=e133]: 持牌銀行
+        - generic [ref=e134]: 獲香港金管局頒發數字銀行牌照
+    - generic [ref=e138]:
+      - generic [ref=e139]:
+        - heading "貸款" [level=4] [ref=e140]
+        - generic [ref=e142] [cursor=pointer]: 私人貸款
+        - generic [ref=e143]:
+          - paragraph [ref=e144]:
+            - text: 專享個人化星級利率
+            - subscript [ref=e145]: "1"
+          - paragraph [ref=e146]:
+            - text: 貸款額高達月薪12倍
+            - subscript [ref=e147]: "2"
+          - paragraph [ref=e148]:
+            - text: 由申請至貸款過數， 最快5分鐘完成
+            - subscript [ref=e149]: "3"
+        - link "了解更多" [ref=e150] [cursor=pointer]:
+          - /url: ./loan.html
+          - text: 了解更多
+          - img [ref=e151]
+        - generic [ref=e154]: 借定唔借？還得到先好借！
+      - generic [ref=e156]: 貸款到賬最快5分鐘
+    - generic [ref=e162]:
+      - heading "存款" [level=4] [ref=e163]
+      - generic [ref=e164]:
+        - generic [ref=e165] [cursor=pointer]: 活期存款
+        - generic [ref=e166] [cursor=pointer]: 定期存款
+        - generic [ref=e167] [cursor=pointer]: 智安存
+      - generic [ref=e169]:
+        - paragraph [ref=e170]: 不設最低結餘要求
+        - paragraph [ref=e171]: 提供多幣種活期存款
+      - link "了解更多" [ref=e172] [cursor=pointer]:
+        - /url: ./deposit.html
+        - text: 了解更多
+        - img [ref=e173]
+    - generic [ref=e179]:
+      - generic [ref=e180]:
+        - heading "外匯" [level=4] [ref=e181]
+        - generic [ref=e182]:
+          - paragraph [ref=e183]: 24 x 7 外匯服務，實時報價
+          - paragraph [ref=e184]: 即時買賣，即兌即到戶
+          - paragraph [ref=e185]: 支援港幣、美元、人民幣等11種幣種兌換
+        - link "了解更多" [ref=e186] [cursor=pointer]:
+          - /url: ./foreign-exchange.html
+          - text: 了解更多
+          - img [ref=e187]
+      - generic [ref=e191]: 24 * 7小時實時服務
+    - generic [ref=e197]:
+      - heading "轉賬" [level=4] [ref=e198]
+      - generic [ref=e199]:
+        - paragraph [ref=e200]: 支援多種貨幣轉賬（包括港幣、美元、人民幣等）
+        - paragraph [ref=e201]: 以手機號碼/郵件地址/戶口號碼即可轉賬
+        - paragraph [ref=e202]: 24 x 7即時轉賬（港幣及人民幣）
+        - paragraph [ref=e203]: 轉數快FPS
+      - link "了解更多" [ref=e204] [cursor=pointer]:
+        - /url: ./money-transfer.html
+        - text: 了解更多
+        - img [ref=e205]
+    - generic [ref=e210]:
+      - generic [ref=e211]:
+        - generic [ref=e212]: 象象銀行，香港數字銀行
+        - generic [ref=e213]: 象象銀行讓你跨進金融科技全新維度， 我們不斷創新「銀行」概念，創造出人人共享的星級銀行服務。 不論資產與地位，與我們一直同行。
+        - generic [ref=e214]:
+          - generic [ref=e215]:
+            - generic [ref=e216]: 實力雄厚
+            - generic [ref=e217]:
+              - paragraph [ref=e218]: 富途集團x小米集團
+              - paragraph [ref=e219]: 戰略投資
+          - generic [ref=e220]:
+            - generic [ref=e221]: 資質合規
+            - generic [ref=e222]:
+              - paragraph [ref=e223]: 獲香港金管局頒發數字銀行牌照
+              - paragraph [ref=e224]: 銀行代碼：395
+          - generic [ref=e225]:
+            - generic [ref=e226]: 技術領先
+            - generic [ref=e227]:
+              - paragraph [ref=e228]: 大數據賦能，全流程手機操作
+              - paragraph [ref=e229]: 24 x 7流動理財服務
+      - link "了解更多" [ref=e231] [cursor=pointer]:
+        - /url: ./about-us.html
+        - text: 了解更多
+        - img [ref=e232]
+    - generic [ref=e238]:
+      - generic [ref=e239]: 備註：
+      - paragraph [ref=e240]:
+        - text: 1.實際年利率乃根據《銀行營運守則》所載之指引計算，並已被約至小數後兩個位。實際年利率是一個參考利率，以年化利率展示出包括銀行產品的基本利率及其他費用與收費（如適用）。實際年利率由7.43%至35.05%，還款期由6個月至60個月。以下例子僅供說明用途。假設貸款額為港幣800,000及還款期為12個月，實際年利率為7.43%，貸款之總還款額為港幣831,497.86（豁免手續費）。詳情請參閱
+        - link "《象象銀行私人分期貸款的條款及細則》" [ref=e241] [cursor=pointer]:
+          - /url: https://api.platform.elebank.com/v2/webview/jump?url=202011977&jump_target=1022&l=zh-hk
+        - text: 。此例子和計算結果不構成本行的報價或要約，亦對本行沒有約束力。獲批核的實際年利率由本行最終決定。 此推廣名額有限，額滿即止。如有任何爭議，本行將保留最終決定權。本行保留隨時更改「私人分期貸款」之詳情（包括條款及細則），或隨時暫停或終止「私人分期貸款」之酌情權，恕不另行通知。
+      - paragraph [ref=e242]: 2.貸款額高達月薪12倍或港幣1,000,000（以較低者為準）。
+      - paragraph [ref=e243]: 3.按個別情況，本行有權要求客戶提供額外文件以作批核，所需審批時間視乎實際情況而定。
+      - paragraph [ref=e244]: 風險聲明：
+      - paragraph [ref=e245]: 貨幣兌換風險 - 外幣兌換涉及匯率風險。客戶進行外幣兌換時可能會因當時外幣匯率之波動而出現虧損。 人民幣貨幣風險 - 人民幣現時並非自由兌換的貨幣，會不時受相關的監管要求限制。實際的兌換安排須依據當時的限制而定。
+  - contentinfo [ref=e246]:
+    - generic [ref=e248]:
+      - generic [ref=e249]:
+        - generic [ref=e250]:
+          - heading "個人銀行" [level=2] [ref=e251]
+          - list [ref=e252]:
+            - listitem [ref=e253]:
+              - link "活期存款" [ref=e254] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/deposit
+            - listitem [ref=e255]:
+              - link "定期存款" [ref=e256] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/deposit#time-deposit
+            - listitem [ref=e257]:
+              - link "貸款" [ref=e258] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/loan
+            - listitem [ref=e259]:
+              - link "銀行卡" [ref=e260] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/card
+            - listitem [ref=e261]:
+              - link "外匯" [ref=e262] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/foreign-exchange
+            - listitem [ref=e263]:
+              - link "轉賬" [ref=e264] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/money-transfer
+            - listitem [ref=e265]:
+              - link "全球匯款" [ref=e266] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/swift
+            - listitem [ref=e267]:
+              - link "匯款至內地·微匯款" [ref=e268] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/remittance
+            - listitem [ref=e269]:
+              - link "匯款至內地·跨境支付通" [ref=e270] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/payment-connect
+        - generic [ref=e271]:
+          - heading "關於我們" [level=2] [ref=e272]
+          - list [ref=e273]:
+            - listitem [ref=e274]:
+              - link "關於象象銀行" [ref=e275] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/about-us
+            - listitem [ref=e276]:
+              - link "新聞中心" [ref=e277] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/media-centre#mediaNewsPage
+            - listitem [ref=e278]:
+              - link "企業管治" [ref=e279] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/media-centre#mediaCorporatePage
+            - listitem [ref=e280]:
+              - link "監管披露" [ref=e281] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/media-centre#mediaReportPage
+            - listitem [ref=e282]:
+              - link "聯絡我們" [ref=e283] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/contact-us
+            - listitem [ref=e284]:
+              - link "加入我們" [ref=e285] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/join-us
+        - generic [ref=e286]:
+          - heading "重要資訊" [level=2] [ref=e287]
+          - list [ref=e288]:
+            - listitem [ref=e289]:
+              - link "幫助中心" [ref=e290] [cursor=pointer]:
+                - /url: https://support.platform.elebank.com/personal/zh-hk
+            - listitem [ref=e291]:
+              - link "重要通知" [ref=e292] [cursor=pointer]:
+                - /url: https://support.platform.elebank.com/personal/zh-hk/categories/2758
+            - listitem [ref=e293]:
+              - link "條款及細則" [ref=e294] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/terms-conditions
+            - listitem [ref=e295]:
+              - link "私隱政策" [ref=e296] [cursor=pointer]:
+                - /url: https://api.platform.elebank.com/v2/webview/jump?url=202011947&jump_target=1022&l=zh-hk
+            - listitem [ref=e297]:
+              - link "開放銀行" [ref=e298] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/bank-cooperate
+            - listitem [ref=e299]:
+              - link "網上及理財保安措施" [ref=e300] [cursor=pointer]:
+                - /url: https://support.platform.elebank.com/personal/zh-hk/categories/2768
+            - listitem [ref=e301]:
+              - link "系統維護時間表" [ref=e302] [cursor=pointer]:
+                - /url: https://support.platform.elebank.com/personal/zh-hk/topic15_590
+            - listitem [ref=e303]:
+              - link "銀行利率" [ref=e304] [cursor=pointer]:
+                - /url: https://www.elebank.com/zh-hk/hkprime
+        - generic [ref=e305]:
+          - link [ref=e306] [cursor=pointer]:
+            - /url: https://www.dps.org.hk/index_SC.html
+            - img [ref=e307]
+          - generic [ref=e308]:
+            - link [ref=e309] [cursor=pointer]:
+              - /url: https://www.elebank.com/zh-hk/follow-now
+              - img [ref=e310]
+            - link [ref=e311] [cursor=pointer]:
+              - /url: https://www.facebook.com/elebank
+              - img [ref=e312]
+            - link [ref=e313] [cursor=pointer]:
+              - /url: https://www.instagram.com/airstar_bank
+              - img [ref=e314]
+      - generic [ref=e316]:
+        - img [ref=e318]
+        - generic [ref=e319]: 象象銀行有限公司版權所有 | Copyright © 2026

@@ -1,0 +1,2 @@
+[    2609ms] [LOG] UET GTM listening for consent updates @ https://www.googletagmanager.com/gtm.js?id=GTM-N3MPNNP&gtm_auth=hFo_jLlffYCYQlbLuLrL4A&gtm_preview=env-2&gtm_cookies_win=x:957
+[    4789ms] [ERROR] Failed to load resource: net::ERR_CERT_COMMON_NAME_INVALID @ https://adnetwork.adasiaholdings.com/t/partner?partnername=livibank&value=view=livibank_complete&ttl=30&tu=days:0

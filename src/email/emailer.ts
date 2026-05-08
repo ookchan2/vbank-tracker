@@ -8,8 +8,8 @@
 import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
-import { BANK_COLORS, BANK_DISPLAY_NAMES, CATEGORY_META, PRODUCT_CATEGORY_META } from '../config/banks';
-import { hktNow } from '../utils/hkt';
+import { BANK_COLORS, BANK_DISPLAY_NAMES, CATEGORY_META, PRODUCT_CATEGORY_META } from '../config/banks.js';
+import { hktNow } from '../utils/hkt.js';
 
 // ── Category / bank helpers ────────────────────────────────────────────────
 

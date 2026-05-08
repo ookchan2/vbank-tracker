@@ -1,0 +1,168 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e4]:
+      - generic [ref=e5]:
+        - link [ref=e6] [cursor=pointer]:
+          - /url: https://www.elebank.com/en-hk
+          - img [ref=e7]
+        - generic [ref=e16]:
+          - link "Personal" [ref=e18] [cursor=pointer]:
+            - /url: https://www.elebank.com/en-hk/index
+          - link "Corporate" [ref=e20] [cursor=pointer]:
+            - /url: https://www.elebank.com/en-hk/corporate
+          - link "Promotion" [ref=e22] [cursor=pointer]:
+            - /url: https://www.elebank.com/en-hk/promotion
+          - link "Support" [ref=e24] [cursor=pointer]:
+            - /url: https://support.platform.elebank.com/personal/en-hk
+          - generic [ref=e26] [cursor=pointer]: About Us
+        - generic [ref=e27]:
+          - link "Download Now" [ref=e28] [cursor=pointer]:
+            - /url: https://www.elebank.com/en-hk/signup-now
+          - generic [ref=e30] [cursor=pointer]: EN
+  - main [ref=e32]:
+    - generic [ref=e36]:
+      - heading "Enjoy More With Stellar Privileges" [level=1] [ref=e39]
+      - img [ref=e41]
+    - generic [ref=e43]:
+      - generic [ref=e45]:
+        - img [ref=e47]
+        - generic [ref=e49]:
+          - heading "Activate Money Safe, Get a Pacific Coffee Voucher☕️" [level=2] [ref=e50]
+          - 'heading "Scammers keep coming up with new tricks⚠️Log in to the EleBank App now to experience the latest anti-fraud feature! Deposit any amount into a \"Money Safe\" account and receive a HKD30 Pacific Coffee e-Cash Voucher. Limited quota, first come, first served. 🔒Stronger Protection: Anti-fraud feature introduced by the Hong Kong Monetary Authority 💰Earn While Locked: Same Savings/Time Deposit interest rates apply 🏦Offline Unlocking: Funds unlocked only with in-person appointment" [level=3] [ref=e51]':
+            - text: Scammers keep coming up with new tricks⚠️Log in to the EleBank App now to experience the latest anti-fraud feature! Deposit any amount into a "Money Safe" account and receive a HKD30 Pacific Coffee e-Cash Voucher. Limited quota, first come, first served.
+            - text: "🔒Stronger Protection: Anti-fraud feature introduced by the Hong Kong Monetary Authority"
+            - text: "💰Earn While Locked: Same Savings/Time Deposit interest rates apply"
+            - text: "🏦Offline Unlocking: Funds unlocked only with in-person appointment"
+          - table [ref=e52]:
+            - rowgroup [ref=e53]:
+              - row "1 x Pacific Coffee HKD30 e-Cash Voucher" [ref=e54]:
+                - cell "1 x Pacific Coffee HKD30 e-Cash Voucher" [ref=e55]
+          - link "View Now" [ref=e57] [cursor=pointer]:
+            - /url: ./signup-now.html
+            - text: View Now
+            - img [ref=e58]
+          - table [ref=e62]:
+            - rowgroup [ref=e63]:
+              - row "Terms & Conditions of \"Activate Money Safe, Get a Pacific Coffee Voucher\" Activity" [ref=e64]:
+                - cell "Terms & Conditions of \"Activate Money Safe, Get a Pacific Coffee Voucher\" Activity" [ref=e65]:
+                  - link "Terms & Conditions of \"Activate Money Safe, Get a Pacific Coffee Voucher\" Activity" [ref=e66] [cursor=pointer]:
+                    - /url: https://risk-disclosure.platform.airstarbank.com/j/MSGETPCC?l=en-us
+      - generic [ref=e68]:
+        - img [ref=e70]
+        - generic [ref=e72]:
+          - heading "✈️A card to unlock exclusive perks for flights" [level=2] [ref=e73]
+          - heading "During the Promotion Period, enjoy the maximum $800 cash rebate reward once for Visa cardholders who use their Registered Eligible Visa Card to pay for air tickets booked with Air New Zealand, ANA, Ethiopian Airlines, EVA AIR or Singapore Airlines via their designated official Hong Kong or Macau websites at the minimum single transaction." [level=3] [ref=e74]
+          - table [ref=e75]:
+            - rowgroup [ref=e76]:
+              - row "Minimum single transaction amount (HKD/MOP) $8,000 or above, to get cash rebate (HKD/MOP) $800 Minimum single transaction amount (HKD/MOP) $4,000 - $7,999, to get cash rebate (HKD/MOP) $240" [ref=e77]:
+                - cell "Minimum single transaction amount (HKD/MOP) $8,000 or above, to get cash rebate (HKD/MOP) $800" [ref=e78]
+                - cell "Minimum single transaction amount (HKD/MOP) $4,000 - $7,999, to get cash rebate (HKD/MOP) $240" [ref=e79]
+          - link "Travel Now" [ref=e81] [cursor=pointer]:
+            - /url: https://visaselectrewardhk.com/TravelWithVisa
+            - text: Travel Now
+            - img [ref=e82]
+          - table [ref=e86]:
+            - rowgroup [ref=e87]:
+              - 'row "Promotion periods vary by airline. Please refer to #TravelWithVisa''s Terms & Conditions." [ref=e88]':
+                - 'cell "Promotion periods vary by airline. Please refer to #TravelWithVisa''s Terms & Conditions." [ref=e89]':
+                  - text: Promotion periods vary by airline. Please refer to
+                  - link "#TravelWithVisa's Terms & Conditions." [ref=e90] [cursor=pointer]:
+                    - /url: https://visaselectrewardhk.com/terms?file=terms_en-Cy4hBMW-.md&title=termsBtn
+  - contentinfo [ref=e91]:
+    - generic [ref=e93]:
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - heading "Bank Service" [level=2] [ref=e96]
+          - list [ref=e97]:
+            - listitem [ref=e98]:
+              - link "Savings Deposit" [ref=e99] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/deposit
+            - listitem [ref=e100]:
+              - link "Time Deposit" [ref=e101] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/deposit#time-deposit
+            - listitem [ref=e102]:
+              - link "Loan" [ref=e103] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/loan
+            - listitem [ref=e104]:
+              - link "Card" [ref=e105] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/card
+            - listitem [ref=e106]:
+              - link "Foreign Exchange" [ref=e107] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/foreign-exchange
+            - listitem [ref=e108]:
+              - link "Transfer" [ref=e109] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/money-transfer
+            - listitem [ref=e110]:
+              - link "Global Remittance" [ref=e111] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/swift
+            - listitem [ref=e112]:
+              - link "Remit to Mainland China·WeRemit" [ref=e113] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/remittance
+            - listitem [ref=e114]:
+              - link "Remit to Mainland China·Payment Connect" [ref=e115] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/payment-connect
+        - generic [ref=e116]:
+          - heading "About Us" [level=2] [ref=e117]
+          - list [ref=e118]:
+            - listitem [ref=e119]:
+              - link "About EleBank" [ref=e120] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/about-us
+            - listitem [ref=e121]:
+              - link "News Center" [ref=e122] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/media-centre#mediaNewsPage
+            - listitem [ref=e123]:
+              - link "Corporate Governance" [ref=e124] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/media-centre#mediaCorporatePage
+            - listitem [ref=e125]:
+              - link "Regulatory Disclosures" [ref=e126] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/media-centre#mediaReportPage
+            - listitem [ref=e127]:
+              - link "Contact Us" [ref=e128] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/contact-us
+            - listitem [ref=e129]:
+              - link "Join Us" [ref=e130] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/join-us
+        - generic [ref=e131]:
+          - heading "Important Information" [level=2] [ref=e132]
+          - list [ref=e133]:
+            - listitem [ref=e134]:
+              - link "Support" [ref=e135] [cursor=pointer]:
+                - /url: https://support.platform.elebank.com/personal/en-hk
+            - listitem [ref=e136]:
+              - link "Important Notice" [ref=e137] [cursor=pointer]:
+                - /url: https://support.platform.elebank.com/personal/en-hk/categories/2758
+            - listitem [ref=e138]:
+              - link "Terms & Conditions" [ref=e139] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/terms-conditions
+            - listitem [ref=e140]:
+              - link "Privacy Policy" [ref=e141] [cursor=pointer]:
+                - /url: https://api.platform.elebank.com/v2/webview/jump?url=202011947&jump_target=1022&l=en-us
+            - listitem [ref=e142]:
+              - link "Open Banking" [ref=e143] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/bank-cooperate
+            - listitem [ref=e144]:
+              - link "Online and Banking Security" [ref=e145] [cursor=pointer]:
+                - /url: https://support.platform.elebank.com/personal/en-hk/categories/2768
+            - listitem [ref=e146]:
+              - link "System Maintenance Schedule" [ref=e147] [cursor=pointer]:
+                - /url: https://support.platform.elebank.com/personal/en-hk/topic15_590
+            - listitem [ref=e148]:
+              - link "Bank Rates" [ref=e149] [cursor=pointer]:
+                - /url: https://www.elebank.com/en-hk/hkprime
+        - generic [ref=e150]:
+          - link [ref=e151] [cursor=pointer]:
+            - /url: https://www.dps.org.hk/index_SC.html
+            - img [ref=e152]
+          - generic [ref=e153]:
+            - link [ref=e154] [cursor=pointer]:
+              - /url: https://www.elebank.com/en-hk/follow-now
+              - img [ref=e155]
+            - link [ref=e156] [cursor=pointer]:
+              - /url: https://www.facebook.com/elebank
+              - img [ref=e157]
+            - link [ref=e158] [cursor=pointer]:
+              - /url: https://www.instagram.com/airstar_bank
+              - img [ref=e159]
+      - generic [ref=e161]:
+        - img [ref=e163]
+        - generic [ref=e164]: © Ele Bank Limited. 2026. All rights reserved.

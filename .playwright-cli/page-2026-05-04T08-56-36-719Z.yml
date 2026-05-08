@@ -1,0 +1,215 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - text: 本網站使用 Cookies以優化網站服務。閣下使用本網站即表示同意當中所列出之私隱政策及Cookie政策。如欲了解更多，詳情請參閱有關
+      - link "私隱政策。" [ref=e4] [cursor=pointer]:
+        - /url: privacy_new.html#p4
+    - generic [ref=e6] [cursor=pointer]: 我明白
+  - banner [ref=e7]:
+    - generic [ref=e8]:
+      - link "平安數字銀行" [ref=e9] [cursor=pointer]:
+        - /url: index.html
+        - img "平安數字銀行" [ref=e10]
+      - navigation [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e14] [cursor=pointer]: 個人銀行
+          - generic [ref=e16] [cursor=pointer]: 商業銀行
+          - generic [ref=e18] [cursor=pointer]: 投資
+          - generic [ref=e20] [cursor=pointer]: 保險
+          - generic [ref=e22] [cursor=pointer]: 下載手機App
+      - navigation [ref=e23]:
+        - link [ref=e24] [cursor=pointer]:
+          - /url: faq.html
+          - img [ref=e25]
+        - img [ref=e27] [cursor=pointer]
+        - link [ref=e28] [cursor=pointer]:
+          - /url: https://www.youtube.com/@PAOBankLimited
+          - img [ref=e29]
+        - link [ref=e30] [cursor=pointer]:
+          - /url: https://www.linkedin.com/company/paobank/
+          - img [ref=e31]
+        - link [ref=e32] [cursor=pointer]:
+          - /url: https://www.facebook.com/paobank
+          - img [ref=e33]
+  - main [ref=e34]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - img [ref=e38]
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - text: 強大分析工具與最新數據
+            - text: 助您輕鬆評估市況
+          - generic [ref=e41]: 指數走勢、行業動向、股價對比
+          - generic [ref=e42]: 一眼看清行情
+      - generic [ref=e44]:
+        - navigation [ref=e45]:
+          - link "投資" [ref=e46] [cursor=pointer]:
+            - /url: investment.html
+          - link "股票" [ref=e47] [cursor=pointer]:
+            - /url: stock.html
+          - link "基金" [ref=e48] [cursor=pointer]:
+            - /url: fund.html
+          - link "貨幣基金" [ref=e49] [cursor=pointer]:
+            - /url: money-market-fund.html
+        - generic [ref=e51]:
+          - generic [ref=e52]: 股票服務
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - generic [ref=e55]:
+                - generic [ref=e56]: 實時指數
+                - generic [ref=e57]: 港股美股實時指數，宏觀分析大市走勢
+              - img [ref=e58]
+            - generic [ref=e59]:
+              - generic [ref=e60]:
+                - generic [ref=e61]: 行業走勢
+                - generic [ref=e62]: 行業熱力圖直接呈現行業動向
+              - img [ref=e63]
+            - generic [ref=e64]:
+              - generic [ref=e65]:
+                - generic [ref=e66]: 個股分析
+                - generic [ref=e67]: 追蹤公司業績數據，提供股票走勢及同行比對
+              - img [ref=e68]
+          - generic [ref=e69]: 美股
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - generic [ref=e73]: 日夜均可交易美股
+              - generic [ref=e74]: 提供盤前盤中盤後交易，交易時間更自由
+            - img [ref=e75]
+          - generic [ref=e76]: 港股
+          - generic [ref=e77]:
+            - generic [ref=e78]:
+              - generic [ref=e79]:
+                - generic [ref=e80]: 免費LV1行情
+                - generic [ref=e81]: 實時LV1市場指數，判斷交易時機
+              - img [ref=e82]
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - generic [ref=e85]: 實時交易熱點排行榜
+                - generic [ref=e86]: 及時捕捉牛股，洞察大市走向
+              - img [ref=e87]
+            - generic [ref=e88]:
+              - generic [ref=e89]:
+                - generic [ref=e90]: 多款下單方式
+                - generic [ref=e91]: 限價單、止損限價單等，靈活交易無懼市場波動風險
+              - img [ref=e92]
+          - generic [ref=e93]:
+            - generic [ref=e94]: 常見問題
+            - generic [ref=e95]:
+              - generic [ref=e97] [cursor=pointer]: 1. 股票的交易時間是什麼時候？
+              - generic [ref=e99] [cursor=pointer]: 2. 我可以看到即時港股市場資料嗎？
+              - generic [ref=e101] [cursor=pointer]: 3. 我可以看到即時美股市場資料嗎？
+              - generic [ref=e103] [cursor=pointer]: 4. 美股的結算及交收機制是什麼？
+              - generic [ref=e105] [cursor=pointer]: 5. 港股的結算及交收安排是什麼？
+          - generic [ref=e106]:
+            - generic [ref=e107]: 平安數字銀行（國際）有限公司 (“平安數字銀行”) 爲根據《證券及期貨條例》登記的註冊機構（中央編號：BVJ909）。
+            - generic [ref=e108]:
+              - generic [ref=e109]: 重要提示
+              - generic [ref=e110]: 本網站所載資料僅供一般參考用途，並不構成亦不應被視為任何投資意見、推薦、要約、招攬、游說、承諾或保證，亦非以銷售任何投資產品或服務為目的。所有資料並未根據任何人士或機構的特定投資目標、投資經驗、財務狀況或風險承受能力而編製。
+              - generic [ref=e111]: 投資決定須由投資者自行作出。在作出任何投資決定前，投資者應自行進行充足的資料搜集及研究，並審慎考慮自身的投資目標、投資經驗、財務狀況、投資期、投資知識及風險承受能力。如有需要，投資者應諮詢獨立的專業顧問意見，包括但不限於財務、法律、稅務及會計顧問。
+              - generic [ref=e112]: 以下風險披露聲明未必能披露所有涉及的風險，亦不會考慮平安數字銀行所概不知情的個別情況。本網站所載資料僅反映刊發時的市場情況，惟不保證其準確性、完整性或持續有效性。
+            - generic [ref=e113]:
+              - generic [ref=e114]: 風險披露聲明
+              - generic [ref=e115]: 投資涉及風險，投資者可能因投資而蒙受損失。在最壞情況下，投資者可能損失全部或大部分投資本金。任何投資的回報或表現均不受保證，過往表現亦不代表未來表現。
+              - generic [ref=e116]: 投資者在作出任何投資決定前，應仔細閱讀平安數字銀行的投資服務條款及細則和相關風險披露聲明，以了解相關投資的性質及風險。
+              - generic [ref=e117]: 就海外投資（包括但不限於美國證券）而言，投資者在投資前應充分了解相關市場的監管制度、交易安排、系統維護、法律及稅務風險，並仔細考慮相關投資的詳情、風險和收費。投資者應就其特定稅務狀況向專業顧問尋求意見，包括但不限於可能涉及的遺產稅、預扣稅或其他稅務責任。某些投資服務可能不適用於特定人士或僅限於某些司法管轄區提供。投資者於作出投資前，應尋求獨立諮詢，考慮有關投資是否適合自己。
+              - generic [ref=e118]: 本網頁所載資料只適用於香港居民，其内容不應視為於任何其他司法管轄區作出分銷、要約銷售或進行任何投資之誘因，有關活動在相關司法管轄區之適用法律法規下可能違反當地適用法律法規，特別是美國。若你繼續瀏覽本網站或進行任何投資活動，即表示及保證你是香港居民，或你本人所屬司法管轄區的適用法律法規容許你瀏覽有關資料及進行相關投資活動。
+              - generic [ref=e119]: 您經由網上經紀服務獲得的市場數據及其他資訊可能由平安數字銀行從香港聯交所或其他第三方取得。聯交所努力確保所提供資訊的準確性及可靠性，但並不保證其準確性或可靠性，且對於任何不準確或忽略而產生的任何損失或損害，聯交所亦不承擔任何責任（無論是侵權或合約或其他責任）。此外，雖然平安數字銀行相信其他第三方所提供的市場數據或資訊可靠，但平安數字銀行或有關第三方並不保證任何此類市場數據或資訊的準確性、完整性或適時性。
+            - generic [ref=e120]: 本網站由平安數字銀行刊發，內容並未經香港證券及期貨事務監察委員會或任何其他監管機構審閱。
+    - generic [ref=e122]:
+      - heading "下載" [level=2] [ref=e123]
+      - generic [ref=e126]:
+        - heading "立即展開嶄新流動理財體驗" [level=3] [ref=e127]
+        - generic [ref=e128]:
+          - link "app store" [ref=e129] [cursor=pointer]:
+            - /url: https://apps.apple.com/hk/app/apple-store/id1505282324?l=zh_hk
+            - img "app store" [ref=e130]
+          - link "google play" [ref=e131] [cursor=pointer]:
+            - /url: https://play.google.com/store/apps/details?id=com.paobank.mobilebank.personal&hl=zh_hk
+            - img "google play" [ref=e132]
+          - link "下載平安數字銀行手機應用程式安裝檔(APK)" [ref=e133] [cursor=pointer]:
+            - /url: ../asset/sdk/paob_retail_774_android_appstore.apk
+            - img "下載平安數字銀行手機應用程式安裝檔(APK)" [ref=e134]
+        - paragraph [ref=e135]: 掃描QR碼下載平安數字銀行手機應用程式
+        - generic [ref=e136]:
+          - img "掃描QR碼下載平安數字銀行手機應用程式" [ref=e139]
+          - img "下載平安數字銀行手機應用程式" [ref=e142]
+      - generic [ref=e143]:
+        - text: Apple和Apple 標誌為 Apple Inc. 在美國及其他國家之註冊商標。App Store 為 Apple Inc. 之服務商標。
+        - text: Google Play 和 Google Play 標誌均為 Google LLC 之商標。
+        - text: HUAWEI EXPLORE IT ON AppGallery和 the HUAWEI EXPLORE IT ON AppGallery標誌均為華為技術有限公司的註冊商標。
+  - contentinfo [ref=e144]:
+    - generic [ref=e145]:
+      - generic [ref=e146]:
+        - heading "關於我們" [level=3] [ref=e147]
+        - generic [ref=e148]:
+          - link "關於我們" [ref=e149] [cursor=pointer]:
+            - /url: about.html
+          - link "企業管治" [ref=e150] [cursor=pointer]:
+            - /url: governance.html
+          - link "媒體中心" [ref=e151] [cursor=pointer]:
+            - /url: media.html
+          - link "財務報告" [ref=e152] [cursor=pointer]:
+            - /url: financial-report.html
+          - link "監管披露" [ref=e153] [cursor=pointer]:
+            - /url: regulatory-disclosures.html
+          - link "兼容的瀏覽器" [ref=e154] [cursor=pointer]:
+            - /url: compatible-browser.html
+          - link "聯絡我們" [ref=e155] [cursor=pointer]:
+            - /url: contact.html
+      - generic [ref=e156]:
+        - heading "常用連結" [level=3] [ref=e157]
+        - generic [ref=e158]:
+          - link "服務收費&最優惠利率" [ref=e159] [cursor=pointer]:
+            - /url: charges_prime-rate.html
+          - link "條款及細則" [ref=e160] [cursor=pointer]:
+            - /url: tnc.html
+          - link "投資服務條款及細則" [ref=e161] [cursor=pointer]:
+            - /url: investment-tnc.html
+          - link "產品資料概要" [ref=e162] [cursor=pointer]:
+            - /url: key-facts-statement.html
+          - link "個人資料收集聲明" [ref=e163] [cursor=pointer]:
+            - /url: pics.html
+          - link "私隱政策" [ref=e164] [cursor=pointer]:
+            - /url: privacy_new.html
+          - link "常見問題" [ref=e165] [cursor=pointer]:
+            - /url: faq.html
+          - link "教學中心" [ref=e166] [cursor=pointer]:
+            - /url: learning.html
+          - link "使用條款" [ref=e167] [cursor=pointer]:
+            - /url: disclaimer_new.html
+          - link "重要通知" [ref=e168] [cursor=pointer]:
+            - /url: notice.html
+          - link "網上保安訊息" [ref=e169] [cursor=pointer]:
+            - /url: security.html
+          - link "網頁地圖" [ref=e170] [cursor=pointer]:
+            - /url: webmap.html
+      - generic [ref=e171]:
+        - heading "聯絡我們" [level=3] [ref=e172]
+        - generic [ref=e173]:
+          - link " (852) 3762 9900" [ref=e174] [cursor=pointer]:
+            - /url: tel:+85237629900
+            - generic [ref=e175]: 
+            - text: (852) 3762 9900
+          - link " pingandb_cs@pingan.com" [ref=e176] [cursor=pointer]:
+            - /url: mailto:pingandb_cs@pingan.com
+            - generic [ref=e177]: 
+            - text: pingandb_cs@pingan.com
+      - generic [ref=e178]:
+        - link [ref=e179] [cursor=pointer]:
+          - /url: faq.html
+          - img [ref=e180]
+        - img [ref=e182] [cursor=pointer]
+        - link [ref=e183] [cursor=pointer]:
+          - /url: https://www.youtube.com/@PAOBankLimited
+          - img [ref=e184]
+        - link [ref=e185] [cursor=pointer]:
+          - /url: https://www.linkedin.com/company/paobank/
+          - img [ref=e186]
+        - link [ref=e187] [cursor=pointer]:
+          - /url: https://www.facebook.com/paobank
+          - img [ref=e188]
+      - img "數碼KEY睇緊啲 撳LINK前要三思" [ref=e190]
+    - link "存款保障計劃成員" [ref=e191] [cursor=pointer]:
+      - /url: https://www.dps.org.hk/index.html
+      - img "存款保障計劃成員" [ref=e192]
+    - generic [ref=e193]: © 2026平安數字銀行（國際）有限公司 。版權所有。

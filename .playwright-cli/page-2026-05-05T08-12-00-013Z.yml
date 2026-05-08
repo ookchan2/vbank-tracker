@@ -1,0 +1,231 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - link "logo" [ref=e13] [cursor=pointer]:
+          - /url: /
+          - img "logo" [ref=e14]
+        - generic [ref=e15]:
+          - generic [ref=e17] [cursor=pointer]: 個人銀行
+          - generic [ref=e19] [cursor=pointer]: 商業銀行
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e23] [cursor=pointer]: 銀行服務
+          - generic [ref=e25] [cursor=pointer]: ZA Card
+          - generic [ref=e27] [cursor=pointer]: 借貸
+          - generic [ref=e29] [cursor=pointer]: 投資
+          - link "保險" [ref=e32] [cursor=pointer]:
+            - /url: /hk/insurance
+          - generic [ref=e33] [cursor=pointer]:
+            - link "幫助中心" [ref=e35]:
+              - /url: /faqs/Individuals
+            - text: "|"
+          - link "Blog" [ref=e38] [cursor=pointer]:
+            - /url: https://blog.za.group/hk
+        - generic [ref=e39]:
+          - generic [ref=e41] [cursor=pointer]: 下載 ZA Bank App
+          - generic [ref=e43] [cursor=pointer]:
+            - text: 登記開戶
+            - img [ref=e44]
+        - img "国际化" [ref=e48] [cursor=pointer]
+    - generic [ref=e51]:
+      - generic [ref=e58]:
+        - generic [ref=e60]: 全港首創 買股票抽股票
+        - generic [ref=e62]:
+          - text: 0 佣 0 存倉費買入股票，平台費低至每單 USD 1.99。仲可享 StockBack 股票回贈計劃，成功買入股票，即送股票回贈
+          - superscript [ref=e63]: "1"
+          - text: ，一邊投資一邊賺獎賞。
+          - text: 投資涉及風險。
+        - button "下載 ZA Bank App" [ref=e67] [cursor=pointer]
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - generic [ref=e77]:
+            - generic [ref=e78]:
+              - text: 同一隻股票
+              - generic [ref=e79]: 更低的收費
+            - list [ref=e80]:
+              - listitem [ref=e81]:
+                - generic [ref=e82]: 超過 6,000 隻美股和 3,000 隻 ETFs 任你揀。
+              - listitem [ref=e83]:
+                - generic [ref=e84]: 每股平台費只需 USD 0.0099，每單最低收費 USD 1.99。
+              - listitem [ref=e85]:
+                - generic [ref=e86]:
+                  - text: 假設你用同樣的本金單筆買入 100 股，於 ZA Bank 你只需要畀最低 USD 1.99 平台費，但於其他銀行
+                  - superscript [ref=e87]: "2"
+                  - text: ，加上半價平台費優惠，你都要畀多 77 倍的費用！
+          - img [ref=e90]
+        - generic [ref=e91]:
+          - generic [ref=e93]:
+            - generic [ref=e94]: 直接交易 無需轉賬
+            - list [ref=e95]:
+              - listitem [ref=e96]:
+                - generic [ref=e97]: 買入股票時，交易金額自動從銀行活期賬戶扣賬
+              - listitem [ref=e98]:
+                - generic [ref=e99]: 賣出股票成交後，資金自動存入活期賬戶
+              - listitem [ref=e100]:
+                - generic [ref=e101]: 讓你盡享流暢的投資體驗！
+          - img [ref=e104]
+        - generic [ref=e105]:
+          - generic [ref=e107]:
+            - generic [ref=e108]: 專業功能 簡單易用
+            - list [ref=e109]:
+              - listitem [ref=e110]:
+                - generic [ref=e111]:
+                  - text: 免費實時報價
+                  - superscript [ref=e112]: "3"
+                  - text: 、24 x 7實時財經資訊、ETF分類器、行情估值等專業分析工具應有盡有，助你輕鬆揀選合適股票！
+              - listitem
+          - generic [ref=e117]:
+            - img [ref=e120]
+            - img [ref=e123]
+            - img [ref=e126]
+      - generic [ref=e137]:
+        - generic [ref=e138]:
+          - generic [ref=e140]:
+            - generic [ref=e141]: 一站式投資賬戶
+            - list [ref=e142]:
+              - listitem [ref=e143]:
+                - generic [ref=e144]: 投資股票和基金，一個賬戶搞掂
+              - listitem [ref=e145]:
+                - generic [ref=e146]: 令你輕鬆處理理財大小事
+          - img [ref=e149]
+        - generic [ref=e150]:
+          - generic [ref=e152]:
+            - generic [ref=e153]: 極速開戶 化繁為簡
+            - list [ref=e154]:
+              - listitem [ref=e155]:
+                - generic [ref=e156]: 最快 3 分鐘開立美股投資戶口
+              - listitem [ref=e157]:
+                - generic [ref=e158]:
+                  - text: 部分用戶更無需提交額外文件
+                  - superscript [ref=e159]: "4"
+          - img [ref=e162]
+      - generic [ref=e166]:
+        - generic [ref=e167]: 備受認可 值得信賴
+        - generic [ref=e168]: 美股交易服務延續 ZA Bank 獲贊譽的產品和服務體驗，為你開啟嶄新的投資之旅。
+        - img [ref=e171]
+      - generic [ref=e177]:
+        - generic [ref=e179]:
+          - img [ref=e180]
+          - generic [ref=e182]: 受監管的香港持牌銀行
+        - generic [ref=e184]:
+          - img [ref=e185]
+          - generic [ref=e187]:
+            - text: 於 Sia Partners 的《2023 年國際移動銀行基準》排名全球第六，亞洲第一
+            - superscript [ref=e188]: "6"
+        - generic [ref=e190]:
+          - img [ref=e191]
+          - generic [ref=e193]:
+            - text: 全港超過 100 萬人已下載 ZA Bank App
+            - superscript [ref=e194]: "7"
+      - link "衍生品知識中心 >" [ref=e198] [cursor=pointer]:
+        - /url: https://cdn.zaticdn.com/if/ipage/prd/data/website/hk/715b2c5f-07bb-43d6-a61a-3bf0c0f7fee4.html?v=1751283088542
+      - generic [ref=e204]:
+        - generic [ref=e206]:
+          - text: 1.「股票最勁抽」推廣期為 2026 年 2 月 1 日至 2026 年 6月 30 日（包括首尾兩日）。參加者於推廣期內成功買入股票後，可獲得一次「股票最勁抽」機會，所有「股票最勁抽」機會由 ZA Bank 派發起 24 小時內有效，到期即失效。若參加者的美股買入交易之平台費收費為低於 USD 2 / 筆，或港股買入交易之平台費收費為低於 HKD 20 / 筆，參加者將不獲「股票最勁抽」機會。參加者的 ZA Bank App 的版本須在 3.8.9 以上，方能獲得「股票最勁抽」機會。於每一次「股票最勁抽」機會中，參加者只能獲得「指定股票兌換券」的獎賞，可兌換按美股市值排行前 100 的股票。「股票最勁抽」推廣受其
+          - link "條款及細則" [ref=e207] [cursor=pointer]:
+            - /url: https://bank-invest.za.group/agreement/html/zh_CN/1001728
+          - text: 約束。
+        - generic [ref=e209]: 2. 其他銀行的佣金是基於 11 家香港銀行美股佣金收費的平均數計算得出，最後更新日期為 2024 年 2 月 20 日。
+        - generic [ref=e211]: 3. 免費實時報價只提供予已成功開通賬戶的「非專業訂閱者」，「專業訂閱者」僅展示 15 分鐘延遲報價。
+        - generic [ref=e213]: 4. 對於已成功激活實體 ZA Card，並且不曾修改居住地址或個人資料的 ZA Bank 用戶，則無需上傳住址證明文件。另外，非證券及期貨條例下之註冊機構的僱員，則無需上傳僱主同意書。
+        - generic [ref=e215]: 5. 數據截至 2023 年 12 月 31 日。
+        - generic [ref=e217]: 6. 根據 Sia Partners 的 2023 年國際流動銀行基準（2023 International Mobile Banking Benchmark），ZA Bank 獲評為亞洲最佳流動銀行應用程式，並在全球最佳流動銀行應用程式中排名第六。該基準是對歐洲、中東和非洲地區、北美、亞洲和澳洲流動銀行現況的研究，以及前景展望。詳情請參閱：https://www.sia-partners.com/en/insights/publications/sia-partners-2023-international-mobile-banking-benchmark
+        - generic [ref=e219]: 7. 數據截至 2023 年 12 月 31 日。
+        - generic [ref=e221]: 重要風險聲明
+        - generic [ref=e223]: 投資涉及風險。股票價格可升可跌，甚至變成毫無價值。過往表現並非日後表現的指標。投資未必一定能夠賺取利潤，亦可能會招致損失。此平台的資料只供參考，並不構成及不應被視為任何建議、推銷、游說客戶認購或出售任何投資產品。投資者應根據本身投資經驗、投資目標、財務狀況及承擔風險程度等因素去衡量是否適合投資於該產品上。若有需要，請諮詢獨立專業建議。投資者作出任何投資決定前，應詳細閱讀有關之條款及細則及其風險披露聲明。若因銷售過程或處理有關交易產生合資格爭議 (定義見金融糾紛調解計劃的金融糾紛調解中心的職權範圍)，ZA Bank 會與你進行金融糾紛調解計劃程序。ZA Bank 無意讓任何人於任何受限制或未獲法律或法規授權分發或使用此平台的司法管轄區、國家或地區內，分發或使用此平台。如你並非身處香港，我們或未獲授權於你身處或居住的國家或地區向你提供產品及服務。
+    - generic [ref=e224]:
+      - generic [ref=e226]:
+        - generic [ref=e227]:
+          - generic [ref=e228]: 關於我們
+          - generic [ref=e229]:
+            - link "關於 ZA Bank" [ref=e231] [cursor=pointer]:
+              - /url: /hk/hkno1digitalbank
+            - link "新聞中心" [ref=e233] [cursor=pointer]:
+              - /url: /hk/about-us#index=news
+            - link "企業管治" [ref=e235] [cursor=pointer]:
+              - /url: /hk/about-us#index=board
+            - link "監管披露" [ref=e237] [cursor=pointer]:
+              - /url: /hk/about-us#index=supervision
+            - link "財務報告" [ref=e239] [cursor=pointer]:
+              - /url: /hk/about-us#index=finance
+        - generic [ref=e240]:
+          - generic [ref=e241]: 常用連結
+          - generic [ref=e242]:
+            - link "銀行收費表" [ref=e244] [cursor=pointer]:
+              - /url: /rates-list
+            - link "幫助" [ref=e246] [cursor=pointer]:
+              - /url: https://bank.za.group/faqs/Individuals
+            - link "保安提示" [ref=e248] [cursor=pointer]:
+              - /url: /security-tips
+            - link "防止金融犯罪資訊中心" [ref=e250] [cursor=pointer]:
+              - /url: /financial
+            - link "條款及細則" [ref=e252] [cursor=pointer]:
+              - /url: /terms
+            - link "下載中心" [ref=e254] [cursor=pointer]:
+              - /url: /hk/tabledown
+            - link "重要通知" [ref=e256] [cursor=pointer]:
+              - /url: /important-notice
+            - link "開放銀行" [ref=e258] [cursor=pointer]:
+              - /url: https://developer.bank.za.group/hk/
+            - link "產品資料概要" [ref=e260] [cursor=pointer]:
+              - /url: /kfs
+        - generic [ref=e261]:
+          - generic [ref=e262]: 服務與諮詢
+          - generic [ref=e263]:
+            - link "bank.opinion@za.group" [ref=e265] [cursor=pointer]:
+              - /url: mailto:bank.opinion@za.group
+            - generic [ref=e266]: +852 3665 3665
+            - generic [ref=e268]: 線上客服
+            - link "聯繫我們" [ref=e270] [cursor=pointer]:
+              - /url: /consulting-feedback
+            - link "銀行業人才起動計劃申请" [ref=e272] [cursor=pointer]:
+              - /url: /banking-talent-programme
+            - link "無障礙聲明" [ref=e274] [cursor=pointer]:
+              - /url: /accessibility
+            - link "舉報渠道" [ref=e276] [cursor=pointer]:
+              - /url: https://cdn.zaticdn.com/if/zaif-cps-seagull-service/20231226/ZAB_WB_statement_1.0_45002.pdf
+        - generic [ref=e277]:
+          - generic [ref=e278]:
+            - generic [ref=e279]:
+              - link "facebook-logo" [ref=e280] [cursor=pointer]:
+                - /url: https://www.facebook.com/zabankhk
+                - img "facebook-logo" [ref=e281]
+              - link "linkedin-logo" [ref=e282] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/za-international
+                - img "linkedin-logo" [ref=e283]
+              - img "weChart" [ref=e285] [cursor=pointer]
+            - generic [ref=e287]:
+              - link "繁" [ref=e289] [cursor=pointer]:
+                - /url: /usstock
+              - text: "|"
+              - link "EN" [ref=e291] [cursor=pointer]:
+                - /url: /en/usstock
+          - generic [ref=e292]:
+            - generic [ref=e294]:
+              - generic [ref=e295]:
+                - button "ios-download" [ref=e296] [cursor=pointer]:
+                  - img "ios-download" [ref=e297]
+                - button "android-download" [ref=e298] [cursor=pointer]:
+                  - img "android-download" [ref=e299]
+                - link "apk" [ref=e300] [cursor=pointer]:
+                  - /url: https://cdn.zaticdn.com/bank/app/android.apk
+                  - img "apk" [ref=e301]
+              - img "qr-code" [ref=e302]
+            - list [ref=e303]:
+              - listitem [ref=e304]: · Apple為Apple Inc.商標，已於美國及其他國家╱地區註冊。App Store為Apple Inc.之服務商標。
+              - listitem [ref=e305]: · Google Play™為Google LLC之商標。
+      - generic [ref=e306]:
+        - generic [ref=e307]:
+          - generic [ref=e308]: 本網站由眾安銀行有限公司編製及發布。版權所有 © 2026 眾安銀行有限公司
+          - generic [ref=e309]:
+            - link "網站使用條款" [ref=e310] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000379
+            - text: "|"
+            - link "私隱政策" [ref=e311] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000442
+            - text: "|"
+            - link "收集個人資料通知" [ref=e312] [cursor=pointer]:
+              - /url: https://bank.za.group/agreement/pdf/zh_HK/1000378
+        - generic [ref=e313]: "*作為香港首間開業的數字銀行，截至 2024 年 6 月 30 日，ZA Bank 的用戶數量及存款均為香港 8 間數字銀行之中最高。資料來源︰8 間數字銀行中期業績報告。"
+  - alert [ref=e314]

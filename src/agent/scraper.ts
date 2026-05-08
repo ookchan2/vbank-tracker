@@ -11,11 +11,11 @@
  */
 
 import { execSync } from 'child_process';
-import { runAgent, type AgentResult } from './client';
-import { BANK_CONFIGS, type BankConfig } from '../config/banks';
-import { hktToday } from '../utils/hkt';
-import { isNonBankContent } from '../utils/filters';
-import { scrubBlockedContent, isValidBankUrl, cacheScreenshot } from '../utils/validation';
+import { runAgent, type AgentResult } from './client.js';
+import { BANK_CONFIGS, type BankConfig } from '../config/banks.js';
+import { hktToday } from '../utils/hkt.js';
+import { isNonBankContent } from '../utils/filters.js';
+import { scrubBlockedContent, isValidBankUrl, cacheScreenshot } from '../utils/validation.js';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -117,6 +117,56 @@ const BAU_GLOBAL_OVERRIDES: string[] = [
   '24/7 service',
 ];
 
+// ── Non-bank content patterns (must be filtered out) ─────────────────────────
+
+const NON_BANK_CONTENT_PATTERNS: string[] = [
+  'taipofire.gov.hk',
+  'taxdeduction.html',
+  'hab033',
+  'cefs.gov.hk',
+  'wang fuk court',
+  'wangfuk',
+  '宏福苑',
+  'support fund for wang fuk',
+  'support fund for',
+  '大埔宏福苑',
+  '援助基金',
+  'tai po fire',
+  'inland revenue',
+  'ird.gov.hk',
+  'gov.hk/taxdeduction',
+  'tax deduction for donation',
+  'tax deduction arrangement',
+  'donation receipt',
+  'donation acknowledgement',
+  'letter of appreciation',
+  'government sincerely thanks',
+  '政府衷心感謝',
+  '捐款致謝',
+  '稅務扣除安排',
+  'charity donation',
+  'relief fund',
+  'disaster relief',
+  'taipofire',
+  'fire support',
+  'fire.gov',
+  'approved charitable donation',
+  'inland revenue ordinance',
+  'bank of china (hong kong) account number 012-875',
+  'beware of scam',
+  'bogus call',
+  'beware of bogus',
+  'scam alert',
+  '防騙',
+  '詐騙',
+  '24x7 service',
+  '24x7 banking',
+  'customer service hour',
+  'service hour',
+  'branch hour',
+  'opening hour',
+];
+
 // ── Allowed categories ───────────────────────────────────────────────────────
 
 const ALLOWED_CATEGORIES = [
@@ -124,46 +174,112 @@ const ALLOWED_CATEGORIES = [
   '貸款', '存款', '外匯', '推薦', '新資金', 'Others',
 ];
 
-// ── AI extraction prompt ─────────────────────────────────────────────────────
+// ── AI extraction prompt (comprehensive version from Python ai_helper.py) ───
 
 const EXTRACTION_SYSTEM_PROMPT = `You are a specialist at extracting bank promotion data from website text.
 
-CRITICAL RULES:
-1. Extract EVERY SINGLE promotion you can find from each page.
-2. Do NOT merge multiple promotions into one entry.
-3. name and highlight must be in English.
-4. For start_date / end_date: look for any date mentioned near the promotion. Always use YYYY-MM-DD format. Use null only if truly absent.
-5. is_bau: set true ONLY for permanent product features with NO end date and NO special eligibility condition.
-   ✅ BAU: "Free Instant FPS Transfers", "Multi-Currency Savings Account", "Account Opening in 3 Minutes"
-   ❌ NOT BAU: "New Customer Bonus", "Limited-Time Fee Waiver", anything with a promo code
-6. CATEGORY TAGGING: Any referral/invite → 推薦, fund/基金/stock/crypto → 投資, travel/flight → 旅遊
-7. FOOTNOTES are real promotions — scan every footnote for fee waivers, discounts, rewards.
-8. DO NOT extract: navigation items, section headings without concrete benefit, pure disclaimers, footer links.
-9. ONLY extract promotions OFFERED BY the specified bank. Skip government/charity content (gov.hk, tax, donation).
-10. If start_date < today, the promotion is NOT new today — but still extract it.
-11. If end_date > today, the promotion is STILL ACTIVE — do NOT treat as expired.
+╔══════════════════════════════════════════════════════════════════════╗
+║  CRITICAL RULES — read carefully before extracting                  ║
+║                                                                      ║
+║  1. Extract EVERY SINGLE promotion you can find.                    ║
+║     If you see 25 promotions → return exactly 25 objects.           ║
+║                                                                      ║
+║  2. Do NOT merge multiple promotions into one entry.                ║
+║                                                                      ║
+║  3. name and highlight must be in English.                          ║
+║                                                                      ║
+║  4. For start_date / end_date: look for any date mentioned near     ║
+║     the promotion. Always use YYYY-MM-DD format.                    ║
+║     Use null only if truly absent.                                  ║
+║                                                                      ║
+║  5. is_bau: set true ONLY for permanent product features with       ║
+║     NO end date and NO special eligibility condition, e.g.:         ║
+║       ✅ BAU: "Free Instant FPS Transfers" (always available)       ║
+║       ✅ BAU: "Multi-Currency Savings Account" (product feature)    ║
+║       ✅ BAU: "New Crypto Customer Fee Waiver" (ZA Bank, permanent) ║
+║       ✅ BAU: "$0 Fund Subscription Fee Mode" (WeLab, no end date)  ║
+║       ✅ BAU: "Account Opening in 3 Minutes" (any bank, UX claim)  ║
+║       ✅ BAU: "Quick Account Opening" (any bank, UX claim)         ║
+║       ✅ BAU: "Mobile Account Opening in 5 Minutes" (UX claim)     ║
+║       ✅ BAU: "24/7 Digital Banking Services" (always-on feature)  ║
+║       ❌ NOT BAU: "New Customer Bonus" (new customers only)         ║
+║       ❌ NOT BAU: "Limited-Time Fee Waiver" (has end date)          ║
+║       ❌ NOT BAU: Any promotion with a promo code                   ║
+║                                                                      ║
+║  6. CATEGORY TAGGING RULES:                                         ║
+║     • Any referral / invite-a-friend / 推薦 program → tag 推薦     ║
+║     • Any fund / 基金 / unit trust subscription fee promo → 投資   ║
+║     • Any stock / crypto / securities trading fee promo → 投資     ║
+║     • Any travel / flight / hotel / 旅遊 promo → tag 旅遊          ║
+║                                                                      ║
+║  7. ⚠️  FOOTNOTES ARE REAL PROMOTIONS — ALWAYS EXTRACT THEM        ║
+║     Lines starting with  *  †  #  ¹  ²  are often the most         ║
+║     important promotion terms, NOT just legal disclaimers.          ║
+║     REQUIRED: scan EVERY footnote line and ask yourself:            ║
+║       "Does this mention a fee waiver, discount, reward, or         ║
+║        eligibility period?" → If YES, extract it as a promotion.   ║
+║                                                                      ║
+║  8. ⛔ DO NOT EXTRACT THESE — they are NOT bank promotions:        ║
+║     • Navigation / menu items                                       ║
+║     • Section headings without a concrete benefit amount            ║
+║     • Pure risk disclaimers / legal boilerplate                     ║
+║     • Generic product feature names with no specific reward         ║
+║     • Footer links (Terms, Privacy Policy, Contact Us, etc.)       ║
+║     • "Beware of Scams" / "Beware of bogus calls" / scam alerts    ║
+║     • 24x7 service information / customer service hours            ║
+║     • Account security tips / fraud prevention notices            ║
+║                                                                      ║
+║     ❌ BAD extraction (nav item): "Travel with ZA Card"            ║
+║     ✅ GOOD extraction (real deal): "Trip.com 8% off + 2% CashBack"║
+║                                                                      ║
+║  9. 🚫 CRITICAL: ONLY extract promotions OFFERED BY THE BANK.     ║
+║     The bank is specified in the prompt. Skip anything that is:   ║
+║     • A government program, agency notice, or tax department      ║
+║       instruction (e.g. Inland Revenue, tax deduction guides)     ║
+║     • A charity / disaster-relief / donation drive operated       ║
+║       by a third party (e.g. Support Fund for Wang Fuk Court,     ║
+║       Red Cross, community funds)                                 ║
+║     • Content mentioning taipofire.gov.hk, hab033, cefs.gov.hk   ║
+║       or any gov.hk domain — these are NEVER bank promotions     ║
+║     • Scam alerts / fraud warnings / security notices            ║
+║     • Customer service hours / 24x7 banking information          ║
+║     If the content is from a government or charity website,     ║
+║     ignore it completely — return [] for that section.           ║
+║                                                                    ║
+║  10. ⚠️  START DATE GATE: If start_date is found AND              ║
+║      start_date < today → this promotion launched BEFORE today;   ║
+║      it is NOT new today.                                         ║
+║                                                                    ║
+║  11. ✅ EXPIRY VALIDATION: If end_date > today the promotion is   ║
+║      still ACTIVE — it has NOT expired. Only set is_bau=false    ║
+║      and include the end_date as-is.                              ║
+╚══════════════════════════════════════════════════════════════════════╝
 
-ALLOWED CATEGORY TAGS (pick 1-3 per promotion):
+ALLOWED CATEGORY TAGS (Chinese, pick 1-3 per promotion):
   迎新 / 消費 / 投資 / 旅遊 / 保險 / 貸款 / 存款 / 外匯 / 推薦 / 新資金 / Others
 
-Return a JSON array of promotion objects with these fields:
-- name: Full descriptive English name
-- types: Array of category tags
-- is_bau: boolean
-- start_date: "YYYY-MM-DD" or null
-- end_date: "YYYY-MM-DD" or null
-- period: Human-readable period string
-- highlight: One-line key benefit starting with an emoji
-- description: 2-3 sentences describing the promotion
-- quota: Eligibility or quota info
-- cost: Minimum spend or required cost, or Free
-- tc_link: Source URL
-- analysis_points: Array of 3-5 concise analysis bullet points covering:
-    * Value assessment (is the reward/fee waiver worth it?)
-    * Eligibility requirements (who qualifies?)
-    * Competitive positioning (how does it compare to similar offers from other HK virtual banks?)
-    * Time sensitivity (when should users act?)
-    * Hidden conditions (minimum spend, quota limits, etc.)`;
+REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
+
+Schema for each object:
+{
+  "name":        "Full descriptive English name of the promotion",
+  "types":       ["category1", "category2"],
+  "is_bau":      false,
+  "start_date":  "YYYY-MM-DD or null",
+  "end_date":    "YYYY-MM-DD or null",
+  "period":      "Human-readable period, e.g. '1 Jan 2025 to 31 Mar 2025' or 'Ongoing'",
+  "highlight":   "One-line key benefit starting with an emoji",
+  "description": "2-3 sentences describing this specific promotion in detail.",
+  "quota":       "Eligibility or quota info (e.g. First 1000 customers / New customers only / No cap)",
+  "cost":        "Minimum spend or required cost, or Free",
+  "tc_link":     "Source URL"
+}
+
+Remember: return ONLY the JSON array starting with [ and ending with ].
+If the text is entirely from a government or charity website, return [].
+If you see any mention of taipofire.gov.hk, wang fuk court, hab033,
+cefs.gov.hk, tax deduction for donation, scam alert, or bogus calls —
+skip that content entirely.`;
 
 const ELEBANK_FEE_CONTEXT = `
 [EleBank Stock Trading Fee Reference — factual, use for exact descriptions]

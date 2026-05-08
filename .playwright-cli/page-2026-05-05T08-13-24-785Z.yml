@@ -1,0 +1,337 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - link "Mox Logo" [ref=e10] [cursor=pointer]:
+          - /url: /zh/
+          - img "Mox Logo" [ref=e11]
+        - img "Standard Chartered" [ref=e13]
+      - generic [ref=e14]:
+        - navigation [ref=e16]:
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - link "Mox+" [ref=e19] [cursor=pointer]:
+                - /url: /zh/MoxPlus-Updates/
+            - listitem [ref=e20]:
+              - link "旅遊攻略" [ref=e21] [cursor=pointer]:
+                - /url: /zh/all-round-travel-playbook/
+            - listitem [ref=e22]:
+              - button "服務特色" [ref=e23] [cursor=pointer]
+              - list:
+                - listitem:
+                  - link "Mox信用卡":
+                    - /url: /zh/features/mox-credit/
+                - listitem:
+                  - link "Mox Invest":
+                    - /url: /zh/features/mox-invest/
+                - listitem:
+                  - link "Mox Insure":
+                    - /url: /zh/features/mox-insure/
+                - listitem:
+                  - link "精明理財":
+                    - /url: /zh/features/smart-banking/
+                - listitem:
+                  - link "精明信貸":
+                    - /url: /zh/features/smart-borrowing/
+                - listitem:
+                  - link "「即時借」私人貸款":
+                    - /url: /zh/promotions/instant-loan/
+                - listitem:
+                  - link "精明儲蓄":
+                    - /url: /zh/features/smart-saving/
+                - listitem:
+                  - link "精明消費":
+                    - /url: /zh/features/smart-spending/
+                - listitem:
+                  - link "Mox FX":
+                    - /url: /zh/features/mox-fx/
+                - listitem:
+                  - link "Mox特色一覽":
+                    - /url: /zh/features/mox-at-a-glance/
+            - listitem [ref=e24]:
+              - link "推廣優惠" [ref=e25] [cursor=pointer]:
+                - /url: /zh/promotions/
+            - listitem [ref=e26]:
+              - link "關於我們" [ref=e27] [cursor=pointer]:
+                - /url: /zh/about-us/
+            - listitem [ref=e28]:
+              - link "常見問題" [ref=e29] [cursor=pointer]:
+                - /url: /zh/faqs/
+        - button "下載Mox" [ref=e30] [cursor=pointer]
+        - img [ref=e35] [cursor=pointer]
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - link "Mox":
+                    - /url: /zh/
+                    - img "Mox"
+                  - generic:
+                    - img "Standard Chartered"
+              - generic:
+                - button
+      - generic:
+        - generic:
+          - generic:
+            - list:
+              - listitem:
+                - link "Mox+":
+                  - /url: /zh/MoxPlus-Updates/
+              - listitem:
+                - link "旅遊攻略":
+                  - /url: /zh/all-round-travel-playbook/
+              - listitem:
+                - button "服務特色"
+                - list:
+                  - listitem:
+                    - link "Mox信用卡":
+                      - /url: /zh/features/mox-credit/
+                  - listitem:
+                    - link "Mox Invest":
+                      - /url: /zh/features/mox-invest/
+                  - listitem:
+                    - link "Mox Insure":
+                      - /url: /zh/features/mox-insure/
+                  - listitem:
+                    - link "精明理財":
+                      - /url: /zh/features/smart-banking/
+                  - listitem:
+                    - link "精明信貸":
+                      - /url: /zh/features/smart-borrowing/
+                  - listitem:
+                    - link "「即時借」私人貸款":
+                      - /url: /zh/promotions/instant-loan/
+                  - listitem:
+                    - link "精明儲蓄":
+                      - /url: /zh/features/smart-saving/
+                  - listitem:
+                    - link "精明消費":
+                      - /url: /zh/features/smart-spending/
+                  - listitem:
+                    - link "Mox FX":
+                      - /url: /zh/features/mox-fx/
+                  - listitem:
+                    - link "Mox特色一覽":
+                      - /url: /zh/features/mox-at-a-glance/
+              - listitem:
+                - link "推廣優惠":
+                  - /url: /zh/promotions/
+              - listitem:
+                - link "關於我們":
+                  - /url: /zh/about-us/
+              - listitem:
+                - link "常見問題":
+                  - /url: /zh/faqs/
+  - generic [ref=e40]:
+    - generic [ref=e47]:
+      - heading "消費存款賞：賺高達HKD1,700¹‧²" [level=2] [ref=e52]
+      - generic [ref=e60]:
+        - paragraph [ref=e61]: 雙重獎賞，盡在掌握！消費同存款，一次過享受雙重獎賞！
+        - paragraph [ref=e62]: 用專屬邀請碼「MOXSMART」開戶，你可從5大熱門商戶HKTVmall、foodpanda、Uber、Keeta或淘寶任選其一，全年狂賺20%現金獎賞# (回贈金額高達HKD1,200)，兼解鎖最高消費獎賞——2%無上限CashBack³長達60日；同時存入HKD50,000，更可額外賺取HKD500，輕鬆盡享總共高達HKD1,700現金獎賞！
+    - generic [ref=e66]:
+      - img [ref=e72]
+      - generic [ref=e75]:
+        - 'heading "專屬回贈商戶: 20%現金獎賞" [level=4] [ref=e76]'
+        - generic [ref=e78]:
+          - paragraph [ref=e79]: 由即日起至2026年6月30日，新客戶^可於Mox信用卡⁴成功批核當天起計12個月，內於指定5個回贈商戶，包括HKTVmall、 foodpanda、Uber*、Keeta及淘寶⁺，作合資格消費⁵，盡享全年12個月20%現金獎賞（高達HKD1,200），無消費要求！
+          - paragraph [ref=e80]:
+            - text: "*"
+            - emphasis [ref=e81]:
+              - text: 適用於Uber Taxi和Uber One會籍交易。
+              - text: ⁺於淘寶作合資格消費，使用AlipayHK付款亦會計算在內。
+    - generic [ref=e85]:
+      - img [ref=e91]
+      - generic [ref=e94]:
+        - heading "存款密密賺，存入資金賺HKD500" [level=4] [ref=e95]
+        - generic [ref=e97]:
+          - paragraph [ref=e98]: 使用邀請碼當日及其後15日期間內完成開戶程序及開戶後7日內，存入資金到活期存款戶口並維持HKD50,000或以上達30日，即可賺取HKD500現金獎賞，相等於約12%年利率。立即加入Mox!
+          - paragraph [ref=e99]: （任何於你定期存款戶口內的存款，將不會計入你的港元活期存款戶口結餘）。
+    - generic [ref=e103]:
+      - img [ref=e109]
+      - generic [ref=e112]:
+        - heading "首60日可解鎖最高消費獎賞，現金 / 里數任你狂賺" [level=4] [ref=e113]
+        - generic [ref=e115]:
+          - paragraph [ref=e116]: Mox信用卡在手，任你選擇「CashBack」作為消費獎賞，狂賺無上限現金：不限消費類別、真正「no cap」！
+          - paragraph [ref=e117]: 此外，在Mox信用卡批核首60日，你可即刻解鎖最高消費獎賞，無條件狂賺2%無上限CashBack，等你即時賺更多！以後處處邊使邊賺，現金每日直入戶口——你間銀行得咩？
+    - generic [ref=e119]:
+      - heading "仲未成為Mox客戶？" [level=2] [ref=e124]
+      - paragraph [ref=e133]: 最快幾分鐘開戶⁶！ 成功開戶並將Mox Card透過「電子銀包」加入Apple Pay、Google Pay 即可開始消費！即Join即Joy! 實體Mox Card亦將直送到你手上。
+    - img [ref=e138]
+    - button "立即下載" [ref=e146] [cursor=pointer]:
+      - generic [ref=e147]: 立即下載
+    - generic [ref=e151]:
+      - paragraph [ref=e152]:
+        - strong [ref=e153]: 借定唔借？還得到先好借！
+      - paragraph [ref=e154]: 名額有限，先到先得，額滿即止。
+      - paragraph [ref=e155]: 如您在的開戶日期前12個月內曾經以您的名義持有Mox戶口，則不符合獎賞資格。
+      - paragraph [ref=e156]: "*適用於Uber Taxi和Uber One會籍交易。"
+      - paragraph [ref=e157]: "#現金獎賞高達 HKD1,200。"
+      - paragraph [ref=e158]: ^你須於使用邀請碼當天及其後15天的期間內，完成Mox戶口開戶程序；並於使用邀請碼當天及其後30天的期間內，完成Mox Credit申請過程及收到Mox Credit批核通知。
+      - paragraph [ref=e159]:
+        - text: ¹受
+        - link "「MOXSMART」邀請碼推廣條款及細則" [ref=e160] [cursor=pointer]:
+          - /url: https://mox.com/static/MOXSMART_Promotion_TnCs.pdf
+        - text: 約束。
+      - paragraph [ref=e161]:
+        - text: ²受
+        - link "Mox免責聲明" [ref=e162] [cursor=pointer]:
+          - /url: https://mox.com/static/230818_Mox_Disclaimer.pdf
+        - text: 約束。
+      - paragraph [ref=e163]:
+        - text: ³若您持有Mox＋資格，我們會豁免此消費獎賞轉換費用，否則我們會收取HKD50消費獎賞轉換費，詳情請參閱
+        - link "Mox Credit產品資料概要" [ref=e164] [cursor=pointer]:
+          - /url: https://mox.com/zh/legal-documents/key-fact-statements/mox-card-with-credit/
+        - text: 及
+        - link "Mox+優惠列表" [ref=e165] [cursor=pointer]:
+          - /url: https://mox.com/static/260402_Mox_Plus_Benefits_Table.pdf
+        - text: 。
+      - paragraph [ref=e166]:
+        - text: ⁴詳情請參閱
+        - link "Mox Credit附表" [ref=e167] [cursor=pointer]:
+          - /url: https://mox.com/zh/legal-documents/general-terms-and-conditions/schedule-3/
+        - text: （也稱為一般條款及細則附表3）及
+        - link "Mox Credit產品資料概要" [ref=e168] [cursor=pointer]:
+          - /url: https://mox.com/zh/legal-documents/key-fact-statements/mox-card-with-credit/
+        - text: 。
+      - paragraph [ref=e169]: ⁵有關合資格交易，請參閱卡獎賞附表第2條。
+      - paragraph [ref=e170]: ⁶在個別情況下，Mox Credit戶口的申請者或須提交相關證明文件，而提交文件過程輕鬆簡單。批核的所需時間，取決於實際情況而定。
+  - contentinfo [ref=e171]:
+    - generic [ref=e173]:
+      - link "Mox" [ref=e175] [cursor=pointer]:
+        - /url: /zh/
+        - img "Mox" [ref=e176]
+      - generic [ref=e178]:
+        - generic [ref=e179]: 合作伙伴
+        - link "PCCW" [ref=e180] [cursor=pointer]:
+          - /url: http://www.pccw.com/index.page?locale=zh
+          - img "PCCW" [ref=e181]
+        - link "HKT" [ref=e182] [cursor=pointer]:
+          - /url: https://www.hkt.com/
+          - img "HKT" [ref=e183]
+        - link "Trip.com" [ref=e184] [cursor=pointer]:
+          - /url: https://hk.trip.com/?locale=zh_hk
+          - img "Trip.com" [ref=e185]
+      - link "Standard Chartered" [ref=e187] [cursor=pointer]:
+        - /url: https://www.sc.com/hk/
+        - img "Standard Chartered" [ref=e188]
+      - generic [ref=e191]:
+        - paragraph [ref=e192]: 服務特色
+        - paragraph [ref=e193]:
+          - link "Mox信用卡" [ref=e194] [cursor=pointer]:
+            - /url: /zh/features/mox-credit/
+        - paragraph [ref=e195]:
+          - link "Mox Invest" [ref=e196] [cursor=pointer]:
+            - /url: /zh/features/mox-invest/
+        - paragraph [ref=e197]:
+          - link "Mox Insure" [ref=e198] [cursor=pointer]:
+            - /url: /zh/features/mox-insure/
+        - paragraph [ref=e199]:
+          - link "精明理財" [ref=e200] [cursor=pointer]:
+            - /url: /zh/features/smart-banking/
+        - paragraph [ref=e201]:
+          - link "精明信貸" [ref=e202] [cursor=pointer]:
+            - /url: /zh/features/smart-borrowing/
+        - paragraph [ref=e203]:
+          - link "「即時借」私人貸款" [ref=e204] [cursor=pointer]:
+            - /url: /zh/promotions/instant-loan/
+        - paragraph [ref=e205]:
+          - link "精明儲蓄" [ref=e206] [cursor=pointer]:
+            - /url: /zh/features/smart-saving/
+        - paragraph [ref=e207]:
+          - link "精明消費" [ref=e208] [cursor=pointer]:
+            - /url: /zh/features/smart-spending/
+        - paragraph [ref=e209]:
+          - link "Mox FX" [ref=e210] [cursor=pointer]:
+            - /url: /zh/features/mox-fx/
+        - paragraph [ref=e211]:
+          - link "Mox特色一覽" [ref=e212] [cursor=pointer]:
+            - /url: /zh/features/mox-at-a-glance/
+      - generic [ref=e213]:
+        - paragraph [ref=e214]: 公司資訊
+        - paragraph [ref=e215]:
+          - link "推廣優惠" [ref=e216] [cursor=pointer]:
+            - /url: /zh/promotions/
+        - paragraph [ref=e217]:
+          - link "關於我們" [ref=e218] [cursor=pointer]:
+            - /url: /zh/about-us/
+        - paragraph [ref=e219]:
+          - link "新聞中心" [ref=e220] [cursor=pointer]:
+            - /url: /zh/media/
+        - paragraph [ref=e221]:
+          - link "工作機會" [ref=e222] [cursor=pointer]:
+            - /url: /zh/careers/
+        - paragraph [ref=e223]:
+          - link "常見問題" [ref=e224] [cursor=pointer]:
+            - /url: /zh/faqs/
+      - generic [ref=e225]:
+        - paragraph [ref=e226]: 有用連結
+        - paragraph [ref=e227]:
+          - link "條款及細則" [ref=e228] [cursor=pointer]:
+            - /url: /zh/legal-documents/
+        - paragraph [ref=e229]:
+          - link "私隱政策" [ref=e230] [cursor=pointer]:
+            - /url: /zh/legal-documents/privacy/
+        - paragraph [ref=e231]:
+          - link "Cookie政策" [ref=e232] [cursor=pointer]:
+            - /url: /zh/legal-documents/cookie-policy/
+        - paragraph [ref=e233]:
+          - link "監管披露" [ref=e234] [cursor=pointer]:
+            - /url: /zh/regulatory-disclosures/
+        - paragraph [ref=e235]:
+          - link "保安提示" [ref=e236] [cursor=pointer]:
+            - /url: /zh/security-tips/
+        - paragraph [ref=e237]:
+          - link "提交漏洞報告" [ref=e238] [cursor=pointer]:
+            - /url: /zh/submit-a-vulnerability/
+        - paragraph [ref=e239]:
+          - link "重要通知" [ref=e240] [cursor=pointer]:
+            - /url: /zh/important-notices/
+        - paragraph [ref=e241]:
+          - link "開放銀行服務" [ref=e242] [cursor=pointer]:
+            - /url: /zh/open-banking/
+        - paragraph [ref=e243]:
+          - link "網站地圖" [ref=e244] [cursor=pointer]:
+            - /url: /zh/sitemap/
+      - generic [ref=e245]:
+        - paragraph [ref=e246]: 聯絡我們
+        - paragraph [ref=e247]:
+          - link "留言給我們" [ref=e248] [cursor=pointer]:
+            - /url: /zh/contact-us/
+        - paragraph [ref=e249]:
+          - link "+852 2888 8228" [ref=e250] [cursor=pointer]:
+            - /url: tel:+85228888228
+        - paragraph [ref=e251]:
+          - link "care@mox.com" [ref=e252] [cursor=pointer]:
+            - /url: mailto:care@mox.com
+        - paragraph [ref=e253]:
+          - link "就業背景調查" [ref=e254] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+        - paragraph [ref=e255]:
+          - link "askhr@sc.com" [ref=e256] [cursor=pointer]:
+            - /url: mailto:askhr@sc.com
+      - generic [ref=e257]:
+        - generic:
+          - generic:
+            - link:
+              - /url: https://www.facebook.com/moxbankhk/
+            - link:
+              - /url: https://www.instagram.com/moxbank/
+            - link:
+              - /url: https://hk.linkedin.com/company/mox-bank/
+            - link:
+              - /url: https://www.youtube.com/channel/UC41ce2iw3ytvBbJCwlF3iiw/featured
+        - generic [ref=e258]:
+          - generic [ref=e260]:
+            - img "apple-store" [ref=e264] [cursor=pointer]
+            - img "google-play" [ref=e268] [cursor=pointer]
+          - generic [ref=e271]:
+            - paragraph [ref=e272]:
+              - text: 上述是唯一下載Mox App的授權途徑。為保障你的個人資料私隱，請勿透過其他途徑下載我們的應用程式。
+              - link "點擊這裡了解更多網絡保安提示信息。" [ref=e273] [cursor=pointer]:
+                - /url: /zh/security-tips/
+            - paragraph [ref=e274]: App Store及Apple標誌均為Apple Inc. 所屬商標, 並已於美國及其他國家註冊。Google Play及Google Play標誌均為Google LLC 所屬商標, 並已於美國及其他國家註冊。
+        - button [ref=e276] [cursor=pointer]
+      - generic [ref=e278]: 版權所有 © 2026 Mox Bank. 保留一切權利

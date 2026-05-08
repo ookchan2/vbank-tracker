@@ -1,0 +1,710 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: 【提防詐騙】請提防偽冒銀行發出的來電丶短訊或電郵。如有懷疑，請致電 +852 3898 6988 與我們聯絡。你亦可以瀏覽香港金融管理局網站上發布的提防詐騙資訊「智醒錦囊」。
+      - button "Close notice" [ref=e7] [cursor=pointer]:
+        - img [ref=e8]
+    - banner [ref=e10]:
+      - generic [ref=e11]:
+        - link "WeLab Bank_logo_en.png" [ref=e12] [cursor=pointer]:
+          - /url: /zh/
+          - img "WeLab Bank_logo_en.png" [ref=e13]
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - navigation [ref=e16]:
+              - list [ref=e17]:
+                - listitem [ref=e18]:
+                  - link "銀行服務" [ref=e19] [cursor=pointer]:
+                    - /url: "#"
+                  - generic:
+                    - generic:
+                      - list:
+                        - listitem:
+                          - link "WeLab Global Wallet":
+                            - /url: /zh/feature/welab-global-wallet/
+                        - listitem:
+                          - link "比較最佳匯率":
+                            - /url: /zh/feature/fx-daily-leaderboard/
+                        - listitem:
+                          - link "WeLab Global Wallet 扣賬卡":
+                            - /url: /zh/feature/debit-card/
+                        - listitem:
+                          - link "GoSave 2.0 定期存款":
+                            - /url: /zh/feature/gosave_2/
+                        - listitem:
+                          - link "轉賬/轉數快/內地匯款":
+                            - /url: /zh/feature/fps/
+                        - listitem:
+                          - link "跨境匯款":
+                            - /url: /zh/feature/global-remittance/
+                        - listitem:
+                          - link "開立賬戶":
+                            - /url: /zh/feature/onboarding/
+                        - listitem:
+                          - link "智安存":
+                            - /url: /zh/feature/moneysafe/
+                - listitem [ref=e20]:
+                  - link "投資" [ref=e21] [cursor=pointer]:
+                    - /url: "#"
+                  - generic:
+                    - generic:
+                      - list:
+                        - listitem:
+                          - link "智動投資顧問":
+                            - /url: /zh/feature/wealth/
+                        - listitem:
+                          - link "WeLab 閒智寶":
+                            - /url: /zh/feature/welab-money-plus/
+                        - listitem:
+                          - link "自選基金服務":
+                            - /url: /zh/feature/fund/
+                - listitem [ref=e22]:
+                  - link "貸款" [ref=e23] [cursor=pointer]:
+                    - /url: "#"
+                  - generic:
+                    - generic:
+                      - list:
+                        - listitem:
+                          - link "私人分期貸款":
+                            - /url: /zh/feature/personal_instalment_loan/
+                        - listitem:
+                          - link "清卡數貸款":
+                            - /url: /zh/feature/debtcon_loan/
+                        - listitem:
+                          - link "Apple產品好賞分期計劃":
+                            - /url: /zh/feature/subscribe_plus/
+                        - listitem:
+                          - link "Learn Now Pay Later 計劃":
+                            - /url: /zh/feature/preface-learn-now-pay-later/
+                        - listitem:
+                          - link "保單貸款":
+                            - /url: /zh/feature/policy_loan/
+                        - listitem:
+                          - link "智能財務健康分析":
+                            - /url: /zh/feature/credit-view/
+                - listitem [ref=e24]:
+                  - link "優惠" [ref=e25] [cursor=pointer]:
+                    - /url: "#"
+                  - generic:
+                    - generic:
+                      - list:
+                        - listitem:
+                          - link "五一假期「Fun Fund投資賞」":
+                            - /url: /zh/feature/may-holiday-fun-fund-reward-26/
+                        - listitem:
+                          - link "「碌住賺・飛住賞」復活節大抽獎":
+                            - /url: /zh/feature/dcp-easter-lucky-draw-2026/
+                        - listitem:
+                          - link "【迎新二重賞】開戶可享約HKD 5,000現金獎賞":
+                            - /url: /zh/feature/2-in-1-welcome-rewards-may26/
+                        - listitem:
+                          - link "最低匯率保證":
+                            - /url: /zh/feature/fx-best-rate-guarantee/
+                        - listitem:
+                          - link "WeLab Global Wallet 扣賬卡全年激賞優惠":
+                            - /url: /zh/feature/global-wallet-etb-offer-feb26/
+                        - listitem:
+                          - link "私人貸款優惠":
+                            - /url: /zh/feature/loan-promotion/
+                        - listitem:
+                          - link "Tesla電動車貸款優惠":
+                            - /url: /zh/feature/tesla-mega-combo/
+                        - listitem:
+                          - link "私人貸款「R Friends大薦」計劃":
+                            - /url: /zh/feature/loan_mgm/
+                - listitem [ref=e26]:
+                  - link "最新消息" [ref=e27] [cursor=pointer]:
+                    - /url: "#"
+                  - generic:
+                    - generic:
+                      - list:
+                        - listitem:
+                          - link "新聞中心":
+                            - /url: /zh/newsroom/
+                        - listitem:
+                          - link "日誌":
+                            - /url: /zh/blog/
+                        - listitem:
+                          - link "獎項及殊榮":
+                            - /url: /zh/awards/
+                        - listitem:
+                          - link "財務概覽":
+                            - /url: /zh/feature/insights/
+                        - listitem:
+                          - link "常見問題":
+                            - /url: /zh/support/
+            - generic [ref=e28]:
+              - generic "Switch language" [ref=e29] [cursor=pointer]:
+                - img [ref=e30]
+              - generic:
+                - generic:
+                  - list:
+                    - listitem:
+                      - generic: 繁體中文
+                    - listitem:
+                      - generic: 简体中文
+                    - listitem:
+                      - generic: English
+          - link "立即下載" [ref=e33] [cursor=pointer]:
+            - /url: /zh/feature/download/
+            - button "立即下載" [ref=e34]
+  - main [ref=e35]:
+    - generic [ref=e37]:
+      - generic [ref=e39]:
+        - generic [ref=e41]:
+          - generic [ref=e43]:
+            - heading "自選基金服務" [level=1] [ref=e44]:
+              - strong [ref=e45]: 自選基金服務
+            - heading "全天候無上限$0認購/轉換費！" [level=1] [ref=e46]:
+              - strong [ref=e47]: 全天候無上限$0認購/轉換費！
+            - paragraph [ref=e48]
+            - paragraph [ref=e49]:
+              - link "按此" [ref=e50] [cursor=pointer]:
+                - /url: https://www.welab.bank/zh/feature/welab-money-plus/
+              - text: 了解【WeLab 閒智寶】詳情
+            - paragraph [ref=e51]
+            - paragraph [ref=e52]: 投資涉及風險，請參閱本頁之重要聲明。屏幕顯示之頁面、投資產品及回報數字僅作說明用途，以上圖像加入了廣告效果，實際情況或有差異。
+          - link "查看基金名單" [ref=e55] [cursor=pointer]:
+            - /url: https://www.welab.bank/uploads/wealth_management_featured_fund_list_TC.pdf
+            - generic [ref=e56]:
+              - generic [ref=e57]: 查看基金名單
+              - img [ref=e58]
+        - img "Fund_main_tc.png" [ref=e63]
+      - img "wealthKV_251023_TC.2e16d0ba.fill-1600x800.png" [ref=e72]
+      - generic [ref=e73]:
+        - generic [ref=e76]:
+          - heading "囊括環球頂尖基金" [level=2] [ref=e79]
+          - paragraph [ref=e82]:
+            - text: WeLab Bank 夥拍頂尖基金公司（包括：
+            - strong [ref=e83]: 聯博基金、安聯投資、貝萊德、富達、景順、駿利亨德森、摩根資產管理、 PIMCO 、施羅德、泰康、惠理
+            - text: ），精選上架超過 170 隻基金，你可以一鍵買入由環球頂尖基金公司管理嘅熱賣基金、派息基金、債券基金等，輕鬆受惠於市場大趨勢。
+        - img "GoWealth_SingleFundWebsiteFundHouse_Feb2026.png" [ref=e91]
+      - generic [ref=e92]:
+        - generic [ref=e95]:
+          - heading "各頂尖基金公司熱銷基金***" [level=2] [ref=e98]
+          - paragraph [ref=e101]: （美元股份類別，以公司英文名稱的字母順序排序）
+        - img "Best Sell Fund from FH_20260331_TC_T1v2.png" [ref=e109]
+      - generic [ref=e111]:
+        - img "【迎新二重賞】開戶可享約HKD 5,000 現金獎賞*💰" [ref=e115]
+        - generic [ref=e117]:
+          - heading "【迎新二重賞】開戶可享約HKD 5,000 現金獎賞*💰" [level=2] [ref=e119]
+          - generic [ref=e121]:
+            - paragraph [ref=e122]:
+              - text: 新客戶專享雙重迎新優惠！無論你想穩健增值財富，定係把握市場機遇，WeLab Bank都為你準備咗最合適嘅選擇。即日起用
+              - strong [ref=e123]: 「
+              - strong [ref=e124]: WL5000
+              - strong [ref=e125]: 」
+              - text: 立即開戶，專享高達
+              - strong [ref=e126]: 4%定期存款利年率
+              - text: +
+              - strong [ref=e127]: HKD 4,000 投資基金現金賞
+              - text: ，合共約
+              - strong [ref=e128]: HKD 5,000 獎賞
+              - text: "*！"
+            - paragraph [ref=e129]
+            - paragraph [ref=e130]: 📅 優惠期：2026 年 5 月 1 日至 5 月 31 日為止（包括首尾兩天）
+            - paragraph [ref=e131]:
+              - text: 💴 如何參加：新客戶用推薦碼
+              - strong [ref=e132]: 「
+              - strong [ref=e133]: WL5000
+              - strong [ref=e134]: 」
+              - text: 成功開戶
+          - link "了解更多" [ref=e136] [cursor=pointer]:
+            - /url: /zh/feature/2-in-1-welcome-rewards-may26/
+            - generic [ref=e137]:
+              - generic [ref=e138]: 了解更多
+              - img [ref=e139]
+      - generic [ref=e146]:
+        - heading "市場快訊📣" [level=2] [ref=e147]
+        - paragraph [ref=e148]:
+          - strong [ref=e149]: 💡 安聯投資觀點｜ 減息開始，風險資產迎來新機？
+        - iframe [ref=e150]:
+          - generic [active] [ref=f1e1]:
+            - generic "YouTube Video Player" [ref=f1e3]
+            - generic [ref=f1e5]:
+              - generic:
+                - generic:
+                  - button "Play video" [ref=f1e10] [cursor=pointer]
+                  - button "Hide player controls" [ref=f1e12] [cursor=pointer]
+                  - generic [ref=f1e14]:
+                    - generic [ref=f1e19]:
+                      - generic [ref=f1e20]:
+                        - link "【市場快訊📣】減息開始，風險資產迎來新機💡？" [ref=f1e21] [cursor=pointer]:
+                          - /url: https://www.youtube.com/watch?v=4nO7mO-vav4
+                        - link "WeLab Bank 講呢啲" [ref=f1e22] [cursor=pointer]:
+                          - /url: /channel/UCVrWZtwdiYFDBhIiSgT6xcg
+                          - generic [ref=f1e23]: WeLab Bank 講呢啲
+                      - generic [ref=f1e24]:
+                        - button [ref=f1e25] [cursor=pointer]
+                        - generic [ref=f1e27]:
+                          - generic: WeLab Bank 講呢啲
+                          - generic: 1.49K subscribers
+                    - generic [ref=f1e28]:
+                      - button "Share" [ref=f1e31] [cursor=pointer]:
+                        - generic [ref=f1e35]:
+                          - img
+                      - link "Watch on YouTube" [ref=f1e42] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=4nO7mO-vav4
+                        - generic [ref=f1e45]:
+                          - text: Watch on
+                          - img [ref=f1e47]:
+                            - generic [ref=f1e49]:
+                              - img
+        - heading [level=2] [ref=e151]
+        - heading "市場快訊📣" [level=2] [ref=e152]
+        - paragraph [ref=e153]:
+          - strong [ref=e154]: 💡 摩根資產觀點｜東升西降，佈局未來，放眼中國？
+        - iframe [ref=e155]:
+          - generic [active] [ref=f2e1]:
+            - generic "YouTube Video Player" [ref=f2e3]
+            - generic [ref=f2e5]:
+              - generic:
+                - generic:
+                  - button "Play video" [ref=f2e10] [cursor=pointer]
+                  - button "Hide player controls" [ref=f2e12] [cursor=pointer]
+                  - generic [ref=f2e14]:
+                    - generic [ref=f2e19]:
+                      - generic [ref=f2e20]:
+                        - link "【市場快訊📣】東升西降，佈局未來，放眼中國💡？" [ref=f2e21] [cursor=pointer]:
+                          - /url: https://www.youtube.com/watch?v=K_wQ_HYRbRs
+                        - link "WeLab Bank 講呢啲" [ref=f2e22] [cursor=pointer]:
+                          - /url: /channel/UCVrWZtwdiYFDBhIiSgT6xcg
+                          - generic [ref=f2e23]: WeLab Bank 講呢啲
+                      - generic [ref=f2e24]:
+                        - button [ref=f2e25] [cursor=pointer]
+                        - generic [ref=f2e27]:
+                          - generic: WeLab Bank 講呢啲
+                          - generic: 1.49K subscribers
+                    - generic [ref=f2e28]:
+                      - button "Share" [ref=f2e31] [cursor=pointer]:
+                        - generic [ref=f2e35]:
+                          - img
+                      - link "Watch on YouTube" [ref=f2e42] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=K_wQ_HYRbRs
+                        - generic [ref=f2e45]:
+                          - text: Watch on
+                          - img [ref=f2e47]:
+                            - generic [ref=f2e49]:
+                              - img
+        - heading [level=2] [ref=e156]
+        - heading "市場快訊📣" [level=2] [ref=e157]
+        - paragraph [ref=e158]:
+          - strong [ref=e159]: 💡 惠理基金觀點｜ 美國減息觀察：從亞洲市場可得到什麼啟示？
+        - iframe [ref=e160]:
+          - generic [active] [ref=f3e1]:
+            - generic "YouTube Video Player" [ref=f3e3]
+            - generic [ref=f3e5]:
+              - generic:
+                - generic:
+                  - button "Play video" [ref=f3e10] [cursor=pointer]
+                  - button "Hide player controls" [ref=f3e12] [cursor=pointer]
+                  - generic [ref=f3e14]:
+                    - generic [ref=f3e19]:
+                      - generic [ref=f3e20]:
+                        - link "【市場快訊📣】美國減息觀察：從亞洲市場可得到什麼啟示💡？" [ref=f3e21] [cursor=pointer]:
+                          - /url: https://www.youtube.com/watch?v=wuZw4poYm2o
+                        - link "WeLab Bank 講呢啲" [ref=f3e22] [cursor=pointer]:
+                          - /url: /channel/UCVrWZtwdiYFDBhIiSgT6xcg
+                          - generic [ref=f3e23]: WeLab Bank 講呢啲
+                      - generic [ref=f3e24]:
+                        - button [ref=f3e25] [cursor=pointer]
+                        - generic [ref=f3e27]:
+                          - generic: WeLab Bank 講呢啲
+                          - generic: 1.49K subscribers
+                    - generic [ref=f3e28]:
+                      - button "Share" [ref=f3e31] [cursor=pointer]:
+                        - generic [ref=f3e35]:
+                          - img
+                      - link "Watch on YouTube" [ref=f3e42] [cursor=pointer]:
+                        - /url: https://www.youtube.com/watch?v=wuZw4poYm2o
+                        - generic [ref=f3e45]:
+                          - text: Watch on
+                          - img [ref=f3e47]:
+                            - generic [ref=f3e49]:
+                              - img
+        - paragraph [ref=e161]
+      - generic [ref=e163]:
+        - generic [ref=e164]:
+          - heading "搜羅熱門投資主題ideas" [level=2] [ref=e167]
+          - paragraph [ref=e170]: 你無需做繁複的研究，WeLab Bank 為你整合主題焦點及相關熱賣基金^，助你輕鬆捕捉市場機遇¹！
+        - generic [ref=e171]:
+          - generic [ref=e173]:
+            - heading "最佳表現基金 過去一年回報高達 125.7%" [level=4] [ref=e175]
+            - img "最佳表現基金 過去一年回報高達 125.7%" [ref=e178]
+          - generic [ref=e180]:
+            - heading "資源及相關類別 過去一年回報高達 125.7%" [level=4] [ref=e182]
+            - img "資源及相關類別 過去一年回報高達 125.7%" [ref=e185]
+          - generic [ref=e187]:
+            - heading "環球股票 過去一年回報高達 13.2%" [level=4] [ref=e189]
+            - img "環球股票 過去一年回報高達 13.2%" [ref=e192]
+          - generic [ref=e194]:
+            - heading "ESG (環境、社會及管治) 過去一年回報高達 24.6%" [level=4] [ref=e196]
+            - img "ESG (環境、社會及管治) 過去一年回報高達 24.6%" [ref=e199]
+          - generic [ref=e201]:
+            - heading "醫療科學 過去一年回報高達 18.7%" [level=4] [ref=e203]
+            - img "醫療科學 過去一年回報高達 18.7%" [ref=e206]
+          - generic [ref=e208]:
+            - heading "歐洲股票 過去一年回報高達 18.2%" [level=4] [ref=e210]
+            - generic [ref=e212]:
+              - generic:
+                - img "歐洲股票 過去一年回報高達 18.2%"
+          - generic [ref=e215]:
+            - heading "亞洲股票 過去一年回報高達 51.4%" [level=4] [ref=e217]
+            - generic [ref=e219]:
+              - generic:
+                - img "亞洲股票 過去一年回報高達 51.4%"
+          - generic [ref=e222]:
+            - heading "AI科技 過去一年回報高達 32.4%" [level=4] [ref=e224]
+            - generic [ref=e226]:
+              - generic:
+                - img "AI科技 過去一年回報高達 32.4%"
+          - generic [ref=e229]:
+            - heading "房地產 過去一年回報高達 15.8%" [level=4] [ref=e231]
+            - generic [ref=e233]:
+              - generic:
+                - img "房地產 過去一年回報高達 15.8%"
+          - generic [ref=e236]:
+            - heading "中國股票 過去一年回報高達 32.3%" [level=4] [ref=e238]
+            - generic [ref=e240]:
+              - generic:
+                - img "中國股票 過去一年回報高達 32.3%"
+          - generic [ref=e243]:
+            - heading "消費趨勢 過去一年回報高達 17.4%" [level=4] [ref=e245]
+            - generic [ref=e247]:
+              - generic:
+                - img "消費趨勢 過去一年回報高達 17.4%"
+          - generic [ref=e250]:
+            - heading "派息之選 最高年化派息率為 8.2%" [level=4] [ref=e252]
+            - generic [ref=e254]:
+              - generic:
+                - img "派息之選 最高年化派息率為 8.2%"
+          - generic [ref=e257]:
+            - heading "亞洲債券 過去一年回報高達 5.9%" [level=4] [ref=e259]
+            - generic [ref=e261]:
+              - generic:
+                - img "亞洲債券 過去一年回報高達 5.9%"
+          - generic [ref=e264]:
+            - heading "高收益 過去一年回報高達 7.6%" [level=4] [ref=e266]
+            - generic [ref=e268]:
+              - generic:
+                - img "高收益 過去一年回報高達 7.6%"
+          - generic [ref=e271]:
+            - heading "單一國家或地區股票 過去一年回報高達 72.5%" [level=4] [ref=e273]
+            - generic [ref=e275]:
+              - generic:
+                - img "單一國家或地區股票 過去一年回報高達 72.5%"
+          - generic [ref=e278]:
+            - heading "環球收益 過去一年回報高達 6.4%" [level=4] [ref=e280]
+            - generic [ref=e282]:
+              - generic:
+                - img "環球收益 過去一年回報高達 6.4%"
+          - generic [ref=e285]:
+            - heading "中國債券 過去一年回報高達 5.9%" [level=4] [ref=e287]
+            - generic [ref=e289]:
+              - generic:
+                - img "中國債券 過去一年回報高達 5.9%"
+          - generic [ref=e292]:
+            - heading "中/小型股票 過去一年回報高達 44.2%" [level=4] [ref=e294]
+            - generic [ref=e296]:
+              - generic:
+                - img "中/小型股票 過去一年回報高達 44.2%"
+          - generic [ref=e299]:
+            - heading "保守型派息 過去一年回報高達 4.0%" [level=4] [ref=e301]
+            - generic [ref=e303]:
+              - generic:
+                - img "保守型派息 過去一年回報高達 4.0%"
+          - generic [ref=e306]:
+            - heading "WeLab閒智寶** 過去一年回報高達 4.4%" [level=4] [ref=e308]
+            - generic [ref=e310]:
+              - generic:
+                - img "WeLab閒智寶** 過去一年回報高達 4.4%"
+      - generic [ref=e312]:
+        - generic [ref=e315]:
+          - heading "劃一月費0.1%，告別高昂收費" [level=2] [ref=e318]
+          - paragraph [ref=e321]:
+            - text: 無需認購費，按照自選基金總值收取劃一月費 0.1%
+            - superscript [ref=e322]: "3"
+            - text: ，幫你慳近 85% 交易費用
+            - superscript [ref=e323]: "4"
+            - text: ！從此可隨意交易，助你零顧慮投資基金及調整持倉。
+        - generic [ref=e325]:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - img "Features Funds Mapping-03.png"
+      - region "經 WeLab Bank 買基金即慳近85% 交易費用" [ref=e327]:
+        - generic [ref=e328]:
+          - heading "經 WeLab Bank 買基金即慳近85% 交易費用" [level=2] [ref=e330]
+          - table [ref=e333]:
+            - rowgroup [ref=e334]:
+              - row "傳統收費模式-每次交易收取認購費 轉至WeLab Bank自選基金服務 (假設總基金價格於期內一直維持HKD100,000不變)" [ref=e335]:
+                - columnheader [ref=e336]
+                - columnheader "傳統收費模式-每次交易收取認購費" [ref=e337]:
+                  - generic [ref=e338]: 傳統收費模式-每次交易收取認購費
+                - columnheader "轉至WeLab Bank自選基金服務 (假設總基金價格於期內一直維持HKD100,000不變)" [ref=e339]:
+                  - generic [ref=e340]: 轉至WeLab Bank自選基金服務 (假設總基金價格於期內一直維持HKD100,000不變)
+            - rowgroup [ref=e341]:
+              - 'row "情況1: 假設投資HKD100,000 其後3季內每季調倉一次(賣出現有存倉,買入另一隻基金) 總交易費用: HKD8,000 (認購費: 4次交易 x 2%收費) 總交易費用: HKD1,200 平台費為0.1% x HKD100,000 x 12個月(慳85%)" [ref=e342]':
+                - 'cell "情況1: 假設投資HKD100,000 其後3季內每季調倉一次(賣出現有存倉,買入另一隻基金)" [ref=e343]'
+                - 'cell "總交易費用: HKD8,000 (認購費: 4次交易 x 2%收費)" [ref=e344]'
+                - 'cell "總交易費用: HKD1,200 平台費為0.1% x HKD100,000 x 12個月(慳85%)" [ref=e345]'
+              - 'row "情況2: 假設投資HKD100,000 三個月後賣出 總交易費用: HKD2,000 (認購費: 1次交易 x 2%收費) 總交易費用: HKD300 平台費為0.1% x HKD100,000 x 3個月(慳85%)" [ref=e346]':
+                - 'cell "情況2: 假設投資HKD100,000 三個月後賣出" [ref=e347]'
+                - 'cell "總交易費用: HKD2,000 (認購費: 1次交易 x 2%收費)" [ref=e348]'
+                - 'cell "總交易費用: HKD300 平台費為0.1% x HKD100,000 x 3個月(慳85%)" [ref=e349]'
+      - generic [ref=e351]:
+        - generic [ref=e352]:
+          - heading "只需三步，簡單入手環球頂尖基金" [level=2] [ref=e355]
+          - paragraph [ref=e358]: 透過自選基金服務，挑選派息基金、債券基金等從此輕而易舉！WeLab Bank 為你準備簡潔介面，將熱門投資 ideas 送到你眼前¹，令你一擊即中貼市基金。
+        - generic [ref=e360]:
+          - generic [ref=e362]:
+            - generic [ref=e363]:
+              - heading "市場熱門投資ideas一目了然" [level=3] [ref=e365]
+              - paragraph [ref=e368]: 毋須花費 me time 做功課，專業團隊搜羅市場熱門投資 ideas，令你輕鬆緊貼市場焦點！
+            - generic [ref=e370]:
+              - generic [ref=e373] [cursor=pointer]: 投資ideas
+              - generic [ref=e377] [cursor=pointer]: 精選基金
+              - generic [ref=e381] [cursor=pointer]: 調整持倉
+          - generic [ref=e385]:
+            - generic [ref=e388]:
+              - generic:
+                - img "市場熱門投資ideas一目了然"
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - img "輕鬆投資貼市基金"
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - img "調整投資零顧慮"
+      - generic [ref=e390]:
+        - img "唔想煩，想有智能系統幫你管理投資組合？" [ref=e394]
+        - generic [ref=e396]:
+          - heading "唔想煩，想有智能系統幫你管理投資組合？" [level=2] [ref=e398]
+          - paragraph [ref=e401]: WeLab Bank 與安聯投資攜手以劃時代 wealthtech 打造「GoWealth智動投資顧問」，按你所需提供個人化多元基金組合，配上智動提示令你毋須 mon 實個市都可以 keep track⁵。
+          - link "了解更多" [ref=e403] [cursor=pointer]:
+            - /url: /zh/feature/wealth/
+            - generic [ref=e404]:
+              - generic [ref=e405]: 了解更多
+              - img [ref=e406]
+      - generic [ref=e410]:
+        - img "隨心入手熱門基金，立即行動！" [ref=e414]
+        - generic [ref=e416]:
+          - heading "隨心入手熱門基金，立即行動！" [level=2] [ref=e417]
+          - heading "未開戶？快至2分鐘⁶ 即可啟動投資戶口！" [level=5] [ref=e418]
+      - generic [ref=e421]:
+        - img "二維碼" [ref=e423]
+        - generic [ref=e424]:
+          - link "IOS" [ref=e425] [cursor=pointer]:
+            - /url: https://apps.apple.com/hk/app/welab-bank-hk-virtual-bank/id1493956050
+            - generic:
+              - img "IOS"
+          - link "Google" [ref=e427] [cursor=pointer]:
+            - /url: https://play.google.com/store/search?q=welab%20bank&c=apps&hl=zh-HK
+            - generic:
+              - img "Google"
+          - link "APK" [ref=e429] [cursor=pointer]:
+            - /url: /uploads/welab.bank-1.9.70.12.apk
+            - generic:
+              - img "APK"
+          - link "APPGallery" [ref=e431] [cursor=pointer]:
+            - /url: https://appgallery.huawei.com/#/app/C113951037
+            - generic:
+              - img "APPGallery"
+      - generic [ref=e433]:
+        - heading "遇到難題?有我哋幫手！" [level=2] [ref=e435]
+        - generic [ref=e438]:
+          - generic [ref=e441]:
+            - heading "什麼是自選基金主題？" [level=5] [ref=e443] [cursor=pointer]
+            - generic [ref=e449]:
+              - paragraph [ref=e450]: 自選基金主題包括：
+              - list [ref=e451]:
+                - listitem [ref=e452]: 領先基金及熱門主題
+              - paragraph [ref=e453]: 於「最佳表現基金」子類別下，你可以瀏覽截至最新更新日期時，經我們的自選基金服務分銷的首十隻回報率最高的最佳表現的基金。此列表將每季度更新。基金回報資訊由Morningstar Asia Limited所提供。
+              - list [ref=e454]:
+                - listitem [ref=e455]: 其他基金類別及主題
+              - paragraph [ref=e456]: 除「最佳表現基金」類別，自選基金服務中的基金根據各自基金公司提供的投資目標分為不同的類別及主題（如「股票基金」、及於「股票基金」類別下的「中國股票」主題）。當你按下其主題時，亦可以瀏覽該主題的相關基金主題故事概述。如你有興趣探索相關基金，你可以撳「我想知多啲」。你亦可以參考基金文件以了解基金投資目標的詳細信息。
+          - generic [ref=e460]:
+            - heading "使用自選基金服務時有咩收費？" [level=5] [ref=e462] [cursor=pointer]
+            - generic [ref=e468]:
+              - paragraph [ref=e469]:
+                - text: 基金平台費將按月收取並於每月第7個工作天或之前由你的核心賬戶中扣除。每月之基金平台費為你每日平台費的每月總額，而每日平台費則根據你每日所有於自選基金服務中除貨幣市場基金外已結算基金之持倉價值（港元或以每日參考匯率計算的等值港元）乘以基金平台月費率再除以該月曆日數計算。當月衍生的基金平台費 (如有)將顯示在相應的投資賬戶月結單上。有關現行基金平台月費率之詳情，請參閱
+                - strong [ref=e470]: 「一般服務收費」
+                - text: 。有關基金資產類別，請參閱WeLab Bank app內的基金詳情頁面。
+              - paragraph [ref=e471]:
+                - text: 基金公司亦可能會收取管理費及其他費用，你可以參考相關基金文件以了解詳情，而我哋會由基金公司收取嘅管理費之中獲得回佣，詳情請參考
+                - strong [ref=e472]: 「一般服務收費」
+                - text: 。
+          - generic [ref=e476]:
+            - heading "我可以用其他貨幣交易嗎？" [level=5] [ref=e478] [cursor=pointer]
+            - generic [ref=e484]:
+              - list [ref=e485]:
+                - listitem [ref=e486]: 「用港元付款」，代表我哋會將你嘅可用港元結餘轉換為美元去處理所有基金交易。
+                - listitem [ref=e487]: 「用美元付款」，代表我哋會將你嘅可用美元結餘去處理是次基金交易的一次性投資金額。請注意，現時你只可以「用港元付款」來設立每月投資指示。如果你想設立每月投資指示，請選擇「用港元付款」。
+              - paragraph [ref=e488]
+          - generic [ref=e492]:
+            - heading "認購費最低金額係？" [level=5] [ref=e494] [cursor=pointer]
+            - paragraph [ref=e501]: 你可以以低至100港元或15 美元的（只適用於自選基金服務）金額開始投資。
+        - link "了解更多" [ref=e504] [cursor=pointer]:
+          - /url: https://www.welab.bank/zh/support/
+          - generic [ref=e505]:
+            - heading "了解更多" [level=5] [ref=e506]
+            - img [ref=e507]
+      - generic [ref=e513]:
+        - heading "重要聲明" [level=2] [ref=e514]
+        - generic [ref=e516]:
+          - paragraph [ref=e517]: 本網頁僅供參考，且不構成對任何人作出買賣、認購或交易任何投資產品或服務的要約、招攬、建議、意見或任何保證。投資產品或服務並不等同，亦不應被視為定期存款的代替品。
+          - paragraph [ref=e518]: 投資涉及風險，基金價格可升可跌，甚至可能變成毫無價值。基於巿場情況，部分投資或不能即時變現。請細閱我們的理財服務條款(包括風險披露)，以及相關基金銷售文件，以瞭解我們的理財服務以及基金更多資料，包括其風險因素。
+          - paragraph [ref=e519]: 投資決定是由你自行作出的，但你不應投資於本網頁所提及之產品或服務，除非中介人於銷售此產品時已向你解釋經考慮你的財政狀況、投資經驗及目標後，相關產品或服務是適合你的。
+          - paragraph [ref=e520]: 你在作出任何投資決定之前，須評估本身的財務狀況、投資目標及經驗、承受風險的意願及能力，並了解有關產品的性質及風險。
+          - paragraph [ref=e521]: 倘有任何關於本網頁所提及之產品或服務、進行交易或基金涉及性質及風險等方面的疑問，你應徵詢獨立財務顧問的意見。
+          - paragraph [ref=e522]: 本網頁中的任何內容，均不應解釋為在任何司法管轄區進行分銷、出售要約或認購任何證券或投資產品的招攬，而根據此等司法管轄區的法律，該等行為屬於非法行為。
+          - paragraph [ref=e523]: 如果你在香港境外，請了解並遵守任何相關限制。 繼續購買即表示你聲明並保證你是香港居民，或者你所在司法管轄區的適用法或法規允許你訪問本網站或我們的應用程式中的資訊並進行購買。
+          - paragraph [ref=e524]: 本網頁由 WeLab Bank 刊發，內容並未經證券及期貨事務監察委員會審閱。
+          - paragraph [ref=e525]: 本中文網頁為英文版本譯本， 如中、英文兩個版本有任何抵觸或不相符之處，應以英文版本為準。
+      - generic [ref=e530]:
+        - heading "註解" [level=2] [ref=e531]
+        - generic [ref=e533]:
+          - paragraph [ref=e534]: 本頁所述之投資產品或服務並不等同，亦不應被視為定期存款的代替品 。
+          - paragraph [ref=e535]: 註：投資涉及風險，以上信息僅供參考，並不構成任何投資建議。
+          - paragraph [ref=e536]:
+            - superscript [ref=e537]: "#"
+            - text: Welab Bank按客戶基金持倉總值收取月費，有別於傳統銀行常用的逐次收取認購費或轉換費模式。收費詳情請參閱「
+            - link "一般服務收費" [ref=e538] [cursor=pointer]:
+              - /url: https://www.welab.bank/zh/support/bank-account/general-service-charges/
+            - text: 」。
+          - paragraph [ref=e539]: ^視乎該分類所屬之基金的股份類別，如該分類之基金的主要股份類別為派息，我們將顯示該分類中最高年化派息率；如該分類之基金的主要股份類別為累積，我們將顯示該分類中最高總回報。你可登入自選基金服務瀏覽每一基金的年化派息率(如適用)及回報數字。上述數字由Morningstar Asia Limited提供，僅供參考。我們不會對資料的準確性負責或認可。過往表現並非將來指標。
+          - paragraph [ref=e540]: 資料由基金公司、Morningstar Asia Limited提供。過往表現並非未來績效的指標。僅作資料提供，並非投資建議。詳情請參閱基金之銷售文件。以上資料截至2026年3月31日。
+          - paragraph [ref=e541]:
+            - text: "*上述現金獎賞包括定期存款利息回贈及基金交易現金獎賞，如新客戶同時分別以HKD 80,000及 HKD 200,000開立兩筆4%年利率1個月港元GoSave 2.0定期存款，其利息計算如下：（HKD 80,000 × 4% ÷ 365 × 30）+（HKD 200,000 × 4% ÷ 365 × 30） = HKD 920.55（四捨五入至最接近的一仙），新客戶最高可獲得HKD 920.55的利息回贈。基金交易現金獎賞方面，客戶可就累計合資格基金交易享高達HKD4,000現金獎賞。「WeLab Bank 迎新二重賞」受條款及細則約束，詳情請"
+            - link "按此" [ref=e542] [cursor=pointer]:
+              - /url: https://www.welab.bank/uploads/2in1-welcome-rewards-tnc-may26-clean.pdf
+              - strong [ref=e543]: 按此
+            - text: 。
+          - paragraph [ref=e544]: "***此列表僅包括在WeLab Bank自選基金服務上架的基金公司及基金，並僅包括那些自願向 WeLab Bank 提供此資訊的基金公司 。此列表基於各基金公司根據2025年第四季香港市場的交易金額統計數據所提供的基金資料。若該公司最暢銷基金未在我們平台上架，則顯示該基金公司的次暢銷基金，若次暢銷基金亦未上架，則顯示第三暢銷基金。基金表現等資料由 Morningstar Asia Limited所提供，資料截至2026年3月31日。我們不會對資料的準確性負責或認可。投資涉及風險。過往表現並非將來指標。 派息/息率並無保證，派息可從資本中支付。基金表現詳情請參閱相關基金銷售文件。"
+          - paragraph [ref=e545]: "聯博美元收益基金 (美元) (每月派息) 年度回報表現: 2021: -0.34%, 2022: -13.09%, 2023: 8.32%, 2024: 2.83%, 2025: 7.57%; 安聯收益及增長基金(美元)(每月派息) 年度回報表現: 2021: 11.66%, 2022: -19.70%, 2023: 17.32%, 2024: 9.94%, 2025: 10.53%; 貝萊德世界黃金基金 (美元) (累積) 年度回報表現: 2021: -10.59%, 2022: -17.00%, 2023: 6.46%, 2024: 13.58%, 2025: 159.48%; 富達環球股息優勢(美元對沖)(每月派息) 年度回報表現: 2021: 14.04%, 2022: -5.19%, 2023: 15.26%, 2024: 16.39%, 2025: 16.34%; 景順環球高評級企業債券基金 (美元) (每月派息) 年度回報表現: 2021: -0.84%, 2022: -16.57%, 2023: 9.46%, 2024: 4.03%, 2025: 6.98%; 駿利亨德森平衡基金(美元)(每月派息) 年度回報表現: 2021: 15.49%, 2022: -17.61%, 2023: 13.62%, 2024: 13.65%, 2025: 13.46%; JPM環球債券收益(美元)(每月派息) 年度回報表現: 2021: 2.17%, 2022: -8.27%, 2023: 4.98%, 2024: 5.96%, 2025: 6.36%; PIMCO收益增長基金 (美元) (每月派息) 年度回報表現: 2021: N/A, 2022: N/A, 2023: N/A, 2024: 11.98%, 2025: 20.91%; 施羅德環球目標回報(美元)(每月派息) 年度回報表現: 2021: 5.50%, 2022: -8.71%, 2023: 8.96%, 2024: 9.63%, 2025: 14.53%; 惠理亞洲股債收益基金 (美元) (每月派息) 年度回報表現: 2021: 3.28%, 2022: -17.80%, 2023: 7.62%, 2024: 10.94%, 2025: 28.92%。"
+          - paragraph [ref=e546]: "**WeLab 閒智寶指WeLab Bank自選基金服務中即日交收的貨幣市場基金之主題。即日交收只適用於交易日截止時間（即香港時間上午 9 點）前提交的WeLab 閒智寶指示。惠理美元貨幣市場基金B 類別 (港元) (累積) 過去一年回報表現最高+4.43%，該基金成立日期為2023年11月22日，自成立至今基金表現為+10.48%，截至2026年3月31日。過往表現並非未來績效的指標。僅作資料提供，並非投資建議。詳情請參閱基金之銷售文件。資料由基金公司、Morningstar Asia Limited提供。"
+          - paragraph [ref=e547]: (1) 我們根據基金資料，將基金按照我們制定的不同投資主題分類，並提供主題說明。基金及分類資訊僅供參考，並非招攬、要約及投資建議。
+          - paragraph [ref=e548]: (2) 相關資訊僅供參考，並非招攬、要約及投資建議。
+          - paragraph [ref=e549]: (3) 每月之基金平台費為你每日平台費的每月總額，而每日平台費則根據你每日所有於自選基金服務中除貨幣市場基金外已結算基金之持倉價值（港元或以每日參考匯率計算的等值港元）乘以基金平台月費率再除以該月曆日數計算。有關基金資產類別，請參閱WeLab Bank app內的基金詳情頁面。
+          - paragraph [ref=e550]: (4) 假設認購費率為2%，使用我們自選基金服務的客戶在上述兩個例子較傳統收取認購費之收費模式節省85%的交易費用。以上例子僅供說明之用。你在作出任何投資決定之前，須評估本身的財務狀況、投資目標及經驗、承受風險的意願及能力，並了解有關產品的性質及風險。
+          - paragraph [ref=e551]: (5) 你可以透過 WeLab Bank app 上之智動投資顧問服務設定你的投資目標，包括相應之投資年期及一次性投資及每月投資金額，而我們的系統會按照你的投資目標及考慮你的相關個人情況提供投資組合建議。如你接受投資組合建議，我們將遵從你的指示進行初始投資，及按照你設定的每月投資金額每月自動投資於投資組合建議。我們會不時提供各種提示，包括但不限於就你的投資目標進度提供提示，惟該等提示並非投資建議。你可於 WeLab Bank app 上查看投資目標之進度，以及按需要調整投資目標。本服務並非全權委託形式的資產管理服務，而本服務所提供之任何建議並不能作為你實現投資目標的保證。
+          - paragraph [ref=e552]: (6) 此為遞交申請及啟動投資帳戶的估計時間，實際時間可能因應不同因素而有差異。
+  - contentinfo [ref=e553]:
+    - generic [ref=e555]:
+      - generic [ref=e556]:
+        - generic [ref=e557]:
+          - img "WeLab Bank_bw.png" [ref=e561]
+          - paragraph [ref=e562]: "（一般服務時間: 9:00am至10:30pm, 星期一至日；貸款查詢服務時間：9:00am至8:00pm, 星期一至五, 公眾假期除外）"
+          - paragraph [ref=e563]:
+            - text: 致電我們
+            - link "+852 3898 6988" [ref=e564] [cursor=pointer]:
+              - /url: tel:+852 3898 6988
+          - paragraph [ref=e565]:
+            - text: 電郵傳送至
+            - link "wecare@welab.bank" [ref=e566] [cursor=pointer]:
+              - /url: mailto:wecare@welab.bank
+          - generic [ref=e568]:
+            - link "FB-bw" [ref=e569] [cursor=pointer]:
+              - /url: https://www.facebook.com/welab-bank/
+              - img "FB-bw" [ref=e573]
+            - link "icon_instagram.png" [ref=e574] [cursor=pointer]:
+              - /url: https://www.instagram.com/welab.bank/
+              - img "icon_instagram.png" [ref=e578]
+            - link "icon_linkedin.png" [ref=e579] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/welab-bank/
+              - img "icon_linkedin.png" [ref=e583]
+            - link "imgbin_wechat-computer-icons-png.png" [ref=e584] [cursor=pointer]:
+              - /url: https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzkyOTY0OTM1NA==#wechat_redirect
+              - img "imgbin_wechat-computer-icons-png.png" [ref=e588]
+          - generic [ref=e590]:
+            - generic [ref=e591]:
+              - img "二維碼" [ref=e593]
+              - generic [ref=e594]:
+                - link "IOS":
+                  - /url: https://apps.apple.com/hk/app/welab-bank-hk-virtual-bank/id1493956050
+                  - generic:
+                    - img "IOS"
+                - link "Google":
+                  - /url: https://play.google.com/store/search?q=welab%20bank&c=apps&hl=zh-HK
+                  - generic:
+                    - img "Google"
+                - link "APK":
+                  - /url: /uploads/welab.bank-1.9.70.12.apk
+                  - generic:
+                    - img "APK"
+                - link "APPGallery":
+                  - /url: https://appgallery.huawei.com/#/app/C113951037
+                  - generic:
+                    - img "APPGallery"
+            - list [ref=e597]:
+              - listitem [ref=e598]: Apple 和 Apple 標誌是 Apple Inc. 在美國和其他國家或地區註冊的商標。
+              - listitem [ref=e599]: App Store是 Apple Inc. 的服務商標。
+              - listitem [ref=e600]: Android、Google Play和Google Play標誌均為Google LLC的商標。
+              - listitem [ref=e601]: 華為和華為標誌為華為技術有限公司於中國及其他國家/地區註冊的商標。
+          - link "Deposit Protection":
+            - /url: https://www.dps.org.hk/index.html
+            - generic:
+              - img "Deposit Protection"
+        - generic [ref=e604]:
+          - generic [ref=e605]:
+            - heading "快速鏈接" [level=5] [ref=e606]
+            - list [ref=e607]:
+              - listitem [ref=e608]:
+                - link "產品特色" [ref=e609] [cursor=pointer]:
+                  - /url: /zh/feature/onboarding/
+              - listitem [ref=e610]:
+                - link "支援" [ref=e611] [cursor=pointer]:
+                  - /url: /zh/support/
+              - listitem [ref=e612]:
+                - link "一般服務收費" [ref=e613] [cursor=pointer]:
+                  - /url: /zh/support/?support-category=bank-account&support-question=general-service-charges
+              - listitem [ref=e614]:
+                - link "Open API" [ref=e615] [cursor=pointer]:
+                  - /url: https://portal-sandbox.welab.bank/
+              - listitem [ref=e616]:
+                - link "保安提示" [ref=e617] [cursor=pointer]:
+                  - /url: /zh/legal/security-tips/
+              - listitem [ref=e618]:
+                - link "工作機會" [ref=e619] [cursor=pointer]:
+                  - /url: https://www.welab.co/zh-Hant-HK/careers/
+              - listitem [ref=e620]:
+                - link "聯絡我們" [ref=e621] [cursor=pointer]:
+                  - /url: /zh/support/?support-category=contact-us&support-question=contact-us
+          - generic [ref=e622]:
+            - heading "法律責任" [level=5] [ref=e623]
+            - list [ref=e624]:
+              - listitem [ref=e625]:
+                - link "條款及細則" [ref=e626] [cursor=pointer]:
+                  - /url: /zh/legal/terms-and-conditions/
+              - listitem [ref=e627]:
+                - link "監管披露" [ref=e628] [cursor=pointer]:
+                  - /url: /zh/legal/regulatory-disclosures/
+              - listitem [ref=e629]:
+                - link "氣候風險相關披露" [ref=e630] [cursor=pointer]:
+                  - /url: /zh/legal/climate-related-disclosures/
+              - listitem [ref=e631]:
+                - link "重要通知" [ref=e632] [cursor=pointer]:
+                  - /url: /zh/legal/important-notices/
+              - listitem [ref=e633]:
+                - link "下載文件" [ref=e634] [cursor=pointer]:
+                  - /url: /zh/legal/download-documents/
+          - generic [ref=e635]:
+            - heading "我哋嘅故事" [level=5] [ref=e636]
+            - list [ref=e637]:
+              - listitem [ref=e638]:
+                - link "關於我們" [ref=e639] [cursor=pointer]:
+                  - /url: /zh/about/
+              - listitem [ref=e640]:
+                - link "新聞中心" [ref=e641] [cursor=pointer]:
+                  - /url: /zh/newsroom/
+              - listitem [ref=e642]:
+                - link "日誌" [ref=e643] [cursor=pointer]:
+                  - /url: /zh/blog/
+      - paragraph [ref=e645]: 版權所有 不得轉載 © 2026 Welab Bank Limited。Made with love in Hong Kong
+  - alert [ref=e646]
