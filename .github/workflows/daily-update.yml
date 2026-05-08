@@ -1,0 +1,73 @@
+name: Daily VBank Tracker
+
+on:
+  schedule:
+    # 香港時間早上 9:00 (UTC+8 → UTC 01:00)
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-tracker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Restore promotions database
+        id: cache-db
+        uses: actions/cache@v4
+        with:
+          path: data/promotions.db
+          key: promotions-db-${{ github.run_id }}
+          restore-keys: |
+            promotions-db-
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Run tracker bot
+        env:
+          POE_API_KEY:         ${{ secrets.POE_API_KEY }}
+          GMAIL_ADDRESS:       ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD:  ${{ secrets.GMAIL_APP_PASSWORD }}
+          RECIPIENT_EMAIL:     ${{ secrets.RECIPIENT_EMAIL }}
+        run: |
+          cd scripts
+          python main.py
+
+      - name: Commit updated website data
+        run: |
+          git config user.name  "VBank Tracker Bot 🤖"
+          git config user.email "bot@vbank-tracker.github.io"
+          git add docs/data.json
+          git diff --staged --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore: update data.json [$(date '+%Y-%m-%d %H:%M')]"
+          git pull --rebase origin main --rebase --autostash
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
