@@ -331,12 +331,16 @@ def init_db():
         }
 
         products_migrations = [
+            ('highlight',     "ALTER TABLE products ADD COLUMN highlight     TEXT DEFAULT ''"),
+            ('created_at',    "ALTER TABLE products ADD COLUMN created_at    TEXT NOT NULL DEFAULT ''"),
             ('first_seen_at', "ALTER TABLE products ADD COLUMN first_seen_at TEXT DEFAULT NULL"),
+            ('last_seen',     "ALTER TABLE products ADD COLUMN last_seen     TEXT NOT NULL DEFAULT ''"),
             ('features',      "ALTER TABLE products ADD COLUMN features      TEXT DEFAULT ''"),
             ('fees',          "ALTER TABLE products ADD COLUMN fees          TEXT DEFAULT ''"),
             ('min_amount',    "ALTER TABLE products ADD COLUMN min_amount    TEXT DEFAULT ''"),
             ('currency',      "ALTER TABLE products ADD COLUMN currency      TEXT DEFAULT ''"),
             ('is_active',     "ALTER TABLE products ADD COLUMN is_active     INTEGER NOT NULL DEFAULT 1"),
+            ('tc_link',       "ALTER TABLE products ADD COLUMN tc_link       TEXT DEFAULT ''"),
         ]
         for col, sql in products_migrations:
             if col not in products_cols:

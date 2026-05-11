@@ -415,7 +415,7 @@
   </details>
 </div>
 
-<div class="max-w-screen-2xl mx-auto px-4 pb-10">
+<div class="max-w-screen-2xl mx-auto px-4 pb-4">
   <div id="productLoadingState" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center text-gray-400">
     <div class="text-4xl mb-3">⏳</div>
     <div class="text-lg font-medium">Loading products…</div>
@@ -425,6 +425,30 @@
     <div class="text-lg font-medium">No products match your filters</div>
   </div>
   <div id="productGrid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+</div>
+
+<!-- Products by Bank -->
+<div class="max-w-screen-2xl mx-auto px-4 pb-10" id="productsByBankSection">
+  <details class="rounded-2xl shadow-sm overflow-hidden border border-gray-200 bg-white">
+    <summary class="select-none">
+      <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">🏦</span>
+          <div>
+            <div class="font-bold text-gray-800">All Products by Bank</div>
+            <div class="text-xs text-gray-400 mt-0.5">Complete product catalogue grouped by bank · all active products with full details</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="productsByBankCount" class="text-xs font-semibold bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full"></span>
+          <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
+        </div>
+      </div>
+    </summary>
+    <div class="border-t border-gray-100 px-5 py-5" id="productsByBankContent">
+      <div class="py-8 text-center text-gray-400">⏳ Loading…</div>
+    </div>
+  </details>
 </div>
 </div><!-- end productTabContent -->
 
@@ -730,6 +754,7 @@ async function loadData() {
     buildProductCatButtons();
     buildProductNewSections();
     buildProductBankAnalysis(strategicInsights);
+    buildProductsByBank();
 
     document.getElementById('loadingState').classList.add('hidden');
     document.getElementById('productLoadingState').classList.add('hidden');
@@ -1214,6 +1239,84 @@ function exportProductsExcel() {
   const ws=XLSX.utils.json_to_sheet(rows), wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Products');
   XLSX.writeFile(wb,`hk_vbank_products_${_PAGE_TODAY_STR}.xlsx`);
+}
+
+// ── Products by Bank ────────────────────────────────────────────────
+function buildProductsByBank() {
+  const wrap  = document.getElementById('productsByBankContent');
+  const count = document.getElementById('productsByBankCount');
+  const active = allProducts.filter(p => p.is_active !== false);
+  if (!active.length) {
+    wrap.innerHTML = `<div class="py-8 text-center text-gray-400">🔍 No products found in data.json yet.</div>`;
+    if (count) count.textContent = '0 products';
+    return;
+  }
+  if (count) count.textContent = `${active.length} product${active.length!==1?'s':''}`;
+
+  // Group by bank, maintaining ZA Bank first
+  const byBank = {};
+  active.forEach(p => {
+    if (!byBank[p.bank_name]) byBank[p.bank_name] = [];
+    byBank[p.bank_name].push(p);
+  });
+  const bankNames = [
+    ...Object.keys(byBank).filter(b => b === 'ZA Bank'),
+    ...Object.keys(byBank).filter(b => b !== 'ZA Bank').sort(),
+  ];
+
+  wrap.innerHTML = bankNames.map(bankName => {
+    const prods  = byBank[bankName];
+    const color  = bankColor(bankName);
+    // Group products by category within this bank
+    const byCat  = {};
+    prods.forEach(p => {
+      const cat = p._displayCat || remapProdCat(p.category) || 'Others';
+      if (!byCat[cat]) byCat[cat] = [];
+      byCat[cat].push(p);
+    });
+
+    const catSections = Object.keys(byCat).sort().map(cat => {
+      const cm = PROD_CAT_META[cat] || { bg:'#6b7280', emoji:'📋' };
+      const rows = byCat[cat].map(p => {
+        const feats = Array.isArray(p.features) ? p.features : toArray(p.features);
+        const featsHtml = feats.length
+          ? `<ul class="mt-1.5 space-y-0.5">${feats.map(f => `<li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-indigo-400 shrink-0">•</span>${f}</li>`).join('')}</ul>`
+          : '';
+        const metaParts = [
+          p.fees       ? `<span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Fees: ${p.fees}</span>` : '',
+          p.min_amount ? `<span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Min: ${p.currency||''} ${p.min_amount}</span>` : '',
+        ].filter(Boolean).join('');
+        const tcLink = p.tc_link || p.url || '';
+        const linkHtml = tcLink
+          ? `<a href="${tcLink}" target="_blank" rel="noopener" class="mt-2 inline-flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">🔗 View Details ↗</a>`
+          : '';
+        return `<div class="rounded-lg border border-gray-100 p-3 bg-gray-50/60">
+          <div class="font-semibold text-gray-800 text-sm leading-snug">${p.product_name||'–'}</div>
+          ${p.highlight ? `<div class="mt-1 text-xs text-gray-600 leading-relaxed">${p.highlight}</div>` : ''}
+          ${featsHtml}
+          ${metaParts ? `<div class="mt-2 flex flex-wrap gap-1">${metaParts}</div>` : ''}
+          ${linkHtml}
+        </div>`;
+      }).join('');
+
+      return `<div class="mb-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="prod-cat-tag" style="background:${cm.bg}">${cm.emoji} ${cat}</span>
+          <span class="text-xs text-gray-400">${byCat[cat].length} product${byCat[cat].length!==1?'s':''}</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">${rows}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="mb-8">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b-2" style="border-color:${color}">
+        <span class="bank-dot" style="background:${color}"></span>
+        <span class="font-extrabold text-gray-800 text-base">${bankName}</span>
+        <span class="text-xs text-gray-400 font-medium">${prods.length} product${prods.length!==1?'s':''}</span>
+      </div>
+      ${catSections}
+    </div>`;
+  }).join('');
 }
 
 // ── Boot ────────────────────────────────────────────────────────────
