@@ -23,6 +23,7 @@
 #   send_email().  If scraped_data is omitted the code falls back to
 #   promotions_data, which may reproduce the over-count.
 
+import html as _html
 import logging
 import os
 import smtplib
@@ -34,9 +35,7 @@ from datetime import datetime, timedelta, timezone
 logger = logging.getLogger(__name__)
 
 # ── HKT timezone (UTC+8, no DST) ─────────────────────────────────────────────
-# Already defined at module level for reuse
-if '_HKT' not in globals():
-    _HKT = timezone(timedelta(hours=8))
+_HKT = timezone(timedelta(hours=8))
 
 # ── Category metadata ─────────────────────────────────────────────────────────
 
@@ -255,14 +254,14 @@ def _collect_recipients(override: str | list[str] | None = None) -> list[str]:
 
 def _new_promo_card(promo: dict) -> str:
     bank_name    = promo.get('bName') or promo.get('bank_name') or promo.get('bank') or 'Unknown'
-    display_name = _bank_display_name(bank_name)
+    display_name = _html.escape(_bank_display_name(bank_name))
     color        = _bank_color(bank_name)
-    title        = (promo.get('title') or promo.get('name') or 'Untitled')[:120]
-    highlight    = promo.get('highlight') or promo.get('description') or ''
-    period       = promo.get('period') or promo.get('validity') or 'Ongoing'
-    quota        = promo.get('quota') or ''
-    cost         = promo.get('cost') or ''
-    tc_link      = promo.get('tc_link') or promo.get('url') or promo.get('link') or ''
+    title        = _html.escape((promo.get('title') or promo.get('name') or 'Untitled')[:120])
+    highlight    = _html.escape(promo.get('highlight') or promo.get('description') or '')
+    period       = _html.escape(promo.get('period') or promo.get('validity') or 'Ongoing')
+    quota        = _html.escape(promo.get('quota') or '')
+    cost         = _html.escape(promo.get('cost') or '')
+    tc_link      = _html.escape(promo.get('tc_link') or promo.get('url') or promo.get('link') or '', quote=True)
     types_raw    = promo.get('types') or promo.get('type') or promo.get('promo_type') or ''
     type_list    = _types_to_list(types_raw)[:4]
     cat_tags     = ''.join(_cat_tag(t) for t in type_list) if type_list else _cat_tag('Others')
@@ -539,40 +538,99 @@ def _build_products_section(
       <td style="padding:8px 12px;text-align:center;font-weight:700;color:#6366f1;">{count}</td>
     </tr>'''
 
-    # New products today section
+    # New products today section (standalone table row for email body)
     new_today_html = ''
     if new_today > 0:
-        new_today_html = f'''
-  <tr><td style="height:16px;"></td></tr>
-  <tr><td style="background:#fff7ed;border-radius:12px;padding:14px 18px;
-                 border:1px solid #fed7aa;border-left:4px solid #f97316;">
-    <div style="font-size:14px;font-weight:800;color:#9a3412;">
-      🆕 New Product{('s' if new_today > 1 else '')} Launched Today
-    </div>
-    <div style="font-size:12px;color:#c2410c;margin-top:4px;">
-      {new_today} new product{('s' if new_today > 1 else '')} added today
-    </div>
+        new_today_html = f'''<tr><td style="height:16px;"></td></tr>
+  <tr><td style="background:#ffffff;border-radius:14px;padding:0;
+                 box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:0;">
+      <tr>
+        <td bgcolor="#f97316"
+            style="background:linear-gradient(135deg,#f97316 0%,#fb923c 100%);
+                   border-radius:14px 14px 0 0;padding:16px 22px;">
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="vertical-align:middle;">
+              <span style="font-size:22px;vertical-align:middle;">🆕</span>
+              <span style="font-weight:900;font-size:17px;color:#ffffff;
+                           vertical-align:middle;margin-left:10px;">
+                New Products Launched Today
+              </span>
+              <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:3px;margin-left:34px;">
+                今日新產品 · first_seen_at = today (HKT)
+              </div>
+            </td>
+            <td style="text-align:right;vertical-align:middle;white-space:nowrap;">
+              <span style="background:rgba(0,0,0,0.15);color:#ffffff;
+                           padding:4px 14px;border-radius:20px;
+                           font-size:12px;font-weight:700;">
+                {new_today} new product{('s' if new_today > 1 else '')}
+              </span>
+            </td>
+          </tr></table>
+        </td>
+      </tr>
+      <tr><td style="background:#fff7ed;padding:16px 22px;border-radius:0 0 14px 14px;
+                     border:1px solid #fed7aa;border-top:none;">
+        <div style="font-size:13px;color:#9a3412;">
+          {new_today} new product{('s' if new_today > 1 else '')} added today across all banks.
+        </div>
+      </td></tr>
+    </table>
   </td></tr>'''
 
-    # New products this week section
+    # New products this week section (standalone table row for email body)
     new_week_html = ''
     if new_week > 0:
-        new_week_html = f'''
-  <tr><td style="height:16px;"></td></tr>
-  <tr><td style="background:#f0fdf4;border-radius:12px;padding:14px 18px;
-                 border:1px solid #bbf7d0;border-left:4px solid #22c55e;">
-    <div style="font-size:14px;font-weight:800;color:#166534;">
-      📅 New Product{('s' if new_week > 1 else '')} This Week
-    </div>
-    <div style="font-size:12px;color:#15803d;margin-top:4px;">
-      {new_week} new product{('s' if new_week > 1 else '')} launched in the past 7 days
-    </div>
+        new_week_html = f'''<tr><td style="height:16px;"></td></tr>
+  <tr><td style="background:#ffffff;border-radius:14px;padding:0;
+                 box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:0;">
+      <tr>
+        <td bgcolor="#22c55e"
+            style="background:linear-gradient(135deg,#22c55e 0%,#4ade80 100%);
+                   border-radius:14px 14px 0 0;padding:16px 22px;">
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="vertical-align:middle;">
+              <span style="font-size:22px;vertical-align:middle;">📅</span>
+              <span style="font-weight:900;font-size:17px;color:#ffffff;
+                           vertical-align:middle;margin-left:10px;">
+                New Products This Week
+              </span>
+              <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:3px;margin-left:34px;">
+                本週新產品 · first_seen_at in past 6 days (excl. today, HKT)
+              </div>
+            </td>
+            <td style="text-align:right;vertical-align:middle;white-space:nowrap;">
+              <span style="background:rgba(0,0,0,0.15);color:#ffffff;
+                           padding:4px 14px;border-radius:20px;
+                           font-size:12px;font-weight:700;">
+                {new_week} new product{('s' if new_week > 1 else '')}
+              </span>
+            </td>
+          </tr></table>
+        </td>
+      </tr>
+      <tr><td style="background:#f0fdf4;padding:16px 22px;border-radius:0 0 14px 14px;
+                     border:1px solid #bbf7d0;border-top:none;">
+        <div style="font-size:13px;color:#166534;">
+          {new_week} new product{('s' if new_week > 1 else '')} launched in the past 6 days.
+        </div>
+      </td></tr>
+    </table>
   </td></tr>'''
 
     return f'''
-  <tr><td style="height:24px;"></td></tr>
+  <tr><td style="height:4px;"></td></tr>
 
-  <!-- Products Section -->
+  <!-- 4. New products today -->
+  {new_today_html if new_today_html else ""}
+
+  <!-- 5. New products this week -->
+  {new_week_html if new_week_html else ""}
+
+  <!-- 6. Total product count + breakdown -->
+  <tr><td style="height:4px;"></td></tr>
   <tr><td style="background:#ffffff;border-radius:14px;padding:22px 22px 16px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
     <div style="font-size:17px;font-weight:800;color:#1f2937;margin-bottom:4px;">
@@ -599,9 +657,6 @@ def _build_products_section(
         </td>
       </tr>
     </table>
-
-    {new_today_html}
-    {new_week_html}
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
       <tr><td colspan="2" style="font-size:13px;font-weight:700;color:#374151;padding-bottom:8px;">
@@ -800,12 +855,15 @@ def build_html_email(
   <tr><td style="height:20px;"></td></tr>
 
   {ai_notice_html}
+
+  <!-- 1. New promos today -->
   {today_section}
+
+  <!-- 2. New promos this week -->
   {week_section}
 
+  <!-- 3. Total non-BAU promo count -->
   <tr><td style="height:20px;"></td></tr>
-
-  <!-- Overall stats -->
   <tr><td style="background:#ffffff;border-radius:14px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -845,7 +903,11 @@ def build_html_email(
   </td></tr>
   <tr><td style="height:20px;"></td></tr>
 
+  <!-- 4+5+6. New products today / this week / total product count -->
+  {_build_products_section(product_stats, new_products_today, new_products_week)}
+
   <!-- Bank breakdown -->
+  <tr><td style="height:20px;"></td></tr>
   <tr><td style="background:#ffffff;border-radius:14px;padding:22px 22px 16px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
     <div style="font-size:17px;font-weight:800;color:#1f2937;margin-bottom:4px;">
@@ -875,9 +937,6 @@ def build_html_email(
       <tbody>{bank_rows}</tbody>
     </table>
   </td></tr>
-
-  <!-- Products Section -->
-  {_build_products_section(product_stats, new_products_today, new_products_week)}
 
   <!-- FOOTER -->
   <tr><td style="height:16px;"></td></tr>

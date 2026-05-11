@@ -1434,12 +1434,44 @@ def export_to_json(
             'last_seen':     p.get('last_seen')     or '',
         })
 
+    # ── Products export ────────────────────────────────────────────────────────
+    all_products = get_active_products()
+    product_records: List[Dict] = []
+    for pr in all_products:
+        raw_features = pr.get('features') or ''
+        if isinstance(raw_features, str) and raw_features:
+            features_list = [f.strip() for f in raw_features.split('|') if f.strip()]
+        elif isinstance(raw_features, list):
+            features_list = raw_features
+        else:
+            features_list = []
+        product_records.append({
+            'id':           pr.get('id'),
+            'bank_id':      pr.get('bank_id',      ''),
+            'bank_name':    pr.get('bank_name',    ''),
+            'product_name': pr.get('product_name', ''),
+            'category':     pr.get('category',     ''),
+            'description':  pr.get('description')  or '',
+            'highlight':    pr.get('highlight')     or '',
+            'features':     features_list,
+            'fees':         pr.get('fees')          or '',
+            'min_amount':   pr.get('min_amount')    or '',
+            'currency':     pr.get('currency')      or '',
+            'url':          pr.get('url')           or '',
+            'tc_link':      pr.get('tc_link')       or pr.get('url') or '',
+            'is_active':    bool(pr.get('is_active', 1)),
+            'created_at':   pr.get('created_at')    or '',
+            'first_seen_at':pr.get('first_seen_at') or '',
+            'last_seen':    pr.get('last_seen')     or '',
+        })
+
     # ★ FIX: sanitise insights so all list fields are real arrays, not strings
     clean_insights = _sanitize_insights(strategic_insights)
 
     output: Dict[str, Any] = {
         'updated':    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'promotions': records,
+        'products':   product_records,
     }
     if clean_insights:
         output['strategic_insights'] = clean_insights
@@ -1649,13 +1681,15 @@ def get_product_stats() -> Dict[str, Any]:
                   AND DATE(COALESCE(first_seen_at, created_at)) = ?
             ''', (_hkt_today(),)).fetchone()[0]
 
-            # New this week
-            since = _hkt_n_days_ago(6)
+            # New this week (past 6 days excluding today, matches website logic)
+            since     = _hkt_n_days_ago(6)
+            yesterday = _hkt_n_days_ago(1)
             new_week = conn.execute('''
                 SELECT COUNT(*) FROM products
                 WHERE is_active = 1
                   AND DATE(COALESCE(first_seen_at, created_at)) >= ?
-            ''', (since,)).fetchone()[0]
+                  AND DATE(COALESCE(first_seen_at, created_at)) <= ?
+            ''', (since, yesterday)).fetchone()[0]
 
             return {
                 'total_products': total,

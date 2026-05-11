@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HK Virtual Bank Promotions Tracker</title>
+<title>HK Virtual Bank Tracker</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -14,19 +14,14 @@
               vertical-align:middle; margin-right:6px; }
   details > summary { list-style:none; cursor:pointer; }
   details > summary::-webkit-details-marker { display:none; }
-  .chevron { transition: transform 0.2s; display:inline-block; }
-  details[open] .accordion-chevron { transform: rotate(180deg); }
+  .chevron { transition:transform 0.2s; display:inline-block; }
+  details[open] .accordion-chevron { transform:rotate(180deg); }
   tr:hover td { background:#f8fafc; }
-  #compTable td:first-child,
-  #compTable th:first-child { position:sticky; left:0; z-index:2; background:#fff; }
+  #compTable td:first-child, #compTable th:first-child { position:sticky; left:0; z-index:2; background:#fff; }
   #compTable thead th:first-child { background:#f9fafb; }
   .cat-filter-btn { cursor:pointer; transition:opacity 0.15s, box-shadow 0.15s, transform 0.15s; }
-  .new-promo-card {
-    border-radius:14px; overflow:hidden;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
-    border:1px solid #e5e7eb; background:#fff;
-    transition:box-shadow 0.2s;
-  }
+  .new-promo-card { border-radius:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    border:1px solid #e5e7eb; background:#fff; transition:box-shadow 0.2s; }
   .new-promo-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.13); }
   #insightsTable td:nth-child(1) { min-width:160px; white-space:nowrap; }
   #insightsTable td:nth-child(2) { min-width:130px; white-space:nowrap; }
@@ -34,38 +29,40 @@
   #insightsTable td:nth-child(4) { min-width:200px; }
   #insightsTable td:nth-child(5) { min-width:150px; }
   #insightsTable td:nth-child(6) { min-width:200px; }
-  .toggle-table-btn {
-    display:inline-flex; align-items:center; gap:6px;
-    padding:4px 14px; border-radius:20px; font-size:11px; font-weight:700;
-    background:rgba(255,255,255,0.18); color:inherit;
-    border:1px solid rgba(255,255,255,0.35); cursor:pointer;
-    transition:background 0.15s;
-  }
+  .toggle-table-btn { display:inline-flex; align-items:center; gap:6px; padding:4px 14px;
+    border-radius:20px; font-size:11px; font-weight:700; background:rgba(255,255,255,0.18);
+    color:inherit; border:1px solid rgba(255,255,255,0.35); cursor:pointer; transition:background 0.15s; }
   .toggle-table-btn:hover { background:rgba(255,255,255,0.30); }
   .toggle-table-btn[data-hidden="true"]::before  { content:"👁 Show Table"; }
   .toggle-table-btn[data-hidden="false"]::before { content:"🙈 Hide Table"; }
-  pre.schema-hint {
-    background:#1e293b; color:#94a3b8; font-size:11px; border-radius:10px;
-    padding:14px 16px; overflow-x:auto; line-height:1.7; margin-top:10px;
-  }
-  pre.schema-hint .key   { color:#7dd3fc; }
-  pre.schema-hint .str   { color:#86efac; }
-  pre.schema-hint .num   { color:#fbbf24; }
-  pre.schema-hint .bool  { color:#f87171; }
+  pre.schema-hint { background:#1e293b; color:#94a3b8; font-size:11px; border-radius:10px;
+    padding:14px 16px; overflow-x:auto; line-height:1.7; margin-top:10px; }
+  pre.schema-hint .key  { color:#7dd3fc; }
+  pre.schema-hint .str  { color:#86efac; }
+  pre.schema-hint .num  { color:#fbbf24; }
+  pre.schema-hint .bool { color:#f87171; }
+  .product-card { border-radius:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    border:1px solid #e5e7eb; background:#fff; transition:box-shadow 0.2s; }
+  .product-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.13); }
+  .prod-cat-tag { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px;
+    color:#fff; font-weight:700; margin:2px 3px 2px 0; white-space:nowrap; }
+  .main-tab-btn { padding:10px 28px; font-size:15px; font-weight:700; border-radius:10px;
+    cursor:pointer; transition:all 0.15s; border:2px solid #e5e7eb; }
+  .main-tab-btn.active { background:#4f46e5; color:#fff; border-color:#4f46e5; }
+  .main-tab-btn:not(.active) { background:#fff; color:#6b7280; }
+  .main-tab-btn:not(.active):hover { background:#f3f4f6; }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-<!-- ── HEADER ──────────────────────────────────────────────────── -->
+<!-- HEADER -->
 <div class="bg-gradient-to-r from-gray-900 to-gray-700 text-white px-4 py-6 shadow-lg">
   <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-extrabold tracking-tight">🏦 HK Virtual Bank Promotions</h1>
-      <p class="text-gray-300 text-sm mt-1">
-        香港虛擬銀行優惠追蹤 · <span id="bankCount">–</span> Banks · Real-time Filter
-      </p>
+      <h1 class="text-2xl font-extrabold tracking-tight">🏦 HK Virtual Bank Tracker</h1>
+      <p class="text-gray-300 text-sm mt-1">香港虛擬銀行追蹤 · <span id="bankCount">–</span> Banks · Real-time Filter</p>
     </div>
-    <div class="flex gap-3 flex-wrap">
+    <div class="flex gap-3 flex-wrap" id="promoHeaderStats">
       <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
         <div class="text-2xl font-black" id="statTotal">–</div>
         <div class="text-xs text-gray-300 uppercase tracking-wide">Total</div>
@@ -83,37 +80,59 @@
         <div class="text-xs text-gray-300 uppercase tracking-wide">Expired ✗</div>
       </div>
     </div>
+    <div class="flex gap-3 flex-wrap hidden" id="productHeaderStats">
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black" id="statProdTotal">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Products</div>
+      </div>
+      <div class="bg-green-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black text-green-300" id="statProdToday">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">New Today 🆕</div>
+      </div>
+      <div class="bg-indigo-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black text-indigo-300" id="statProdWeek">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">New Week 📅</div>
+      </div>
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black" id="statProdBanks">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Banks</div>
+      </div>
+    </div>
   </div>
   <div class="max-w-screen-2xl mx-auto mt-2">
     <p class="text-gray-400 text-xs" id="lastUpdated">Loading…</p>
   </div>
 </div>
 
-<!-- ── BANK FILTER TABS ───────────────────────────────────────── -->
-<div class="max-w-screen-2xl mx-auto px-4 pt-4">
-  <div class="flex gap-2 flex-wrap" id="bankTabs">
-    <button onclick="setBankTab('')" id="tab-all"
-      class="bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-indigo-600 text-white">
-      All Banks
-    </button>
+<!-- MAIN TAB BUTTONS -->
+<div class="max-w-screen-2xl mx-auto px-4 pt-4 pb-2">
+  <div class="flex gap-3">
+    <button class="main-tab-btn active" id="mainTabPromo" onclick="switchTab('promotions')">🎁 Promotions</button>
+    <button class="main-tab-btn" id="mainTabProduct" onclick="switchTab('products')">📦 Products</button>
   </div>
 </div>
 
-<!-- ── CONTROLS ───────────────────────────────────────────────── -->
+<!-- ═══ PROMOTIONS TAB ═══ -->
+<div id="promoTabContent">
+
+<div class="max-w-screen-2xl mx-auto px-4 pt-2">
+  <div class="flex gap-2 flex-wrap" id="bankTabs">
+    <button onclick="setBankTab('')" id="tab-all"
+      class="bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-indigo-600 text-white">All Banks</button>
+  </div>
+</div>
+
 <div class="max-w-screen-2xl mx-auto px-4 py-3">
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
     <div class="flex flex-col md:flex-row gap-3 items-start md:items-center flex-wrap">
       <div class="relative flex-1 min-w-48">
         <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
-        <input id="searchInput" type="text"
-          placeholder="Search promotions… (e.g. cash reward, 0 fee, interest)"
-          class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm
-                 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+        <input id="searchInput" type="text" placeholder="Search promotions… (e.g. cash reward, 0 fee)"
+          class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
           oninput="applyFilters()">
       </div>
       <select id="statusFilter" onchange="applyFilters()"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm
-               focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
         <option value="active+expiring" selected>✅⚡ Active + Expiring</option>
         <option value="active">✅ Active Only</option>
         <option value="expiring">⚡ Expiring Soon</option>
@@ -121,16 +140,14 @@
         <option value="expired">✗ Expired Only</option>
       </select>
       <select id="sortFilter" onchange="applyFilters()"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm
-               focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white">
         <option value="default">Sort: Default</option>
         <option value="bank">Sort: Bank</option>
         <option value="enddate">Sort: End Date</option>
         <option value="newest">Sort: Newest</option>
       </select>
       <button onclick="exportExcel()"
-        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white
-               px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
         📥 Export Excel
       </button>
     </div>
@@ -139,12 +156,10 @@
   </div>
 </div>
 
-<!-- ══ NEW TODAY ════════════════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-2" id="newTodaySection" style="display:none;">
   <details open class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
     <summary class="select-none">
-      <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4
-                  flex items-center justify-between cursor-pointer">
+      <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4 flex items-center justify-between cursor-pointer">
         <div class="flex items-center gap-3">
           <span class="text-2xl">🆕</span>
           <div>
@@ -158,21 +173,15 @@
         </div>
       </div>
     </summary>
-    <div class="bg-amber-50 p-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newTodayCards"></div>
-    </div>
-    <div id="newTodayEmpty" class="hidden bg-amber-50 px-5 py-10 text-center text-gray-400 text-sm">
-      🔍 No new promotions detected today.
-    </div>
+    <div class="bg-amber-50 p-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newTodayCards"></div></div>
+    <div id="newTodayEmpty" class="hidden bg-amber-50 px-5 py-10 text-center text-gray-400 text-sm">🔍 No new promotions detected today.</div>
   </details>
 </div>
 
-<!-- ══ PROMOTION NEWLY LAUNCHED WITHIN THIS WEEK ════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newWeeklySection" style="display:none;">
   <details class="rounded-2xl shadow-sm overflow-hidden border border-indigo-200">
     <summary class="select-none">
-      <div class="bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-4
-                  flex items-center justify-between cursor-pointer">
+      <div class="bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-4 flex items-center justify-between cursor-pointer">
         <div class="flex items-center gap-3">
           <span class="text-2xl">📅</span>
           <div>
@@ -186,16 +195,11 @@
         </div>
       </div>
     </summary>
-    <div class="bg-indigo-50 p-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newWeeklyCards"></div>
-    </div>
-    <div id="newWeeklyEmpty" class="hidden bg-indigo-50 px-5 py-10 text-center text-gray-400 text-sm">
-      🔍 No new promotions in the past 6 days.
-    </div>
+    <div class="bg-indigo-50 p-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newWeeklyCards"></div></div>
+    <div id="newWeeklyEmpty" class="hidden bg-indigo-50 px-5 py-10 text-center text-gray-400 text-sm">🔍 No new promotions in the past 6 days.</div>
   </details>
 </div>
 
-<!-- ══ STRATEGIC INSIGHTS ════════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4">
   <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" id="insightsDetails">
     <summary class="select-none">
@@ -204,14 +208,11 @@
           <span class="text-xl">🧠</span>
           <div>
             <div class="font-bold text-gray-800">Strategic Insights · Best in Category</div>
-            <div class="text-xs text-gray-400 mt-0.5">
-              AI-generated · daily · based on active promotions across all 8 banks
-            </div>
+            <div class="text-xs text-gray-400 mt-0.5">AI-generated · daily · based on active promotions across all 8 banks</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <button class="toggle-table-btn" id="toggleInsightsBtn"
-                  data-hidden="false" onclick="toggleInsightsTable(event)"></button>
+          <button class="toggle-table-btn" id="toggleInsightsBtn" data-hidden="false" onclick="toggleInsightsTable(event)"></button>
           <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
         </div>
       </div>
@@ -229,19 +230,14 @@
               <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Why They Don't Win</th>
             </tr>
           </thead>
-          <tbody id="insightsTbody">
-            <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">⏳ Loading insights…</td></tr>
-          </tbody>
+          <tbody id="insightsTbody"><tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">⏳ Loading insights…</td></tr></tbody>
         </table>
       </div>
-      <p class="mt-3 text-xs text-gray-400 italic">
-        ⚙️ BAU = permanent feature (no end date) · still counted as a competitive advantage
-      </p>
+      <p class="mt-3 text-xs text-gray-400 italic">⚙️ BAU = permanent feature (no end date) · still counted as a competitive advantage</p>
     </div>
   </details>
 </div>
 
-<!-- ══ BANK-BY-BANK ANALYSIS ════════════════════════════════════ -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4">
   <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" id="analysisDetails">
     <summary class="select-none">
@@ -250,14 +246,11 @@
           <span class="text-xl">📋</span>
           <div>
             <div class="font-bold text-gray-800">Bank-by-Bank Analysis</div>
-            <div class="text-xs text-gray-400 mt-0.5">
-              Focus · Key strengths (5–6 pts) · Better than ZA · Worse than ZA
-            </div>
+            <div class="text-xs text-gray-400 mt-0.5">Focus · Key strengths (5–6 pts) · Better than ZA · Worse than ZA</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <button class="toggle-table-btn" id="toggleAnalysisBtn"
-                  data-hidden="false" onclick="toggleAnalysisGrid(event)"></button>
+          <button class="toggle-table-btn" id="toggleAnalysisBtn" data-hidden="false" onclick="toggleAnalysisGrid(event)"></button>
           <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
         </div>
       </div>
@@ -270,18 +263,14 @@
   </details>
 </div>
 
-<!-- ── COMPARISON TABLE ──────────────────────────────────────────── -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-4" id="comparisonSection" style="display:none">
   <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <summary class="px-5 py-4 flex items-center justify-between
-                    hover:bg-gray-50/80 select-none transition-colors">
+    <summary class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 select-none transition-colors">
       <div class="flex items-center gap-3">
         <span class="text-xl">📊</span>
         <div>
           <div class="font-bold text-gray-800">銀行比較 Bank Comparison</div>
-          <div class="text-xs text-gray-400 mt-0.5">
-            以 ZA Bank 為基準 · ▲ more than ZA · ▼ less than ZA · 🟢 category leader
-          </div>
+          <div class="text-xs text-gray-400 mt-0.5">以 ZA Bank 為基準 · ▲ more than ZA · ▼ less than ZA · 🟢 category leader</div>
         </div>
       </div>
       <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
@@ -289,9 +278,7 @@
     <div class="px-5 pb-6 border-t border-gray-100">
       <div class="overflow-x-auto rounded-xl border border-gray-100 mt-5 mb-5 shadow-sm">
         <table class="w-full border-collapse text-sm" id="compTable">
-          <tbody>
-            <tr><td class="px-6 py-8 text-center text-gray-400">⏳ Loading...</td></tr>
-          </tbody>
+          <tbody><tr><td class="px-6 py-8 text-center text-gray-400">⏳ Loading...</td></tr></tbody>
         </table>
       </div>
       <div class="grid gap-4 md:grid-cols-2" id="prosConsWrap"></div>
@@ -299,7 +286,6 @@
   </details>
 </div>
 
-<!-- ── MAIN TABLE ────────────────────────────────────────────────── -->
 <div class="max-w-screen-2xl mx-auto px-4 pb-10">
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <div id="loadingState" class="p-16 text-center text-gray-400">
@@ -332,9 +318,118 @@
     </div>
   </div>
 </div>
+</div><!-- end promoTabContent -->
+
+<!-- ═══ PRODUCTS TAB ═══ -->
+<div id="productTabContent" style="display:none;">
+
+<div class="max-w-screen-2xl mx-auto px-4 pt-2">
+  <div class="flex gap-2 flex-wrap" id="productBankTabs">
+    <button onclick="setProductBankTab('')" id="ptab-all"
+      class="prod-bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-indigo-600 text-white">All Banks</button>
+  </div>
+</div>
+
+<div class="max-w-screen-2xl mx-auto px-4 py-3">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+    <div class="flex flex-col md:flex-row gap-3 items-start md:items-center flex-wrap">
+      <div class="relative flex-1 min-w-48">
+        <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
+        <input id="productSearchInput" type="text" placeholder="Search products… (e.g. ETF, 0 commission, savings)"
+          class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          oninput="applyProductFilters()">
+      </div>
+      <button onclick="exportProductsExcel()"
+        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+        📥 Export Excel
+      </button>
+    </div>
+    <div class="mt-3 flex flex-wrap gap-2 items-center" id="prodCatFilter"></div>
+    <div class="mt-2 text-sm text-gray-500" id="prodResultCount"></div>
+  </div>
+</div>
+
+<div class="max-w-screen-2xl mx-auto px-4 pb-2" id="newProdTodaySection" style="display:none;">
+  <details open class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
+    <summary class="select-none">
+      <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4 flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🆕</span>
+          <div>
+            <div class="font-extrabold text-white text-lg tracking-tight">New Products Today</div>
+            <div class="text-orange-100 text-xs mt-0.5">今日新產品 · first_seen_at = today (HKT)</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="newProdTodayCount" class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+          <span class="accordion-chevron chevron text-white text-base">▼</span>
+        </div>
+      </div>
+    </summary>
+    <div class="bg-amber-50 p-4"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="newProdTodayCards"></div></div>
+    <div id="newProdTodayEmpty" class="hidden bg-amber-50 px-5 py-10 text-center text-gray-400 text-sm">🔍 No new products today.</div>
+  </details>
+</div>
+
+<div class="max-w-screen-2xl mx-auto px-4 pb-4" id="newProdWeekSection" style="display:none;">
+  <details class="rounded-2xl shadow-sm overflow-hidden border border-indigo-200">
+    <summary class="select-none">
+      <div class="bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-4 flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">📅</span>
+          <div>
+            <div class="font-extrabold text-white text-lg tracking-tight">New Products This Week</div>
+            <div class="text-indigo-100 text-xs mt-0.5">本週新產品 · first_seen_at in past 6 days (excl. today, HKT)</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="newProdWeekCount" class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+          <span class="accordion-chevron chevron text-white text-base">▼</span>
+        </div>
+      </div>
+    </summary>
+    <div class="bg-indigo-50 p-4"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="newProdWeekCards"></div></div>
+    <div id="newProdWeekEmpty" class="hidden bg-indigo-50 px-5 py-10 text-center text-gray-400 text-sm">🔍 No new products this week.</div>
+  </details>
+</div>
+
+<div class="max-w-screen-2xl mx-auto px-4 pb-4">
+  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <summary class="select-none">
+      <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">📦</span>
+          <div>
+            <div class="font-bold text-gray-800">Product Intelligence · Bank-to-Bank Analysis</div>
+            <div class="text-xs text-gray-400 mt-0.5">ZA Bank as baseline · AI-generated · based on active products across all banks</div>
+          </div>
+        </div>
+        <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
+      </div>
+    </summary>
+    <div class="px-5 pb-6 border-t border-gray-100">
+      <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4" id="productBankAnalysisGrid">
+        <div class="col-span-full py-8 text-center text-gray-400">⏳ Loading product analysis…</div>
+      </div>
+    </div>
+  </details>
+</div>
+
+<div class="max-w-screen-2xl mx-auto px-4 pb-10">
+  <div id="productLoadingState" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center text-gray-400">
+    <div class="text-4xl mb-3">⏳</div>
+    <div class="text-lg font-medium">Loading products…</div>
+  </div>
+  <div id="productEmptyState" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center text-gray-400 hidden">
+    <div class="text-4xl mb-3">🔍</div>
+    <div class="text-lg font-medium">No products match your filters</div>
+  </div>
+  <div id="productGrid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+</div>
+</div><!-- end productTabContent -->
 
 <script>
-// ── Category config ────────────────────────────────────────────────
+// ── Category config ─────────────────────────────────────────────────
 const CAT_META = {
   "迎新 Welcome":      { bg:"#10b981", emoji:"🎉" },
   "消費 Spending":     { bg:"#f59e0b", emoji:"💳" },
@@ -364,58 +459,60 @@ const BANK_COLORS = {
 };
 
 const CAT_FILTER_LIST = [
-  { key:'__ALL__',            label:'All',           bg:'#4f46e5' },
-  { key:'BAU',                label:'⚙️ BAU',        bg:'#64748b' },
-  { key:'迎新 Welcome',       label:'🎉 迎新',       bg:'#10b981' },
-  { key:'消費 Spending',      label:'💳 消費',       bg:'#f59e0b' },
-  { key:'投資 Investment',    label:'📈 投資',       bg:'#6366f1' },
-  { key:'旅遊 Travel',        label:'✈️ 旅遊',      bg:'#06b6d4' },
-  { key:'保險 Insurance',     label:'🛡️ 保險',     bg:'#ef4444' },
-  { key:'貸款 Loan',          label:'💰 貸款',       bg:'#dc2626' },
-  { key:'活期存款 Savings',   label:'🏦 活期存款',   bg:'#3b82f6' },
-  { key:'定期存款 TDeposit',  label:'🏛️ 定期存款',  bg:'#0369a1' },
-  { key:'外匯 FX',            label:'🌐 外匯',       bg:'#8b5cf6' },
-  { key:'推薦 Referral',      label:'👥 推薦',       bg:'#ec4899' },
-  { key:'新資金 New Funds',   label:'💵 新資金',     bg:'#0ea5e9' },
-  { key:'Others 其他',        label:'📋 Others',     bg:'#6b7280' },
+  { key:'__ALL__',            label:'All',          bg:'#4f46e5' },
+  { key:'BAU',                label:'⚙️ BAU',       bg:'#64748b' },
+  { key:'迎新 Welcome',       label:'🎉 迎新',      bg:'#10b981' },
+  { key:'消費 Spending',      label:'💳 消費',      bg:'#f59e0b' },
+  { key:'投資 Investment',    label:'📈 投資',      bg:'#6366f1' },
+  { key:'旅遊 Travel',        label:'✈️ 旅遊',     bg:'#06b6d4' },
+  { key:'保險 Insurance',     label:'🛡️ 保險',    bg:'#ef4444' },
+  { key:'貸款 Loan',          label:'💰 貸款',      bg:'#dc2626' },
+  { key:'活期存款 Savings',   label:'🏦 活期存款',  bg:'#3b82f6' },
+  { key:'定期存款 TDeposit',  label:'🏛️ 定期存款', bg:'#0369a1' },
+  { key:'外匯 FX',            label:'🌐 外匯',      bg:'#8b5cf6' },
+  { key:'推薦 Referral',      label:'👥 推薦',      bg:'#ec4899' },
+  { key:'新資金 New Funds',   label:'💵 新資金',    bg:'#0ea5e9' },
+  { key:'Others 其他',        label:'📋 Others',    bg:'#6b7280' },
+];
+
+const PROD_CAT_META = {
+  "US Stock":             { bg:"#1d4ed8", emoji:"🇺🇸" },
+  "HK Stock":             { bg:"#dc2626", emoji:"🇭🇰" },
+  "Crypto":               { bg:"#f59e0b", emoji:"₿" },
+  "Fund":                 { bg:"#6366f1", emoji:"📈" },
+  "Credit Card":          { bg:"#ec4899", emoji:"💳" },
+  "Saving/Current Deposit":{ bg:"#3b82f6", emoji:"🏦" },
+  "Time Deposit":         { bg:"#0369a1", emoji:"🏛️" },
+  "Currency Exchange":    { bg:"#8b5cf6", emoji:"🌐" },
+  "Personal Loan":        { bg:"#ef4444", emoji:"💰" },
+  "Others":               { bg:"#6b7280", emoji:"📋" },
+};
+
+const PROD_CAT_FILTER_LIST = [
+  { key:'__ALL__',               label:'All',         bg:'#4f46e5' },
+  { key:'US Stock',              label:'🇺🇸 US Stock',bg:'#1d4ed8' },
+  { key:'HK Stock',              label:'🇭🇰 HK Stock',bg:'#dc2626' },
+  { key:'Crypto',                label:'₿ Crypto',    bg:'#f59e0b' },
+  { key:'Fund',                  label:'📈 Fund',     bg:'#6366f1' },
+  { key:'Credit Card',           label:'💳 Card',     bg:'#ec4899' },
+  { key:'Saving/Current Deposit',label:'🏦 Saving',   bg:'#3b82f6' },
+  { key:'Time Deposit',          label:'🏛️ TDeposit',bg:'#0369a1' },
+  { key:'Currency Exchange',     label:'🌐 FX',       bg:'#8b5cf6' },
+  { key:'Personal Loan',         label:'💰 Loan',     bg:'#ef4444' },
+  { key:'Others',                label:'📋 Others',   bg:'#6b7280' },
 ];
 
 const HOW_DEFINED = {
-  "HK Stock Trading":
-    "Zero or lowest total cost per order for HKEX-listed (HK) stocks. " +
-    "Total cost = commission + platform fee. " +
-    "EleBank: $0 commission + HKD 15 platform fee = HKD 15/order. " +
-    "ZA Bank: $0 commission + HKD 18 platform fee = HKD 18/order. " +
-    "EleBank wins (HKD 15 < HKD 18).",
-  "US Stock Trading":
-    "Zero or lowest total cost per order for NYSE/NASDAQ-listed (US) stocks. " +
-    "ZA Bank: $0 commission + USD 0.0099/share platform fee (min USD 1.99/order). " +
-    "EleBank: USD 0.0049/share commission (min $0.99) + USD 0.005/share platform (min $1.00) " +
-    "= USD 0.0099/share total, min USD 1.99/order — same as ZA Bank. " +
-    "ZA Bank selected by default when tied (simpler $0-commission structure).",
-  "Stock Trading":
-    "Zero or lowest trading fee/commission for HK/US/A-share stocks, best IPO reward, or most " +
-    "comprehensive brokerage platform with no trade minimum.",
-  "Investment (Stock/Crypto Trading)":
-    "HK/US Stock Trading: zero brokerage commission ($0 commission is the primary criterion). " +
-    "Crypto Trading: zero platform fee for virtual assets.",
-  "Crypto Trading":
-    "Zero or lowest crypto/virtual-asset trading or platform fee, widest digital-asset selection, " +
-    "or strongest permanent crypto incentive.",
-  "Fund Investment":
-    "Widest range of funds at $0 subscription fee, or permanent fee waiver with no expiry.",
-  "Spending/CashBack":
-    "Highest consistent % cashback rate or most versatile reward categories with no cap.",
-  "Welcome Bonus":
-    "Highest total guaranteed HKD cash reward for a new account holder completing standard onboarding.",
-  "Travel":
-    "Strongest travel ecosystem — named partners, lounge access, or highest dedicated travel cashback.",
-  "Loan APR":
-    "Lowest explicitly stated APR on a personal loan currently offered.",
-  "FX/Multi-Currency":
-    "Most competitive FX rates, lowest fees, or most feature-rich multi-currency wallet.",
-  "Referral Bonus":
-    "Highest guaranteed HKD reward per successful referral.",
+  "HK Stock Trading": "Zero or lowest total cost per order for HKEX-listed stocks. EleBank: HKD 15/order. ZA Bank: HKD 18/order.",
+  "US Stock Trading": "Zero or lowest total cost per order for NYSE/NASDAQ stocks. ZA Bank $0 commission selected by default when tied.",
+  "Crypto Trading": "Zero or lowest crypto trading fee, widest digital-asset selection, or strongest permanent crypto incentive.",
+  "Fund Investment": "Widest range of funds at $0 subscription fee, or permanent fee waiver.",
+  "Spending/CashBack": "Highest consistent % cashback rate or most versatile reward categories.",
+  "Welcome Bonus": "Highest total guaranteed HKD cash reward for a new account holder.",
+  "Travel": "Strongest travel ecosystem — named partners, lounge access, or highest travel cashback.",
+  "Loan APR": "Lowest explicitly stated APR on a personal loan currently offered.",
+  "FX/Multi-Currency": "Most competitive FX rates, lowest fees, or most feature-rich multi-currency wallet.",
+  "Referral Bonus": "Highest guaranteed HKD reward per successful referral.",
 };
 
 const _BANK_COLOR_GENERIC = new Set(['bank','banking','digital','virtual']);
@@ -451,84 +548,100 @@ function bauTag(p) {
   return `<span class="cat-tag" style="background:#64748b">⚙️ BAU</span>`;
 }
 
-// ── ★ FIX: toArray — safely coerce any AI field value to a JS array ──────────
-// Handles: null/undefined → []  |  string → split on newline/bullet/comma
-// string array items → trim + filter blanks  |  already-array → pass through
 function toArray(val) {
   if (!val) return [];
   if (Array.isArray(val)) return val.map(String).filter(Boolean);
   if (typeof val === 'string') {
-    // Try newline split first, then bullet (•), then comma
-    const bySep = ['\n', '•', ';', ','];
+    const bySep = ['\n','•',';',','];
     for (const sep of bySep) {
-      if (val.includes(sep)) {
-        return val.split(sep).map(s => s.replace(/^[-–*·]\s*/, '').trim()).filter(Boolean);
-      }
+      if (val.includes(sep)) return val.split(sep).map(s => s.replace(/^[-–*·]\s*/,'').trim()).filter(Boolean);
     }
     return val.trim() ? [val.trim()] : [];
   }
   return [];
 }
 
-// ── Stable "today" string computed ONCE at page load (HKT) ────────────────
-const _PAGE_TODAY_STR     = new Date(Date.now() + 8 * 3600000).toISOString().substring(0, 10);
+const _PAGE_TODAY_STR     = new Date(Date.now() + 8*3600000).toISOString().substring(0,10);
 const _MS_PER_DAY         = 86400000;
 const _PAGE_TODAY_NOON_MS = Date.parse(_PAGE_TODAY_STR + 'T12:00:00Z');
 
 function _endDateDiffDays(endDateStr) {
-  const endNoonMs = Date.parse(endDateStr.substring(0, 10) + 'T12:00:00Z');
-  return Math.round((endNoonMs - _PAGE_TODAY_NOON_MS) / _MS_PER_DAY);
+  return Math.round((Date.parse(endDateStr.substring(0,10)+'T12:00:00Z') - _PAGE_TODAY_NOON_MS) / _MS_PER_DAY);
 }
 
 function getStatus(p) {
   if (p.active === false) return 'expired';
   if (p.end_date) {
-    const endStr = (p.end_date + '').substring(0, 10);
+    const endStr = (p.end_date+'').substring(0,10);
     if (endStr < _PAGE_TODAY_STR) return 'expired';
-    const diffDays = _endDateDiffDays(endStr);
-    if (diffDays <= 30) return 'expiring';
+    if (_endDateDiffDays(endStr) <= 30) return 'expiring';
     return 'active';
   }
-  if (p.period === 'Ongoing' ||
-      (p.period && p.period.toLowerCase().includes('ongoing'))) return 'active';
+  if (p.period === 'Ongoing' || (p.period && p.period.toLowerCase().includes('ongoing'))) return 'active';
   return 'active';
 }
 
 function statusBadge(p) {
   const s = getStatus(p);
-  if (s === 'active')
-    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                         text-xs font-bold bg-green-100 text-green-700">✅ Active</span>`;
+  if (s === 'active') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">✅ Active</span>`;
   if (s === 'expiring') {
-    const diffDays = _endDateDiffDays((p.end_date + '').substring(0, 10));
-    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                         text-xs font-bold bg-orange-100 text-orange-600">⚡ ${diffDays}d left</span>`;
+    const d = _endDateDiffDays((p.end_date+'').substring(0,10));
+    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-600">⚡ ${d}d left</span>`;
   }
-  return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
-                       text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
+  return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-400">✗ Expired</span>`;
 }
 
 function hktToday()    { return _PAGE_TODAY_STR; }
-function hktDaysAgo(n) {
-  return new Date(Date.now() + 8 * 3600000 - n * _MS_PER_DAY).toISOString().substring(0, 10);
-}
+function hktDaysAgo(n) { return new Date(Date.now()+8*3600000-n*_MS_PER_DAY).toISOString().substring(0,10); }
 
 function isNewToday(p, today) {
   if (p.is_bau) return false;
   if (p.active === false) return false;
   if (getStatus(p) === 'expired') return false;
-  const firstSeen = (p.first_seen_at || p.created_at || '').substring(0, 10);
-  return firstSeen === today;
+  return (p.first_seen_at||p.created_at||'').substring(0,10) === today;
 }
 
 function isNewThisWeek(p, today) {
   if (p.is_bau) return false;
   if (p.active === false) return false;
   if (getStatus(p) === 'expired') return false;
-  const firstSeen = (p.first_seen_at || p.created_at || '').substring(0, 10);
-  const sixAgo    = hktDaysAgo(6);
-  const yesterday = hktDaysAgo(1);
-  return firstSeen >= sixAgo && firstSeen <= yesterday;
+  const fs = (p.first_seen_at||p.created_at||'').substring(0,10);
+  return fs >= hktDaysAgo(6) && fs <= hktDaysAgo(1);
+}
+
+function isProdNewToday(p, today) {
+  if (p.is_active === false) return false;
+  return (p.first_seen_at||p.created_at||'').substring(0,10) === today;
+}
+function isProdNewThisWeek(p) {
+  if (p.is_active === false) return false;
+  const fs = (p.first_seen_at||p.created_at||'').substring(0,10);
+  return fs >= hktDaysAgo(6) && fs <= hktDaysAgo(1);
+}
+
+function remapCat(t) {
+  const MAP = {
+    '迎新':'迎新 Welcome','消費':'消費 Spending','投資':'投資 Investment','旅遊':'旅遊 Travel',
+    '保險':'保險 Insurance','貸款':'貸款 Loan','存款':'活期存款 Savings','活期存款':'活期存款 Savings',
+    '定期存款':'定期存款 TDeposit','外匯':'外匯 FX','推薦':'推薦 Referral',
+    '新資金':'新資金 New Funds','Others':'Others 其他',
+  };
+  return MAP[t] || t;
+}
+
+function remapProdCat(c) {
+  if (!c) return 'Others';
+  const cl = c.toLowerCase();
+  if (cl.includes('us') || cl.includes('nyse') || cl.includes('nasdaq') || cl === 'us_stock' || cl === 'us-stock') return 'US Stock';
+  if (cl.includes('hk') || cl.includes('hkex') || cl === 'hk_stock' || cl === 'hk-stock') return 'HK Stock';
+  if (cl.includes('crypto') || cl.includes('virtual') || cl.includes('bitcoin') || cl.includes('eth')) return 'Crypto';
+  if (cl.includes('fund') || cl === 'investment') return 'Fund';
+  if (cl.includes('credit') || cl.includes('card') || cl === 'credit_card') return 'Credit Card';
+  if (cl.includes('time') || cl === 'td' || cl === 'time_deposit' || cl === 'time-deposit') return 'Time Deposit';
+  if (cl.includes('saving') || cl.includes('current') || cl === 'deposit') return 'Saving/Current Deposit';
+  if (cl.includes('fx') || cl.includes('currency') || cl.includes('exchange') || cl.includes('remit')) return 'Currency Exchange';
+  if (cl.includes('loan') || cl.includes('borrow') || cl === 'personal_loan') return 'Personal Loan';
+  return 'Others';
 }
 
 let allPromos         = [];
@@ -536,110 +649,51 @@ let filtered          = [];
 let activeBankTab     = '';
 let selectedCats      = [];
 let strategicInsights = null;
+let allProducts           = [];
+let filteredProducts      = [];
+let activeProductBankTab  = '';
+let selectedProductCats   = [];
+let currentTab = 'promotions';
 
-// ── No-data placeholders ──────────────────────────────────────────
+// ── Tab switching ───────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('promoTabContent').style.display   = tab === 'promotions' ? '' : 'none';
+  document.getElementById('productTabContent').style.display = tab === 'products'   ? '' : 'none';
+  document.getElementById('promoHeaderStats').classList.toggle('hidden',   tab !== 'promotions');
+  document.getElementById('productHeaderStats').classList.toggle('hidden', tab !== 'products');
+  document.getElementById('mainTabPromo').classList.toggle('active',   tab === 'promotions');
+  document.getElementById('mainTabProduct').classList.toggle('active', tab === 'products');
+}
+
+// ── No-data placeholders ────────────────────────────────────────────
 function insightsNoDataHtml() {
-  return `
-    <tr>
-      <td colspan="6" class="px-5 py-5">
-        <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
-          <div class="flex items-start gap-3">
-            <span class="text-2xl shrink-0">⚠️</span>
-            <div class="flex-1 min-w-0">
-              <div class="font-bold text-amber-800 text-sm mb-1">
-                No AI insights data found in <code class="bg-amber-100 px-1 rounded">data.json</code>
-              </div>
-              <div class="text-amber-700 text-xs mb-3">
-                Add a <code class="bg-amber-100 px-1 rounded">strategic_insights.best_for</code> array
-                to your <code class="bg-amber-100 px-1 rounded">data.json</code>. Each item must have
-                these fields:
-              </div>
-              <pre class="schema-hint">
-{
-  <span class="key">"strategic_insights"</span>: {
-    <span class="key">"best_for"</span>: [
-      {
-        <span class="key">"category"</span>:        <span class="str">"HK Stock Trading"</span>,
-        <span class="key">"bank"</span>:            <span class="str">"EleBank"</span>,
-        <span class="key">"detail"</span>:          <span class="str">"$0 commission + HKD 15 platform fee per order."</span>,
-        <span class="key">"is_bau"</span>:          <span class="bool">true</span>,
-        <span class="key">"similar_banks"</span>:   [<span class="str">"ZA Bank"</span>, <span class="str">"PADB"</span>],
-        <span class="key">"why_others_lose"</span>: <span class="str">"ZA Bank charges HKD 18 platform fee/order."</span>
-      }
-    ]
-  }
-}</pre>
-            </div>
-          </div>
-        </div>
-      </td>
-    </tr>`;
+  return `<tr><td colspan="6" class="px-5 py-5">
+    <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
+      <div class="font-bold text-amber-800 text-sm mb-1">No AI insights data found in data.json</div>
+      <div class="text-amber-700 text-xs">Add a <code>strategic_insights.best_for</code> array to data.json.</div>
+    </div></td></tr>`;
 }
-
 function analysisNoDataHtml() {
-  return `
-    <div class="col-span-full">
-      <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
-        <div class="flex items-start gap-3">
-          <span class="text-2xl shrink-0">⚠️</span>
-          <div class="flex-1 min-w-0">
-            <div class="font-bold text-amber-800 text-sm mb-1">
-              No bank analysis data found in <code class="bg-amber-100 px-1 rounded">data.json</code>
-            </div>
-            <div class="text-amber-700 text-xs mb-3">
-              Add a <code class="bg-amber-100 px-1 rounded">strategic_insights.bank_analysis</code>
-              object keyed by bank name.
-            </div>
-            <pre class="schema-hint">
-{
-  <span class="key">"strategic_insights"</span>: {
-    <span class="key">"bank_analysis"</span>: {
-      <span class="key">"ZA Bank"</span>: {
-        <span class="key">"count"</span>:          <span class="num">12</span>,
-        <span class="key">"bau_count"</span>:      <span class="num">3</span>,
-        <span class="key">"focus"</span>:          <span class="str">"All-round digital banking"</span>,
-        <span class="key">"strengths"</span>:      [<span class="str">"$0 brokerage commission"</span>],
-        <span class="key">"expiring_alert"</span>: <span class="str">""</span>,
-        <span class="key">"vs_za_pros"</span>:     <span class="bool">null</span>,
-        <span class="key">"vs_za_cons"</span>:     <span class="bool">null</span>
-      }
-    }
-  }
-}</pre>
-          </div>
-        </div>
-      </div>
-    </div>`;
+  return `<div class="col-span-full rounded-xl border border-amber-200 bg-amber-50 p-5">
+    <div class="font-bold text-amber-800 text-sm mb-1">No bank analysis data found in data.json</div>
+    <div class="text-amber-700 text-xs">Add a <code>strategic_insights.bank_analysis</code> object to data.json.</div>
+  </div>`;
 }
 
-// ── loadData ──────────────────────────────────────────────────────
+// ── loadData ────────────────────────────────────────────────────────
 async function loadData() {
   try {
     const res  = await fetch('./data.json?_=' + Date.now());
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    if (data.ai_unavailable) {
-      const notice = document.createElement('div');
-      notice.className = 'max-w-screen-2xl mx-auto px-4 pt-3';
-      notice.innerHTML = `
-        <div class="bg-amber-50 border border-amber-300 rounded-xl px-4 py-3
-                    flex items-start gap-3 text-sm">
-          <span class="text-xl shrink-0">⚠️</span>
-          <div>
-            <div class="font-bold text-amber-800">Cached Data — AI Unavailable During Last Run</div>
-            <div class="text-amber-700 mt-0.5">
-              Promotions shown are from the last successful AI extraction run.
-              Today's changes may not be reflected.
-            </div>
-          </div>
-        </div>`;
-      document.querySelector('.max-w-screen-2xl').after(notice);
-    }
-
     allPromos = (data.promotions || []).map(p => ({
-      ...p,
-      types: (p.types || []).filter(t => !t.includes('長期')).map(remapCat),
+      ...p, types: (p.types||[]).filter(t => !t.includes('長期')).map(remapCat),
+    }));
+
+    allProducts = (data.products || []).map(p => ({
+      ...p, _displayCat: remapProdCat(p.category),
     }));
 
     strategicInsights = data.strategic_insights || null;
@@ -648,16 +702,23 @@ async function loadData() {
     const activeN      = activeNonBau.filter(p => getStatus(p) === 'active').length;
     const expiringN    = activeNonBau.filter(p => getStatus(p) === 'expiring').length;
     const expiredN     = allPromos.filter(p => !p.is_bau && getStatus(p) === 'expired').length;
-    const totalN       = activeNonBau.length;
     const banks        = [...new Set(allPromos.map(p => p.bank_name))];
 
-    document.getElementById('statTotal').textContent    = totalN;
+    document.getElementById('statTotal').textContent    = activeNonBau.length;
     document.getElementById('statActive').textContent   = activeN;
     document.getElementById('statExpiring').textContent = expiringN;
     document.getElementById('statExpired').textContent  = expiredN;
     document.getElementById('bankCount').textContent    = banks.length;
-    document.getElementById('lastUpdated').textContent  =
-      `Last updated: ${data.updated || data.last_updated || 'Unknown'} HKT`;
+    document.getElementById('lastUpdated').textContent  = `Last updated: ${data.updated||data.last_updated||'Unknown'} HKT`;
+
+    const today = hktToday();
+    const prodToday = allProducts.filter(p => isProdNewToday(p, today)).length;
+    const prodWeek  = allProducts.filter(p => isProdNewThisWeek(p)).length;
+    const prodBanks = [...new Set(allProducts.map(p => p.bank_name))].length;
+    document.getElementById('statProdTotal').textContent = allProducts.length;
+    document.getElementById('statProdToday').textContent = prodToday;
+    document.getElementById('statProdWeek').textContent  = prodWeek;
+    document.getElementById('statProdBanks').textContent = prodBanks;
 
     buildBankTabs(banks);
     buildCatButtons();
@@ -665,58 +726,51 @@ async function loadData() {
     buildStrategicInsights(strategicInsights);
     buildBankAnalysis(strategicInsights);
     buildComparisonTable();
+    buildProductBankTabs([...new Set(allProducts.map(p => p.bank_name))]);
+    buildProductCatButtons();
+    buildProductNewSections();
+    buildProductBankAnalysis(strategicInsights);
 
     document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('productLoadingState').classList.add('hidden');
     applyFilters();
+    applyProductFilters();
 
-  } catch (e) {
+  } catch(e) {
     document.getElementById('loadingState').classList.add('hidden');
     document.getElementById('errorState').classList.remove('hidden');
     document.getElementById('errorMsg').textContent = e.message;
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────
-function remapCat(t) {
-  const MAP = {
-    '迎新':'迎新 Welcome',       '消費':'消費 Spending',
-    '投資':'投資 Investment',     '旅遊':'旅遊 Travel',
-    '保險':'保險 Insurance',      '貸款':'貸款 Loan',
-    '存款':'活期存款 Savings',    '活期存款':'活期存款 Savings',
-    '定期存款':'定期存款 TDeposit',
-    '外匯':'外匯 FX',             '推薦':'推薦 Referral',
-    '新資金':'新資金 New Funds',  'Others':'Others 其他',
-  };
-  return MAP[t] || t;
-}
-
+// ── Promo card (with enhanced summary) ─────────────────────────────
 function buildPromoCard(p) {
-  const color   = bankColor(p.bank_name);
-  const cats    = (p.types || ['Others 其他']).map(catTag).join('');
-  const badge   = statusBadge(p);
-  const tcLink  = p.tc_link || p.url || '';
+  const color  = bankColor(p.bank_name);
+  const cats   = (p.types||['Others 其他']).map(catTag).join('');
+  const badge  = statusBadge(p);
+  const tcLink = p.tc_link || p.url || '';
   const summary = p.description || p.highlight || '';
 
-  const quotaHtml = p.quota
-    ? `<div class="mt-2">
-         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">👥 Quota / Eligibility</div>
-         <div class="text-sm text-gray-700">${p.quota}</div>
-       </div>` : '';
+  const quotaHtml = p.quota ? `<div class="mt-2"><div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">👥 Quota / Eligibility</div><div class="text-sm text-gray-700">${p.quota}</div></div>` : '';
+  const costHtml  = p.cost  ? `<div class="mt-2"><div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">💲 Cost / Min Spend</div><div class="text-sm text-gray-700">${p.cost}</div></div>` : '';
+  const sourceHtml = tcLink ? `<div class="mt-3 pt-3 border-t border-gray-100"><a href="${tcLink}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors">🔗 View Official Source ↗</a></div>` : '';
 
-  const costHtml = p.cost
-    ? `<div class="mt-2">
-         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-0.5">💲 Cost / Min Spend</div>
-         <div class="text-sm text-gray-700">${p.cost}</div>
-       </div>` : '';
+  // Enhanced promotion summary bullets
+  const bullets = [];
+  if (summary) {
+    const desc = summary.length > 20 ? summary : (p.highlight || p.description || '');
+    if (desc) bullets.push(`<li class="text-xs text-gray-600 leading-relaxed">📌 <strong>What:</strong> ${desc.substring(0,180)}${desc.length>180?'…':''}</li>`);
+  }
+  if (p.quota) bullets.push(`<li class="text-xs text-gray-600 leading-relaxed">👥 <strong>Who:</strong> ${p.quota.substring(0,120)}</li>`);
+  if (p.cost)  bullets.push(`<li class="text-xs text-gray-600 leading-relaxed">💲 <strong>Cost:</strong> ${p.cost.substring(0,120)}</li>`);
+  if (p.period && p.period !== 'Ongoing') bullets.push(`<li class="text-xs text-gray-600 leading-relaxed">📅 <strong>Period:</strong> ${p.period}</li>`);
+  if (p.types && p.types.some(t => t.includes('迎新'))) bullets.push(`<li class="text-xs text-gray-500 italic leading-relaxed">💡 Compare with other banks' welcome offers for best value</li>`);
 
-  const sourceHtml = tcLink
-    ? `<div class="mt-3 pt-3 border-t border-gray-100">
-         <a href="${tcLink}" target="_blank" rel="noopener"
-            class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600
-                   hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors">
-           🔗 View Official Source ↗
-         </a>
-       </div>` : '';
+  const summaryHtml = bullets.length ? `
+    <div class="mt-3 bg-gray-50 rounded-lg px-3 py-2 border-l-2" style="border-color:${color}">
+      <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Promotion Summary</div>
+      <ul class="space-y-1 list-none">${bullets.join('')}</ul>
+    </div>` : '';
 
   return `
     <div class="new-promo-card">
@@ -725,648 +779,444 @@ function buildPromoCard(p) {
           <span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span>
           <span class="font-extrabold text-white text-base">${p.bank_name}</span>
         </div>
-        <div class="flex items-center gap-2">
-          ${badge}
-          <span class="text-white/75 text-xs">📅 ${p.period || '—'}</span>
-        </div>
+        <div class="flex items-center gap-2">${badge}<span class="text-white/75 text-xs">📅 ${p.period||'—'}</span></div>
       </div>
       <div class="p-4">
         <div class="mb-2">${cats}</div>
         <div class="font-bold text-gray-800 text-sm leading-snug mb-2">${p.title}</div>
-        ${summary
-          ? `<div class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg
-                         px-3 py-2 mb-1 border-l-2" style="border-color:${color}">${summary}</div>`
-          : ''}
+        ${summaryHtml}
         ${quotaHtml}${costHtml}${sourceHtml}
       </div>
     </div>`;
 }
 
-// ── New Today / This Week sections ────────────────────────────────
+// ── Product card ────────────────────────────────────────────────────
+function buildProductCard(p) {
+  const color   = bankColor(p.bank_name);
+  const cat     = p._displayCat || 'Others';
+  const cm      = PROD_CAT_META[cat] || { bg:'#6b7280', emoji:'📋' };
+  const features = Array.isArray(p.features) ? p.features : toArray(p.features);
+  const tcLink  = p.tc_link || p.url || '';
+
+  const maxShow = 4;
+  const showFeatures = features.slice(0, maxShow);
+  const extraFeatures = features.slice(maxShow);
+  const featId = 'feat-' + Math.random().toString(36).slice(2,8);
+
+  const featsHtml = showFeatures.length ? `
+    <div class="mt-2">
+      <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Features</div>
+      <ul class="space-y-0.5">${showFeatures.map(f => `<li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-indigo-400 mt-0.5 shrink-0">•</span>${f}</li>`).join('')}</ul>
+      ${extraFeatures.length ? `
+        <div id="${featId}-more" class="hidden mt-1">
+          <ul class="space-y-0.5">${extraFeatures.map(f => `<li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-indigo-400 mt-0.5 shrink-0">•</span>${f}</li>`).join('')}</ul>
+        </div>
+        <button onclick="toggleFeat('${featId}')" id="${featId}-btn"
+          class="mt-1 text-xs text-indigo-500 hover:text-indigo-700 font-semibold">
+          +${extraFeatures.length} more ▼
+        </button>` : ''}
+    </div>` : '';
+
+  const metaHtml = [
+    p.fees       ? `<span class="text-xs text-gray-500">Fees: ${p.fees}</span>` : '',
+    p.min_amount ? `<span class="text-xs text-gray-500">Min: ${p.currency||''} ${p.min_amount}</span>` : '',
+  ].filter(Boolean).join('<span class="text-gray-300 mx-1">|</span>');
+
+  const sourceHtml = tcLink ? `<a href="${tcLink}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 mt-3 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors">🔗 View Details ↗</a>` : '';
+
+  return `
+    <div class="product-card">
+      <div class="px-4 py-3 flex items-center justify-between" style="background:${color};">
+        <div class="flex items-center gap-2">
+          <span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span>
+          <span class="font-extrabold text-white text-base">${p.bank_name}</span>
+        </div>
+        <span class="prod-cat-tag" style="background:${cm.bg}">${cm.emoji} ${cat}</span>
+      </div>
+      <div class="p-4">
+        <div class="font-bold text-gray-800 text-sm leading-snug mb-2">${p.product_name||'–'}</div>
+        ${p.highlight ? `<div class="text-xs text-gray-600 leading-relaxed bg-gray-50 rounded-lg px-3 py-2 mb-1 border-l-2" style="border-color:${color}">${p.highlight}</div>` : ''}
+        ${featsHtml}
+        ${metaHtml ? `<div class="mt-2 flex flex-wrap gap-1">${metaHtml}</div>` : ''}
+        ${sourceHtml}
+      </div>
+    </div>`;
+}
+
+function toggleFeat(id) {
+  const more = document.getElementById(id+'-more');
+  const btn  = document.getElementById(id+'-btn');
+  if (!more) return;
+  const hidden = more.classList.toggle('hidden');
+  btn.textContent = hidden ? `+${more.querySelectorAll('li').length} more ▼` : 'Show less ▲';
+}
+
+// ── New sections ────────────────────────────────────────────────────
 function buildNewSections() {
   const today = hktToday();
-
-  const newToday   = allPromos.filter(p => isNewToday(p, today));
-  const todaySec   = document.getElementById('newTodaySection');
-  const todayCards = document.getElementById('newTodayCards');
-  const todayCount = document.getElementById('newTodayCount');
-  const todayEmpty = document.getElementById('newTodayEmpty');
-  todaySec.style.display = 'block';
+  const newToday = allPromos.filter(p => isNewToday(p, today));
+  const sec = document.getElementById('newTodaySection');
+  sec.style.display = 'block';
   if (!newToday.length) {
-    todayCards.innerHTML = '';
-    todayEmpty.classList.remove('hidden');
-    todayCount.textContent = '0 new today';
+    document.getElementById('newTodayCards').innerHTML = '';
+    document.getElementById('newTodayEmpty').classList.remove('hidden');
+    document.getElementById('newTodayCount').textContent = '0 new today';
   } else {
-    todayEmpty.classList.add('hidden');
-    todayCount.textContent = `${newToday.length} new today`;
-    todayCards.innerHTML   = newToday.map(buildPromoCard).join('');
+    document.getElementById('newTodayEmpty').classList.add('hidden');
+    document.getElementById('newTodayCount').textContent = `${newToday.length} new today`;
+    document.getElementById('newTodayCards').innerHTML = newToday.map(buildPromoCard).join('');
   }
-
-  const newWeek   = allPromos.filter(p => isNewThisWeek(p, today));
-  const weekSec   = document.getElementById('newWeeklySection');
-  const weekCards = document.getElementById('newWeeklyCards');
-  const weekCount = document.getElementById('newWeeklyCount');
-  const weekEmpty = document.getElementById('newWeeklyEmpty');
-  weekSec.style.display = 'block';
+  const newWeek = allPromos.filter(p => isNewThisWeek(p, today));
+  document.getElementById('newWeeklySection').style.display = 'block';
   if (!newWeek.length) {
-    weekCards.innerHTML = '';
-    weekEmpty.classList.remove('hidden');
-    weekCount.textContent = '0 newly launched this week';
+    document.getElementById('newWeeklyCards').innerHTML = '';
+    document.getElementById('newWeeklyEmpty').classList.remove('hidden');
+    document.getElementById('newWeeklyCount').textContent = '0 newly launched this week';
   } else {
-    weekEmpty.classList.add('hidden');
-    weekCount.textContent = `${newWeek.length} newly launched this week`;
-    weekCards.innerHTML   = newWeek.map(buildPromoCard).join('');
+    document.getElementById('newWeeklyEmpty').classList.add('hidden');
+    document.getElementById('newWeeklyCount').textContent = `${newWeek.length} newly launched this week`;
+    document.getElementById('newWeeklyCards').innerHTML = newWeek.map(buildPromoCard).join('');
   }
 }
 
-// ── Bank tabs ─────────────────────────────────────────────────────
+function buildProductNewSections() {
+  const today = hktToday();
+  const newToday = allProducts.filter(p => isProdNewToday(p, today));
+  const sec = document.getElementById('newProdTodaySection');
+  sec.style.display = 'block';
+  if (!newToday.length) {
+    document.getElementById('newProdTodayCards').innerHTML = '';
+    document.getElementById('newProdTodayEmpty').classList.remove('hidden');
+    document.getElementById('newProdTodayCount').textContent = '0 new today';
+  } else {
+    document.getElementById('newProdTodayEmpty').classList.add('hidden');
+    document.getElementById('newProdTodayCount').textContent = `${newToday.length} new today`;
+    document.getElementById('newProdTodayCards').innerHTML = newToday.map(buildProductCard).join('');
+  }
+  const newWeek = allProducts.filter(isProdNewThisWeek);
+  document.getElementById('newProdWeekSection').style.display = 'block';
+  if (!newWeek.length) {
+    document.getElementById('newProdWeekCards').innerHTML = '';
+    document.getElementById('newProdWeekEmpty').classList.remove('hidden');
+    document.getElementById('newProdWeekCount').textContent = '0 new this week';
+  } else {
+    document.getElementById('newProdWeekEmpty').classList.add('hidden');
+    document.getElementById('newProdWeekCount').textContent = `${newWeek.length} new this week`;
+    document.getElementById('newProdWeekCards').innerHTML = newWeek.map(buildProductCard).join('');
+  }
+}
+
+// ── Bank tabs ───────────────────────────────────────────────────────
 function buildBankTabs(banks) {
-  const container = document.getElementById('bankTabs');
+  const c = document.getElementById('bankTabs');
   banks.sort().forEach(b => {
-    const c      = bankColor(b);
-    const safeId = 'tab-' + b.replace(/\s+/g,'-');
-    const btn    = document.createElement('button');
-    btn.id             = safeId;
-    btn.dataset.bank   = b;
-    btn.className      = 'bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold '
-                       + 'border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
-    btn.style.borderColor = c;
-    btn.innerHTML      = `<span style="color:${c}">●</span> ${b}`;
-    btn.onclick        = () => setBankTab(b);
-    container.appendChild(btn);
+    const col = bankColor(b), sid = 'tab-'+b.replace(/\s+/g,'-');
+    const btn = document.createElement('button');
+    btn.id = sid; btn.dataset.bank = b;
+    btn.className = 'bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
+    btn.style.borderColor = col;
+    btn.innerHTML = `<span style="color:${col}">●</span> ${b}`;
+    btn.onclick = () => setBankTab(b);
+    c.appendChild(btn);
   });
 }
 
 function setBankTab(bank) {
   activeBankTab = bank;
-  document.querySelectorAll('.bank-tab-btn').forEach(btn => {
-    btn.classList.remove('bg-indigo-600','text-white');
-    btn.classList.add('text-gray-600','bg-white');
-  });
-  const safeId    = bank ? 'tab-' + bank.replace(/\s+/g,'-') : 'tab-all';
-  const activeBtn = document.getElementById(safeId);
-  if (activeBtn) {
-    activeBtn.classList.remove('text-gray-600','bg-white');
-    activeBtn.classList.add('bg-indigo-600','text-white');
-  }
+  document.querySelectorAll('.bank-tab-btn').forEach(b => { b.classList.remove('bg-indigo-600','text-white'); b.classList.add('text-gray-600','bg-white'); });
+  const sid = bank ? 'tab-'+bank.replace(/\s+/g,'-') : 'tab-all';
+  const ab  = document.getElementById(sid);
+  if (ab) { ab.classList.remove('text-gray-600','bg-white'); ab.classList.add('bg-indigo-600','text-white'); }
   applyFilters();
 }
 
-// ── Category filter buttons ───────────────────────────────────────
+function buildProductBankTabs(banks) {
+  const c = document.getElementById('productBankTabs');
+  banks.sort().forEach(b => {
+    const col = bankColor(b), sid = 'ptab-'+b.replace(/\s+/g,'-');
+    const btn = document.createElement('button');
+    btn.id = sid; btn.dataset.bank = b;
+    btn.className = 'prod-bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
+    btn.style.borderColor = col;
+    btn.innerHTML = `<span style="color:${col}">●</span> ${b}`;
+    btn.onclick = () => setProductBankTab(b);
+    c.appendChild(btn);
+  });
+}
+
+function setProductBankTab(bank) {
+  activeProductBankTab = bank;
+  document.querySelectorAll('.prod-bank-tab-btn').forEach(b => { b.classList.remove('bg-indigo-600','text-white'); b.classList.add('text-gray-600','bg-white'); });
+  const sid = bank ? 'ptab-'+bank.replace(/\s+/g,'-') : 'ptab-all';
+  const ab  = document.getElementById(sid);
+  if (ab) { ab.classList.remove('text-gray-600','bg-white'); ab.classList.add('bg-indigo-600','text-white'); }
+  applyProductFilters();
+}
+
+// ── Category filter buttons ─────────────────────────────────────────
 function buildCatButtons() {
-  const container = document.getElementById('catTagFilter');
-  container.innerHTML =
-    `<span class="text-xs text-gray-400 font-semibold self-center mr-1 whitespace-nowrap">
-       Category:
-     </span>` +
-    CAT_FILTER_LIST.map(c => `
-      <button class="cat-filter-btn cat-tag" data-cat="${c.key}"
-        style="background:${c.bg}; opacity:${c.key==='__ALL__'?'1':'0.65'};
-               ${c.key==='__ALL__'?'box-shadow:0 0 0 3px rgba(0,0,0,0.28);':''}"
-        onclick="toggleCat('${c.key}')">
-        ${c.label}
-      </button>`
-    ).join('');
+  const c = document.getElementById('catTagFilter');
+  c.innerHTML = `<span class="text-xs text-gray-400 font-semibold self-center mr-1 whitespace-nowrap">Category:</span>` +
+    CAT_FILTER_LIST.map(x => `<button class="cat-filter-btn cat-tag" data-cat="${x.key}"
+      style="background:${x.bg};opacity:${x.key==='__ALL__'?'1':'0.65'};${x.key==='__ALL__'?'box-shadow:0 0 0 3px rgba(0,0,0,0.28);':''}"
+      onclick="toggleCat('${x.key}')">${x.label}</button>`).join('');
 }
 
 function toggleCat(cat) {
   if (cat === '__ALL__') { selectedCats = []; }
-  else {
-    const idx = selectedCats.indexOf(cat);
-    if (idx === -1) selectedCats.push(cat);
-    else            selectedCats.splice(idx,1);
-  }
-  updateCatButtons();
-  applyFilters();
+  else { const i = selectedCats.indexOf(cat); if (i===-1) selectedCats.push(cat); else selectedCats.splice(i,1); }
+  updateCatButtons(); applyFilters();
 }
 
 function updateCatButtons() {
   document.querySelectorAll('.cat-filter-btn').forEach(btn => {
-    const cat = btn.dataset.cat, isAll = cat==='__ALL__', noneSelected = selectedCats.length===0;
-    if (isAll) {
-      btn.style.opacity   = noneSelected ? '1' : '0.45';
-      btn.style.boxShadow = noneSelected ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
-      btn.style.transform = 'scale(1)';
-    } else {
-      const sel = selectedCats.includes(cat);
-      btn.style.opacity   = sel ? '1' : (noneSelected ? '0.65' : '0.38');
-      btn.style.boxShadow = sel ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none';
-      btn.style.transform = sel ? 'scale(1.07)' : 'scale(1)';
-    }
+    const cat=btn.dataset.cat, isAll=cat==='__ALL__', noneSelected=selectedCats.length===0;
+    if (isAll) { btn.style.opacity=noneSelected?'1':'0.45'; btn.style.boxShadow=noneSelected?'0 0 0 3px rgba(0,0,0,0.28)':'none'; btn.style.transform='scale(1)'; }
+    else { const sel=selectedCats.includes(cat); btn.style.opacity=sel?'1':(noneSelected?'0.65':'0.38'); btn.style.boxShadow=sel?'0 0 0 3px rgba(0,0,0,0.28)':'none'; btn.style.transform=sel?'scale(1.07)':'scale(1)'; }
   });
 }
 
-// ── Section toggles ───────────────────────────────────────────────
+function buildProductCatButtons() {
+  const c = document.getElementById('prodCatFilter');
+  c.innerHTML = `<span class="text-xs text-gray-400 font-semibold self-center mr-1 whitespace-nowrap">Category:</span>` +
+    PROD_CAT_FILTER_LIST.map(x => `<button class="prod-cat-filter-btn prod-cat-tag" data-cat="${x.key}"
+      style="background:${x.bg};opacity:${x.key==='__ALL__'?'1':'0.65'};${x.key==='__ALL__'?'box-shadow:0 0 0 3px rgba(0,0,0,0.28);':''}"
+      onclick="toggleProductCat('${x.key}')">${x.label}</button>`).join('');
+}
+
+function toggleProductCat(cat) {
+  if (cat === '__ALL__') { selectedProductCats = []; }
+  else { const i=selectedProductCats.indexOf(cat); if(i===-1) selectedProductCats.push(cat); else selectedProductCats.splice(i,1); }
+  updateProductCatButtons(); applyProductFilters();
+}
+
+function updateProductCatButtons() {
+  document.querySelectorAll('.prod-cat-filter-btn').forEach(btn => {
+    const cat=btn.dataset.cat, isAll=cat==='__ALL__', none=selectedProductCats.length===0;
+    if (isAll) { btn.style.opacity=none?'1':'0.45'; btn.style.boxShadow=none?'0 0 0 3px rgba(0,0,0,0.28)':'none'; btn.style.transform='scale(1)'; }
+    else { const sel=selectedProductCats.includes(cat); btn.style.opacity=sel?'1':(none?'0.65':'0.38'); btn.style.boxShadow=sel?'0 0 0 3px rgba(0,0,0,0.28)':'none'; btn.style.transform=sel?'scale(1.07)':'scale(1)'; }
+  });
+}
+
+// ── Section toggles ─────────────────────────────────────────────────
 function toggleInsightsTable(e) {
   e.stopPropagation();
-  const wrap   = document.getElementById('insightsTableWrap');
-  const btn    = document.getElementById('toggleInsightsBtn');
-  const hidden = wrap.style.display === 'none';
-  wrap.style.display = hidden ? '' : 'none';
-  btn.dataset.hidden = hidden ? 'false' : 'true';
+  const wrap=document.getElementById('insightsTableWrap'), btn=document.getElementById('toggleInsightsBtn');
+  const hidden=wrap.style.display==='none'; wrap.style.display=hidden?'':'none'; btn.dataset.hidden=hidden?'false':'true';
 }
-
 function toggleAnalysisGrid(e) {
   e.stopPropagation();
-  const grid   = document.getElementById('bankAnalysisGrid');
-  const btn    = document.getElementById('toggleAnalysisBtn');
-  const hidden = grid.style.display === 'none';
-  grid.style.display = hidden ? '' : 'none';
-  btn.dataset.hidden = hidden ? 'false' : 'true';
+  const grid=document.getElementById('bankAnalysisGrid'), btn=document.getElementById('toggleAnalysisBtn');
+  const hidden=grid.style.display==='none'; grid.style.display=hidden?'':'none'; btn.dataset.hidden=hidden?'false':'true';
 }
 
-// ── Strategic Insights table ──────────────────────────────────────
+// ── Strategic Insights ──────────────────────────────────────────────
 function buildStrategicInsights(insights) {
   const tbody = document.getElementById('insightsTbody');
-
-  if (!insights || !insights.best_for || !insights.best_for.length) {
-    tbody.innerHTML = insightsNoDataHtml();
-    return;
-  }
-
-  const rows = insights.best_for.map(item => {
-    const cat    = item.category      || '';
-    const bank   = item.bank          || 'None';
-    const detail = item.detail        || '—';
-
-    const standard = (item.standard && item.standard.trim())
-                     ? item.standard
-                     : (HOW_DEFINED[cat] || '—');
-
-    // ★ FIX: use toArray() — similar_banks may be a string from AI output
-    const similar  = toArray(item.similar_banks).filter(b => b !== bank);
-    const whyLose  = item.why_others_lose || '—';
-    const isBau    = item.is_bau || false;
-    const isNone   = ['none','n/a',''].includes(bank.toLowerCase());
-    const color    = isNone ? '#6b7280' : bankColor(bank);
-
-    const bauPill = isBau
-      ? `<span class="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-semibold">⚙️ BAU</span>`
-      : '';
-
-    const winnerBadge = isNone
-      ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs
-                      font-bold bg-gray-100 text-gray-400">—</span>`
-      : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs
-                      font-bold text-white" style="background:${color}">🏆 ${bank}</span>`;
-
-    const similarHtml = similar.length
-      ? similar.map(b => {
-          const bc = bankColor(b);
-          return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs
-                              font-semibold text-white mr-1 mb-1"
-                        style="background:${bc}">${b}</span>`;
-        }).join('')
-      : '<span class="text-gray-400 text-xs">—</span>';
-
-    return `
-      <tr class="border-b border-gray-100 hover:bg-gray-50/50">
-        <td class="px-4 py-3 font-semibold text-gray-700 text-sm">${cat}</td>
-        <td class="px-4 py-3 whitespace-nowrap">${winnerBadge}${bauPill}</td>
-        <td class="px-4 py-3 text-xs text-gray-600 leading-relaxed">${detail}</td>
-        <td class="px-4 py-3 text-xs text-gray-500 leading-relaxed">${standard}</td>
-        <td class="px-4 py-3">${similarHtml}</td>
-        <td class="px-4 py-3 text-xs text-gray-500 leading-relaxed">${whyLose}</td>
-      </tr>`;
-  });
-
-  tbody.innerHTML = rows.join('');
-}
-
-// ── Bank-by-Bank Analysis grid ────────────────────────────────────
-function buildBankAnalysis(insights) {
-  const grid = document.getElementById('bankAnalysisGrid');
-
-  if (!insights || !insights.bank_analysis) {
-    grid.innerHTML = analysisNoDataHtml();
-    return;
-  }
-
-  const analysis  = insights.bank_analysis;
-  const bankNames = Object.keys(analysis);
-  if (!bankNames.length) {
-    grid.innerHTML = analysisNoDataHtml();
-    return;
-  }
-
-  const sorted = [
-    ...bankNames.filter(b => b === 'ZA Bank'),
-    ...bankNames.filter(b => b !== 'ZA Bank').sort(),
-  ];
-
-  grid.innerHTML = sorted.map(bankName => {
-    const d = analysis[bankName] || {};
-
-    // ★ FIX: use toArray() for all three list fields — AI may return strings
-    const strengths = toArray(d.strengths);
-    const pros      = toArray(d.vs_za_pros);
-    const cons      = toArray(d.vs_za_cons);
-
-    const color    = bankColor(bankName);
-    const alert    = d.expiring_alert || '';
-    const focus    = d.focus          || '';
-    const count    = d.count          || 0;
-    const bauCount = d.bau_count      || 0;
-    const isZA     = bankName === 'ZA Bank';
-
-    const zaBadge = isZA
-      ? `<span class="text-xs px-2 py-0.5 bg-white/20 rounded-full font-semibold ml-2">📊 Baseline</span>`
-      : '';
-
-    const strengthsHtml = strengths.length
-      ? `<ul class="mt-2 space-y-1">
-          ${strengths.map(s =>
-            `<li class="flex items-start gap-2 text-xs text-gray-600">
-               <span class="text-green-500 mt-0.5 shrink-0">✓</span>${s}
-             </li>`
-          ).join('')}
-         </ul>`
-      : '<p class="text-xs text-gray-400 mt-2">No strengths listed.</p>';
-
-    const prosHtml = (!isZA && pros.length)
-      ? `<div class="mt-3 pt-3 border-t border-gray-100">
-           <div class="text-xs font-bold text-green-600 mb-1.5">▲ Better than ZA</div>
-           <ul class="space-y-1">
-             ${pros.map(s =>
-               `<li class="flex items-start gap-2 text-xs text-gray-600">
-                  <span class="text-green-500 shrink-0">+</span>${s}
-                </li>`
-             ).join('')}
-           </ul>
-         </div>` : '';
-
-    const consHtml = (!isZA && cons.length)
-      ? `<div class="mt-3">
-           <div class="text-xs font-bold text-red-500 mb-1.5">▼ Worse than ZA</div>
-           <ul class="space-y-1">
-             ${cons.map(s =>
-               `<li class="flex items-start gap-2 text-xs text-gray-600">
-                  <span class="text-red-400 shrink-0">−</span>${s}
-                </li>`
-             ).join('')}
-           </ul>
-         </div>` : '';
-
-    const alertHtml = alert
-      ? `<div class="mt-3 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
-           <span class="text-xs text-orange-600 font-semibold">⚡ ${alert}</span>
-         </div>` : '';
-
-    return `
-      <div class="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
-        <div class="px-4 py-3 flex items-center justify-between" style="background:${color}">
-          <div class="flex items-center gap-2">
-            <span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span>
-            <span class="font-extrabold text-white text-sm">${bankName}</span>
-            ${zaBadge}
-          </div>
-          <span class="text-white/80 text-xs">
-            ${count} active${bauCount ? ` +${bauCount} BAU` : ''}
-          </span>
-        </div>
-        <div class="p-4">
-          ${focus
-            ? `<div class="text-xs text-indigo-600 font-semibold mb-2">🎯 ${focus}</div>`
-            : ''}
-          <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Key Strengths</div>
-          ${strengthsHtml}
-          ${prosHtml}${consHtml}${alertHtml}
-        </div>
-      </div>`;
-  }).join('');
-}
-
-// ── Comparison table ──────────────────────────────────────────────
-function buildComparisonTable() {
-  const section = document.getElementById('comparisonSection');
-  if (!allPromos.length) { section.style.display = 'none'; return; }
-
-  const bankSet = [...new Set(
-    allPromos.filter(p => p.bank_name).map(p => p.bank_name)
-  )].sort();
-
-  if (bankSet.length < 2) { section.style.display = 'none'; return; }
-  section.style.display = '';
-
-  const activeNonBau = allPromos.filter(p => !p.is_bau && getStatus(p) !== 'expired');
-
-  const catCounts  = {};
-  const bankTotals = {};
-  bankSet.forEach(b => { bankTotals[b] = 0; });
-
-  activeNonBau.forEach(p => {
-    const types = p.types && p.types.length ? p.types : ['Others 其他'];
-    types.forEach(t => {
-      if (!catCounts[t]) catCounts[t] = {};
-      catCounts[t][p.bank_name] = (catCounts[t][p.bank_name] || 0) + 1;
-    });
-    if (p.bank_name) bankTotals[p.bank_name] = (bankTotals[p.bank_name] || 0) + 1;
-  });
-
-  const cats = Object.keys(catCounts).sort((a, b) => {
-    const sumA = Object.values(catCounts[a]).reduce((s, n) => s + n, 0);
-    const sumB = Object.values(catCounts[b]).reduce((s, n) => s + n, 0);
-    return sumB - sumA;
-  });
-
-  const zaName  = bankSet.find(b => b === 'ZA Bank') || '';
-  const zaTotal = zaName ? (bankTotals[zaName] || 0) : 0;
-
-  const headerHtml = `
-    <thead>
-      <tr class="bg-gray-50 border-b-2 border-gray-200">
-        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase
-                   tracking-wide sticky left-0 bg-gray-50 z-10">Category</th>
-        ${bankSet.map(b => {
-          const c = bankColor(b);
-          return `<th class="px-4 py-3 text-center text-xs font-bold uppercase
-                             tracking-wide whitespace-nowrap" style="color:${c}">${b}</th>`;
-        }).join('')}
-      </tr>
-    </thead>`;
-
-  const bodyRows = cats.map(cat => {
-    const counts  = catCounts[cat] || {};
-    const zaCount = zaName ? (counts[zaName] || 0) : 0;
-    const maxN    = Math.max(0, ...Object.values(counts));
-    const leaders = new Set(
-      Object.entries(counts)
-        .filter(([, n]) => n === maxN && n > 0)
-        .map(([b]) => b)
-    );
-
-    const cells = bankSet.map(b => {
-      const n        = counts[b] || 0;
-      const isZA     = b === zaName;
-      const isLeader = leaders.has(b);
-
-      if (n === 0)
-        return `<td class="px-4 py-3 text-center text-gray-200 text-sm">—</td>`;
-
-      let diffHtml = '';
-      if (!isZA && zaName && zaCount > 0) {
-        const diff = n - zaCount;
-        if (diff > 0)
-          diffHtml = `<span class="text-green-600 font-bold ml-1 text-xs">▲${diff}</span>`;
-        else if (diff < 0)
-          diffHtml = `<span class="text-red-400 font-bold ml-1 text-xs">▼${Math.abs(diff)}</span>`;
-      }
-
-      return `
-        <td class="px-4 py-3 text-center text-sm">
-          <span class="font-semibold text-gray-700">
-            ${isLeader ? '🟢 ' : ''}${n}${diffHtml}
-          </span>
-        </td>`;
-    }).join('');
-
-    const { emoji } = catMeta(cat);
-    return `
-      <tr class="border-b border-gray-50 hover:bg-gray-50/60">
-        <td class="px-4 py-3 text-sm font-semibold text-gray-700 sticky left-0
-                   bg-white whitespace-nowrap z-10">${emoji} ${cat}</td>
-        ${cells}
-      </tr>`;
-  }).join('');
-
-  const totalCells = bankSet.map(b => {
-    const n    = bankTotals[b] || 0;
-    const isZA = b === zaName;
-    let diffHtml = '';
-    if (!isZA && zaName && zaTotal > 0) {
-      const diff = n - zaTotal;
-      if (diff > 0)
-        diffHtml = `<span class="text-green-600 font-bold ml-1">▲${diff}</span>`;
-      else if (diff < 0)
-        diffHtml = `<span class="text-red-400 font-bold ml-1">▼${Math.abs(diff)}</span>`;
-    }
-    return `<td class="px-4 py-3 text-center text-sm font-extrabold text-gray-800 bg-gray-50">
-              ${n}${diffHtml}
-            </td>`;
-  }).join('');
-
-  const totalRow = `
-    <tr class="border-t-2 border-gray-200 bg-gray-50">
-      <td class="px-4 py-3 text-sm font-extrabold text-gray-700 sticky left-0 bg-gray-50 z-10">
-        📊 Total Active
-      </td>
-      ${totalCells}
+  if (!insights || !insights.best_for || !insights.best_for.length) { tbody.innerHTML = insightsNoDataHtml(); return; }
+  tbody.innerHTML = insights.best_for.map(item => {
+    const cat=item.category||'', bank=item.bank||'None', detail=item.detail||'—';
+    const standard=(item.standard&&item.standard.trim())?item.standard:(HOW_DEFINED[cat]||'—');
+    const similar=toArray(item.similar_banks).filter(b=>b!==bank);
+    const isBau=item.is_bau||false, isNone=['none','n/a',''].includes(bank.toLowerCase());
+    const color=isNone?'#6b7280':bankColor(bank);
+    const bauPill=isBau?`<span class="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-semibold">⚙️ BAU</span>`:'';
+    const winnerBadge=isNone?`<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-400">—</span>`:`<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-white" style="background:${color}">🏆 ${bank}</span>`;
+    const similarHtml=similar.length?similar.map(b=>`<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold text-white mr-1 mb-1" style="background:${bankColor(b)}">${b}</span>`).join(''):`<span class="text-gray-400 text-xs">—</span>`;
+    return `<tr class="border-b border-gray-100 hover:bg-gray-50/50">
+      <td class="px-4 py-3 font-semibold text-gray-700 text-sm">${cat}</td>
+      <td class="px-4 py-3 whitespace-nowrap">${winnerBadge}${bauPill}</td>
+      <td class="px-4 py-3 text-xs text-gray-600 leading-relaxed">${detail}</td>
+      <td class="px-4 py-3 text-xs text-gray-500 leading-relaxed">${standard}</td>
+      <td class="px-4 py-3">${similarHtml}</td>
+      <td class="px-4 py-3 text-xs text-gray-500 leading-relaxed">${item.why_others_lose||'—'}</td>
     </tr>`;
-
-  document.getElementById('compTable').innerHTML =
-    `${headerHtml}<tbody>${bodyRows}${totalRow}</tbody>`;
-
-  // Pros / Cons cards
-  const prosConsWrap = document.getElementById('prosConsWrap');
-  prosConsWrap.innerHTML = '';
-
-  if (strategicInsights && strategicInsights.bank_analysis) {
-    prosConsWrap.innerHTML = bankSet
-      .filter(b => b !== 'ZA Bank')
-      .map(bank => {
-        const d = (strategicInsights.bank_analysis || {})[bank];
-        if (!d) return '';
-
-        // ★ FIX: use toArray() here too — same AI-string risk
-        const pros = toArray(d.vs_za_pros);
-        const cons = toArray(d.vs_za_cons);
-        if (!pros.length && !cons.length) return '';
-
-        const color = bankColor(bank);
-        return `
-          <div class="rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-            <div class="px-4 py-2.5 font-bold text-white text-sm"
-                 style="background:${color}">${bank} vs ZA Bank</div>
-            <div class="p-4 grid grid-cols-2 gap-3">
-              <div>
-                <div class="text-xs font-bold text-green-600 mb-2">▲ Better than ZA</div>
-                ${pros.length
-                  ? pros.map(s =>
-                      `<div class="text-xs text-gray-600 mb-1.5 leading-relaxed">✓ ${s}</div>`
-                    ).join('')
-                  : '<div class="text-xs text-gray-400">—</div>'}
-              </div>
-              <div>
-                <div class="text-xs font-bold text-red-500 mb-2">▼ Worse than ZA</div>
-                ${cons.length
-                  ? cons.map(s =>
-                      `<div class="text-xs text-gray-600 mb-1.5 leading-relaxed">✗ ${s}</div>`
-                    ).join('')
-                  : '<div class="text-xs text-gray-400">—</div>'}
-              </div>
-            </div>
-          </div>`;
-      })
-      .filter(Boolean)
-      .join('');
-  }
-}
-
-// ── Main table render ─────────────────────────────────────────────
-function renderTable() {
-  const tbody      = document.getElementById('promoTbody');
-  const wrapper    = document.getElementById('tableWrapper');
-  const emptyState = document.getElementById('emptyState');
-
-  if (!filtered.length) {
-    tbody.innerHTML = '';
-    wrapper.classList.add('hidden');
-    emptyState.classList.remove('hidden');
-    return;
-  }
-
-  wrapper.classList.remove('hidden');
-  emptyState.classList.add('hidden');
-
-  tbody.innerHTML = filtered.map(p => {
-    const color  = bankColor(p.bank_name);
-    const cats   = (p.types || ['Others 其他']).map(catTag).join('');
-    const bau    = bauTag(p);
-    const badge  = statusBadge(p);
-    const tcLink = p.tc_link || p.url || '';
-    const detail = p.highlight || p.description || '';
-
-    return `
-      <tr class="border-b border-gray-50">
-        <td class="px-4 py-3 whitespace-nowrap">
-          <div class="flex items-center gap-2">
-            <span class="bank-dot" style="background:${color}"></span>
-            <span class="font-semibold text-sm text-gray-700">${p.bank_name}</span>
-          </div>
-        </td>
-        <td class="px-4 py-3 max-w-sm">
-          <div class="font-semibold text-gray-800 text-sm leading-snug">${p.title}</div>
-          ${detail
-            ? `<div class="text-xs text-gray-500 mt-0.5 leading-relaxed">${detail}</div>`
-            : ''}
-          ${tcLink
-            ? `<a href="${tcLink}" target="_blank" rel="noopener"
-                  class="inline-flex items-center gap-1 mt-1 text-xs text-indigo-500
-                         hover:text-indigo-700 font-medium">
-                  🔗 Source ↗
-                </a>`
-            : ''}
-        </td>
-        <td class="px-4 py-3">
-          <div class="flex flex-wrap">${cats}${bau}</div>
-        </td>
-        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">${p.period || '—'}</td>
-        <td class="px-4 py-3">${badge}</td>
-        <td class="px-4 py-3 text-xs text-gray-500">
-          ${p.quota ? `<div class="mb-1">👥 ${p.quota}</div>` : ''}
-          ${p.cost  ? `<div>💲 ${p.cost}</div>`               : ''}
-        </td>
-      </tr>`;
   }).join('');
 }
 
-// ── Filter + sort ─────────────────────────────────────────────────
+// ── Bank-by-Bank Analysis ───────────────────────────────────────────
+function _buildAnalysisCard(bankName, d, isZA) {
+  const color=bankColor(bankName);
+  const strengths=toArray(d.strengths), pros=toArray(d.vs_za_pros), cons=toArray(d.vs_za_cons);
+  const alert=d.expiring_alert||'', focus=d.focus||'', count=d.count||0, bauCount=d.bau_count||0;
+  const zaBadge=isZA?`<span class="text-xs px-2 py-0.5 bg-white/20 rounded-full font-semibold ml-2">📊 Baseline</span>`:'';
+  const strengthsHtml=strengths.length?`<ul class="mt-2 space-y-1">${strengths.map(s=>`<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-green-500 mt-0.5 shrink-0">✓</span>${s}</li>`).join('')}</ul>`:'<p class="text-xs text-gray-400 mt-2">No strengths listed.</p>';
+  const prosHtml=(!isZA&&pros.length)?`<div class="mt-3 pt-3 border-t border-gray-100"><div class="text-xs font-bold text-green-600 mb-1.5">▲ Better than ZA</div><ul class="space-y-1">${pros.map(s=>`<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-green-500 shrink-0">+</span>${s}</li>`).join('')}</ul></div>`:'';
+  const consHtml=(!isZA&&cons.length)?`<div class="mt-3"><div class="text-xs font-bold text-red-500 mb-1.5">▼ Worse than ZA</div><ul class="space-y-1">${cons.map(s=>`<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-red-400 shrink-0">−</span>${s}</li>`).join('')}</ul></div>`:'';
+  const alertHtml=alert?`<div class="mt-3 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2"><span class="text-xs text-orange-600 font-semibold">⚡ ${alert}</span></div>`:'';
+  return `<div class="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+    <div class="px-4 py-3 flex items-center justify-between" style="background:${color}">
+      <div class="flex items-center gap-2"><span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span><span class="font-extrabold text-white text-sm">${bankName}</span>${zaBadge}</div>
+      <span class="text-white/80 text-xs">${count} active${bauCount?` +${bauCount} BAU`:''}</span>
+    </div>
+    <div class="p-4">
+      ${focus?`<div class="text-xs text-indigo-600 font-semibold mb-2">🎯 ${focus}</div>`:''}
+      <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Key Strengths</div>
+      ${strengthsHtml}${prosHtml}${consHtml}${alertHtml}
+    </div>
+  </div>`;
+}
+
+function buildBankAnalysis(insights) {
+  const grid=document.getElementById('bankAnalysisGrid');
+  if (!insights||!insights.bank_analysis) { grid.innerHTML=analysisNoDataHtml(); return; }
+  const analysis=insights.bank_analysis, bankNames=Object.keys(analysis);
+  if (!bankNames.length) { grid.innerHTML=analysisNoDataHtml(); return; }
+  const sorted=[...bankNames.filter(b=>b==='ZA Bank'),...bankNames.filter(b=>b!=='ZA Bank').sort()];
+  grid.innerHTML=sorted.map(bn=>_buildAnalysisCard(bn,analysis[bn]||{},bn==='ZA Bank')).join('');
+}
+
+function buildProductBankAnalysis(insights) {
+  const grid=document.getElementById('productBankAnalysisGrid');
+  if (!insights||!insights.bank_analysis) { grid.innerHTML=analysisNoDataHtml(); return; }
+  const analysis=insights.bank_analysis, bankNames=Object.keys(analysis);
+  if (!bankNames.length) { grid.innerHTML=analysisNoDataHtml(); return; }
+  const sorted=[...bankNames.filter(b=>b==='ZA Bank'),...bankNames.filter(b=>b!=='ZA Bank').sort()];
+  grid.innerHTML=sorted.map(bn=>_buildAnalysisCard(bn,analysis[bn]||{},bn==='ZA Bank')).join('');
+}
+
+// ── Comparison table ────────────────────────────────────────────────
+function buildComparisonTable() {
+  const section=document.getElementById('comparisonSection');
+  if (!allPromos.length) { section.style.display='none'; return; }
+  const bankSet=[...new Set(allPromos.filter(p=>p.bank_name).map(p=>p.bank_name))].sort();
+  if (bankSet.length<2) { section.style.display='none'; return; }
+  section.style.display='';
+  const activeNonBau=allPromos.filter(p=>!p.is_bau&&getStatus(p)!=='expired');
+  const catCounts={}, bankTotals={};
+  bankSet.forEach(b=>{bankTotals[b]=0;});
+  activeNonBau.forEach(p=>{
+    const types=p.types&&p.types.length?p.types:['Others 其他'];
+    types.forEach(t=>{if(!catCounts[t])catCounts[t]={};catCounts[t][p.bank_name]=(catCounts[t][p.bank_name]||0)+1;});
+    if(p.bank_name)bankTotals[p.bank_name]=(bankTotals[p.bank_name]||0)+1;
+  });
+  const cats=Object.keys(catCounts).sort((a,b)=>Object.values(catCounts[b]).reduce((s,n)=>s+n,0)-Object.values(catCounts[a]).reduce((s,n)=>s+n,0));
+  const zaName=bankSet.find(b=>b==='ZA Bank')||'', zaTotal=zaName?(bankTotals[zaName]||0):0;
+  const headerHtml=`<thead><tr class="bg-gray-50 border-b-2 border-gray-200"><th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide sticky left-0 bg-gray-50 z-10">Category</th>${bankSet.map(b=>`<th class="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide whitespace-nowrap" style="color:${bankColor(b)}">${b}</th>`).join('')}</tr></thead>`;
+  const bodyRows=cats.map(cat=>{
+    const counts=catCounts[cat]||{}, zaCount=zaName?(counts[zaName]||0):0;
+    const maxN=Math.max(0,...Object.values(counts)), leaders=new Set(Object.entries(counts).filter(([,n])=>n===maxN&&n>0).map(([b])=>b));
+    const cells=bankSet.map(b=>{
+      const n=counts[b]||0, isZA=b===zaName, isLeader=leaders.has(b);
+      if(!n) return `<td class="px-4 py-3 text-center text-gray-200 text-sm">—</td>`;
+      let diffHtml='';
+      if(!isZA&&zaName&&zaCount>0){const d=n-zaCount;if(d>0)diffHtml=`<span class="text-green-600 font-bold ml-1 text-xs">▲${d}</span>`;else if(d<0)diffHtml=`<span class="text-red-400 font-bold ml-1 text-xs">▼${Math.abs(d)}</span>`;}
+      return `<td class="px-4 py-3 text-center text-sm"><span class="font-semibold text-gray-700">${isLeader?'🟢 ':''}${n}${diffHtml}</span></td>`;
+    }).join('');
+    return `<tr class="border-b border-gray-50 hover:bg-gray-50/60"><td class="px-4 py-3 text-sm font-semibold text-gray-700 sticky left-0 bg-white whitespace-nowrap z-10">${catMeta(cat).emoji} ${cat}</td>${cells}</tr>`;
+  }).join('');
+  const totalCells=bankSet.map(b=>{
+    const n=bankTotals[b]||0,isZA=b===zaName;let diffHtml='';
+    if(!isZA&&zaName&&zaTotal>0){const d=n-zaTotal;if(d>0)diffHtml=`<span class="text-green-600 font-bold ml-1">▲${d}</span>`;else if(d<0)diffHtml=`<span class="text-red-400 font-bold ml-1">▼${Math.abs(d)}</span>`;}
+    return `<td class="px-4 py-3 text-center text-sm font-extrabold text-gray-800 bg-gray-50">${n}${diffHtml}</td>`;
+  }).join('');
+  document.getElementById('compTable').innerHTML=`${headerHtml}<tbody>${bodyRows}<tr class="border-t-2 border-gray-200 bg-gray-50"><td class="px-4 py-3 text-sm font-extrabold text-gray-700 sticky left-0 bg-gray-50 z-10">📊 Total Active</td>${totalCells}</tr></tbody>`;
+  const prosConsWrap=document.getElementById('prosConsWrap');
+  prosConsWrap.innerHTML='';
+  if(strategicInsights&&strategicInsights.bank_analysis){
+    prosConsWrap.innerHTML=bankSet.filter(b=>b!=='ZA Bank').map(bank=>{
+      const d=(strategicInsights.bank_analysis||{})[bank];
+      if(!d)return'';
+      const pros=toArray(d.vs_za_pros),cons=toArray(d.vs_za_cons);
+      if(!pros.length&&!cons.length)return'';
+      const color=bankColor(bank);
+      return `<div class="rounded-xl border border-gray-100 overflow-hidden shadow-sm"><div class="px-4 py-2.5 font-bold text-white text-sm" style="background:${color}">${bank} vs ZA Bank</div><div class="p-4 grid grid-cols-2 gap-3"><div><div class="text-xs font-bold text-green-600 mb-2">▲ Better than ZA</div>${pros.length?pros.map(s=>`<div class="text-xs text-gray-600 mb-1.5 leading-relaxed">✓ ${s}</div>`).join(''):'<div class="text-xs text-gray-400">—</div>'}</div><div><div class="text-xs font-bold text-red-500 mb-2">▼ Worse than ZA</div>${cons.length?cons.map(s=>`<div class="text-xs text-gray-600 mb-1.5 leading-relaxed">✗ ${s}</div>`).join(''):'<div class="text-xs text-gray-400">—</div>'}</div></div></div>`;
+    }).filter(Boolean).join('');
+  }
+}
+
+// ── Main promo table render ─────────────────────────────────────────
+function renderTable() {
+  const tbody=document.getElementById('promoTbody'), wrapper=document.getElementById('tableWrapper'), emptyState=document.getElementById('emptyState');
+  if (!filtered.length) { tbody.innerHTML=''; wrapper.classList.add('hidden'); emptyState.classList.remove('hidden'); return; }
+  wrapper.classList.remove('hidden'); emptyState.classList.add('hidden');
+  tbody.innerHTML=filtered.map(p=>{
+    const color=bankColor(p.bank_name), cats=(p.types||['Others 其他']).map(catTag).join(''), bau=bauTag(p), badge=statusBadge(p), tcLink=p.tc_link||p.url||'', detail=p.highlight||p.description||'';
+    return `<tr class="border-b border-gray-50">
+      <td class="px-4 py-3 whitespace-nowrap"><div class="flex items-center gap-2"><span class="bank-dot" style="background:${color}"></span><span class="font-semibold text-sm text-gray-700">${p.bank_name}</span></div></td>
+      <td class="px-4 py-3 max-w-sm"><div class="font-semibold text-gray-800 text-sm leading-snug">${p.title}</div>${detail?`<div class="text-xs text-gray-500 mt-0.5 leading-relaxed">${detail}</div>`:''}${tcLink?`<a href="${tcLink}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 mt-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">🔗 Source ↗</a>`:''}</td>
+      <td class="px-4 py-3"><div class="flex flex-wrap">${cats}${bau}</div></td>
+      <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">${p.period||'—'}</td>
+      <td class="px-4 py-3">${badge}</td>
+      <td class="px-4 py-3 text-xs text-gray-500">${p.quota?`<div class="mb-1">👥 ${p.quota}</div>`:''}${p.cost?`<div>💲 ${p.cost}</div>`:''}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Product grid render ─────────────────────────────────────────────
+function renderProductGrid() {
+  const grid=document.getElementById('productGrid'), empty=document.getElementById('productEmptyState');
+  if (!filteredProducts.length) { grid.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+  grid.classList.remove('hidden'); empty.classList.add('hidden');
+  grid.innerHTML=filteredProducts.map(buildProductCard).join('');
+}
+
+// ── Filter functions ────────────────────────────────────────────────
 function applyFilters() {
-  const search = (document.getElementById('searchInput').value || '').toLowerCase();
-  const status = document.getElementById('statusFilter').value;
-  const sort   = document.getElementById('sortFilter').value;
-
-  filtered = allPromos.filter(p => {
-    if (activeBankTab && p.bank_name !== activeBankTab) return false;
-
-    const s = getStatus(p);
-    if (status === 'active'          && s !== 'active')   return false;
-    if (status === 'expiring'        && s !== 'expiring') return false;
-    if (status === 'active+expiring' && s === 'expired')  return false;
-    if (status === 'expired'         && s !== 'expired')  return false;
-
-    if (selectedCats.length) {
-      const hasBauFilter = selectedCats.includes('BAU');
-      const catKeys      = selectedCats.filter(c => c !== 'BAU');
-      const matchesCat   = catKeys.length > 0
-        ? (p.types || []).some(t => catKeys.includes(t))
-        : false;
-      const matchesBAU   = hasBauFilter && !!p.is_bau;
-      if (!matchesCat && !matchesBAU) return false;
+  const search=(document.getElementById('searchInput').value||'').toLowerCase();
+  const status=document.getElementById('statusFilter').value;
+  const sort=document.getElementById('sortFilter').value;
+  filtered=allPromos.filter(p=>{
+    if(activeBankTab&&p.bank_name!==activeBankTab)return false;
+    const s=getStatus(p);
+    if(status==='active'&&s!=='active')return false;
+    if(status==='expiring'&&s!=='expiring')return false;
+    if(status==='active+expiring'&&s==='expired')return false;
+    if(status==='expired'&&s!=='expired')return false;
+    if(selectedCats.length){
+      const hasBau=selectedCats.includes('BAU'),catKeys=selectedCats.filter(c=>c!=='BAU');
+      const matchCat=catKeys.length>0?(p.types||[]).some(t=>catKeys.includes(t)):false;
+      const matchBau=hasBau&&!!p.is_bau;
+      if(!matchCat&&!matchBau)return false;
     }
-
-    if (search) {
-      const haystack = [
-        p.bank_name || '', p.title || '', p.highlight || '',
-        p.description || '', p.period || '',
-        (p.types || []).join(' '),
-      ].join(' ').toLowerCase();
-      if (!haystack.includes(search)) return false;
-    }
-
+    if(search){const hay=[p.bank_name||'',p.title||'',p.highlight||'',p.description||'',p.period||'',(p.types||[]).join(' ')].join(' ').toLowerCase();if(!hay.includes(search))return false;}
     return true;
   });
-
-  if (sort === 'bank') {
-    filtered.sort((a, b) => (a.bank_name || '').localeCompare(b.bank_name || ''));
-  } else if (sort === 'enddate') {
-    filtered.sort((a, b) => {
-      const da = a.end_date ? (a.end_date + '').substring(0, 10) : '9999-12-31';
-      const db = b.end_date ? (b.end_date + '').substring(0, 10) : '9999-12-31';
-      return da.localeCompare(db);
-    });
-  } else if (sort === 'newest') {
-    filtered.sort((a, b) => {
-      const da = (a.first_seen_at || a.created_at || '').substring(0, 10);
-      const db = (b.first_seen_at || b.created_at || '').substring(0, 10);
-      return db.localeCompare(da);
-    });
-  }
-
-  renderTable();
-  updateCatButtons();
-
-  const searchVal = document.getElementById('searchInput').value;
-  document.getElementById('resultCount').textContent =
-    `Showing ${filtered.length} promotion${filtered.length !== 1 ? 's' : ''}` +
-    (activeBankTab ? ` · ${activeBankTab}` : '') +
-    (searchVal     ? ` · "${searchVal}"`   : '');
+  if(sort==='bank')filtered.sort((a,b)=>(a.bank_name||'').localeCompare(b.bank_name||''));
+  else if(sort==='enddate')filtered.sort((a,b)=>{const da=a.end_date?(a.end_date+'').substring(0,10):'9999-12-31',db=b.end_date?(b.end_date+'').substring(0,10):'9999-12-31';return da.localeCompare(db);});
+  else if(sort==='newest')filtered.sort((a,b)=>{const da=(a.first_seen_at||a.created_at||'').substring(0,10),db=(b.first_seen_at||b.created_at||'').substring(0,10);return db.localeCompare(da);});
+  renderTable(); updateCatButtons();
+  document.getElementById('resultCount').textContent=`Showing ${filtered.length} promotion${filtered.length!==1?'s':''}${activeBankTab?` · ${activeBankTab}`:''}${document.getElementById('searchInput').value?` · "${document.getElementById('searchInput').value}"`:''}`;
 }
 
-// ── Excel export ──────────────────────────────────────────────────
+function applyProductFilters() {
+  const search=(document.getElementById('productSearchInput').value||'').toLowerCase();
+  filteredProducts=allProducts.filter(p=>{
+    if(activeProductBankTab&&p.bank_name!==activeProductBankTab)return false;
+    if(p.is_active===false)return false;
+    if(selectedProductCats.length&&!selectedProductCats.includes(p._displayCat))return false;
+    if(search){
+      const feats=Array.isArray(p.features)?p.features.join(' '):toArray(p.features).join(' ');
+      const hay=[p.bank_name||'',p.product_name||'',p.description||'',p.highlight||'',feats].join(' ').toLowerCase();
+      if(!hay.includes(search))return false;
+    }
+    return true;
+  });
+  renderProductGrid(); updateProductCatButtons();
+  document.getElementById('prodResultCount').textContent=`Showing ${filteredProducts.length} product${filteredProducts.length!==1?'s':''}${activeProductBankTab?` · ${activeProductBankTab}`:''}`;
+}
+
+// ── Excel exports ───────────────────────────────────────────────────
 function exportExcel() {
-  if (!filtered.length) {
-    const dialog = document.createElement('div');
-    dialog.className = 'fixed inset-0 bg-black/40 flex items-center justify-center z-50';
-    dialog.innerHTML = `
-      <div class="bg-white rounded-2xl shadow-xl p-8 text-center max-w-sm mx-4">
-        <div class="text-3xl mb-3">📭</div>
-        <div class="font-bold text-gray-800 mb-2">Nothing to export</div>
-        <div class="text-sm text-gray-500 mb-5">Apply different filters to get results first.</div>
-        <button onclick="this.closest('.fixed').remove()"
-          class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold">
-          OK
-        </button>
-      </div>`;
-    document.body.appendChild(dialog);
-    return;
-  }
-
-  const rows = filtered.map(p => ({
-    'Bank':         p.bank_name     || '',
-    'Title':        p.title         || '',
-    'Highlight':    p.highlight     || '',
-    'Description':  p.description   || '',
-    'Categories':   (p.types || []).join(', '),
-    'Period':       p.period        || '',
-    'Start Date':   p.start_date    || '',
-    'End Date':     p.end_date      || '',
-    'Status':       getStatus(p),
-    'BAU':          p.is_bau        ? 'Yes' : 'No',
-    'Quota':        p.quota         || '',
-    'Cost':         p.cost          || '',
-    'Source URL':   p.tc_link || p.url || '',
-    'First Seen':   (p.first_seen_at || '').substring(0, 10),
-    'Last Seen':    (p.last_seen     || '').substring(0, 10),
-  }));
-
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Promotions');
-  XLSX.writeFile(wb, `hk_vbank_promos_${_PAGE_TODAY_STR}.xlsx`);
+  if (!filtered.length) { alert('No promotions to export. Adjust filters first.'); return; }
+  const rows=filtered.map(p=>({'Bank':p.bank_name||'','Title':p.title||'','Highlight':p.highlight||'','Description':p.description||'','Categories':(p.types||[]).join(', '),'Period':p.period||'','Start Date':p.start_date||'','End Date':p.end_date||'','Status':getStatus(p),'BAU':p.is_bau?'Yes':'No','Quota':p.quota||'','Cost':p.cost||'','Source URL':p.tc_link||p.url||'','First Seen':(p.first_seen_at||'').substring(0,10),'Last Seen':(p.last_seen||'').substring(0,10)}));
+  const ws=XLSX.utils.json_to_sheet(rows), wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Promotions');
+  XLSX.writeFile(wb,`hk_vbank_promos_${_PAGE_TODAY_STR}.xlsx`);
 }
 
-// ── Boot ──────────────────────────────────────────────────────────
+function exportProductsExcel() {
+  if (!filteredProducts.length) { alert('No products to export. Adjust filters first.'); return; }
+  const rows=filteredProducts.map(p=>{
+    const feats=Array.isArray(p.features)?p.features.join('; '):toArray(p.features).join('; ');
+    return {'Bank':p.bank_name||'','Product Name':p.product_name||'','Category':p._displayCat||'','Description':p.description||p.highlight||'','Features':feats,'Fees':p.fees||'','Min Amount':p.min_amount||'','Currency':p.currency||'','URL':p.tc_link||p.url||'','First Seen':(p.first_seen_at||'').substring(0,10)};
+  });
+  const ws=XLSX.utils.json_to_sheet(rows), wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Products');
+  XLSX.writeFile(wb,`hk_vbank_products_${_PAGE_TODAY_STR}.xlsx`);
+}
+
+// ── Boot ────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>

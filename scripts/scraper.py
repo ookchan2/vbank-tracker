@@ -2,6 +2,7 @@
 
 import asyncio
 import hashlib
+import os
 import re
 import time
 from dataclasses import dataclass, field
@@ -78,6 +79,12 @@ _BLOCKED_CONTENT_RE = re.compile(
 
 # ── Bank domain allow-list ────────────────────────────────────────────────────
 # ★ CHANGED: 'airstar' domain updated to elebank.com (bank renamed to EleBank)
+
+_CDN_ALLOW: frozenset[str] = frozenset({
+    'cdn.tailwindcss.com', 'fonts.googleapis.com',
+    'fonts.gstatic.com',   'cdnjs.cloudflare.com',
+    'unpkg.com',           'jsdelivr.net',
+})
 
 BANK_DOMAINS: dict[str, list[str]] = {
     'za':      ['bank.za.group', 'za.group'],
@@ -367,18 +374,17 @@ def scrape_with_requests(url: str) -> str | None:
 
 # ── Screenshot cache helpers ──────────────────────────────────────────────────
 
-import os  # For file system operations
-
 _SCREENSHOT_CACHE_DIR = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), '..', '.screenshot_cache'
 )
+
+_SCREENSHOT_CACHE_TTL_DAYS = 7
+
 
 def _cache_screenshot(url: str, data: bytes) -> Optional[str]:
     """Save screenshot to disk cache. Returns cache path or None on error."""
     try:
         os.makedirs(_SCREENSHOT_CACHE_DIR, exist_ok=True)
-        # Create filename from URL hash
-        import hashlib
         fname = hashlib.md5(url.encode()).hexdigest() + '.png'
         fpath = os.path.join(_SCREENSHOT_CACHE_DIR, fname)
         with open(fpath, 'wb') as f:
@@ -390,12 +396,15 @@ def _cache_screenshot(url: str, data: bytes) -> Optional[str]:
 
 
 def _load_cached_screenshot(url: str) -> Optional[bytes]:
-    """Load screenshot from disk cache if exists."""
+    """Load screenshot from disk cache if it exists and is not older than TTL."""
     try:
-        import hashlib
         fname = hashlib.md5(url.encode()).hexdigest() + '.png'
         fpath = os.path.join(_SCREENSHOT_CACHE_DIR, fname)
         if os.path.exists(fpath):
+            age_days = (time.time() - os.path.getmtime(fpath)) / 86400
+            if age_days > _SCREENSHOT_CACHE_TTL_DAYS:
+                print(f'    ⚠  Screenshot cache expired ({age_days:.1f}d old) for {url}')
+                return None
             with open(fpath, 'rb') as f:
                 return f.read()
     except Exception:
@@ -523,11 +532,6 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
                     req_hostname == d or req_hostname.endswith('.' + d)
                     for d in allowed
                 ):
-                    _CDN_ALLOW = {
-                        'cdn.tailwindcss.com', 'fonts.googleapis.com',
-                        'fonts.gstatic.com',   'cdnjs.cloudflare.com',
-                        'unpkg.com',           'jsdelivr.net',
-                    }
                     if not any(cdn in req_hostname for cdn in _CDN_ALLOW):
                         if route.request.resource_type in ('document', 'xhr', 'fetch'):
                             await route.abort()
