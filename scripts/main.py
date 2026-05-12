@@ -12,7 +12,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from scraper   import run_scraper, BANK_CONFIGS
+from scraper   import run_scraper, BANK_CONFIGS, run_broker_scraper, BROKER_CONFIGS
 from ai_helper import (
     init_ai,
     analyze_promotions,
@@ -20,6 +20,9 @@ from ai_helper import (
     ai_dedup_titles,
     ai_match_against_existing,
     generate_strategic_insights,
+    analyze_broker_promotions,
+    analyze_broker_products,
+    generate_broker_insights,
 )
 from database  import (
     init_db,
@@ -44,6 +47,17 @@ from database  import (
     get_new_products_today,
     get_new_products_last_n_days,
     repair_reinserted_promotions,
+    save_broker_promotions,
+    save_broker_products,
+    get_active_broker_promos_for_broker,
+    get_active_broker_promotions,
+    get_new_broker_promotions_today,
+    get_new_broker_promotions_last_n_days,
+    get_new_broker_products_today,
+    get_new_broker_products_last_n_days,
+    get_broker_product_stats,
+    mark_stale_broker_promotions,
+    mark_stale_broker_products,
 )
 from emailer   import build_html_email, send_email
 
@@ -430,6 +444,98 @@ def main() -> int:
     if ai_ok and banks_ai_saved:
         mark_products_stale(banks_ai_saved, today_str=RUN_DATE)
 
+    # -- Step 5e: Scrape, extract, and save brokers ---------------
+    print(f'\nStep 5e -- Scrape + extract {len(BROKER_CONFIGS)} brokers')
+    t5e = time.monotonic()
+    broker_ids_saved: list[str] = []
+
+    try:
+        if _SKIP_SCRAPE:
+            broker_scraped: dict = {
+                bid: {
+                    'bank_name':      cfg['name'],
+                    'text':           '',
+                    'success':        True,
+                    'screenshot':     None,
+                    'sections_count': 0,
+                    'elapsed_s':      0.0,
+                    'errors':         [],
+                }
+                for bid, cfg in BROKER_CONFIGS.items()
+            }
+        else:
+            broker_scraped = run_broker_scraper()
+    except Exception as exc:
+        print(f'  [ERR] Broker scrape failed: {exc} — skipping broker pipeline')
+        broker_scraped = {}
+
+    for broker_id, result in broker_scraped.items():
+        broker_name = result.get('bank_name', broker_id)
+        default_url = BROKER_CONFIGS.get(broker_id, {}).get('link', '')
+        chars       = len(result.get('text', ''))
+        mark        = '[OK]' if result.get('success') else '[ERR]'
+        print(f'\n  [{broker_id.upper()}] {broker_name}  {mark}  ({chars:,} chars)')
+
+        if not ai_ok:
+            print('    [WARN]  AI unavailable — skip broker AI')
+            continue
+        if not result.get('success') and not _SKIP_SCRAPE:
+            print(f'    [WARN]  Broker scrape failed — skip AI for {broker_name}')
+            continue
+
+        try:
+            broker_promos = analyze_broker_promotions(
+                broker_id   = broker_id,
+                broker_name = broker_name,
+                text        = result.get('text', ''),
+                screenshot  = result.get('screenshot'),
+                default_url = default_url,
+            )
+        except Exception as exc:
+            print(f'    [ERR] Broker AI extraction error for {broker_name}: {exc}')
+            continue
+
+        if broker_promos:
+            try:
+                existing_broker_db = get_active_broker_promos_for_broker(broker_id)
+                if existing_broker_db:
+                    match_map = ai_match_against_existing(broker_promos, existing_broker_db, broker_name)
+                    for idx, db_id in match_map.items():
+                        if 0 <= idx < len(broker_promos):
+                            broker_promos[idx]['_matched_id'] = db_id
+            except Exception as exc:
+                print(f'    [WARN]  Broker DB-match error for {broker_name}: {exc}')
+
+            try:
+                save_broker_promotions(
+                    broker_id, broker_name, broker_promos,
+                    current_run_id = current_run_id,
+                    today_str      = RUN_DATE,
+                )
+                broker_ids_saved.append(broker_id)
+            except Exception as exc:
+                print(f'    [ERR] save_broker_promotions error for {broker_name}: {exc}')
+                continue
+
+        if ai_ok and result.get('text'):
+            try:
+                broker_products = analyze_broker_products(
+                    broker_id   = broker_id,
+                    broker_name = broker_name,
+                    text        = result.get('text', ''),
+                    default_url = default_url,
+                )
+                if broker_products:
+                    save_broker_products(broker_id, broker_name, broker_products, today_str=RUN_DATE)
+            except Exception as exc:
+                print(f'    [WARN] Broker product extraction error for {broker_name}: {exc}')
+
+    if ai_ok and broker_ids_saved:
+        mark_stale_broker_promotions(broker_ids_saved, today_str=RUN_DATE)
+        mark_stale_broker_products(broker_ids_saved, today_str=RUN_DATE)
+
+    print(f'  [TIME]  Broker pipeline completed in {time.monotonic() - t5e:.1f}s')
+
     # -- Step 6: Export data.json for website --------------------─
     print('\nStep 6 -- Export data.json for website')
 
@@ -548,6 +654,30 @@ def main() -> int:
         if _reloaded is not None:
             data_json_content = _reloaded
 
+    # -- Step 8d: Broker strategic insights ------------------------
+    print('\nStep 8d -- Generate broker strategic insights')
+    broker_insights = None
+    if ai_ok:
+        try:
+            za_bank_promos = promos_by_name.get('ZA Bank', [])
+            broker_promos_by_name: dict = {}
+            for p in get_active_broker_promotions(include_bau=True):
+                bname = p.get('broker_name', '')
+                broker_promos_by_name.setdefault(bname, []).append(p)
+
+            if broker_promos_by_name:
+                broker_insights = generate_broker_insights(
+                    broker_promos_by_name = broker_promos_by_name,
+                    za_bank_promos        = za_bank_promos,
+                    today_str             = RUN_DATE,
+                )
+                if broker_insights:
+                    _patch_data_json(DATA_JSON_PATH, {'broker_strategic_insights': broker_insights})
+            else:
+                print('  [NEXT] No broker promotions yet — skipping broker insights')
+        except Exception as exc:
+            print(f'  [WARN]  Broker insights error: {exc}')
+
     # -- Step 8c: Get product data for email -----------------------------
     print('\nStep 8c -- Get product data for email')
     new_products_today = get_new_products_today()
@@ -557,19 +687,33 @@ def main() -> int:
     print(f'  [INFO] New products today: {len(new_products_today)}')
     print(f'  [INFO] New products this week: {len(new_products_week)}')
 
+    new_broker_promos_today = get_new_broker_promotions_today(include_bau=False)
+    new_broker_promos_week  = get_new_broker_promotions_last_n_days(days=6, include_bau=False)
+    new_broker_products_today = get_new_broker_products_today()
+    new_broker_products_week  = get_new_broker_products_last_n_days(days=6)
+    broker_product_stats      = get_broker_product_stats()
+    print(f'  [INFO] New broker promos today: {len(new_broker_promos_today)}')
+    print(f'  [INFO] New broker promos this week: {len(new_broker_promos_week)}')
+    print(f'  [INFO] Broker products: {broker_product_stats.get("total_products", 0)} total')
+
     # -- Step 9: Build & send email --------------------------------
     print('\nStep 9 -- Build & send email')
 
     html = build_html_email(
-        promotions_data    = all_promos_email,
-        scraped_data       = data_json_content,
-        strategic_insights = strategic_insights,
-        new_promos         = new_promos_email,
-        new_promos_week    = new_promos_week_email,
-        ai_unavailable     = not ai_ok,
-        product_stats      = product_stats,
-        new_products_today = new_products_today,
-        new_products_week  = new_products_week,
+        promotions_data         = all_promos_email,
+        scraped_data            = data_json_content,
+        strategic_insights      = strategic_insights,
+        new_promos              = new_promos_email,
+        new_promos_week         = new_promos_week_email,
+        ai_unavailable          = not ai_ok,
+        product_stats           = product_stats,
+        new_products_today      = new_products_today,
+        new_products_week       = new_products_week,
+        new_broker_promos_today = new_broker_promos_today,
+        new_broker_promos_week  = new_broker_promos_week,
+        broker_product_stats    = broker_product_stats,
+        new_broker_products_today = new_broker_products_today,
+        new_broker_products_week  = new_broker_products_week,
     )
     print('  [OK] HTML email built')
 

@@ -98,6 +98,34 @@
         <div class="text-xs text-gray-300 uppercase tracking-wide">Banks</div>
       </div>
     </div>
+    <div class="flex gap-3 flex-wrap hidden" id="brokerPromoHeaderStats">
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black" id="statBrokerPromoTotal">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Promos</div>
+      </div>
+      <div class="bg-green-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black text-green-300" id="statBrokerPromoToday">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">New Today 🆕</div>
+      </div>
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black" id="statBrokerBrokers">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Brokers</div>
+      </div>
+    </div>
+    <div class="flex gap-3 flex-wrap hidden" id="brokerProductHeaderStats">
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black" id="statBrokerProdTotal">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Products</div>
+      </div>
+      <div class="bg-green-500/30 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black text-green-300" id="statBrokerProdToday">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">New Today 🆕</div>
+      </div>
+      <div class="bg-white/10 rounded-xl px-4 py-2 text-center min-w-[80px]">
+        <div class="text-2xl font-black" id="statBrokerProdBrokers">–</div>
+        <div class="text-xs text-gray-300 uppercase tracking-wide">Brokers</div>
+      </div>
+    </div>
   </div>
   <div class="max-w-screen-2xl mx-auto mt-2">
     <p class="text-gray-400 text-xs" id="lastUpdated">Loading…</p>
@@ -107,8 +135,10 @@
 <!-- MAIN TAB BUTTONS -->
 <div class="max-w-screen-2xl mx-auto px-4 pt-4 pb-2">
   <div class="flex gap-3">
-    <button class="main-tab-btn active" id="mainTabPromo" onclick="switchTab('promotions')">🎁 Promotions</button>
-    <button class="main-tab-btn" id="mainTabProduct" onclick="switchTab('products')">📦 Products</button>
+    <button class="main-tab-btn active" id="mainTab_promotions" onclick="switchTab('promotions')">🏦 Bank Promotion</button>
+    <button class="main-tab-btn" id="mainTab_products" onclick="switchTab('products')">🏦 Bank Product</button>
+    <button class="main-tab-btn" id="mainTab_brokerPromos" onclick="switchTab('brokerPromos')">📊 Broker Promotion</button>
+    <button class="main-tab-btn" id="mainTab_brokerProducts" onclick="switchTab('brokerProducts')">📊 Broker Product</button>
   </div>
 </div>
 
@@ -460,6 +490,108 @@
 </div>
 </div><!-- end productTabContent -->
 
+<!-- ═══ BROKER PROMOTIONS TAB ═══ -->
+<div id="brokerPromosTabContent" style="display:none;">
+<div class="max-w-screen-2xl mx-auto px-4 pt-2">
+  <div class="flex gap-2 flex-wrap" id="brokerPromoTabs">
+    <button onclick="setBrokerPromoTab('')" id="btab-all"
+      class="bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-red-600 text-white">All Brokers</button>
+  </div>
+</div>
+<div class="max-w-screen-2xl mx-auto px-4 py-3">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+    <div class="flex flex-col md:flex-row gap-3 items-start md:items-center flex-wrap">
+      <div class="relative flex-1 min-w-48">
+        <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
+        <input id="brokerPromoSearch" type="text" placeholder="Search broker promotions…"
+          class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+          oninput="applyBrokerPromoFilters()">
+      </div>
+      <button onclick="exportBrokerPromosExcel()"
+        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+        📥 Export Excel
+      </button>
+    </div>
+    <div class="mt-3 flex flex-wrap gap-2 items-center" id="brokerPromoCatFilter"></div>
+    <div class="mt-2 text-sm text-gray-500" id="brokerPromoResultCount"></div>
+  </div>
+</div>
+<div class="max-w-screen-2xl mx-auto px-4 pb-2" id="brokerPromoNewTodaySection" style="display:none;">
+  <details open class="rounded-2xl shadow-sm overflow-hidden border border-red-200">
+    <summary class="select-none">
+      <div class="bg-gradient-to-r from-red-600 to-orange-500 px-5 py-4 flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-3"><span class="text-2xl">🆕</span>
+          <div>
+            <div class="font-extrabold text-white text-lg tracking-tight">New Broker Promotions Today</div>
+            <div class="text-red-100 text-xs mt-0.5">今日首次偵測到的券商優惠</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="brokerPromoNewTodayCount" class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+          <span class="accordion-chevron chevron text-white text-base">▼</span>
+        </div>
+      </div>
+    </summary>
+    <div class="bg-red-50 p-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="brokerPromoNewTodayCards"></div></div>
+  </details>
+</div>
+<div class="max-w-screen-2xl mx-auto px-4 pb-2" id="brokerPromoNewWeeklySection" style="display:none;">
+  <details open class="rounded-2xl shadow-sm overflow-hidden border border-orange-200">
+    <summary class="select-none">
+      <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4 flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-3"><span class="text-2xl">📅</span>
+          <div>
+            <div class="font-extrabold text-white text-lg tracking-tight">New Broker Promotions This Week</div>
+            <div class="text-orange-100 text-xs mt-0.5">本週首次偵測到的券商優惠</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="brokerPromoNewWeekCount" class="bg-white/25 text-white font-bold text-sm px-4 py-1 rounded-full"></span>
+          <span class="accordion-chevron chevron text-white text-base">▼</span>
+        </div>
+      </div>
+    </summary>
+    <div class="bg-amber-50 p-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="brokerPromoNewWeekCards"></div></div>
+  </details>
+</div>
+<div class="max-w-screen-2xl mx-auto px-4 pb-4">
+  <div id="brokerPromoLoadingState" class="text-center py-12 text-gray-400">Loading broker promotions…</div>
+  <div id="brokerPromoTable"></div>
+</div>
+</div><!-- end brokerPromosTabContent -->
+
+<!-- ═══ BROKER PRODUCTS TAB ═══ -->
+<div id="brokerProductsTabContent" style="display:none;">
+<div class="max-w-screen-2xl mx-auto px-4 pt-2">
+  <div class="flex gap-2 flex-wrap" id="brokerProductTabs">
+    <button onclick="setBrokerProductTab('')" id="bptab-all"
+      class="bank-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-green-700 text-white">All Brokers</button>
+  </div>
+</div>
+<div class="max-w-screen-2xl mx-auto px-4 py-3">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+    <div class="flex flex-col md:flex-row gap-3 items-start md:items-center flex-wrap">
+      <div class="relative flex-1 min-w-48">
+        <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
+        <input id="brokerProductSearch" type="text" placeholder="Search broker products…"
+          class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
+          oninput="applyBrokerProductFilters()">
+      </div>
+      <button onclick="exportBrokerProductsExcel()"
+        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+        📥 Export Excel
+      </button>
+    </div>
+    <div class="mt-3 flex flex-wrap gap-2 items-center" id="brokerProductCatFilter"></div>
+    <div class="mt-2 text-sm text-gray-500" id="brokerProductResultCount"></div>
+  </div>
+</div>
+<div class="max-w-screen-2xl mx-auto px-4 pb-4">
+  <div id="brokerProductLoadingState" class="text-center py-12 text-gray-400">Loading broker products…</div>
+  <div id="brokerProductGrid"></div>
+</div>
+</div><!-- end brokerProductsTabContent -->
+
 <script>
 // ── Category config ─────────────────────────────────────────────────
 const CAT_META = {
@@ -687,15 +819,32 @@ let activeProductBankTab  = '';
 let selectedProductCats   = [];
 let currentTab = 'promotions';
 
+// Broker state
+let allBrokerPromos        = [];
+let filteredBrokerPromos   = [];
+let activeBrokerPromoTab   = '';
+let selectedBrokerPromoCats = [];
+let allBrokerProducts       = [];
+let filteredBrokerProducts  = [];
+let activeBrokerProductTab  = '';
+let selectedBrokerProductCats = [];
+let brokerStrategicInsights = null;
+
 // ── Tab switching ───────────────────────────────────────────────────
 function switchTab(tab) {
   currentTab = tab;
-  document.getElementById('promoTabContent').style.display   = tab === 'promotions' ? '' : 'none';
-  document.getElementById('productTabContent').style.display = tab === 'products'   ? '' : 'none';
-  document.getElementById('promoHeaderStats').classList.toggle('hidden',   tab !== 'promotions');
-  document.getElementById('productHeaderStats').classList.toggle('hidden', tab !== 'products');
-  document.getElementById('mainTabPromo').classList.toggle('active',   tab === 'promotions');
-  document.getElementById('mainTabProduct').classList.toggle('active', tab === 'products');
+  const tabs = ['promotions','products','brokerPromos','brokerProducts'];
+  tabs.forEach(t => {
+    const contentId = t === 'promotions' ? 'promoTabContent' :
+                      t === 'products'   ? 'productTabContent' :
+                      t === 'brokerPromos' ? 'brokerPromosTabContent' : 'brokerProductsTabContent';
+    document.getElementById(contentId).style.display = t === tab ? '' : 'none';
+    document.getElementById('mainTab_' + t).classList.toggle('active', t === tab);
+  });
+  document.getElementById('promoHeaderStats').classList.toggle('hidden',         tab !== 'promotions');
+  document.getElementById('productHeaderStats').classList.toggle('hidden',       tab !== 'products');
+  document.getElementById('brokerPromoHeaderStats').classList.toggle('hidden',   tab !== 'brokerPromos');
+  document.getElementById('brokerProductHeaderStats').classList.toggle('hidden', tab !== 'brokerProducts');
 }
 
 // ── No-data placeholders ────────────────────────────────────────────
@@ -730,6 +879,14 @@ async function loadData() {
 
     strategicInsights = data.strategic_insights || null;
 
+    allBrokerPromos = (data.broker_promotions || []).map(p => ({
+      ...p, _displayCat: remapBrokerCat(p.types?.[0] || ''),
+    }));
+    allBrokerProducts = (data.broker_products || []).map(p => ({
+      ...p, _displayCat: remapBrokerCat(p.category),
+    }));
+    brokerStrategicInsights = data.broker_strategic_insights || null;
+
     const activeNonBau = allPromos.filter(p => !p.is_bau && p.active !== false && getStatus(p) !== 'expired');
     const activeN      = activeNonBau.filter(p => getStatus(p) === 'active').length;
     const expiringN    = activeNonBau.filter(p => getStatus(p) === 'expiring').length;
@@ -752,6 +909,18 @@ async function loadData() {
     document.getElementById('statProdWeek').textContent  = prodWeek;
     document.getElementById('statProdBanks').textContent = prodBanks;
 
+    // Broker header stats
+    const bpToday = allBrokerPromos.filter(p => isNewToday(p, today)).length;
+    const bBrokers = [...new Set(allBrokerPromos.map(p => p.broker_name))].length;
+    document.getElementById('statBrokerPromoTotal').textContent   = allBrokerPromos.length;
+    document.getElementById('statBrokerPromoToday').textContent   = bpToday;
+    document.getElementById('statBrokerBrokers').textContent      = bBrokers;
+    const bprodToday   = allBrokerProducts.filter(p => isProdNewToday(p, today)).length;
+    const bprodBrokers = [...new Set(allBrokerProducts.map(p => p.broker_name))].length;
+    document.getElementById('statBrokerProdTotal').textContent   = allBrokerProducts.length;
+    document.getElementById('statBrokerProdToday').textContent   = bprodToday;
+    document.getElementById('statBrokerProdBrokers').textContent = bprodBrokers;
+
     buildBankTabs(banks);
     buildCatButtons();
     buildNewSections();
@@ -764,10 +933,21 @@ async function loadData() {
     buildProductBankAnalysis();
     buildProductsByBank();
 
+    // Broker build functions
+    buildBrokerPromoTabs([...new Set(allBrokerPromos.map(p => p.broker_name))]);
+    buildBrokerPromoCatButtons();
+    buildBrokerPromoNewSections();
+    buildBrokerProductTabs([...new Set(allBrokerProducts.map(p => p.broker_name))]);
+    buildBrokerProductCatButtons();
+
     document.getElementById('loadingState').classList.add('hidden');
     document.getElementById('productLoadingState').classList.add('hidden');
+    document.getElementById('brokerPromoLoadingState').classList.add('hidden');
+    document.getElementById('brokerProductLoadingState').classList.add('hidden');
     applyFilters();
     applyProductFilters();
+    applyBrokerPromoFilters();
+    applyBrokerProductFilters();
 
   } catch(e) {
     document.getElementById('loadingState').classList.add('hidden');
@@ -1409,6 +1589,445 @@ function buildProductsByBank() {
       ${catSections}
     </div>`;
   }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// BROKER TAB FUNCTIONS
+// ══════════════════════════════════════════════════════════════════════
+
+// ── Broker constants ────────────────────────────────────────────────
+const BROKER_CAT_META = {
+  "US Stock":        { bg:"#1d4ed8", emoji:"🇺🇸" },
+  "HK Stock":        { bg:"#dc2626", emoji:"🇭🇰" },
+  "A Share":         { bg:"#b91c1c", emoji:"🇨🇳" },
+  "Investment Funds":{ bg:"#6366f1", emoji:"📈" },
+  "Crypto":          { bg:"#f59e0b", emoji:"₿" },
+  "Margin":          { bg:"#7c3aed", emoji:"📐" },
+  "Bond":            { bg:"#0369a1", emoji:"🏛️" },
+  "Metals":          { bg:"#d97706", emoji:"🥇" },
+  "Stock Option":    { bg:"#0891b2", emoji:"⚙️" },
+  "Futures":         { bg:"#059669", emoji:"📊" },
+  "Saving Discount": { bg:"#16a34a", emoji:"💰" },
+};
+
+const BROKER_CAT_FILTER_LIST = [
+  { key:'__ALL__', label:'All',             bg:'#374151' },
+  { key:'US Stock',        label:'🇺🇸 US Stock',        bg:'#1d4ed8' },
+  { key:'HK Stock',        label:'🇭🇰 HK Stock',        bg:'#dc2626' },
+  { key:'A Share',         label:'🇨🇳 A Share',          bg:'#b91c1c' },
+  { key:'Investment Funds',label:'📈 Funds',             bg:'#6366f1' },
+  { key:'Crypto',          label:'₿ Crypto',             bg:'#f59e0b' },
+  { key:'Margin',          label:'📐 Margin',            bg:'#7c3aed' },
+  { key:'Bond',            label:'🏛️ Bond',              bg:'#0369a1' },
+  { key:'Metals',          label:'🥇 Metals',            bg:'#d97706' },
+  { key:'Stock Option',    label:'⚙️ Options',           bg:'#0891b2' },
+  { key:'Futures',         label:'📊 Futures',           bg:'#059669' },
+  { key:'Saving Discount', label:'💰 Saving Disc.',      bg:'#16a34a' },
+];
+
+const BROKER_COLORS = {
+  "IBKR":       "#e74c3c",
+  "Futu":       "#e67e22",
+  "Tiger":      "#f39c12",
+  "Longbridge": "#27ae60",
+  "立橋":        "#16a085",
+  "webull":     "#2980b9",
+  "耀才":        "#8e44ad",
+  "uSmart":     "#1abc9c",
+};
+
+function brokerColor(name) {
+  return BROKER_COLORS[name] || '#6b7280';
+}
+
+function remapBrokerCat(cat) {
+  if (!cat) return 'US Stock';
+  if (BROKER_CAT_META[cat]) return cat;
+  const lower = cat.toLowerCase();
+  if (lower.includes('us stock') || lower.includes('us equity')) return 'US Stock';
+  if (lower.includes('hk stock') || lower.includes('hong kong stock')) return 'HK Stock';
+  if (lower.includes('a share') || lower.includes('china stock') || lower.includes('a-share')) return 'A Share';
+  if (lower.includes('fund') || lower.includes('etf')) return 'Investment Funds';
+  if (lower.includes('crypto') || lower.includes('bitcoin') || lower.includes('virtual asset')) return 'Crypto';
+  if (lower.includes('margin')) return 'Margin';
+  if (lower.includes('bond') || lower.includes('fixed income')) return 'Bond';
+  if (lower.includes('metal') || lower.includes('gold') || lower.includes('silver')) return 'Metals';
+  if (lower.includes('option')) return 'Stock Option';
+  if (lower.includes('future') || lower.includes('warrant')) return 'Futures';
+  if (lower.includes('saving') || lower.includes('discount') || lower.includes('cashback') || lower.includes('rebate')) return 'Saving Discount';
+  return 'US Stock';
+}
+
+// ── Broker promo tabs ───────────────────────────────────────────────
+function buildBrokerPromoTabs(brokers) {
+  const c = document.getElementById('brokerPromoTabs');
+  if (!c) return;
+  // Keep the static All Brokers button (btab-all), append broker-specific buttons
+  // Remove any previously injected broker buttons
+  c.querySelectorAll('.broker-promo-tab-btn').forEach(b => b.remove());
+  // Re-class the static all button
+  const allBtn = document.getElementById('btab-all');
+  if (allBtn) { allBtn.className = 'broker-promo-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold border-2 bg-indigo-600 text-white transition-colors'; allBtn.style.borderColor = '#4f46e5'; }
+
+  brokers.sort().forEach(b => {
+    const col = brokerColor(b), sid = 'bptab-' + b.replace(/\s+/g, '-');
+    const btn = document.createElement('button');
+    btn.id = sid; btn.dataset.broker = b;
+    btn.className = 'broker-promo-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
+    btn.style.borderColor = col;
+    btn.innerHTML = `<span style="color:${col}">●</span> ${b}`;
+    btn.onclick = () => setBrokerPromoTab(b);
+    c.appendChild(btn);
+  });
+}
+
+function setBrokerPromoTab(broker) {
+  activeBrokerPromoTab = broker;
+  document.querySelectorAll('.broker-promo-tab-btn').forEach(b => { b.classList.remove('bg-indigo-600','text-white'); b.classList.add('text-gray-600','bg-white'); });
+  const sid = broker ? 'bptab-' + broker.replace(/\s+/g, '-') : 'btab-all';
+  const ab = document.getElementById(sid);
+  if (ab) { ab.classList.remove('text-gray-600','bg-white'); ab.classList.add('bg-indigo-600','text-white'); }
+  applyBrokerPromoFilters();
+}
+
+// ── Broker promo category buttons ───────────────────────────────────
+function buildBrokerPromoCatButtons() {
+  const c = document.getElementById('brokerPromoCatFilter');
+  if (!c) return;
+  c.innerHTML = `<span class="text-xs text-gray-400 font-semibold self-center mr-1 whitespace-nowrap">Category:</span>` +
+    BROKER_CAT_FILTER_LIST.map(x => `<button class="broker-promo-cat-btn cat-tag" data-cat="${x.key}"
+      style="background:${x.bg};opacity:${x.key==='__ALL__'?'1':'0.65'};${x.key==='__ALL__'?'box-shadow:0 0 0 3px rgba(0,0,0,0.28);':''}"
+      onclick="toggleBrokerPromoCat('${x.key}')">${x.label}</button>`).join('');
+}
+
+function toggleBrokerPromoCat(cat) {
+  if (cat === '__ALL__') { selectedBrokerPromoCats = []; }
+  else { const i = selectedBrokerPromoCats.indexOf(cat); if (i === -1) selectedBrokerPromoCats.push(cat); else selectedBrokerPromoCats.splice(i, 1); }
+  updateBrokerPromoCatButtons(); applyBrokerPromoFilters();
+}
+
+function updateBrokerPromoCatButtons() {
+  document.querySelectorAll('.broker-promo-cat-btn').forEach(btn => {
+    const cat = btn.dataset.cat, isAll = cat === '__ALL__', none = selectedBrokerPromoCats.length === 0;
+    if (isAll) { btn.style.opacity = none ? '1' : '0.45'; btn.style.boxShadow = none ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none'; btn.style.transform = 'scale(1)'; }
+    else { const sel = selectedBrokerPromoCats.includes(cat); btn.style.opacity = sel ? '1' : (none ? '0.65' : '0.38'); btn.style.boxShadow = sel ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none'; btn.style.transform = sel ? 'scale(1.07)' : 'scale(1)'; }
+  });
+}
+
+// ── Broker promo card ───────────────────────────────────────────────
+function buildBrokerPromoCard(p) {
+  const color = brokerColor(p.broker_name || '');
+  const cats = toArray(p.promo_type || p.types || p.category || '');
+  const catTags = cats.slice(0,3).map(c => {
+    const cm = BROKER_CAT_META[remapBrokerCat(c)] || { bg:'#6b7280', emoji:'📋' };
+    return `<span class="cat-tag" style="background:${cm.bg}">${cm.emoji} ${c}</span>`;
+  }).join('');
+  const endDate = p.end_date ? `<span class="text-xs text-gray-400">Ends ${p.end_date}</span>` : '';
+  const linkHtml = (p.url || p.tc_link)
+    ? `<a href="${p.url || p.tc_link}" target="_blank" rel="noopener" class="mt-2 inline-flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">🔗 Details ↗</a>`
+    : '';
+  return `<div class="promo-card rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="h-1.5" style="background:${color}"></div>
+    <div class="p-4">
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <span class="font-extrabold text-gray-800 text-sm leading-snug flex-1">${p.title||'–'}</span>
+        <span class="text-xs font-bold px-2 py-0.5 rounded-full text-white shrink-0" style="background:${color}">${p.broker_name||''}</span>
+      </div>
+      ${p.highlight ? `<div class="text-xs text-indigo-600 font-semibold mb-1.5 leading-snug">✦ ${p.highlight}</div>` : ''}
+      ${p.description ? `<div class="text-xs text-gray-600 leading-relaxed mb-2">${p.description}</div>` : ''}
+      <div class="flex flex-wrap gap-1 mb-2">${catTags}</div>
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+        ${p.period ? `<span class="text-xs text-gray-400">📅 ${p.period}</span>` : ''}
+        ${endDate}
+        ${p.quota ? `<span class="text-xs text-gray-400">👤 ${p.quota}</span>` : ''}
+        ${p.cost ? `<span class="text-xs text-gray-400">💰 ${p.cost}</span>` : ''}
+      </div>
+      ${linkHtml}
+    </div>
+  </div>`;
+}
+
+// ── Broker promo new sections ───────────────────────────────────────
+function buildBrokerPromoNewSections() {
+  const today = hktToday();
+  const weekStart = hktDaysAgo(6);
+  const newToday = allBrokerPromos.filter(p => (p.first_seen_at||p.created_at||'').slice(0,10) === today);
+  const todaySection = document.getElementById('brokerPromoNewTodaySection');
+  if (todaySection) todaySection.style.display = 'block';
+  const todayCards = document.getElementById('brokerPromoNewTodayCards');
+  const todayCount = document.getElementById('brokerPromoNewTodayCount');
+  if (!newToday.length) {
+    if (todayCards) todayCards.innerHTML = `<div class="col-span-full text-center text-gray-400 text-sm py-4">No new broker promotions today.</div>`;
+    if (todayCount) todayCount.textContent = '0 new today';
+  } else {
+    if (todayCount) todayCount.textContent = `${newToday.length} new today`;
+    if (todayCards) todayCards.innerHTML = newToday.map(buildBrokerPromoCard).join('');
+  }
+
+  const newWeek = allBrokerPromos.filter(p => {
+    const fs = (p.first_seen_at||p.created_at||'').slice(0,10);
+    return fs >= weekStart && fs <= today;
+  });
+  const weekSection = document.getElementById('brokerPromoNewWeeklySection');
+  if (weekSection) weekSection.style.display = 'block';
+  const weekCards = document.getElementById('brokerPromoNewWeekCards');
+  const weekCount = document.getElementById('brokerPromoNewWeekCount');
+  if (!newWeek.length) {
+    if (weekCards) weekCards.innerHTML = `<div class="col-span-full text-center text-gray-400 text-sm py-4">No new broker promotions this week.</div>`;
+    if (weekCount) weekCount.textContent = '0 new this week';
+  } else {
+    if (weekCount) weekCount.textContent = `${newWeek.length} new this week`;
+    if (weekCards) weekCards.innerHTML = newWeek.map(buildBrokerPromoCard).join('');
+  }
+}
+
+// ── Broker promo filter + render ────────────────────────────────────
+function applyBrokerPromoFilters() {
+  const q = (document.getElementById('brokerPromoSearch')?.value || '').toLowerCase();
+  filteredBrokerPromos = allBrokerPromos.filter(p => {
+    if (activeBrokerPromoTab && p.broker_name !== activeBrokerPromoTab) return false;
+    if (selectedBrokerPromoCats.length) {
+      const cats = toArray(p.promo_type || p.types || p.category || '').map(remapBrokerCat);
+      if (!selectedBrokerPromoCats.some(c => cats.includes(c))) return false;
+    }
+    if (q) {
+      const hay = [p.title, p.description, p.highlight, p.broker_name, p.category].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  renderBrokerPromoTable();
+}
+
+function renderBrokerPromoTable() {
+  const container = document.getElementById('brokerPromoTable');
+  if (!container) return;
+  const resultCount = document.getElementById('brokerPromoResultCount');
+  if (resultCount) resultCount.textContent = `${filteredBrokerPromos.length} promotion${filteredBrokerPromos.length!==1?'s':''}`;
+  if (!filteredBrokerPromos.length) {
+    container.innerHTML = `<div class="text-center text-gray-400 text-sm py-8">No broker promotions match your filters.</div>`;
+    return;
+  }
+  const rows = filteredBrokerPromos.map(p => {
+    const color = brokerColor(p.broker_name || '');
+    const cats = toArray(p.promo_type || p.types || p.category || '');
+    const catHtml = cats.slice(0,2).map(c => {
+      const cm = BROKER_CAT_META[remapBrokerCat(c)] || { bg:'#6b7280', emoji:'📋' };
+      return `<span class="cat-tag text-xs" style="background:${cm.bg}">${cm.emoji} ${c}</span>`;
+    }).join('');
+    const bauHtml = p.is_bau ? `<span class="ml-1 text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-semibold">⚙️ BAU</span>` : '';
+    const linkHtml = (p.url || p.tc_link) ? `<a href="${p.url||p.tc_link}" target="_blank" rel="noopener" class="text-indigo-500 hover:underline text-xs">🔗</a>` : '';
+    return `<tr class="border-b border-gray-100 hover:bg-gray-50/50">
+      <td class="px-3 py-3 whitespace-nowrap"><span class="text-xs font-bold px-2 py-0.5 rounded-full text-white" style="background:${color}">${p.broker_name||'–'}</span></td>
+      <td class="px-3 py-3 max-w-xs"><div class="font-semibold text-gray-800 text-sm leading-snug">${p.title||'–'}${bauHtml}</div>${p.highlight?`<div class="text-xs text-gray-500 mt-0.5 leading-snug">${p.highlight}</div>`:''}</td>
+      <td class="px-3 py-3"><div class="flex flex-wrap gap-1">${catHtml}</div></td>
+      <td class="px-3 py-3 text-xs text-gray-500">${p.period||'–'}</td>
+      <td class="px-3 py-3 text-xs text-gray-500">${p.end_date||'–'}</td>
+      <td class="px-3 py-3 text-xs text-gray-500">${p.quota||'–'}</td>
+      <td class="px-3 py-3">${linkHtml}</td>
+    </tr>`;
+  }).join('');
+  container.innerHTML = `<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead><tr class="bg-gray-50 border-b border-gray-200">
+          <th class="px-3 py-3 text-left font-semibold text-gray-600 text-xs uppercase">Broker</th>
+          <th class="px-3 py-3 text-left font-semibold text-gray-600 text-xs uppercase">Title</th>
+          <th class="px-3 py-3 text-left font-semibold text-gray-600 text-xs uppercase">Categories</th>
+          <th class="px-3 py-3 text-left font-semibold text-gray-600 text-xs uppercase">Period</th>
+          <th class="px-3 py-3 text-left font-semibold text-gray-600 text-xs uppercase">End Date</th>
+          <th class="px-3 py-3 text-left font-semibold text-gray-600 text-xs uppercase">Eligibility</th>
+          <th class="px-3 py-3 text-left font-semibold text-gray-600 text-xs uppercase">Link</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function exportBrokerPromosExcel() {
+  if (!filteredBrokerPromos.length) { alert('No broker promotions to export.'); return; }
+  const rows = [['Broker','Title','Categories','Highlight','Description','Period','End Date','Quota','Cost','BAU','URL']];
+  filteredBrokerPromos.forEach(p => {
+    rows.push([
+      p.broker_name||'', p.title||'',
+      toArray(p.promo_type||p.types||p.category||'').join('; '),
+      p.highlight||'', p.description||'', p.period||'', p.end_date||'',
+      p.quota||'', p.cost||'', p.is_bau?'Yes':'No', p.url||p.tc_link||'',
+    ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Broker Promotions');
+  XLSX.writeFile(wb, 'broker_promotions.xlsx');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// BROKER PRODUCT TAB FUNCTIONS
+// ══════════════════════════════════════════════════════════════════════
+
+// ── Broker product tabs ─────────────────────────────────────────────
+function buildBrokerProductTabs(brokers) {
+  const c = document.getElementById('brokerProductTabs');
+  if (!c) return;
+  // Keep the static All Brokers button (bptab-all), append broker-specific buttons
+  c.querySelectorAll('.broker-prod-tab-btn').forEach(b => b.remove());
+  const allBtn = document.getElementById('bptab-all');
+  if (allBtn) { allBtn.className = 'broker-prod-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold border-2 bg-indigo-600 text-white transition-colors'; allBtn.style.borderColor = '#4f46e5'; }
+
+  brokers.sort().forEach(b => {
+    const col = brokerColor(b), sid = 'bkptab-' + b.replace(/\s+/g, '-');
+    const btn = document.createElement('button');
+    btn.id = sid; btn.dataset.broker = b;
+    btn.className = 'broker-prod-tab-btn px-4 py-1.5 rounded-full text-sm font-semibold border-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors';
+    btn.style.borderColor = col;
+    btn.innerHTML = `<span style="color:${col}">●</span> ${b}`;
+    btn.onclick = () => setBrokerProductTab(b);
+    c.appendChild(btn);
+  });
+}
+
+function setBrokerProductTab(broker) {
+  activeBrokerProductTab = broker;
+  document.querySelectorAll('.broker-prod-tab-btn').forEach(b => { b.classList.remove('bg-indigo-600','text-white'); b.classList.add('text-gray-600','bg-white'); });
+  const sid = broker ? 'bkptab-' + broker.replace(/\s+/g, '-') : 'bptab-all';
+  const ab = document.getElementById(sid);
+  if (ab) { ab.classList.remove('text-gray-600','bg-white'); ab.classList.add('bg-indigo-600','text-white'); }
+  applyBrokerProductFilters();
+}
+
+// ── Broker product category buttons ────────────────────────────────
+function buildBrokerProductCatButtons() {
+  const c = document.getElementById('brokerProductCatFilter');
+  if (!c) return;
+  c.innerHTML = `<span class="text-xs text-gray-400 font-semibold self-center mr-1 whitespace-nowrap">Category:</span>` +
+    BROKER_CAT_FILTER_LIST.map(x => `<button class="broker-prod-cat-btn cat-tag" data-cat="${x.key}"
+      style="background:${x.bg};opacity:${x.key==='__ALL__'?'1':'0.65'};${x.key==='__ALL__'?'box-shadow:0 0 0 3px rgba(0,0,0,0.28);':''}"
+      onclick="toggleBrokerProductCat('${x.key}')">${x.label}</button>`).join('');
+}
+
+function toggleBrokerProductCat(cat) {
+  if (cat === '__ALL__') { selectedBrokerProductCats = []; }
+  else { const i = selectedBrokerProductCats.indexOf(cat); if (i === -1) selectedBrokerProductCats.push(cat); else selectedBrokerProductCats.splice(i, 1); }
+  updateBrokerProductCatButtons(); applyBrokerProductFilters();
+}
+
+function updateBrokerProductCatButtons() {
+  document.querySelectorAll('.broker-prod-cat-btn').forEach(btn => {
+    const cat = btn.dataset.cat, isAll = cat === '__ALL__', none = selectedBrokerProductCats.length === 0;
+    if (isAll) { btn.style.opacity = none ? '1' : '0.45'; btn.style.boxShadow = none ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none'; btn.style.transform = 'scale(1)'; }
+    else { const sel = selectedBrokerProductCats.includes(cat); btn.style.opacity = sel ? '1' : (none ? '0.65' : '0.38'); btn.style.boxShadow = sel ? '0 0 0 3px rgba(0,0,0,0.28)' : 'none'; btn.style.transform = sel ? 'scale(1.07)' : 'scale(1)'; }
+  });
+}
+
+// ── Broker product card ─────────────────────────────────────────────
+function buildBrokerProductCard(p) {
+  const color = brokerColor(p.broker_name || '');
+  const cat = remapBrokerCat(p.category || '');
+  const cm = BROKER_CAT_META[cat] || { bg:'#6b7280', emoji:'📋' };
+  const feats = toArray(p.features);
+  const featsHtml = feats.length
+    ? `<ul class="mt-1.5 space-y-0.5">${feats.map(f => `<li class="text-xs text-gray-600 flex items-start gap-1.5"><span class="text-indigo-400 shrink-0">•</span>${f}</li>`).join('')}</ul>`
+    : '';
+  const metaParts = [
+    p.fees       ? `<span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Fees: ${p.fees}</span>` : '',
+    p.min_amount ? `<span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Min: ${p.currency||''} ${p.min_amount}</span>` : '',
+  ].filter(Boolean).join('');
+  const linkHtml = (p.url || p.tc_link)
+    ? `<a href="${p.url||p.tc_link}" target="_blank" rel="noopener" class="mt-2 inline-flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">🔗 View Details ↗</a>`
+    : '';
+  return `<div class="rounded-lg border border-gray-100 p-3 bg-gray-50/60">
+    <div class="flex items-center justify-between mb-1.5">
+      <span class="prod-cat-tag" style="background:${cm.bg}">${cm.emoji} ${cat}</span>
+      <span class="text-xs font-bold px-2 py-0.5 rounded-full text-white" style="background:${color}">${p.broker_name||''}</span>
+    </div>
+    <div class="font-semibold text-gray-800 text-sm leading-snug">${p.product_name||'–'}</div>
+    ${p.highlight ? `<div class="mt-1 text-xs text-gray-600 leading-relaxed">${p.highlight}</div>` : ''}
+    ${featsHtml}
+    ${metaParts ? `<div class="mt-2 flex flex-wrap gap-1">${metaParts}</div>` : ''}
+    ${linkHtml}
+  </div>`;
+}
+
+// ── Broker product filter + render ──────────────────────────────────
+function applyBrokerProductFilters() {
+  const q = (document.getElementById('brokerProductSearch')?.value || '').toLowerCase();
+  filteredBrokerProducts = allBrokerProducts.filter(p => {
+    if (activeBrokerProductTab && p.broker_name !== activeBrokerProductTab) return false;
+    if (selectedBrokerProductCats.length) {
+      const cat = remapBrokerCat(p.category || '');
+      if (!selectedBrokerProductCats.includes(cat)) return false;
+    }
+    if (q) {
+      const hay = [p.product_name, p.description, p.highlight, p.broker_name, p.category, p.features].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  renderBrokerProductGrid();
+}
+
+function renderBrokerProductGrid() {
+  const grid = document.getElementById('brokerProductGrid');
+  if (!grid) return;
+  if (!filteredBrokerProducts.length) {
+    grid.innerHTML = `<div class="col-span-full text-center text-gray-400 text-sm py-8">No broker products match your filters.</div>`;
+    return;
+  }
+  // Group by broker then by category
+  const byBroker = {};
+  filteredBrokerProducts.forEach(p => {
+    const b = p.broker_name || 'Unknown';
+    if (!byBroker[b]) byBroker[b] = [];
+    byBroker[b].push(p);
+  });
+  const brokerNames = Object.keys(byBroker).sort();
+  grid.innerHTML = brokerNames.map(brokerName => {
+    const prods = byBroker[brokerName];
+    const color = brokerColor(brokerName);
+    const byCat = {};
+    prods.forEach(p => {
+      const cat = remapBrokerCat(p.category || '');
+      if (!byCat[cat]) byCat[cat] = [];
+      byCat[cat].push(p);
+    });
+    const catSections = Object.keys(byCat).sort().map(cat => {
+      const cm = BROKER_CAT_META[cat] || { bg:'#6b7280', emoji:'📋' };
+      const rows = byCat[cat].map(p => buildBrokerProductCard(p)).join('');
+      return `<div class="mb-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="prod-cat-tag" style="background:${cm.bg}">${cm.emoji} ${cat}</span>
+          <span class="text-xs text-gray-400">${byCat[cat].length} product${byCat[cat].length!==1?'s':''}</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">${rows}</div>
+      </div>`;
+    }).join('');
+    return `<div class="col-span-full mb-8">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b-2" style="border-color:${color}">
+        <span class="bank-dot" style="background:${color}"></span>
+        <span class="font-extrabold text-gray-800 text-base">${brokerName}</span>
+        <span class="text-xs text-gray-400 font-medium">${prods.length} product${prods.length!==1?'s':''}</span>
+      </div>
+      ${catSections}
+    </div>`;
+  }).join('');
+}
+
+function exportBrokerProductsExcel() {
+  if (!filteredBrokerProducts.length) { alert('No broker products to export.'); return; }
+  const rows = [['Broker','Product','Category','Highlight','Description','Features','Fees','Min Amount','Currency','URL']];
+  filteredBrokerProducts.forEach(p => {
+    rows.push([
+      p.broker_name||'', p.product_name||'', p.category||'',
+      p.highlight||'', p.description||'',
+      toArray(p.features).join('; '),
+      p.fees||'', p.min_amount||'', p.currency||'', p.url||p.tc_link||'',
+    ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Broker Products');
+  XLSX.writeFile(wb, 'broker_products.xlsx');
 }
 
 // ── Boot ────────────────────────────────────────────────────────────

@@ -354,6 +354,113 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_products_first_seen ON products(first_seen_at);
         ''')
 
+        # ── Broker promotions table ─────────────────────────────────────────────
+        conn.executescript('''
+            CREATE TABLE IF NOT EXISTS broker_promotions (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                broker_id     TEXT    NOT NULL,
+                broker_name   TEXT    NOT NULL,
+                title         TEXT    NOT NULL,
+                description   TEXT    DEFAULT '',
+                highlight     TEXT    DEFAULT '',
+                category      TEXT    DEFAULT '',
+                url           TEXT    DEFAULT '',
+                tc_link       TEXT    DEFAULT '',
+                start_date    TEXT    DEFAULT NULL,
+                period        TEXT    DEFAULT '',
+                end_date      TEXT    DEFAULT NULL,
+                quota         TEXT    DEFAULT '',
+                cost          TEXT    DEFAULT '',
+                promo_type    TEXT    DEFAULT '',
+                is_bau        INTEGER DEFAULT 0,
+                first_run_id  INTEGER DEFAULT NULL,
+                created_at    TEXT    NOT NULL,
+                first_seen_at TEXT    DEFAULT NULL,
+                last_seen     TEXT    NOT NULL,
+                active        INTEGER NOT NULL DEFAULT 1
+            );
+        ''')
+
+        broker_promo_cols = {
+            row[1] for row in conn.execute('PRAGMA table_info(broker_promotions)').fetchall()
+        }
+        broker_promo_migrations = [
+            ('category',      "ALTER TABLE broker_promotions ADD COLUMN category      TEXT DEFAULT ''"),
+            ('highlight',     "ALTER TABLE broker_promotions ADD COLUMN highlight     TEXT DEFAULT ''"),
+            ('tc_link',       "ALTER TABLE broker_promotions ADD COLUMN tc_link       TEXT DEFAULT ''"),
+            ('start_date',    "ALTER TABLE broker_promotions ADD COLUMN start_date    TEXT DEFAULT NULL"),
+            ('period',        "ALTER TABLE broker_promotions ADD COLUMN period        TEXT DEFAULT ''"),
+            ('end_date',      "ALTER TABLE broker_promotions ADD COLUMN end_date      TEXT DEFAULT NULL"),
+            ('quota',         "ALTER TABLE broker_promotions ADD COLUMN quota         TEXT DEFAULT ''"),
+            ('cost',          "ALTER TABLE broker_promotions ADD COLUMN cost          TEXT DEFAULT ''"),
+            ('promo_type',    "ALTER TABLE broker_promotions ADD COLUMN promo_type    TEXT DEFAULT ''"),
+            ('is_bau',        "ALTER TABLE broker_promotions ADD COLUMN is_bau        INTEGER DEFAULT 0"),
+            ('first_run_id',  "ALTER TABLE broker_promotions ADD COLUMN first_run_id  INTEGER DEFAULT NULL"),
+            ('first_seen_at', "ALTER TABLE broker_promotions ADD COLUMN first_seen_at TEXT DEFAULT NULL"),
+        ]
+        for col, sql in broker_promo_migrations:
+            if col not in broker_promo_cols:
+                conn.execute(sql)
+                print(f'  [MIGRATE] DB migration: added column "{col}" to broker_promotions table')
+
+        conn.executescript('''
+            CREATE INDEX IF NOT EXISTS idx_broker_promo_broker_id    ON broker_promotions(broker_id);
+            CREATE INDEX IF NOT EXISTS idx_broker_promo_active        ON broker_promotions(active);
+            CREATE INDEX IF NOT EXISTS idx_broker_promo_first_seen    ON broker_promotions(first_seen_at);
+            CREATE INDEX IF NOT EXISTS idx_broker_promo_last_seen     ON broker_promotions(last_seen);
+            CREATE INDEX IF NOT EXISTS idx_broker_promo_is_bau        ON broker_promotions(is_bau);
+        ''')
+
+        # ── Broker products table ───────────────────────────────────────────────
+        conn.executescript('''
+            CREATE TABLE IF NOT EXISTS broker_products (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                broker_id     TEXT    NOT NULL,
+                broker_name   TEXT    NOT NULL,
+                product_name  TEXT    NOT NULL,
+                category      TEXT    NOT NULL,
+                description   TEXT    DEFAULT '',
+                highlight     TEXT    DEFAULT '',
+                features      TEXT    DEFAULT '',
+                fees          TEXT    DEFAULT '',
+                min_amount    TEXT    DEFAULT '',
+                currency      TEXT    DEFAULT '',
+                url           TEXT    DEFAULT '',
+                tc_link       TEXT    DEFAULT '',
+                is_active     INTEGER NOT NULL DEFAULT 1,
+                created_at    TEXT    NOT NULL,
+                first_seen_at TEXT    DEFAULT NULL,
+                last_seen     TEXT    NOT NULL
+            );
+        ''')
+
+        broker_prod_cols = {
+            row[1] for row in conn.execute('PRAGMA table_info(broker_products)').fetchall()
+        }
+        broker_prod_migrations = [
+            ('highlight',     "ALTER TABLE broker_products ADD COLUMN highlight     TEXT DEFAULT ''"),
+            ('created_at',    "ALTER TABLE broker_products ADD COLUMN created_at    TEXT NOT NULL DEFAULT ''"),
+            ('first_seen_at', "ALTER TABLE broker_products ADD COLUMN first_seen_at TEXT DEFAULT NULL"),
+            ('last_seen',     "ALTER TABLE broker_products ADD COLUMN last_seen     TEXT NOT NULL DEFAULT ''"),
+            ('features',      "ALTER TABLE broker_products ADD COLUMN features      TEXT DEFAULT ''"),
+            ('fees',          "ALTER TABLE broker_products ADD COLUMN fees          TEXT DEFAULT ''"),
+            ('min_amount',    "ALTER TABLE broker_products ADD COLUMN min_amount    TEXT DEFAULT ''"),
+            ('currency',      "ALTER TABLE broker_products ADD COLUMN currency      TEXT DEFAULT ''"),
+            ('is_active',     "ALTER TABLE broker_products ADD COLUMN is_active     INTEGER NOT NULL DEFAULT 1"),
+            ('tc_link',       "ALTER TABLE broker_products ADD COLUMN tc_link       TEXT DEFAULT ''"),
+        ]
+        for col, sql in broker_prod_migrations:
+            if col not in broker_prod_cols:
+                conn.execute(sql)
+                print(f'  [MIGRATE] DB migration: added column "{col}" to broker_products table')
+
+        conn.executescript('''
+            CREATE INDEX IF NOT EXISTS idx_broker_prod_broker_id    ON broker_products(broker_id);
+            CREATE INDEX IF NOT EXISTS idx_broker_prod_category      ON broker_products(category);
+            CREATE INDEX IF NOT EXISTS idx_broker_prod_active        ON broker_products(is_active);
+            CREATE INDEX IF NOT EXISTS idx_broker_prod_first_seen    ON broker_products(first_seen_at);
+        ''')
+
         conn.executescript('''
             CREATE INDEX IF NOT EXISTS idx_bank_id       ON promotions(bank_id);
             CREATE INDEX IF NOT EXISTS idx_active        ON promotions(active);
@@ -1469,13 +1576,78 @@ def export_to_json(
             'last_seen':    pr.get('last_seen')     or '',
         })
 
+    # ── Broker promotions export ───────────────────────────────────────────────
+    broker_promo_records: List[Dict] = []
+    for p in get_active_broker_promotions(include_bau=True):
+        raw_type   = p.get('promo_type') or p.get('category') or ''
+        types_list = (
+            [t.strip() for t in raw_type.split(',') if t.strip()]
+            if isinstance(raw_type, str) else list(raw_type)
+        )
+        if not types_list:
+            types_list = ['Others']
+        broker_promo_records.append({
+            'id':            p.get('id'),
+            'broker_id':     p.get('broker_id',   ''),
+            'broker_name':   p.get('broker_name', ''),
+            'title':         p.get('title')       or '',
+            'highlight':     p.get('highlight')   or '',
+            'description':   p.get('description') or '',
+            'category':      p.get('category')    or '',
+            'start_date':    p.get('start_date'),
+            'end_date':      p.get('end_date'),
+            'period':        p.get('period')      or 'Ongoing',
+            'quota':         p.get('quota')       or '',
+            'cost':          p.get('cost')        or '',
+            'types':         types_list,
+            'url':           p.get('url')         or '',
+            'tc_link':       p.get('tc_link')     or p.get('url') or '',
+            'is_bau':        bool(p.get('is_bau', 0)),
+            'active':        bool(p.get('active', 1)),
+            'created_at':    p.get('created_at')    or '',
+            'first_seen_at': p.get('first_seen_at') or '',
+            'last_seen':     p.get('last_seen')     or '',
+        })
+
+    # ── Broker products export ─────────────────────────────────────────────────
+    broker_product_records: List[Dict] = []
+    for pr in get_active_broker_products():
+        raw_features = pr.get('features') or ''
+        if isinstance(raw_features, str) and raw_features:
+            features_list = [f.strip() for f in raw_features.split('|') if f.strip()]
+        elif isinstance(raw_features, list):
+            features_list = raw_features
+        else:
+            features_list = []
+        broker_product_records.append({
+            'id':           pr.get('id'),
+            'broker_id':    pr.get('broker_id',    ''),
+            'broker_name':  pr.get('broker_name',  ''),
+            'product_name': pr.get('product_name', ''),
+            'category':     pr.get('category',     ''),
+            'description':  pr.get('description')  or '',
+            'highlight':    pr.get('highlight')     or '',
+            'features':     features_list,
+            'fees':         pr.get('fees')          or '',
+            'min_amount':   pr.get('min_amount')    or '',
+            'currency':     pr.get('currency')      or '',
+            'url':          pr.get('url')           or '',
+            'tc_link':      pr.get('tc_link')       or pr.get('url') or '',
+            'is_active':    bool(pr.get('is_active', 1)),
+            'created_at':   pr.get('created_at')    or '',
+            'first_seen_at':pr.get('first_seen_at') or '',
+            'last_seen':    pr.get('last_seen')     or '',
+        })
+
     # ★ FIX: sanitise insights so all list fields are real arrays, not strings
     clean_insights = _sanitize_insights(strategic_insights)
 
     output: Dict[str, Any] = {
-        'updated':    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'promotions': records,
-        'products':   product_records,
+        'updated':          datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'promotions':       records,
+        'products':         product_records,
+        'broker_promotions': broker_promo_records,
+        'broker_products':   broker_product_records,
     }
     if clean_insights:
         output['strategic_insights'] = clean_insights
@@ -1781,3 +1953,501 @@ def export_products_to_json(output_path: str) -> None:
         f'  [FILE] products.json -> {len(records)} products '
         f'({stats.get("by_category", {})}) -> {output_path}'
     )
+
+
+# ── 11. Broker database functions ─────────────────────────────────────────────
+
+def _find_broker_duplicate_id(
+    conn: sqlite3.Connection,
+    broker_id: str,
+    title: str,
+    highlight: str,
+) -> Optional[int]:
+    rows = conn.execute(
+        "SELECT id, title, highlight, active FROM broker_promotions WHERE broker_id = ?",
+        (broker_id,)
+    ).fetchall()
+
+    norm_new      = _normalize_title(title)
+    hi_snippet    = (highlight or '').strip()[:150]
+    new_code_stem = _extract_promo_code_stem(title)
+    toks_new      = _tokenize_for_jaccard(title)
+
+    for row in rows:
+        is_inactive = not row['active']
+        j_thr = _JACCARD_THRESHOLD_INACTIVE if is_inactive else _JACCARD_THRESHOLD
+        l_thr = _LCP_THRESHOLD_INACTIVE     if is_inactive else _LCP_THRESHOLD
+
+        if new_code_stem:
+            old_code_stem = _extract_promo_code_stem(row['title'])
+            if old_code_stem and new_code_stem == old_code_stem:
+                return row['id']
+
+        norm_old = _normalize_title(row['title'])
+        old_snip = (row['highlight'] or '').strip()[:150]
+
+        if norm_new and norm_old:
+            if norm_new == norm_old:
+                return row['id']
+
+            len_new, len_old = len(norm_new), len(norm_old)
+            min_len = min(len_new, len_old)
+            max_len = max(len_new, len_old)
+            if (
+                min_len >= _MIN_NORM_LEN
+                and min_len >= max_len * 0.35
+                and (norm_new in norm_old or norm_old in norm_new)
+            ):
+                return row['id']
+
+            toks_old = _tokenize_for_jaccard(row['title'])
+            if (
+                len(toks_new) >= _MIN_TOKENS
+                and len(toks_old) >= _MIN_TOKENS
+                and len(toks_new & toks_old) >= _MIN_TOKENS
+                and _jaccard_similarity(title, row['title']) >= j_thr
+            ):
+                return row['id']
+
+            if (
+                len_new >= _MIN_NORM_LEN
+                and len_old >= _MIN_NORM_LEN
+                and _common_prefix_ratio(norm_new, norm_old) >= l_thr
+            ):
+                return row['id']
+
+        if hi_snippet and old_snip and hi_snippet == old_snip:
+            return row['id']
+
+    return None
+
+
+def save_broker_promotions(
+    broker_id: str,
+    broker_name: str,
+    promotions: List[Dict],
+    current_run_id: int = 0,
+    today_str: str = None,
+) -> Dict:
+    today = today_str or _hkt_today()
+    stats = {'new': 0, 'updated': 0, 'skipped': 0}
+
+    with _db_connection() as conn:
+        try:
+            for p in promotions:
+                title = (
+                    p.get('title') or p.get('name') or
+                    p.get('promotion_name') or p.get('promo_name') or ''
+                ).strip()
+                highlight = (p.get('highlight') or '').strip()
+
+                if not title:
+                    stats['skipped'] += 1
+                    continue
+
+                types_raw  = p.get('types') or p.get('promo_type') or []
+                promo_type = ','.join(types_raw) if isinstance(types_raw, list) else str(types_raw)
+                is_bau     = int(bool(p.get('is_bau', False)))
+                start_date = p.get('start_date') or None
+                end_date   = p.get('end_date')   or None
+
+                period = (p.get('period') or '').strip()
+                if start_date and end_date:
+                    period = f'{start_date} to {end_date}'
+                elif start_date:
+                    period = f'From {start_date}'
+                elif end_date:
+                    period = f'Until {end_date}'
+                elif not period:
+                    period = 'Ongoing'
+
+                pre_match_id = p.pop('_matched_id', None)
+                dup_id = (
+                    pre_match_id
+                    if pre_match_id is not None
+                    else _find_broker_duplicate_id(conn, broker_id, title, highlight)
+                )
+
+                if dup_id:
+                    existing = conn.execute(
+                        "SELECT title FROM broker_promotions WHERE id = ?", (dup_id,)
+                    ).fetchone()
+                    keep_title = (
+                        title
+                        if (existing and len(title) >= len(existing['title']))
+                        else (existing['title'] if existing else title)
+                    )
+                    conn.execute("""
+                        UPDATE broker_promotions SET
+                            broker_name = ?,
+                            title       = ?,
+                            highlight   = COALESCE(NULLIF(?, ''), highlight),
+                            description = COALESCE(NULLIF(?, ''), description),
+                            category    = COALESCE(NULLIF(?, ''), category),
+                            start_date  = COALESCE(NULLIF(?, ''), start_date),
+                            end_date    = COALESCE(NULLIF(?, ''), end_date),
+                            period      = COALESCE(NULLIF(?, ''), period),
+                            quota       = COALESCE(NULLIF(?, ''), quota),
+                            cost        = COALESCE(NULLIF(?, ''), cost),
+                            promo_type  = COALESCE(NULLIF(?, ''), promo_type),
+                            url         = COALESCE(NULLIF(?, ''), url),
+                            tc_link     = COALESCE(NULLIF(?, ''), tc_link),
+                            is_bau      = ?,
+                            active      = 1,
+                            last_seen   = ?
+                        WHERE id = ?
+                    """, (
+                        broker_name,
+                        keep_title,
+                        highlight,
+                        p.get('description', ''), p.get('category', ''),
+                        start_date, end_date, period,
+                        p.get('quota', ''), p.get('cost', ''),
+                        promo_type, p.get('url', ''), p.get('tc_link', ''),
+                        is_bau, today, dup_id,
+                    ))
+                    stats['updated'] += 1
+                else:
+                    conn.execute("""
+                        INSERT INTO broker_promotions
+                            (broker_id, broker_name, title, highlight, description,
+                             category, start_date, period, end_date, quota, cost,
+                             promo_type, url, tc_link, is_bau,
+                             first_run_id, active, created_at, first_seen_at, last_seen)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
+                    """, (
+                        broker_id, broker_name, title, highlight,
+                        p.get('description', ''), p.get('category', ''),
+                        start_date, period, end_date,
+                        p.get('quota', ''), p.get('cost', ''),
+                        promo_type, p.get('url', ''), p.get('tc_link', ''),
+                        is_bau,
+                        current_run_id if current_run_id else None,
+                        today, today, today,
+                    ))
+                    stats['new'] += 1
+
+            conn.commit()
+            print(
+                f"  [{broker_id}] broker promos saved -> "
+                f"new:{stats['new']}  updated:{stats['updated']}  skipped:{stats['skipped']}"
+            )
+            return stats
+
+        except Exception as exc:
+            conn.rollback()
+            print(f'  [ERR] save_broker_promotions error: {exc}')
+            raise
+
+
+def save_broker_products(
+    broker_id: str,
+    broker_name: str,
+    products: List[Dict],
+    today_str: str = None,
+) -> Dict:
+    today = today_str or _hkt_today()
+    stats = {'new': 0, 'updated': 0, 'skipped': 0}
+
+    with _db_connection() as conn:
+        try:
+            for p in products:
+                product_name = (p.get('product_name') or '').strip()
+                category = (p.get('category') or '').strip()
+
+                if not product_name or not category:
+                    stats['skipped'] += 1
+                    continue
+
+                existing = conn.execute(
+                    "SELECT id FROM broker_products WHERE broker_id = ? AND product_name = ?",
+                    (broker_id, product_name)
+                ).fetchone()
+
+                features_str = ''
+                features = p.get('features', [])
+                if isinstance(features, list):
+                    features_str = '|'.join(str(f) for f in features if f)
+                elif isinstance(features, str):
+                    features_str = features
+
+                if existing:
+                    conn.execute("""
+                        UPDATE broker_products SET
+                            broker_name = ?,
+                            category    = ?,
+                            description = COALESCE(NULLIF(?, ''), description),
+                            highlight   = COALESCE(NULLIF(?, ''), highlight),
+                            features    = COALESCE(NULLIF(?, ''), features),
+                            fees        = COALESCE(NULLIF(?, ''), fees),
+                            min_amount  = COALESCE(NULLIF(?, ''), min_amount),
+                            currency    = COALESCE(NULLIF(?, ''), currency),
+                            url         = COALESCE(NULLIF(?, ''), url),
+                            tc_link     = COALESCE(NULLIF(?, ''), tc_link),
+                            is_active   = 1,
+                            last_seen   = ?
+                        WHERE id = ?
+                    """, (
+                        broker_name,
+                        category,
+                        p.get('description', ''),
+                        p.get('highlight', ''),
+                        features_str,
+                        p.get('fees', ''),
+                        p.get('min_amount', ''),
+                        p.get('currency', ''),
+                        p.get('url', ''),
+                        p.get('tc_link', ''),
+                        today,
+                        existing['id'],
+                    ))
+                    stats['updated'] += 1
+                else:
+                    conn.execute("""
+                        INSERT INTO broker_products
+                            (broker_id, broker_name, product_name, category, description,
+                             highlight, features, fees, min_amount, currency, url, tc_link,
+                             is_active, created_at, first_seen_at, last_seen)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
+                    """, (
+                        broker_id, broker_name, product_name, category,
+                        p.get('description', ''),
+                        p.get('highlight', ''),
+                        features_str,
+                        p.get('fees', ''),
+                        p.get('min_amount', ''),
+                        p.get('currency', ''),
+                        p.get('url', ''),
+                        p.get('tc_link', ''),
+                        today, today, today,
+                    ))
+                    stats['new'] += 1
+
+            conn.commit()
+            print(
+                f"  [{broker_id}] broker products saved -> "
+                f"new:{stats['new']}  updated:{stats['updated']}  skipped:{stats['skipped']}"
+            )
+            return stats
+
+        except Exception as exc:
+            conn.rollback()
+            print(f'  [ERR] save_broker_products error: {exc}')
+            raise
+
+
+def get_active_broker_promos_for_broker(broker_id: str) -> List[Dict[str, Any]]:
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute(
+                'SELECT id, title FROM broker_promotions WHERE broker_id = ? AND active = 1',
+                (broker_id,)
+            ).fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_active_broker_promos_for_broker error: {exc}')
+            return []
+
+
+def get_active_broker_promotions(include_bau: bool = True) -> List[Dict[str, Any]]:
+    with _db_connection() as conn:
+        try:
+            bau_clause = '' if include_bau else 'AND is_bau = 0'
+            return _to_dicts(conn.execute(f'''
+                SELECT * FROM broker_promotions
+                WHERE active = 1 {bau_clause}
+                ORDER BY broker_id ASC, last_seen DESC
+            ''').fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_active_broker_promotions error: {exc}')
+            return []
+
+
+def get_new_broker_promotions_today(include_bau: bool = False) -> List[Dict[str, Any]]:
+    today = _hkt_today()
+    with _db_connection() as conn:
+        try:
+            bau_clause = '' if include_bau else 'AND is_bau = 0'
+            return _to_dicts(conn.execute(f'''
+                SELECT * FROM broker_promotions
+                WHERE active = 1
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) = ?
+                  AND (end_date IS NULL OR end_date = '' OR DATE(end_date) >= ?)
+                  {bau_clause}
+                ORDER BY broker_id ASC, id ASC
+            ''', (today, today)).fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_new_broker_promotions_today error: {exc}')
+            return []
+
+
+def get_new_broker_promotions_last_n_days(
+    days: int = 6,
+    include_bau: bool = False,
+) -> List[Dict[str, Any]]:
+    today = _hkt_today()
+    since = _hkt_n_days_ago(days)
+    with _db_connection() as conn:
+        try:
+            bau_clause = '' if include_bau else 'AND is_bau = 0'
+            return _to_dicts(conn.execute(f'''
+                SELECT * FROM broker_promotions
+                WHERE active = 1
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) >= ?
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) <  ?
+                  AND (end_date IS NULL OR end_date = '' OR DATE(end_date) >= ?)
+                  {bau_clause}
+                ORDER BY COALESCE(first_seen_at, created_at) DESC, broker_id ASC
+            ''', (since, today, today)).fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_new_broker_promotions_last_n_days error: {exc}')
+            return []
+
+
+def get_active_broker_products() -> List[Dict[str, Any]]:
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute(
+                'SELECT * FROM broker_products WHERE is_active = 1 ORDER BY broker_id ASC, category ASC'
+            ).fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_active_broker_products error: {exc}')
+            return []
+
+
+def get_new_broker_products_today() -> List[Dict[str, Any]]:
+    today = _hkt_today()
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute('''
+                SELECT * FROM broker_products
+                WHERE is_active = 1
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) = ?
+                ORDER BY broker_id ASC, category ASC
+            ''', (today,)).fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_new_broker_products_today error: {exc}')
+            return []
+
+
+def get_new_broker_products_last_n_days(days: int = 6) -> List[Dict[str, Any]]:
+    today = _hkt_today()
+    since = _hkt_n_days_ago(days)
+    with _db_connection() as conn:
+        try:
+            return _to_dicts(conn.execute('''
+                SELECT * FROM broker_products
+                WHERE is_active = 1
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) >= ?
+                  AND COALESCE(DATE(first_seen_at), DATE(created_at)) <  ?
+                ORDER BY COALESCE(first_seen_at, created_at) DESC, broker_id ASC
+            ''', (since, today)).fetchall())
+        except Exception as exc:
+            print(f'  [ERR] get_new_broker_products_last_n_days error: {exc}')
+            return []
+
+
+def get_broker_product_stats() -> Dict[str, Any]:
+    with _db_connection() as conn:
+        try:
+            total = conn.execute('SELECT COUNT(*) FROM broker_products WHERE is_active = 1').fetchone()[0]
+
+            by_category = {}
+            for row in conn.execute(
+                'SELECT category, COUNT(*) as cnt FROM broker_products WHERE is_active = 1 GROUP BY category'
+            ).fetchall():
+                by_category[row['category']] = row['cnt']
+
+            by_broker = {}
+            for row in conn.execute(
+                'SELECT broker_name, COUNT(*) as cnt FROM broker_products WHERE is_active = 1 GROUP BY broker_name'
+            ).fetchall():
+                by_broker[row['broker_name']] = row['cnt']
+
+            new_today = conn.execute('''
+                SELECT COUNT(*) FROM broker_products
+                WHERE is_active = 1
+                  AND DATE(COALESCE(first_seen_at, created_at)) = ?
+            ''', (_hkt_today(),)).fetchone()[0]
+
+            since     = _hkt_n_days_ago(6)
+            yesterday = _hkt_n_days_ago(1)
+            new_week = conn.execute('''
+                SELECT COUNT(*) FROM broker_products
+                WHERE is_active = 1
+                  AND DATE(COALESCE(first_seen_at, created_at)) >= ?
+                  AND DATE(COALESCE(first_seen_at, created_at)) <= ?
+            ''', (since, yesterday)).fetchone()[0]
+
+            return {
+                'total_products': total,
+                'by_category': by_category,
+                'by_broker': by_broker,
+                'new_today': new_today,
+                'new_this_week': new_week,
+            }
+        except Exception as exc:
+            print(f'  [ERR] get_broker_product_stats error: {exc}')
+            return {}
+
+
+def mark_stale_broker_promotions(
+    broker_ids_scraped: List[str],
+    today_str: str = None,
+) -> int:
+    if not broker_ids_scraped:
+        return 0
+    today_str = today_str or _hkt_today()
+    total = 0
+    with _db_connection() as conn:
+        try:
+            for broker_id in broker_ids_scraped:
+                cur = conn.execute('''
+                    UPDATE broker_promotions SET active = 0
+                    WHERE broker_id      = ?
+                      AND active         = 1
+                      AND DATE(last_seen) < ?
+                      AND (
+                            end_date IS NULL
+                         OR end_date  = ''
+                         OR DATE(end_date) < ?
+                      )
+                ''', (broker_id, today_str, today_str))
+                if cur.rowcount:
+                    print(
+                        f'  [CLEANUP]  {broker_id}: {cur.rowcount} broker promo(s) marked inactive'
+                    )
+                total += cur.rowcount
+            conn.commit()
+            return total
+        except Exception as exc:
+            conn.rollback()
+            print(f'  [ERR] mark_stale_broker_promotions error: {exc}')
+            return 0
+
+
+def mark_stale_broker_products(
+    broker_ids_scraped: List[str],
+    today_str: str = None,
+) -> int:
+    if not broker_ids_scraped:
+        return 0
+    today_str = today_str or _hkt_today()
+    total = 0
+    with _db_connection() as conn:
+        try:
+            for broker_id in broker_ids_scraped:
+                cur = conn.execute('''
+                    UPDATE broker_products SET is_active = 0
+                    WHERE broker_id = ?
+                      AND is_active = 1
+                      AND DATE(last_seen) < ?
+                ''', (broker_id, today_str))
+                total += cur.rowcount
+            conn.commit()
+            if total:
+                print(f'  [CLEANUP] {total} broker product(s) marked inactive')
+            return total
+        except Exception as exc:
+            conn.rollback()
+            print(f'  [ERR] mark_stale_broker_products error: {exc}')
+            return 0

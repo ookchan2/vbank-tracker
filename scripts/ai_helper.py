@@ -1984,3 +1984,400 @@ Return this EXACT JSON structure (no markdown, no code fences):
         f'({bau_wins} BAU winner(s), {none_wins} None slot(s))'
     )
     return result
+
+
+# ── Broker extraction ─────────────────────────────────────────────────────────
+
+BROKER_ALLOWED_CATEGORIES = [
+    "US Stock", "HK Stock", "A Share", "Investment Funds",
+    "Crypto", "Margin", "Bond", "Metals", "Stock Option",
+    "Futures", "Saving Discount",
+]
+
+_BROKER_PROMPT_TMPL = """\
+You are a specialist at extracting broker promotion data from website text.
+
+Broker: BROKER_NAME_PLACEHOLDER
+Source URL: URL_PLACEHOLDER
+Today's Date: TODAY_DATE_PLACEHOLDER
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  CRITICAL RULES — read carefully before extracting                  ║
+║                                                                      ║
+║  1. Extract EVERY SINGLE promotion you can find.                    ║
+║     If you see 15 promotions → return exactly 15 objects.           ║
+║                                                                      ║
+║  2. Do NOT merge multiple promotions into one entry.                ║
+║                                                                      ║
+║  3. name, highlight, and description must be in English.            ║
+║                                                                      ║
+║  4. For start_date / end_date: look for any date mentioned near     ║
+║     the promotion. Always use YYYY-MM-DD format.                    ║
+║     Use null only if truly absent.                                  ║
+║                                                                      ║
+║  5. ⚠️  DESCRIPTION MUST BE 3+ SENTENCES — be detailed!            ║
+║     Include: (1) what the benefit is, (2) who is eligible,          ║
+║     (3) key terms/conditions, (4) how to claim.                     ║
+║                                                                      ║
+║  6. is_bau: set true ONLY for permanent standing features with      ║
+║     NO end date and NO special eligibility, e.g.:                   ║
+║       ✅ BAU: "$0 Commission on HK Stock Trading" (permanent rate)  ║
+║       ✅ BAU: "Free Account Opening" (always available)             ║
+║       ❌ NOT BAU: "New Customer Free Commission" (limited time)     ║
+║       ❌ NOT BAU: Any promotion with an end date                    ║
+║                                                                      ║
+║  7. CATEGORY TAGGING RULES:                                         ║
+║     US Stock        → US/NYSE/NASDAQ stock trading promos           ║
+║     HK Stock        → HKEX/HK-listed stock trading promos          ║
+║     A Share         → Shanghai/Shenzhen/China A-share promos        ║
+║     Investment Funds→ Fund subscription/switching fee promos        ║
+║     Crypto          → Crypto/virtual asset trading promos           ║
+║     Margin          → Margin loan/margin financing promos           ║
+║     Bond            → Bond/fixed income trading promos              ║
+║     Metals          → Gold/silver/precious metal trading promos     ║
+║     Stock Option    → Options trading promos                        ║
+║     Futures         → Futures contract trading promos               ║
+║     Saving Discount → Account opening cash rewards / fee discounts  ║
+║                                                                      ║
+║  8. ⛔ DO NOT EXTRACT:                                              ║
+║     • Navigation / menu items                                       ║
+║     • Pure risk disclaimers / legal boilerplate                     ║
+║     • Generic company information with no reward/benefit            ║
+║     • Footer links                                                  ║
+║                                                                      ║
+║  9. ⚠️  EXPIRY VALIDATION (today = TODAY_DATE_PLACEHOLDER):         ║
+║     If end_date > TODAY_DATE_PLACEHOLDER the promotion is ACTIVE.   ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+ALLOWED CATEGORY TAGS (English, pick 1-2 per promotion):
+  US Stock / HK Stock / A Share / Investment Funds / Crypto / Margin /
+  Bond / Metals / Stock Option / Futures / Saving Discount
+
+REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
+
+Schema for each object:
+{{
+  "name":        "Full descriptive English name of the promotion",
+  "types":       ["category1"],
+  "is_bau":      false,
+  "start_date":  "YYYY-MM-DD or null",
+  "end_date":    "YYYY-MM-DD or null",
+  "period":      "Human-readable period, e.g. '1 Jan 2025 to 31 Mar 2025' or 'Ongoing'",
+  "highlight":   "One-line key benefit starting with an emoji",
+  "description": "REQUIRED: 3 or more detailed sentences describing this promotion.",
+  "quota":       "Eligibility or quota info",
+  "cost":        "Minimum spend or requirement, or Free",
+  "tc_link":     "URL_PLACEHOLDER"
+}}
+
+WEBSITE TEXT TO ANALYSE:
+────────────────────────────────────────────────────────────────────────
+TEXT_PLACEHOLDER
+────────────────────────────────────────────────────────────────────────
+Remember: return ONLY the JSON array starting with [ and ending with ]."""
+
+
+_BROKER_PRODUCT_PROMPT_TMPL = """\
+You are a specialist at extracting broker PRODUCT information from website text.
+
+Broker: BROKER_NAME_PLACEHOLDER
+Source URL: URL_PLACEHOLDER
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  BROKER PRODUCT EXTRACTION RULES                                    ║
+║                                                                      ║
+║  1. Extract ALL financial products/services offered by this broker. ║
+║     Products include: stock trading platforms, margin services,      ║
+║     options, futures, bond trading, crypto, etc.                    ║
+║                                                                      ║
+║  2. DO NOT extract time-limited promotions — only permanent         ║
+║     products/services and standing fee schedules.                   ║
+║                                                                      ║
+║  3. Categorize each product into ONE of these categories:           ║
+║     • US Stock         — US stock trading platform/service          ║
+║     • HK Stock         — HK stock trading platform/service          ║
+║     • A Share          — China A-share trading                      ║
+║     • Investment Funds — Fund subscription/investment platform       ║
+║     • Crypto           — Cryptocurrency/virtual asset trading        ║
+║     • Margin           — Margin loan / margin financing service      ║
+║     • Bond             — Bond/fixed income trading service           ║
+║     • Metals           — Gold/silver/precious metal trading          ║
+║     • Stock Option     — Options trading service                    ║
+║     • Futures          — Futures trading service                    ║
+║     • Saving Discount  — Cash management / saving accounts          ║
+║                                                                      ║
+║  4. For each product, provide:                                      ║
+║     • product_name: Full English name of the product                ║
+║     • category: One of the 11 categories above                     ║
+║     • description: 3+ detailed sentences about the product          ║
+║     • highlight: One-line key benefit starting with an emoji        ║
+║     • features: List of key features (strings)                      ║
+║     • fees: Standard fee schedule description                       ║
+║     • min_amount: Minimum deposit/investment amount if stated       ║
+║     • currency: Supported currencies                                ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+REQUIRED OUTPUT: A valid JSON array — NO other text, NO markdown fences.
+
+Schema for each object:
+{{
+  "product_name": "Full English name of the product",
+  "category":     "One of the 11 broker categories",
+  "description":  "REQUIRED: 3+ detailed sentences describing the product.",
+  "highlight":    "One-line key benefit starting with an emoji",
+  "features":     ["feature1", "feature2"],
+  "fees":         "Fee schedule description",
+  "min_amount":   "Minimum amount required or empty string",
+  "currency":     "HKD, USD, etc."
+}}
+
+WEBSITE TEXT TO ANALYSE:
+────────────────────────────────────────────────────────────────────────
+TEXT_PLACEHOLDER
+────────────────────────────────────────────────────────────────────────
+Remember: return ONLY the JSON array starting with [ and ending with ].
+If no products found, return []."""
+
+
+def _build_broker_prompt(broker_name: str, url: str, text: str) -> str:
+    today = datetime.now().strftime('%Y-%m-%d')
+    return (
+        _BROKER_PROMPT_TMPL
+        .replace('BROKER_NAME_PLACEHOLDER', broker_name)
+        .replace('URL_PLACEHOLDER',         url)
+        .replace('TODAY_DATE_PLACEHOLDER',  today)
+        .replace('TEXT_PLACEHOLDER',        text)
+    )
+
+
+def _build_broker_product_prompt(broker_name: str, url: str, text: str) -> str:
+    return (
+        _BROKER_PRODUCT_PROMPT_TMPL
+        .replace('BROKER_NAME_PLACEHOLDER', broker_name)
+        .replace('URL_PLACEHOLDER',         url)
+        .replace('TEXT_PLACEHOLDER',        text)
+    )
+
+
+def _stamp_broker(items: list, broker_id: str, broker_name: str, default_url: str) -> list:
+    for p in items:
+        p['broker_id']   = broker_id
+        p['broker_name'] = broker_name
+        p.setdefault('url',     default_url)
+        p.setdefault('tc_link', default_url)
+    return items
+
+
+def analyze_broker_promotions(
+    broker_id:   str,
+    broker_name: str,
+    text:        str = '',
+    screenshot:  Optional[bytes] = None,
+    default_url: str = '',
+) -> list:
+    if not AI_AVAILABLE:
+        return []
+
+    clean   = _trim_text(text.strip() if text else '')
+    results = []
+
+    if len(clean) >= 200:
+        prompt = _build_broker_prompt(broker_name=broker_name, url=default_url, text=clean)
+
+        for attempt in range(2):
+            try:
+                raw    = _call([{'role': 'user', 'content': prompt}], label=broker_id)
+                parsed = _parse_array(raw)
+                if parsed:
+                    results   = parsed
+                    bau_count = sum(1 for p in parsed if p.get('is_bau'))
+                    print(
+                        f'  📝 Text → {len(results)} broker promos for {broker_name} '
+                        f'({bau_count} BAU)'
+                    )
+                    break
+                else:
+                    if attempt == 0:
+                        print(f'  🔄 Retry AI for {broker_name}...')
+            except Exception as exc:
+                if attempt == 0:
+                    print(f'  ⚠️  AI error for {broker_name}: {exc} — retrying...')
+        else:
+            print(f'  ❌ Both attempts failed for {broker_name}')
+    else:
+        print(f'  ⚠️  Text too short ({len(clean)} chars) for {broker_name}')
+
+    results = _stamp_broker(results, broker_id, broker_name, default_url)
+
+    # Validate categories
+    for p in results:
+        types_raw = p.get('types') or []
+        if isinstance(types_raw, list):
+            valid = [t for t in types_raw if t in BROKER_ALLOWED_CATEGORIES]
+            p['types'] = valid if valid else ['Saving Discount']
+        else:
+            p['types'] = ['Saving Discount']
+
+    print(f'  ✅ Total: {len(results)} broker promos for {broker_name}')
+    return results
+
+
+def analyze_broker_products(
+    broker_id:   str,
+    broker_name: str,
+    text:        str = '',
+    default_url: str = '',
+) -> list:
+    if not AI_AVAILABLE:
+        return []
+
+    clean   = _trim_text(text.strip() if text else '')
+    results = []
+
+    if len(clean) >= 200:
+        prompt = _build_broker_product_prompt(broker_name=broker_name, url=default_url, text=clean)
+
+        for attempt in range(2):
+            try:
+                raw    = _call([{'role': 'user', 'content': prompt}], label=f'{broker_id}_products')
+                parsed = _parse_array(raw)
+                if parsed:
+                    results = parsed
+                    print(f'  📦 Text → {len(results)} broker products for {broker_name}')
+                    break
+                else:
+                    if attempt == 0:
+                        print(f'  🔄 Retry product extraction for {broker_name}...')
+            except Exception as exc:
+                if attempt == 0:
+                    print(f'  ⚠️  Product extraction error for {broker_name}: {exc} — retrying...')
+        else:
+            print(f'  ❌ Product extraction failed for {broker_name}')
+    else:
+        print(f'  ⚠️  Text too short ({len(clean)} chars) for {broker_name} products')
+
+    _stamp_broker(results, broker_id, broker_name, default_url)
+
+    # Validate categories
+    for p in results:
+        cat = p.get('category', '')
+        if cat not in BROKER_ALLOWED_CATEGORIES:
+            p['category'] = 'US Stock'
+
+    print(f'  ✅ Total: {len(results)} broker products for {broker_name}')
+    return results
+
+
+def generate_broker_insights(
+    broker_promos_by_name: dict,
+    za_bank_promos: list,
+    today_str: str = None,
+) -> Optional[dict]:
+    if not AI_AVAILABLE:
+        return None
+
+    today = today_str or datetime.now().strftime('%Y-%m-%d')
+
+    # Build ZA Bank summary
+    za_lines = []
+    for p in za_bank_promos[:20]:
+        title     = (p.get('name') or p.get('title') or 'N/A')[:80]
+        highlight = (p.get('highlight') or p.get('description') or '')[:100]
+        bau_tag   = ' [BAU]' if p.get('is_bau') else ''
+        za_lines.append(f'  {title}: {highlight}{bau_tag}')
+
+    za_section = (
+        'ZA Bank (BASELINE — NOT a broker, used only as comparison reference):\n'
+        + ('\n'.join(za_lines) if za_lines else '  No active promotions')
+    )
+
+    # Build broker summaries
+    broker_sections = []
+    for broker, promos in sorted(broker_promos_by_name.items()):
+        lines = []
+        for p in promos[:15]:
+            title     = (p.get('name') or p.get('title') or 'N/A')[:80]
+            highlight = (p.get('highlight') or p.get('description') or '')[:100]
+            cats      = p.get('types') or []
+            cat_str   = (', '.join(cats) if isinstance(cats, list) else str(cats))[:40]
+            bau_tag   = ' [BAU]' if p.get('is_bau') else ''
+            lines.append(f'  [{cat_str}]{bau_tag} {title}: {highlight}')
+        broker_sections.append(f'{broker}:\n' + '\n'.join(lines))
+
+    all_broker_names = list(broker_promos_by_name.keys())
+
+    prompt = f"""You are a Hong Kong financial market analyst specialising in retail brokerage promotions.
+Today: {today}
+
+Your task: analyse the active promotions from {len(all_broker_names)} HK online brokers and produce
+competitive intelligence. ZA Bank is provided ONLY as a bank baseline for comparison — it is NOT a broker.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PROMOTIONS DATA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{za_section}
+
+{chr(10).join(broker_sections)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. best_for: one winner per category (US Stock, HK Stock, A Share, Investment Funds,
+   Crypto, Margin, Bond, Metals, Stock Option, Futures, Saving Discount).
+   Output "None" only if zero evidence exists for that category across ALL brokers.
+2. broker_analysis: one entry per broker (NOT ZA Bank).
+   vs_za_pros: specific ways this broker beats ZA Bank for retail investors.
+   vs_za_cons: specific ways ZA Bank still wins vs this broker.
+   strengths: list of 2-3 specific competitive advantages with concrete numbers.
+3. detail field MUST contain at least one concrete figure (%, HKD/USD amount, $0, etc.).
+
+Return this EXACT JSON structure (no markdown, no code fences):
+{{
+  "best_for": [
+    {{
+      "category": "US Stock",
+      "broker": "BrokerName",
+      "detail": "specific fee/commission detail with concrete numbers",
+      "is_bau": true,
+      "similar_brokers": ["BrokerA"],
+      "why_others_lose": "specific reason with numbers"
+    }}
+  ],
+  "broker_analysis": {{
+    "IBKR": {{
+      "count": 0,
+      "bau_count": 0,
+      "focus": "short keywords",
+      "strengths": ["s1 with number", "s2"],
+      "expiring_alert": "",
+      "vs_za_pros": "specific advantages over ZA Bank for investors",
+      "vs_za_cons": "specific areas where ZA Bank wins"
+    }}
+  }}
+}}"""
+
+    raw = _call([{'role': 'user', 'content': prompt}], label='broker_insights')
+    if not raw:
+        print('❌ Broker insights: empty response from AI')
+        return None
+
+    result = _parse_object(raw)
+    if result is None:
+        print('❌ Broker insights: JSON parse failed')
+        return None
+
+    name_lookup = {k.lower(): k for k in broker_promos_by_name}
+    for bname in result.get('broker_analysis', {}):
+        matched_key = name_lookup.get(bname.lower())
+        if matched_key:
+            all_p = broker_promos_by_name[matched_key]
+            non_bau = [p for p in all_p if not p.get('is_bau')]
+            result['broker_analysis'][bname]['count']     = len(non_bau)
+            result['broker_analysis'][bname]['bau_count'] = len(all_p) - len(non_bau)
+        else:
+            result['broker_analysis'][bname]['count']     = 0
+            result['broker_analysis'][bname]['bau_count'] = 0
+
+    print(f'✅ Broker insights generated for {len(all_broker_names)} brokers')
+    return result

@@ -97,10 +97,21 @@ BANK_DOMAINS: dict[str, list[str]] = {
     'ant':     ['antbank.hk'],
 }
 
+BROKER_DOMAINS: dict[str, list[str]] = {
+    'ibkr':        ['interactivebrokers.com.hk', 'interactivebrokers.com'],
+    'futu':        ['futuhk.com', 'futuhkapp.com', 'invest.futuhk.com', 'openapi.futunn.com'],
+    'tiger':       ['itiger.com'],
+    'longbridge':  ['longbridge.com'],
+    'welllink':    ['wlsec.com'],
+    'webull':      ['webull.com'],
+    'brightsmart': ['bsgroup.com.hk'],
+    'usmart':      ['usmartglobal.com', 'hk.usmartglobal.com'],
+}
 
-def _is_valid_bank_url(url: str, bank_id: str) -> bool:
-    """Return True only if url's hostname belongs to the bank's allowed domains."""
-    allowed = BANK_DOMAINS.get(bank_id, [])
+
+def _is_valid_url(url: str, entity_id: str, domains: dict[str, list[str]]) -> bool:
+    """Return True only if url's hostname belongs to the entity's allowed domains."""
+    allowed = domains.get(entity_id, [])
     if not allowed:
         return True
     try:
@@ -108,6 +119,10 @@ def _is_valid_bank_url(url: str, bank_id: str) -> bool:
     except Exception:
         return False
     return any(hostname == d or hostname.endswith('.' + d) for d in allowed)
+
+
+def _is_valid_bank_url(url: str, bank_id: str) -> bool:
+    return _is_valid_url(url, bank_id, BANK_DOMAINS)
 
 
 # ── Bank configs ──────────────────────────────────────────────────────────────
@@ -242,6 +257,91 @@ BANK_CONFIGS: dict[str, dict] = {
         'link':       'https://www.antbank.hk/em-plus-offer?lang=en_us',
         'wait_extra': 9000,
         'max_retries': 3,
+    },
+}
+
+# ── Broker configs ────────────────────────────────────────────────────────────
+
+BROKER_CONFIGS: dict[str, dict] = {
+    'ibkr': {
+        'name': 'IBKR', 'color': '#e74c3c',
+        'urls': [
+            'https://www.interactivebrokers.com.hk/en/whyib/overview.php',
+            'https://www.interactivebrokers.com/en/pricing/commissions-home.php',
+        ],
+        'link':       'https://www.interactivebrokers.com.hk/en/whyib/overview.php',
+        'wait_extra': 5000,
+    },
+    'futu': {
+        'name': 'Futu', 'color': '#e67e22',
+        'urls': [
+            'https://www.futuhk.com/',
+            'https://www.futuhkapp.com/about-us/promotions',
+            'https://invest.futuhk.com/vipofficial',
+            'https://invest.futuhk.com/invite-centre',
+            'https://www.futuhk.com/commissionnew',
+        ],
+        'link':       'https://www.futuhk.com/',
+        'wait_extra': 5000,
+    },
+    'tiger': {
+        'name': 'Tiger', 'color': '#f39c12',
+        'urls': [
+            'https://www.itiger.com/hk/en/market/promotion',
+            'https://www.itiger.com/hk/en/commissions',
+        ],
+        'link':       'https://www.itiger.com/hk/en/market/promotion',
+        'wait_extra': 5000,
+    },
+    'longbridge': {
+        'name': 'Longbridge', 'color': '#27ae60',
+        'urls': [
+            'https://longbridge.com/hk/investment-products',
+            'https://longbridge.com/hk/zh-HK/rate',
+        ],
+        'link':       'https://longbridge.com/hk/investment-products',
+        'wait_extra': 5000,
+    },
+    'welllink': {
+        'name': '立橋', 'color': '#16a085',
+        'urls': [
+            'https://wlsec.com/notice.jhtml?tab=adInfo',
+            'https://wlsec.com/service.jhtml?tab=commissions',
+            'https://wlsec.com/service.jhtml?tab=deposit',
+        ],
+        'link':       'https://wlsec.com/notice.jhtml?tab=adInfo',
+        'wait_extra': 6000,
+    },
+    'webull': {
+        'name': 'webull', 'color': '#2980b9',
+        'urls': [
+            'https://www.webull.com/offers-promotions',
+            'https://www.webull.com/pricing',
+        ],
+        'link':       'https://www.webull.com/offers-promotions',
+        'wait_extra': 5000,
+    },
+    'brightsmart': {
+        'name': '耀才', 'color': '#8e44ad',
+        'urls': [
+            'https://www.bsgroup.com.hk/',
+            'https://www.bsgroup.com.hk/commissions/hongkongsecurities/',
+            'https://www.bsgroup.com.hk/commissions/shanghaishenzhena/',
+            'https://www.bsgroup.com.hk/commissions/globalsecurities/',
+            'https://www.bsgroup.com.hk/commissions/hongkongfutureoption/',
+            'https://www.bsgroup.com.hk/commissions/usstockoptions/',
+        ],
+        'link':       'https://www.bsgroup.com.hk/',
+        'wait_extra': 5000,
+    },
+    'usmart': {
+        'name': 'uSmart', 'color': '#1abc9c',
+        'urls': [
+            'https://hk.usmartglobal.com/zh-hk/promotion-and-activities',
+            'https://hk.usmartglobal.com/zh-hk/charges',
+        ],
+        'link':       'https://hk.usmartglobal.com/zh-hk/promotion-and-activities',
+        'wait_extra': 5000,
     },
 }
 
@@ -638,3 +738,173 @@ async def _run_all() -> dict[str, dict]:
 def run_scraper() -> dict:
     """Synchronous entry point called by main.py."""
     return asyncio.run(_run_all())
+
+
+# ── Broker scraper ────────────────────────────────────────────────────────────
+
+async def _scrape_broker(browser: Browser, broker_id: str) -> ScrapeResult:
+    cfg        = BROKER_CONFIGS[broker_id]
+    wait_extra = cfg.get('wait_extra', 3000)
+    retries    = cfg.get('max_retries', MAX_RETRIES)
+    t_start    = time.monotonic()
+
+    result = ScrapeResult(
+        bank_id   = broker_id,
+        bank_name = cfg['name'],
+        url       = cfg['link'],
+        text      = '',
+    )
+
+    valid_urls:   list[str] = []
+    skipped_urls: list[str] = []
+    for url in cfg['urls']:
+        if _is_valid_url(url, broker_id, BROKER_DOMAINS):
+            valid_urls.append(url)
+        else:
+            skipped_urls.append(url)
+            print(f'    [BLOCKED] Domain guard SKIPPED non-broker URL for {cfg["name"]}: {url}')
+
+    if skipped_urls:
+        print(
+            f'    [BLOCKED] {len(skipped_urls)} URL(s) outside {cfg["name"]} domain skipped'
+        )
+
+    if not valid_urls:
+        result.errors.append('All URLs failed domain validation')
+        result.elapsed_s = round(time.monotonic() - t_start, 2)
+        return result
+
+    allowed_domains = BROKER_DOMAINS.get(broker_id, [])
+
+    context: BrowserContext = await browser.new_context(
+        viewport            = {'width': 1366, 'height': 900},
+        user_agent          = USER_AGENT,
+        ignore_https_errors = True,
+        extra_http_headers  = {
+            'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8',
+            'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+    )
+
+    sections:  list[tuple[str, str]] = []
+    best_shot: Optional[bytes]       = None
+
+    try:
+        page = await context.new_page()
+
+        async def _handle_route(route):
+            req_url = route.request.url
+
+            if _BLOCKED_EXTENSIONS.search(req_url):
+                await route.abort()
+                return
+
+            try:
+                req_hostname = urlparse(req_url).hostname or ''
+                if allowed_domains and not any(
+                    req_hostname == d or req_hostname.endswith('.' + d)
+                    for d in allowed_domains
+                ):
+                    if not any(cdn in req_hostname for cdn in _CDN_ALLOW):
+                        if route.request.resource_type in ('document', 'xhr', 'fetch'):
+                            await route.abort()
+                            return
+            except Exception:
+                pass
+
+            await route.continue_()
+
+        await page.route('**/*', _handle_route)
+
+        for url in valid_urls:
+            print(f'    -> {url}')
+            text, shot = await _try_url(page, url, wait_extra, retries)
+
+            if text and len(text) > MIN_CONTENT_CHARS:
+                sections.append((url, text))
+                if best_shot is None and shot:
+                    best_shot  = shot
+                    result.url = url
+                print(f'    [OK]  {len(text):,} chars')
+            else:
+                thin_len = len(text)
+                print(f'    🔁 thin ({thin_len} chars) -> requests fallback for {url}')
+                fb = scrape_with_requests(url)
+                if fb and len(fb) > MIN_CONTENT_CHARS:
+                    sections.append((url, fb))
+                    print(f'    [OK]  requests: {len(fb):,} chars')
+                else:
+                    msg = f'Insufficient content from both methods: {url}'
+                    result.errors.append(msg)
+                    print(f'    ⚠  {msg}')
+
+        sections = _deduplicate_sections(sections)
+        sections = _truncate_sections(sections)
+
+        combined = '\n\n'.join(
+            f'=== SOURCE: {url} ===\n{text}'
+            for url, text in sections
+        ).strip()
+
+        if best_shot is None and len(combined) < MIN_CONTENT_CHARS:
+            print('    [SCREENSHOT] Still thin -> screenshot fallback…')
+            try:
+                await page.unroute('**/*')
+                await page.goto(cfg['link'], wait_until='domcontentloaded', timeout=45_000)
+                await page.wait_for_timeout(wait_extra + 3_000)
+                best_shot = await page.screenshot(full_page=True, type='png')
+                print('    [OK]  screenshot taken')
+            except Exception as exc:
+                msg = f'Screenshot fallback failed: {exc}'
+                result.errors.append(msg)
+                print(f'    ❌ {msg}')
+
+        result.text           = combined
+        result.screenshot     = best_shot
+        result.success        = len(combined) > MIN_CONTENT_CHARS
+        result.sections_count = len(sections)
+
+    finally:
+        await context.close()
+        result.elapsed_s = round(time.monotonic() - t_start, 2)
+
+    return result
+
+
+async def _run_all_brokers() -> dict[str, dict]:
+    results: dict[str, dict] = {}
+    sem = asyncio.Semaphore(CONCURRENCY_LIMIT)
+
+    async def _bounded(browser: Browser, broker_id: str) -> None:
+        async with sem:
+            cfg    = BROKER_CONFIGS[broker_id]
+            header = f'== {cfg["name"]} (broker) '
+            print(f'\n{header}{"=" * max(1, 50 - len(header))}')
+
+            result = await _scrape_broker(browser, broker_id)
+
+            mark       = '✅' if result.success else '❌'
+            total      = len(cfg['urls'])
+            error_note = f' | {len(result.errors)} error(s)' if result.errors else ''
+            print(
+                f'  {mark}  {cfg["name"]}: '
+                f'{len(result.text):,} chars '
+                f'from {result.sections_count}/{total} URLs '
+                f'in {result.elapsed_s}s'
+                f'{error_note}'
+            )
+            results[broker_id] = result.to_dict()
+
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(headless=True, args=BROWSER_ARGS)
+        await asyncio.gather(*[
+            _bounded(browser, broker_id) for broker_id in BROKER_CONFIGS
+        ])
+        await browser.close()
+
+    return results
+
+
+def run_broker_scraper() -> dict:
+    """Synchronous entry point for broker scraping called by main.py."""
+    return asyncio.run(_run_all_brokers())

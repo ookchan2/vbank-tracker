@@ -762,24 +762,238 @@ def _build_products_section(
   </td></tr>'''
 
 
+# ── Broker section builders ───────────────────────────────────────────────────
+
+_BROKER_COLORS = {
+    'IBKR':       '#e74c3c',
+    'Futu':       '#e67e22',
+    'Tiger':      '#f39c12',
+    'Longbridge': '#27ae60',
+    '立橋':       '#16a085',
+    'webull':     '#2980b9',
+    '耀才':       '#8e44ad',
+    'uSmart':     '#1abc9c',
+}
+
+
+def _broker_color(broker_name: str) -> str:
+    for k, v in _BROKER_COLORS.items():
+        if k.lower() in broker_name.lower():
+            return v
+    return '#6b7280'
+
+
+def _new_broker_promo_card(p: dict) -> str:
+    broker_name  = p.get('broker_name', '')
+    title        = _html.escape(p.get('title') or p.get('name') or '')
+    highlight    = _html.escape(p.get('highlight') or '')
+    description  = _html.escape(p.get('description') or '')
+    url          = p.get('url') or p.get('tc_link') or ''
+    types_raw    = p.get('types') or []
+    type_list    = types_raw if isinstance(types_raw, list) else [str(types_raw)]
+    color        = _broker_color(broker_name)
+    cat_tags     = ''.join(
+        f'<span style="display:inline-block;background:{color};color:#fff;'
+        f'font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;'
+        f'margin-right:4px;">{_html.escape(t)}</span>'
+        for t in type_list[:2]
+    ) if type_list else ''
+
+    link_btn = (
+        f'<a href="{_html.escape(url)}" target="_blank" '
+        f'style="display:inline-block;padding:6px 14px;background:{color};'
+        f'color:#ffffff;text-decoration:none;border-radius:6px;'
+        f'font-size:12px;font-weight:700;">View →</a>'
+        if url else ''
+    )
+
+    return f'''
+<div style="border:1px solid #e5e7eb;border-radius:10px;margin-bottom:12px;overflow:hidden;">
+  <div style="background:{color};padding:10px 14px;">
+    <span style="font-weight:700;font-size:13px;color:#ffffff;">{_html.escape(broker_name)}</span>
+    &nbsp; {cat_tags}
+  </div>
+  <div style="padding:12px 14px;">
+    <div style="font-weight:700;font-size:14px;color:#1f2937;margin-bottom:4px;">{title}</div>
+    {f'<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">{highlight}</div>' if highlight else ''}
+    {f'<div style="font-size:12px;color:#374151;line-height:1.5;margin-bottom:8px;">{description}</div>' if description else ''}
+    {link_btn}
+  </div>
+</div>'''
+
+
+def _build_broker_promotions_section(
+    new_broker_promos_today: list,
+    new_broker_promos_week:  list,
+) -> str:
+    today_n = len(new_broker_promos_today)
+    week_n  = len(new_broker_promos_week)
+
+    if today_n == 0 and week_n == 0:
+        return ''
+
+    today_html = ''
+    if today_n > 0:
+        cards = ''.join(_new_broker_promo_card(p) for p in new_broker_promos_today)
+        today_html = f'''<tr><td style="height:16px;"></td></tr>
+  <tr><td style="background:#ffffff;border-radius:16px;padding:24px;
+                 box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;"><tr>
+      <td bgcolor="#e74c3c"
+          style="background:linear-gradient(135deg,#e74c3c 0%,#e67e22 100%);
+                 border-radius:12px;padding:16px 22px;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="vertical-align:middle;">
+            <span style="font-size:22px;vertical-align:middle;">📊</span>
+            <span style="font-weight:900;font-size:17px;color:#ffffff;
+                         vertical-align:middle;margin-left:10px;">
+              New Broker Promotions Today
+            </span>
+          </td>
+          <td style="text-align:right;vertical-align:middle;white-space:nowrap;">
+            <span style="background:rgba(0,0,0,0.15);color:#ffffff;
+                         padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;">
+              {today_n} new
+            </span>
+          </td>
+        </tr></table>
+      </td>
+    </tr></table>
+    {cards}
+  </td></tr>'''
+
+    week_html = ''
+    if week_n > 0:
+        cards = ''.join(_new_broker_promo_card(p) for p in new_broker_promos_week)
+        week_html = f'''<tr><td style="height:16px;"></td></tr>
+  <tr><td style="background:#ffffff;border-radius:16px;padding:24px;
+                 box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;"><tr>
+      <td bgcolor="#27ae60"
+          style="background:linear-gradient(135deg,#27ae60 0%,#1abc9c 100%);
+                 border-radius:12px;padding:16px 22px;">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="vertical-align:middle;">
+            <span style="font-size:22px;vertical-align:middle;">📅</span>
+            <span style="font-weight:900;font-size:17px;color:#ffffff;
+                         vertical-align:middle;margin-left:10px;">
+              New Broker Promotions This Week
+            </span>
+          </td>
+          <td style="text-align:right;vertical-align:middle;white-space:nowrap;">
+            <span style="background:rgba(0,0,0,0.15);color:#ffffff;
+                         padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;">
+              {week_n} new
+            </span>
+          </td>
+        </tr></table>
+      </td>
+    </tr></table>
+    {cards}
+  </td></tr>'''
+
+    return f'''
+  <tr><td style="height:4px;"></td></tr>
+  {today_html}
+  {week_html}'''
+
+
+def _build_broker_products_section(
+    broker_product_stats:      dict,
+    new_broker_products_today: list,
+    new_broker_products_week:  list,
+) -> str:
+    total    = broker_product_stats.get('total_products', 0)
+    by_cat   = broker_product_stats.get('by_category', {})
+    by_broker = broker_product_stats.get('by_broker', {})
+    new_today = len(new_broker_products_today)
+    new_week  = len(new_broker_products_week)
+
+    if total == 0:
+        return ''
+
+    cat_rows = ''
+    for cat, count in sorted(by_cat.items(), key=lambda x: x[1], reverse=True):
+        if count > 0:
+            cat_rows += f'''
+    <tr style="border-bottom:1px solid #f3f4f6;">
+      <td style="padding:8px 12px;font-size:13px;color:#374151;">{_html.escape(cat)}</td>
+      <td style="padding:8px 12px;text-align:center;font-weight:700;color:#e74c3c;">{count}</td>
+    </tr>'''
+
+    broker_rows = ''
+    for bname, count in sorted(by_broker.items(), key=lambda x: x[1], reverse=True)[:8]:
+        broker_rows += f'''
+    <tr style="border-bottom:1px solid #f3f4f6;">
+      <td style="padding:8px 12px;font-size:13px;color:#374151;">{_html.escape(bname)}</td>
+      <td style="padding:8px 12px;text-align:center;font-weight:700;color:#e74c3c;">{count}</td>
+    </tr>'''
+
+    return f'''
+  <tr><td style="height:16px;"></td></tr>
+  <tr><td style="background:#ffffff;border-radius:14px;padding:22px 22px 16px;
+                 box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+    <div style="font-size:17px;font-weight:800;color:#1f2937;margin-bottom:4px;">
+      📊 Broker Products Overview
+    </div>
+    <div style="font-size:12px;color:#9ca3af;margin-bottom:18px;">
+      Total broker products tracked across all brokers
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+      <tr>
+        <td width="50%" style="text-align:center;padding:16px;border-right:1px solid #f3f4f6;">
+          <div style="font-size:32px;font-weight:900;color:#e74c3c;line-height:1;">{total}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Total Products</div>
+        </td>
+        <td width="50%" style="text-align:center;padding:16px;">
+          <div style="font-size:32px;font-weight:900;color:#22c55e;line-height:1;">{new_week}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">New This Week</div>
+        </td>
+      </tr>
+    </table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+      <tr><td colspan="2" style="font-size:13px;font-weight:700;color:#374151;padding-bottom:8px;">
+        By Category
+      </td></tr>
+      {cat_rows}
+    </table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
+      <tr><td colspan="2" style="font-size:13px;font-weight:700;color:#374151;padding-bottom:8px;">
+        By Broker
+      </td></tr>
+      {broker_rows}
+    </table>
+  </td></tr>'''
+
+
 # ── Main HTML builder ─────────────────────────────────────────────────────────
 
 def build_html_email(
-    promotions_data:    list,
-    scraped_data:       dict,
-    strategic_insights: dict = None,
-    new_promos:         list = None,
-    new_promos_week:    list = None,
-    ai_unavailable:     bool = False,
-    product_stats:      dict = None,
-    new_products_today: list = None,
-    new_products_week:  list = None,
+    promotions_data:           list,
+    scraped_data:              dict,
+    strategic_insights:        dict = None,
+    new_promos:                list = None,
+    new_promos_week:           list = None,
+    ai_unavailable:            bool = False,
+    product_stats:             dict = None,
+    new_products_today:        list = None,
+    new_products_week:         list = None,
+    new_broker_promos_today:   list = None,
+    new_broker_promos_week:    list = None,
+    broker_product_stats:      dict = None,
+    new_broker_products_today: list = None,
+    new_broker_products_week:  list = None,
 ) -> str:
     new_promos      = new_promos      or []
     new_promos_week = new_promos_week or []
     product_stats   = product_stats   or {}
     new_products_today = new_products_today or []
     new_products_week  = new_products_week  or []
+    new_broker_promos_today   = new_broker_promos_today   or []
+    new_broker_promos_week    = new_broker_promos_week    or []
+    broker_product_stats      = broker_product_stats      or {}
+    new_broker_products_today = new_broker_products_today or []
+    new_broker_products_week  = new_broker_products_week  or []
 
     date_only = _hkt_now().strftime('%d %b %Y')
 
@@ -1025,6 +1239,12 @@ def build_html_email(
 
   <!-- 4+5+7. New products today / this week / product overview -->
   {_build_products_section(product_stats, new_products_today, new_products_week)}
+
+  <!-- 8. Broker promotion highlights -->
+  {_build_broker_promotions_section(new_broker_promos_today, new_broker_promos_week)}
+
+  <!-- 9. Broker product highlights -->
+  {_build_broker_products_section(broker_product_stats, new_broker_products_today, new_broker_products_week)}
 
   <!-- FOOTER -->
   <tr><td style="height:16px;"></td></tr>
