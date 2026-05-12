@@ -12,7 +12,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from scraper   import run_scraper, BANK_CONFIGS, run_broker_scraper, BROKER_CONFIGS
+from scraper   import run_scraper_combined, BANK_CONFIGS, BROKER_CONFIGS
 from ai_helper import (
     init_ai,
     analyze_promotions,
@@ -245,11 +245,11 @@ def main() -> int:
         else:
             print('\n  [WARN]  AI unavailable and DB is completely empty')
 
-    # -- Step 3: Scrape all banks ----------------------------------
-    print(f'\nStep 3 -- Scrape all {len(BANK_CONFIGS)} banks')
+    # -- Step 3: Scrape all banks + brokers (single event loop) ------
     t3 = time.monotonic()
 
     if _SKIP_SCRAPE:
+        print(f'\nStep 3 -- Scrape all {len(BANK_CONFIGS)} banks')
         print('  [NEXT]  --skip-scrape: using existing DB data only')
         scraped: dict = {
             bid: {
@@ -263,8 +263,20 @@ def main() -> int:
             }
             for bid, cfg in BANK_CONFIGS.items()
         }
+        _broker_scraped_early: dict = {
+            bid: {
+                'bank_name':      cfg['name'],
+                'text':           '',
+                'success':        True,
+                'screenshot':     None,
+                'sections_count': 0,
+                'elapsed_s':      0.0,
+                'errors':         [],
+            }
+            for bid, cfg in BROKER_CONFIGS.items()
+        }
     else:
-        scraped = run_scraper()
+        scraped, _broker_scraped_early = run_scraper_combined()
 
     print(f'  [TIME]  Scrape completed in {time.monotonic() - t3:.1f}s')
 
@@ -444,30 +456,11 @@ def main() -> int:
     if ai_ok and banks_ai_saved:
         mark_products_stale(banks_ai_saved, today_str=RUN_DATE)
 
-    # -- Step 5e: Scrape, extract, and save brokers ---------------
-    print(f'\nStep 5e -- Scrape + extract {len(BROKER_CONFIGS)} brokers')
+    # -- Step 5e: AI extract + save brokers (scraped in Step 3) ------
+    print(f'\nStep 5e -- Extract + save {len(BROKER_CONFIGS)} brokers')
     t5e = time.monotonic()
     broker_ids_saved: list[str] = []
-
-    try:
-        if _SKIP_SCRAPE:
-            broker_scraped: dict = {
-                bid: {
-                    'bank_name':      cfg['name'],
-                    'text':           '',
-                    'success':        True,
-                    'screenshot':     None,
-                    'sections_count': 0,
-                    'elapsed_s':      0.0,
-                    'errors':         [],
-                }
-                for bid, cfg in BROKER_CONFIGS.items()
-            }
-        else:
-            broker_scraped = run_broker_scraper()
-    except Exception as exc:
-        print(f'  [ERR] Broker scrape failed: {exc} — skipping broker pipeline')
-        broker_scraped = {}
+    broker_scraped = _broker_scraped_early
 
     for broker_id, result in broker_scraped.items():
         broker_name = result.get('bank_name', broker_id)

@@ -736,8 +736,58 @@ async def _run_all() -> dict[str, dict]:
 
 
 def run_scraper() -> dict:
-    """Synchronous entry point called by main.py."""
+    """Synchronous entry point called by main.py (banks only)."""
     return asyncio.run(_run_all())
+
+
+def run_scraper_combined() -> tuple[dict, dict]:
+    """Run banks + brokers in a single event loop and return (bank_results, broker_results).
+
+    Using a single asyncio.run() avoids 'Task was destroyed but it is pending!'
+    errors that occur when two separate asyncio.run() calls share the same process
+    and the first one leaves async-generator cleanup tasks still in flight.
+    """
+    async def _combined() -> tuple[dict, dict]:
+        bank_results, broker_results = {}, {}
+        bank_sem   = asyncio.Semaphore(CONCURRENCY_LIMIT)
+        broker_sem = asyncio.Semaphore(CONCURRENCY_LIMIT)
+
+        async def _bounded_bank(browser, bank_id):
+            async with bank_sem:
+                cfg = BANK_CONFIGS[bank_id]
+                print(f'\n== {cfg["name"]} {"=" * max(1, 50 - len(cfg["name"]) - 1)}')
+                result = await _scrape_bank(browser, bank_id)
+                mark       = '✅' if result.success else '❌'
+                error_note = f' | {len(result.errors)} error(s)' if result.errors else ''
+                print(f'  {mark}  {cfg["name"]}: {len(result.text):,} chars '
+                      f'from {result.sections_count}/{len(cfg["urls"])} URLs '
+                      f'in {result.elapsed_s}s{error_note}')
+                bank_results[bank_id] = result.to_dict()
+
+        async def _bounded_broker(browser, broker_id):
+            async with broker_sem:
+                cfg    = BROKER_CONFIGS[broker_id]
+                header = f'== {cfg["name"]} (broker) '
+                print(f'\n{header}{"=" * max(1, 50 - len(header))}')
+                result = await _scrape_broker(browser, broker_id)
+                mark       = '✅' if result.success else '❌'
+                error_note = f' | {len(result.errors)} error(s)' if result.errors else ''
+                print(f'  {mark}  {cfg["name"]}: {len(result.text):,} chars '
+                      f'from {result.sections_count}/{len(cfg["urls"])} URLs '
+                      f'in {result.elapsed_s}s{error_note}')
+                broker_results[broker_id] = result.to_dict()
+
+        async with async_playwright() as pw:
+            browser = await pw.chromium.launch(headless=True, args=BROWSER_ARGS)
+            print(f'\nStep 3 -- Scrape all {len(BANK_CONFIGS)} banks')
+            await asyncio.gather(*[_bounded_bank(browser, bid) for bid in BANK_CONFIGS])
+            print(f'\nStep 5e -- Scrape + extract {len(BROKER_CONFIGS)} brokers (scraping phase)')
+            await asyncio.gather(*[_bounded_broker(browser, bid) for bid in BROKER_CONFIGS])
+            await browser.close()
+
+        return bank_results, broker_results
+
+    return asyncio.run(_combined())
 
 
 # ── Broker scraper ────────────────────────────────────────────────────────────
