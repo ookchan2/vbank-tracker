@@ -423,6 +423,13 @@ def _call(messages: list, label: str = '') -> str:
         try:
             return loop.run_until_complete(_async_call(messages, label))
         finally:
+            # Drain async generators before closing to avoid
+            # "Task was destroyed but it is pending!" warnings from
+            # the Poe fp.get_bot_response() async generator cleanup.
+            try:
+                loop.run_until_complete(loop.shutdown_asyncgens())
+            except Exception:
+                pass
             loop.close()
     except Exception as exc:
         logger.error(f'Sync wrapper error: {type(exc).__name__}: {exc}')

@@ -432,7 +432,7 @@
 </div>
 
 <div class="max-w-screen-2xl mx-auto px-4 pb-4">
-  <details class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+  <details open class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <summary class="select-none">
       <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
         <div class="flex items-center gap-3">
@@ -555,6 +555,27 @@
   </details>
 </div>
 <div class="max-w-screen-2xl mx-auto px-4 pb-4">
+  <details open class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <summary class="select-none">
+      <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">📊</span>
+          <div>
+            <div class="font-bold text-gray-800">ZA vs Broker Analysis · Promotion Comparison</div>
+            <div class="text-xs text-gray-400 mt-0.5">ZA Bank as baseline · strengths, pros &amp; cons per broker</div>
+          </div>
+        </div>
+        <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
+      </div>
+    </summary>
+    <div class="px-5 pb-6 border-t border-gray-100">
+      <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4" id="brokerPromoAnalysisGrid">
+        <div class="col-span-full py-8 text-center text-gray-400">⏳ Loading broker analysis…</div>
+      </div>
+    </div>
+  </details>
+</div>
+<div class="max-w-screen-2xl mx-auto px-4 pb-4">
   <div id="brokerPromoLoadingState" class="text-center py-12 text-gray-400">Loading broker promotions…</div>
   <div id="brokerPromoTable"></div>
 </div>
@@ -585,6 +606,27 @@
     <div class="mt-3 flex flex-wrap gap-2 items-center" id="brokerProductCatFilter"></div>
     <div class="mt-2 text-sm text-gray-500" id="brokerProductResultCount"></div>
   </div>
+</div>
+<div class="max-w-screen-2xl mx-auto px-4 pb-4">
+  <details open class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <summary class="select-none">
+      <div class="px-5 py-4 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">📦</span>
+          <div>
+            <div class="font-bold text-gray-800">Product Coverage · ZA vs Broker Comparison</div>
+            <div class="text-xs text-gray-400 mt-0.5">ZA Bank as baseline · product counts by category · ▲ more / ▼ fewer than ZA</div>
+          </div>
+        </div>
+        <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
+      </div>
+    </summary>
+    <div class="px-5 pb-6 border-t border-gray-100">
+      <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4" id="brokerProductAnalysisGrid">
+        <div class="col-span-full py-8 text-center text-gray-400">⏳ Loading broker product analysis…</div>
+      </div>
+    </div>
+  </details>
 </div>
 <div class="max-w-screen-2xl mx-auto px-4 pb-4">
   <div id="brokerProductLoadingState" class="text-center py-12 text-gray-400">Loading broker products…</div>
@@ -937,8 +979,10 @@ async function loadData() {
     buildBrokerPromoTabs([...new Set(allBrokerPromos.map(p => p.broker_name))]);
     buildBrokerPromoCatButtons();
     buildBrokerPromoNewSections();
+    buildBrokerPromoAnalysis(brokerStrategicInsights);
     buildBrokerProductTabs([...new Set(allBrokerProducts.map(p => p.broker_name))]);
     buildBrokerProductCatButtons();
+    buildBrokerProductAnalysis();
 
     document.getElementById('loadingState').classList.add('hidden');
     document.getElementById('productLoadingState').classList.add('hidden');
@@ -2028,6 +2072,117 @@ function exportBrokerProductsExcel() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Broker Products');
   XLSX.writeFile(wb, 'broker_products.xlsx');
+}
+
+// ── Broker promotion analysis (ZA vs Broker) ────────────────────────
+function buildBrokerPromoAnalysis(insights) {
+  const grid = document.getElementById('brokerPromoAnalysisGrid');
+  if (!grid) return;
+  if (!insights || !insights.broker_analysis) {
+    grid.innerHTML = `<div class="col-span-full rounded-xl border border-amber-200 bg-amber-50 p-5">
+      <div class="font-bold text-amber-800 text-sm mb-1">No broker analysis available</div>
+      <div class="text-amber-700 text-xs">Broker insights will appear here after the next tracker run.</div>
+    </div>`;
+    return;
+  }
+  const analysis = insights.broker_analysis;
+  const names = Object.keys(analysis);
+  if (!names.length) { grid.innerHTML = `<div class="col-span-full py-8 text-center text-gray-400">No broker analysis data.</div>`; return; }
+  // ZA Bank first as baseline, then rest sorted
+  const sorted = [...names.filter(n => n === 'ZA Bank'), ...names.filter(n => n !== 'ZA Bank').sort()];
+  grid.innerHTML = sorted.map(name => {
+    const d = analysis[name] || {};
+    const isZA = name === 'ZA Bank';
+    const color = isZA ? bankColor(name) : brokerColor(name);
+    const zaBadge = isZA ? `<span class="text-xs px-2 py-0.5 bg-white/20 rounded-full font-semibold ml-2">📊 Baseline</span>` : '';
+    const strengths = toArray(d.strengths);
+    const pros = toArray(d.vs_za_pros);
+    const cons = toArray(d.vs_za_cons);
+    const count = d.count || 0, bauCount = d.bau_count || 0;
+    const focus = d.focus || '';
+    const strengthsHtml = strengths.length
+      ? `<ul class="mt-2 space-y-1">${strengths.map(s => `<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-green-500 mt-0.5 shrink-0">✓</span>${s}</li>`).join('')}</ul>`
+      : '<p class="text-xs text-gray-400 mt-2">No strengths listed.</p>';
+    const prosHtml = (!isZA && pros.length)
+      ? `<div class="mt-3 pt-3 border-t border-gray-100"><div class="text-xs font-bold text-green-600 mb-1.5">▲ Better than ZA</div><ul class="space-y-1">${pros.map(s => `<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-green-500 shrink-0">+</span>${s}</li>`).join('')}</ul></div>` : '';
+    const consHtml = (!isZA && cons.length)
+      ? `<div class="mt-3"><div class="text-xs font-bold text-red-500 mb-1.5">▼ Worse than ZA</div><ul class="space-y-1">${cons.map(s => `<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-red-400 shrink-0">−</span>${s}</li>`).join('')}</ul></div>` : '';
+    return `<div class="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+      <div class="px-4 py-3 flex items-center justify-between" style="background:${color}">
+        <div class="flex items-center gap-2"><span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span><span class="font-extrabold text-white text-sm">${name}</span>${zaBadge}</div>
+        <span class="text-white/80 text-xs">${count} active${bauCount ? ` +${bauCount} BAU` : ''}</span>
+      </div>
+      <div class="p-4">
+        ${focus ? `<div class="text-xs text-indigo-600 font-semibold mb-2">🎯 ${focus}</div>` : ''}
+        <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Key Strengths</div>
+        ${strengthsHtml}${prosHtml}${consHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Broker product analysis (ZA vs Broker product coverage) ─────────
+function buildBrokerProductAnalysis() {
+  const grid = document.getElementById('brokerProductAnalysisGrid');
+  if (!grid) return;
+  if (!allBrokerProducts.length) {
+    grid.innerHTML = `<div class="col-span-full rounded-xl border border-amber-200 bg-amber-50 p-5">
+      <div class="font-bold text-amber-800 text-sm mb-1">No broker product data found</div>
+      <div class="text-amber-700 text-xs">Broker products will appear here after the next tracker run.</div>
+    </div>`;
+    return;
+  }
+
+  // Group broker products by broker name
+  const byBroker = {};
+  allBrokerProducts.forEach(p => {
+    const b = p.broker_name || 'Unknown';
+    if (!byBroker[b]) byBroker[b] = { cats: {}, total: 0 };
+    const cat = remapBrokerCat(p.category || '');
+    byBroker[b].cats[cat] = (byBroker[b].cats[cat] || 0) + 1;
+    byBroker[b].total++;
+  });
+
+  // Get ZA Bank products from bank products tab for comparison
+  const zaProds = allProducts.filter(p => p.bank_name === 'ZA Bank' && p.is_active !== false);
+  const zaByBrokerCat = {};
+  zaProds.forEach(p => {
+    // Map bank product categories to broker categories for comparison
+    const bcat = remapBrokerCat(p._displayCat || remapProdCat(p.category) || '');
+    zaByBrokerCat[bcat] = (zaByBrokerCat[bcat] || 0) + 1;
+  });
+
+  const allCats = Object.keys(BROKER_CAT_META);
+  const brokerNames = Object.keys(byBroker).sort();
+
+  grid.innerHTML = brokerNames.map(brokerName => {
+    const d = byBroker[brokerName];
+    const color = brokerColor(brokerName);
+
+    const catRows = allCats.map(cat => {
+      const cm = BROKER_CAT_META[cat];
+      const n = d.cats[cat] || 0;
+      if (n === 0) return '';
+      return `<li class="flex items-center justify-between text-xs py-0.5">
+        <span class="flex items-center gap-1.5">
+          <span style="width:8px;height:8px;border-radius:50%;background:${cm.bg};display:inline-block;"></span>
+          <span class="text-gray-600">${cm.emoji} ${cat}</span>
+        </span>
+        <span class="font-bold text-gray-700">${n}</span>
+      </li>`;
+    }).filter(Boolean).join('');
+
+    return `<div class="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+      <div class="px-4 py-3 flex items-center justify-between" style="background:${color}">
+        <div class="flex items-center gap-2"><span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span><span class="font-extrabold text-white text-sm">${brokerName}</span></div>
+        <span class="text-white/80 text-xs">${d.total} product${d.total !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="p-4">
+        <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Products by Category</div>
+        <ul class="space-y-0.5">${catRows || '<li class="text-xs text-gray-400">No categorized products</li>'}</ul>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ── Boot ────────────────────────────────────────────────────────────
