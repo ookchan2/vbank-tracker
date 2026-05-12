@@ -298,7 +298,15 @@
       <div class="text-sm mt-2" id="errorMsg"></div>
     </div>
     <div id="tableWrapper" class="hidden overflow-x-auto">
-      <table class="w-full border-collapse text-sm" id="promoTable">
+      <table class="w-full border-collapse text-sm" id="promoTable" style="table-layout:fixed;">
+        <colgroup>
+          <col style="width:110px;">
+          <col>
+          <col style="width:180px;">
+          <col style="width:130px;">
+          <col style="width:100px;">
+          <col style="width:200px;">
+        </colgroup>
         <thead>
           <tr class="bg-gray-50 border-b border-gray-100">
             <th class="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Bank</th>
@@ -400,8 +408,8 @@
         <div class="flex items-center gap-3">
           <span class="text-xl">📦</span>
           <div>
-            <div class="font-bold text-gray-800">Product Intelligence · Bank-to-Bank Analysis</div>
-            <div class="text-xs text-gray-400 mt-0.5">ZA Bank as baseline · AI-generated · based on active products across all banks</div>
+            <div class="font-bold text-gray-800">Product Coverage · Bank-to-Bank Comparison</div>
+            <div class="text-xs text-gray-400 mt-0.5">ZA Bank as baseline · product counts by category · ▲ more / ▼ fewer than ZA</div>
           </div>
         </div>
         <span class="accordion-chevron chevron text-gray-400 text-sm">▼</span>
@@ -753,7 +761,7 @@ async function loadData() {
     buildProductBankTabs([...new Set(allProducts.map(p => p.bank_name))]);
     buildProductCatButtons();
     buildProductNewSections();
-    buildProductBankAnalysis(strategicInsights);
+    buildProductBankAnalysis();
     buildProductsByBank();
 
     document.getElementById('loadingState').classList.add('hidden');
@@ -1091,13 +1099,97 @@ function buildBankAnalysis(insights) {
   grid.innerHTML=sorted.map(bn=>_buildAnalysisCard(bn,analysis[bn]||{},bn==='ZA Bank')).join('');
 }
 
-function buildProductBankAnalysis(insights) {
-  const grid=document.getElementById('productBankAnalysisGrid');
-  if (!insights||!insights.bank_analysis) { grid.innerHTML=analysisNoDataHtml(); return; }
-  const analysis=insights.bank_analysis, bankNames=Object.keys(analysis);
-  if (!bankNames.length) { grid.innerHTML=analysisNoDataHtml(); return; }
-  const sorted=[...bankNames.filter(b=>b==='ZA Bank'),...bankNames.filter(b=>b!=='ZA Bank').sort()];
-  grid.innerHTML=sorted.map(bn=>_buildAnalysisCard(bn,analysis[bn]||{},bn==='ZA Bank')).join('');
+function buildProductBankAnalysis() {
+  const grid = document.getElementById('productBankAnalysisGrid');
+  if (!allProducts.length) {
+    grid.innerHTML = `<div class="col-span-full rounded-xl border border-amber-200 bg-amber-50 p-5">
+      <div class="font-bold text-amber-800 text-sm mb-1">No product data found</div>
+      <div class="text-amber-700 text-xs">Products will appear here after the next tracker run.</div>
+    </div>`;
+    return;
+  }
+
+  const active = allProducts.filter(p => p.is_active !== false);
+
+  // Group by bank
+  const byBank = {};
+  active.forEach(p => {
+    const b = p.bank_name || 'Unknown';
+    if (!byBank[b]) byBank[b] = { cats: {}, total: 0 };
+    const cat = p._displayCat || remapProdCat(p.category) || 'Others';
+    byBank[b].cats[cat] = (byBank[b].cats[cat] || 0) + 1;
+    byBank[b].total++;
+  });
+
+  const bankNames = [
+    ...Object.keys(byBank).filter(b => b === 'ZA Bank'),
+    ...Object.keys(byBank).filter(b => b !== 'ZA Bank').sort(),
+  ];
+
+  const zaData = byBank['ZA Bank'] || { cats: {}, total: 0 };
+  const allCats = [...new Set(active.map(p => p._displayCat || remapProdCat(p.category) || 'Others'))].sort();
+
+  grid.innerHTML = bankNames.map(bankName => {
+    const d = byBank[bankName];
+    const color = bankColor(bankName);
+    const isZA = bankName === 'ZA Bank';
+    const zaBadge = isZA ? `<span class="text-xs px-2 py-0.5 bg-white/20 rounded-full font-semibold ml-2">📊 Baseline</span>` : '';
+
+    // Category coverage rows
+    const catRows = allCats.map(cat => {
+      const cm = PROD_CAT_META[cat] || { bg:'#6b7280', emoji:'📋' };
+      const n = d.cats[cat] || 0;
+      const zaN = zaData.cats[cat] || 0;
+      let diffBadge = '';
+      if (!isZA && zaN > 0) {
+        const diff = n - zaN;
+        if (diff > 0) diffBadge = `<span class="text-green-600 font-bold text-xs ml-1">▲${diff}</span>`;
+        else if (diff < 0) diffBadge = `<span class="text-red-400 font-bold text-xs ml-1">▼${Math.abs(diff)}</span>`;
+      }
+      if (n === 0 && !diffBadge) return '';
+      return `<li class="flex items-center justify-between text-xs py-0.5">
+        <span class="flex items-center gap-1.5">
+          <span style="width:8px;height:8px;border-radius:50%;background:${cm.bg};display:inline-block;"></span>
+          <span class="text-gray-600">${cm.emoji} ${cat}</span>
+        </span>
+        <span class="font-bold text-gray-700">${n}${diffBadge}</span>
+      </li>`;
+    }).filter(Boolean).join('');
+
+    // vs ZA comparison for non-ZA banks
+    let vsZa = '';
+    if (!isZA) {
+      const better = allCats.filter(c => (d.cats[c]||0) > (zaData.cats[c]||0))
+        .map(c => `${(PROD_CAT_META[c]||{emoji:'📋'}).emoji} ${c}: ${d.cats[c]||0} vs ZA ${zaData.cats[c]||0}`);
+      const worse = allCats.filter(c => zaData.cats[c] > 0 && (d.cats[c]||0) < zaData.cats[c])
+        .map(c => `${(PROD_CAT_META[c]||{emoji:'📋'}).emoji} ${c}: ${d.cats[c]||0} vs ZA ${zaData.cats[c]||0}`);
+      const missing = allCats.filter(c => zaData.cats[c] > 0 && !(d.cats[c]));
+
+      vsZa = `<div class="mt-3 pt-3 border-t border-gray-100">
+        ${better.length ? `<div class="text-xs font-bold text-green-600 mb-1.5">▲ More than ZA</div>
+          ${better.map(s=>`<div class="text-xs text-gray-600 mb-1">✓ ${s}</div>`).join('')}` : ''}
+        ${worse.length ? `<div class="text-xs font-bold text-red-500 mb-1.5 ${better.length?'mt-2':''}">▼ Fewer than ZA</div>
+          ${worse.map(s=>`<div class="text-xs text-gray-600 mb-1">✗ ${s}</div>`).join('')}` : ''}
+        ${missing.length ? `<div class="text-xs font-bold text-gray-400 mb-1.5 mt-2">⊘ Not offered (ZA has)</div>
+          ${missing.map(c=>`<div class="text-xs text-gray-400 mb-1">— ${c}</div>`).join('')}` : ''}
+      </div>`;
+    }
+
+    return `<div class="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+      <div class="px-4 py-3 flex items-center justify-between" style="background:${color}">
+        <div class="flex items-center gap-2">
+          <span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span>
+          <span class="font-extrabold text-white text-sm">${bankName}</span>${zaBadge}
+        </div>
+        <span class="text-white/80 text-xs">${d.total} product${d.total!==1?'s':''}</span>
+      </div>
+      <div class="p-4">
+        <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Products by Category</div>
+        <ul class="space-y-0.5">${catRows || '<li class="text-xs text-gray-400">No products tracked yet</li>'}</ul>
+        ${vsZa}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ── Comparison table ────────────────────────────────────────────────
@@ -1158,12 +1250,12 @@ function renderTable() {
   tbody.innerHTML=filtered.map(p=>{
     const color=bankColor(p.bank_name), cats=(p.types||['Others 其他']).map(catTag).join(''), bau=bauTag(p), badge=statusBadge(p), tcLink=p.tc_link||p.url||'', detail=p.highlight||p.description||'';
     return `<tr class="border-b border-gray-50">
-      <td class="px-4 py-3 whitespace-nowrap"><div class="flex items-center gap-2"><span class="bank-dot" style="background:${color}"></span><span class="font-semibold text-sm text-gray-700">${p.bank_name}</span></div></td>
-      <td class="px-4 py-3 max-w-sm"><div class="font-semibold text-gray-800 text-sm leading-snug">${p.title}</div>${detail?`<div class="text-xs text-gray-500 mt-0.5 leading-relaxed">${detail}</div>`:''}${tcLink?`<a href="${tcLink}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 mt-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">🔗 Source ↗</a>`:''}</td>
-      <td class="px-4 py-3"><div class="flex flex-wrap">${cats}${bau}</div></td>
-      <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500">${p.period||'—'}</td>
-      <td class="px-4 py-3">${badge}</td>
-      <td class="px-4 py-3 text-xs text-gray-500">${p.quota?`<div class="mb-1">👥 ${p.quota}</div>`:''}${p.cost?`<div>💲 ${p.cost}</div>`:''}</td>
+      <td class="px-4 py-3 align-top"><div class="flex items-center gap-2 flex-wrap"><span class="bank-dot shrink-0" style="background:${color}"></span><span class="font-semibold text-sm text-gray-700">${p.bank_name}</span></div></td>
+      <td class="px-4 py-3 align-top" style="word-break:break-word;"><div class="font-semibold text-gray-800 text-sm leading-snug">${p.title}</div>${detail?`<div class="text-xs text-gray-500 mt-0.5 leading-relaxed">${detail}</div>`:''}${tcLink?`<a href="${tcLink}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 mt-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">🔗 Source ↗</a>`:''}</td>
+      <td class="px-4 py-3 align-top"><div class="flex flex-wrap">${cats}${bau}</div></td>
+      <td class="px-4 py-3 align-top text-xs text-gray-500">${p.period||'—'}</td>
+      <td class="px-4 py-3 align-top">${badge}</td>
+      <td class="px-4 py-3 align-top text-xs text-gray-500">${p.quota?`<div class="mb-1">👥 ${p.quota}</div>`:''}${p.cost?`<div>💲 ${p.cost}</div>`:''}</td>
     </tr>`;
   }).join('');
 }

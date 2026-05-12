@@ -498,6 +498,101 @@ def _build_plain_text(
 
 # ── Products section builder ───────────────────────────────────────────────────
 
+def _new_product_card(product: dict) -> str:
+    """Build a single product card for the email (new today / new this week sections)."""
+    bank_name    = product.get('bank_name') or product.get('bank') or 'Unknown'
+    color        = _bank_color(bank_name)
+    display_name = _html.escape(_bank_display_name(bank_name))
+    product_name = _html.escape((product.get('product_name') or product.get('name') or 'Untitled')[:120])
+    category     = _html.escape(product.get('category') or product.get('_displayCat') or '')
+    highlight    = _html.escape(product.get('highlight') or product.get('description') or '')
+    features_raw = product.get('features') or []
+    if isinstance(features_raw, str):
+        features_raw = [f.strip() for f in features_raw.replace('\n', ';').split(';') if f.strip()]
+    features = features_raw[:5]
+    fees       = _html.escape(product.get('fees') or '')
+    min_amount = _html.escape(product.get('min_amount') or '')
+    currency   = _html.escape(product.get('currency') or '')
+    tc_link    = _html.escape(product.get('tc_link') or product.get('url') or '', quote=True)
+
+    cat_bg = {
+        'US Stock': '#1d4ed8', 'HK Stock': '#dc2626', 'Crypto': '#f59e0b',
+        'Fund': '#6366f1', 'Credit Card': '#ec4899',
+        'Saving/Current Deposit': '#3b82f6', 'Time Deposit': '#0369a1',
+        'Currency Exchange': '#8b5cf6', 'Personal Loan': '#ef4444',
+    }.get(category, '#6b7280')
+
+    cat_tag_html = (
+        f'<span style="display:inline-block;padding:2px 10px;border-radius:20px;'
+        f'font-size:11px;color:#fff;font-weight:700;background:{cat_bg};">'
+        f'{category}</span>'
+        if category else ''
+    )
+
+    features_html = ''
+    if features:
+        items = ''.join(
+            f'<li style="font-size:12px;color:#374151;margin-bottom:4px;'
+            f'padding-left:14px;position:relative;">'
+            f'<span style="position:absolute;left:0;color:#6366f1;">•</span>{f}</li>'
+            for f in features
+        )
+        features_html = (
+            f'<div style="font-size:10px;font-weight:700;color:#9ca3af;'
+            f'text-transform:uppercase;letter-spacing:.07em;margin:10px 0 5px;">Features</div>'
+            f'<ul style="margin:0;padding:0;list-style:none;">{items}</ul>'
+        )
+
+    meta_parts = []
+    if fees:
+        meta_parts.append(f'Fees: {fees}')
+    if min_amount:
+        meta_parts.append(f'Min: {currency} {min_amount}'.strip())
+    meta_html = ''
+    if meta_parts:
+        meta_html = (
+            f'<div style="margin-top:8px;font-size:12px;color:#6b7280;">'
+            + ' &nbsp;|&nbsp; '.join(meta_parts) +
+            f'</div>'
+        )
+
+    source_btn = ''
+    if tc_link:
+        source_btn = (
+            f'<div style="margin-top:12px;">'
+            f'<a href="{tc_link}" style="display:inline-block;padding:7px 18px;'
+            f'background:#6366f1;color:#ffffff;border-radius:8px;'
+            f'font-size:12px;font-weight:700;text-decoration:none;">🔗 View Details ↗</a>'
+            f'</div>'
+        )
+
+    return f"""
+<table width="100%" cellpadding="0" cellspacing="0"
+       style="margin-bottom:18px;border-radius:14px;overflow:hidden;
+              border:1px solid #e5e7eb;box-shadow:0 3px 10px rgba(0,0,0,0.08);">
+  <tr>
+    <td bgcolor="{color}" style="background:{color};padding:13px 18px;">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="vertical-align:middle;">
+          <span style="font-weight:900;font-size:17px;color:#ffffff;">{display_name}</span>
+        </td>
+        <td style="text-align:right;vertical-align:middle;">{cat_tag_html}</td>
+      </tr></table>
+    </td>
+  </tr>
+  <tr>
+    <td style="background:#ffffff;padding:16px 18px;">
+      <div style="font-weight:800;font-size:15px;color:#1f2937;
+                  line-height:1.4;margin-bottom:8px;">{product_name}</div>
+      {f'<div style="font-size:13px;color:#4b5563;line-height:1.7;background:#f9fafb;border-radius:8px;padding:10px 14px;margin-bottom:8px;border-left:3px solid {color};">{highlight}</div>' if highlight else ''}
+      {features_html}
+      {meta_html}
+      {source_btn}
+    </td>
+  </tr>
+</table>"""
+
+
 def _build_products_section(
     product_stats:      dict,
     new_products_today: list,
@@ -516,8 +611,9 @@ def _build_products_section(
     # Build category breakdown
     category_rows = ''
     category_order = [
-        'US Stock', 'HK Stock', 'Investment Funds', 'Crypto Trading',
-        'Credit Card', 'Loans', 'Saving/Current Deposit', 'Time Deposit'
+        'US Stock', 'HK Stock', 'Fund', 'Crypto',
+        'Credit Card', 'Personal Loan', 'Saving/Current Deposit',
+        'Time Deposit', 'Currency Exchange', 'Others',
     ]
     for cat in category_order:
         count = by_category.get(cat, 0)
@@ -531,24 +627,25 @@ def _build_products_section(
     # Build bank breakdown
     bank_rows = ''
     sorted_banks = sorted(by_bank.items(), key=lambda x: x[1], reverse=True)
-    for bank_name, count in sorted_banks[:8]:  # Top 8 banks
+    for bank_name, count in sorted_banks[:8]:
         bank_rows += f'''
     <tr style="border-bottom:1px solid #f3f4f6;">
       <td style="padding:8px 12px;font-size:13px;color:#374151;">{bank_name}</td>
       <td style="padding:8px 12px;text-align:center;font-weight:700;color:#6366f1;">{count}</td>
     </tr>'''
 
-    # New products today section (standalone table row for email body)
+    # 4. New products today — full cards
     new_today_html = ''
     if new_today > 0:
+        today_cards = ''.join(_new_product_card(p) for p in new_products_today)
         new_today_html = f'''<tr><td style="height:16px;"></td></tr>
-  <tr><td style="background:#ffffff;border-radius:14px;padding:0;
+  <tr><td style="background:#ffffff;border-radius:16px;padding:24px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;">
       <tr>
         <td bgcolor="#f97316"
             style="background:linear-gradient(135deg,#f97316 0%,#fb923c 100%);
-                   border-radius:14px 14px 0 0;padding:16px 22px;">
+                   border-radius:12px;padding:16px 22px;">
           <table width="100%" cellpadding="0" cellspacing="0"><tr>
             <td style="vertical-align:middle;">
               <span style="font-size:22px;vertical-align:middle;">🆕</span>
@@ -570,26 +667,22 @@ def _build_products_section(
           </tr></table>
         </td>
       </tr>
-      <tr><td style="background:#fff7ed;padding:16px 22px;border-radius:0 0 14px 14px;
-                     border:1px solid #fed7aa;border-top:none;">
-        <div style="font-size:13px;color:#9a3412;">
-          {new_today} new product{('s' if new_today > 1 else '')} added today across all banks.
-        </div>
-      </td></tr>
     </table>
+    {today_cards}
   </td></tr>'''
 
-    # New products this week section (standalone table row for email body)
+    # 5. New products this week — full cards
     new_week_html = ''
     if new_week > 0:
+        week_cards = ''.join(_new_product_card(p) for p in new_products_week)
         new_week_html = f'''<tr><td style="height:16px;"></td></tr>
-  <tr><td style="background:#ffffff;border-radius:14px;padding:0;
+  <tr><td style="background:#ffffff;border-radius:16px;padding:24px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;">
       <tr>
-        <td bgcolor="#22c55e"
-            style="background:linear-gradient(135deg,#22c55e 0%,#4ade80 100%);
-                   border-radius:14px 14px 0 0;padding:16px 22px;">
+        <td bgcolor="#6366f1"
+            style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);
+                   border-radius:12px;padding:16px 22px;">
           <table width="100%" cellpadding="0" cellspacing="0"><tr>
             <td style="vertical-align:middle;">
               <span style="font-size:22px;vertical-align:middle;">📅</span>
@@ -611,13 +704,8 @@ def _build_products_section(
           </tr></table>
         </td>
       </tr>
-      <tr><td style="background:#f0fdf4;padding:16px 22px;border-radius:0 0 14px 14px;
-                     border:1px solid #bbf7d0;border-top:none;">
-        <div style="font-size:13px;color:#166534;">
-          {new_week} new product{('s' if new_week > 1 else '')} launched in the past 6 days.
-        </div>
-      </td></tr>
     </table>
+    {week_cards}
   </td></tr>'''
 
     return f'''
@@ -629,8 +717,8 @@ def _build_products_section(
   <!-- 5. New products this week -->
   {new_week_html if new_week_html else ""}
 
-  <!-- 6. Total product count + breakdown -->
-  <tr><td style="height:4px;"></td></tr>
+  <!-- 7. Total product count + breakdown -->
+  <tr><td style="height:16px;"></td></tr>
   <tr><td style="background:#ffffff;border-radius:14px;padding:22px 22px 16px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
     <div style="font-size:17px;font-weight:800;color:#1f2937;margin-bottom:4px;">
@@ -903,10 +991,7 @@ def build_html_email(
   </td></tr>
   <tr><td style="height:20px;"></td></tr>
 
-  <!-- 4+5+6. New products today / this week / total product count -->
-  {_build_products_section(product_stats, new_products_today, new_products_week)}
-
-  <!-- Bank breakdown -->
+  <!-- 6. Promotions by Bank (overview) -->
   <tr><td style="height:20px;"></td></tr>
   <tr><td style="background:#ffffff;border-radius:14px;padding:22px 22px 16px;
                  box-shadow:0 2px 8px rgba(0,0,0,0.07);">
@@ -937,6 +1022,9 @@ def build_html_email(
       <tbody>{bank_rows}</tbody>
     </table>
   </td></tr>
+
+  <!-- 4+5+7. New products today / this week / product overview -->
+  {_build_products_section(product_stats, new_products_today, new_products_week)}
 
   <!-- FOOTER -->
   <tr><td style="height:16px;"></td></tr>
