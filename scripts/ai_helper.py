@@ -299,8 +299,8 @@ Schema for each object:
   "start_date":  "YYYY-MM-DD or null",
   "end_date":    "YYYY-MM-DD or null",
   "period":      "Human-readable period, e.g. '1 Jan 2025 to 31 Mar 2025' or 'Ongoing'",
-  "highlight":   "One-line key benefit starting with an emoji",
-  "description": "REQUIRED: 3 or more detailed sentences describing this promotion. Include: (1) what the benefit is, (2) who is eligible, (3) any key terms or conditions, (4) how to redeem. Be specific with amounts, percentages, and dates.",
+  "highlight":   "One-line key benefit starting with an emoji — lead with the exact reward amount (e.g. '🎁 Earn HK$500 cashback when you spend HK$3,000 in 3 months')",
+  "description": "REQUIRED: Write 3–5 sentences so a reader fully understands the promotion WITHOUT visiting any other page. Follow this structure exactly: Sentence 1 — state the reward in concrete terms (exact dollar/percentage/unit, e.g. 'HK$500 cash rebate', '3% cashback', '5,000 reward points'). Sentence 2 — state exactly what the user must DO to earn it, as a clear action sequence (e.g. 'Apply via the livi app, deposit HK$10,000 within 30 days of account opening, then spend HK$3,000 on eligible purchases by the end of the promotion period'). Sentence 3 — state the cap, limit, or ceiling if any (e.g. 'Cashback is capped at HK$300 per customer' or 'No cap stated'). Sentence 4 — state who is eligible (e.g. 'Open to new customers only who have not previously held a livi account'). Sentence 5 — state the promotion period or deadline. If any of these facts are not available in the source text, omit that sentence rather than guessing. Never fabricate amounts or dates.",
   "quota":       "Eligibility or quota info (e.g. First 1000 customers / New customers only / No cap)",
   "cost":        "Minimum spend or required cost, or Free",
   "tc_link":     "URL_PLACEHOLDER"
@@ -1187,8 +1187,8 @@ Schema for each object:
 {{
   "product_name": "Full English name of the product",
   "category":     "One of: US Stock, HK Stock, Investment Funds, Crypto Trading, Credit Card, Loans, Saving/Current Deposit, Time Deposit",
-  "description":  "REQUIRED: 3+ detailed sentences describing the product features, fees, eligibility, and how to use it.",
-  "highlight":    "One-line key benefit starting with an emoji",
+  "description":  "REQUIRED: Write 3–4 sentences so a reader understands the product WITHOUT visiting any other page. Sentence 1 — state the core product and its headline rate or benefit in concrete terms (exact interest rate, fee, or return, e.g. 'Up to 3.6% p.a. on HKD savings with no lock-up period'). Sentence 2 — state key features or how it works (e.g. 'Interest is calculated daily and credited monthly; no minimum balance required'). Sentence 3 — state the fee structure with exact figures if available (e.g. 'Zero commission on HK stock trades; platform fee HKD 15 per order'). Sentence 4 — state eligibility or notable limits. Only include sentences where the fact is stated in the source text — never fabricate rates, fees, or amounts.",
+  "highlight":    "One-line key benefit with exact rate/amount starting with an emoji (e.g. '💰 Up to 3.6% p.a. on HKD savings, no lock-up')",
   "features":     ["feature1", "feature2", "feature3"],
   "fees":         "Fee structure description",
   "min_amount":   "Minimum amount required",
@@ -2070,8 +2070,8 @@ Schema for each object:
   "start_date":  "YYYY-MM-DD or null",
   "end_date":    "YYYY-MM-DD or null",
   "period":      "Human-readable period, e.g. '1 Jan 2025 to 31 Mar 2025' or 'Ongoing'",
-  "highlight":   "One-line key benefit starting with an emoji",
-  "description": "REQUIRED: 3 or more detailed sentences describing this promotion.",
+  "highlight":   "One-line key benefit starting with an emoji — lead with the exact reward amount (e.g. '🎁 Earn HK$500 cashback when you spend HK$3,000 in 3 months')",
+  "description": "REQUIRED: Write 3–5 sentences so a reader fully understands the promotion WITHOUT visiting any other page. Follow this structure exactly: Sentence 1 — state the reward in concrete terms (exact dollar/percentage/unit, e.g. 'HK$500 cash rebate', '3% cashback', 'USD 0 commission'). Sentence 2 — state exactly what the user must DO to earn it, as a clear action sequence (e.g. 'Open a new account, deposit USD 10,000 within 30 days, then execute 3 trades within the first month'). Sentence 3 — state the cap, limit, or ceiling if any (e.g. 'Cashback is capped at HK$300 per customer' or 'No cap stated'). Sentence 4 — state who is eligible (e.g. 'Open to new customers only who have not held an account with this broker before'). Sentence 5 — state the promotion period or deadline. If any of these facts are not available in the source text, omit that sentence rather than guessing. Never fabricate amounts or dates.",
   "quota":       "Eligibility or quota info",
   "cost":        "Minimum spend or requirement, or Free",
   "tc_link":     "URL_PLACEHOLDER"
@@ -2130,8 +2130,8 @@ Schema for each object:
 {{
   "product_name": "Full English name of the product",
   "category":     "One of the 11 broker categories",
-  "description":  "REQUIRED: 3+ detailed sentences describing the product.",
-  "highlight":    "One-line key benefit starting with an emoji",
+  "description":  "REQUIRED: Write 3–4 sentences so a reader understands the product WITHOUT visiting any other page. Sentence 1 — state the core product and its headline rate or fee in concrete terms (exact commission, spread, or rate, e.g. 'USD 0 commission on US stock trades with a minimum platform fee of USD 1.99 per order'). Sentence 2 — state key features or how it works. Sentence 3 — state the full fee structure with exact figures if available. Sentence 4 — state eligibility or notable limits. Only include sentences where the fact is stated in the source text — never fabricate rates, fees, or amounts.",
+  "highlight":    "One-line key benefit with exact fee/rate starting with an emoji (e.g. '📊 USD 0 commission on US stocks, min USD 1.99/order platform fee')",
   "features":     ["feature1", "feature2"],
   "fees":         "Fee schedule description",
   "min_amount":   "Minimum amount required or empty string",
