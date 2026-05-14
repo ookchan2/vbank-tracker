@@ -1359,7 +1359,7 @@ function buildProductBankAnalysis() {
     const isZA = bankName === 'ZA Bank';
     const zaBadge = isZA ? `<span class="text-xs px-2 py-0.5 bg-white/20 rounded-full font-semibold ml-2">📊 Baseline</span>` : '';
 
-    // Category coverage rows
+    // Category coverage rows (with diff badge vs ZA for non-ZA banks)
     const catRows = allCats.map(cat => {
       const cm = PROD_CAT_META[cat] || { bg:'#6b7280', emoji:'📋' };
       const n = d.cats[cat] || 0;
@@ -1380,16 +1380,38 @@ function buildProductBankAnalysis() {
       </li>`;
     }).filter(Boolean).join('');
 
-    // vs ZA comparison for non-ZA banks
-    let vsZa = '';
-    if (!isZA) {
-      const better = allCats.filter(c => (d.cats[c]||0) > (zaData.cats[c]||0))
-        .map(c => `${(PROD_CAT_META[c]||{emoji:'📋'}).emoji} ${c}: ${d.cats[c]||0} vs ZA ${zaData.cats[c]||0}`);
-      const worse = allCats.filter(c => zaData.cats[c] > 0 && (d.cats[c]||0) < zaData.cats[c])
-        .map(c => `${(PROD_CAT_META[c]||{emoji:'📋'}).emoji} ${c}: ${d.cats[c]||0} vs ZA ${zaData.cats[c]||0}`);
-      const missing = allCats.filter(c => zaData.cats[c] > 0 && !(d.cats[c]));
+    let vsSection = '';
+    if (isZA) {
+      // ZA card: show where ZA leads and where others have more
+      const zaLeads = allCats.filter(c => {
+        const zaN = zaData.cats[c] || 0;
+        return zaN > 0 && bankNames.filter(b => b !== 'ZA Bank').every(b => (byBank[b]?.cats[c] || 0) <= zaN);
+      }).map(c => `${(PROD_CAT_META[c]||{emoji:'📋'}).emoji} ${c}: ${zaData.cats[c]} product${zaData.cats[c]!==1?'s':''}`);
 
-      vsZa = `<div class="mt-3 pt-3 border-t border-gray-100">
+      const zaTrails = allCats.filter(c => {
+        const zaN = zaData.cats[c] || 0;
+        return bankNames.filter(b => b !== 'ZA Bank').some(b => (byBank[b]?.cats[c] || 0) > zaN);
+      }).map(c => {
+        const best = Math.max(...bankNames.filter(b => b !== 'ZA Bank').map(b => byBank[b]?.cats[c] || 0));
+        const leader = bankNames.filter(b => b !== 'ZA Bank').find(b => (byBank[b]?.cats[c] || 0) === best);
+        return `${(PROD_CAT_META[c]||{emoji:'📋'}).emoji} ${c}: ZA ${zaData.cats[c]||0} vs ${leader} ${best}`;
+      });
+
+      vsSection = `<div class="mt-3 pt-3 border-t border-gray-100">
+        ${zaLeads.length ? `<div class="text-xs font-bold text-green-600 mb-1.5">💪 ZA Leads (no bank has more)</div>
+          ${zaLeads.map(s=>`<div class="text-xs text-gray-600 mb-1">✓ ${s}</div>`).join('')}` : ''}
+        ${zaTrails.length ? `<div class="text-xs font-bold text-red-500 mb-1.5 ${zaLeads.length?'mt-2':''}">⚠ ZA Trails (others have more)</div>
+          ${zaTrails.map(s=>`<div class="text-xs text-gray-600 mb-1">✗ ${s}</div>`).join('')}` : ''}
+      </div>`;
+    } else {
+      // Non-ZA card: show where it beats ZA, where it falls behind, and gaps
+      const better = allCats.filter(c => (d.cats[c]||0) > (zaData.cats[c]||0))
+        .map(c => `${(PROD_CAT_META[c]||{emoji:'📋'}).emoji} ${c}: ${d.cats[c]} vs ZA ${zaData.cats[c]||0}`);
+      const worse = allCats.filter(c => (zaData.cats[c]||0) > 0 && (d.cats[c]||0) < zaData.cats[c])
+        .map(c => `${(PROD_CAT_META[c]||{emoji:'📋'}).emoji} ${c}: ${d.cats[c]||0} vs ZA ${zaData.cats[c]}`);
+      const missing = allCats.filter(c => (zaData.cats[c]||0) > 0 && !(d.cats[c]));
+
+      vsSection = `<div class="mt-3 pt-3 border-t border-gray-100">
         ${better.length ? `<div class="text-xs font-bold text-green-600 mb-1.5">▲ More than ZA</div>
           ${better.map(s=>`<div class="text-xs text-gray-600 mb-1">✓ ${s}</div>`).join('')}` : ''}
         ${worse.length ? `<div class="text-xs font-bold text-red-500 mb-1.5 ${better.length?'mt-2':''}">▼ Fewer than ZA</div>
@@ -1410,7 +1432,7 @@ function buildProductBankAnalysis() {
       <div class="p-4">
         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Products by Category</div>
         <ul class="space-y-0.5">${catRows || '<li class="text-xs text-gray-400">No products tracked yet</li>'}</ul>
-        ${vsZa}
+        ${vsSection}
       </div>
     </div>`;
   }).join('');
@@ -2103,10 +2125,30 @@ function buildBrokerPromoAnalysis(insights) {
     const strengthsHtml = strengths.length
       ? `<ul class="mt-2 space-y-1">${strengths.map(s => `<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-green-500 mt-0.5 shrink-0">✓</span>${s}</li>`).join('')}</ul>`
       : '<p class="text-xs text-gray-400 mt-2">No strengths listed.</p>';
-    const prosHtml = (!isZA && pros.length)
-      ? `<div class="mt-3 pt-3 border-t border-gray-100"><div class="text-xs font-bold text-green-600 mb-1.5">▲ Better than ZA</div><ul class="space-y-1">${pros.map(s => `<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-green-500 shrink-0">+</span>${s}</li>`).join('')}</ul></div>` : '';
-    const consHtml = (!isZA && cons.length)
-      ? `<div class="mt-3"><div class="text-xs font-bold text-red-500 mb-1.5">▼ Worse than ZA</div><ul class="space-y-1">${cons.map(s => `<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-red-400 shrink-0">−</span>${s}</li>`).join('')}</ul></div>` : '';
+
+    let comparisonHtml = '';
+    if (isZA) {
+      // For ZA: collect all broker pros (things brokers do better) to show ZA's weaknesses
+      const allBrokerPros = sorted
+        .filter(n => n !== 'ZA Bank')
+        .flatMap(n => toArray((analysis[n] || {}).vs_za_pros));
+      // Deduplicate
+      const uniqueBrokerPros = [...new Set(allBrokerPros)];
+      const zaWeaknessHtml = uniqueBrokerPros.length
+        ? `<div class="mt-3 pt-3 border-t border-gray-100">
+            <div class="text-xs font-bold text-red-500 mb-1.5">⚠ Where Brokers Beat ZA</div>
+            <ul class="space-y-1">${uniqueBrokerPros.map(s => `<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-red-400 shrink-0">−</span>${s}</li>`).join('')}</ul>
+          </div>`
+        : '';
+      comparisonHtml = zaWeaknessHtml;
+    } else {
+      const prosHtml = pros.length
+        ? `<div class="mt-3 pt-3 border-t border-gray-100"><div class="text-xs font-bold text-green-600 mb-1.5">▲ Better than ZA</div><ul class="space-y-1">${pros.map(s => `<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-green-500 shrink-0">+</span>${s}</li>`).join('')}</ul></div>` : '';
+      const consHtml = cons.length
+        ? `<div class="mt-3"><div class="text-xs font-bold text-red-500 mb-1.5">▼ Worse than ZA</div><ul class="space-y-1">${cons.map(s => `<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-red-400 shrink-0">−</span>${s}</li>`).join('')}</ul></div>` : '';
+      comparisonHtml = prosHtml + consHtml;
+    }
+
     return `<div class="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
       <div class="px-4 py-3 flex items-center justify-between" style="background:${color}">
         <div class="flex items-center gap-2"><span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span><span class="font-extrabold text-white text-sm">${name}</span>${zaBadge}</div>
@@ -2115,7 +2157,7 @@ function buildBrokerPromoAnalysis(insights) {
       <div class="p-4">
         ${focus ? `<div class="text-xs text-indigo-600 font-semibold mb-2">🎯 ${focus}</div>` : ''}
         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Key Strengths</div>
-        ${strengthsHtml}${prosHtml}${consHtml}
+        ${strengthsHtml}${comparisonHtml}
       </div>
     </div>`;
   }).join('');
@@ -2154,23 +2196,87 @@ function buildBrokerProductAnalysis() {
 
   const allCats = Object.keys(BROKER_CAT_META);
   const brokerNames = Object.keys(byBroker).sort();
+  const zaTotal = Object.values(zaByBrokerCat).reduce((s, n) => s + n, 0);
 
-  grid.innerHTML = brokerNames.map(brokerName => {
-    const d = byBroker[brokerName];
-    const color = brokerColor(brokerName);
-
-    const catRows = allCats.map(cat => {
+  // Helper to build category rows for a given cats map, with optional diff vs ZA
+  function _brokerCatRows(catsMap, showDiff) {
+    return allCats.map(cat => {
       const cm = BROKER_CAT_META[cat];
-      const n = d.cats[cat] || 0;
-      if (n === 0) return '';
+      const n = catsMap[cat] || 0;
+      const zaN = zaByBrokerCat[cat] || 0;
+      let diffBadge = '';
+      if (showDiff && zaN > 0) {
+        const diff = n - zaN;
+        if (diff > 0) diffBadge = `<span class="text-green-600 font-bold text-xs ml-1">▲${diff}</span>`;
+        else if (diff < 0) diffBadge = `<span class="text-red-400 font-bold text-xs ml-1">▼${Math.abs(diff)}</span>`;
+      }
+      if (n === 0 && !diffBadge) return '';
       return `<li class="flex items-center justify-between text-xs py-0.5">
         <span class="flex items-center gap-1.5">
           <span style="width:8px;height:8px;border-radius:50%;background:${cm.bg};display:inline-block;"></span>
           <span class="text-gray-600">${cm.emoji} ${cat}</span>
         </span>
-        <span class="font-bold text-gray-700">${n}</span>
+        <span class="font-bold text-gray-700">${n}${diffBadge}</span>
       </li>`;
     }).filter(Boolean).join('');
+  }
+
+  // Build ZA Bank card first (if ZA has products)
+  const zaCard = zaTotal > 0 ? (() => {
+    const zaCatRows = _brokerCatRows(zaByBrokerCat, false);
+    const zaLeads = allCats.filter(c => {
+      const zaN = zaByBrokerCat[c] || 0;
+      return zaN > 0 && brokerNames.every(b => (byBroker[b]?.cats[c] || 0) <= zaN);
+    }).map(c => `${BROKER_CAT_META[c].emoji} ${c}: ${zaByBrokerCat[c]} product${zaByBrokerCat[c]!==1?'s':''}`);
+    const zaTrails = allCats.filter(c => {
+      const zaN = zaByBrokerCat[c] || 0;
+      return brokerNames.some(b => (byBroker[b]?.cats[c] || 0) > zaN);
+    }).map(c => {
+      const best = Math.max(...brokerNames.map(b => byBroker[b]?.cats[c] || 0));
+      const leader = brokerNames.find(b => (byBroker[b]?.cats[c] || 0) === best);
+      return `${BROKER_CAT_META[c].emoji} ${c}: ZA ${zaByBrokerCat[c]||0} vs ${leader} ${best}`;
+    });
+    const zaColor = bankColor('ZA Bank');
+    return `<div class="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+      <div class="px-4 py-3 flex items-center justify-between" style="background:${zaColor}">
+        <div class="flex items-center gap-2"><span class="bank-dot" style="background:rgba(255,255,255,0.5)"></span>
+          <span class="font-extrabold text-white text-sm">ZA Bank</span>
+          <span class="text-xs px-2 py-0.5 bg-white/20 rounded-full font-semibold ml-1">📊 Baseline</span>
+        </div>
+        <span class="text-white/80 text-xs">${zaTotal} product${zaTotal!==1?'s':''}</span>
+      </div>
+      <div class="p-4">
+        <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Products by Category</div>
+        <ul class="space-y-0.5">${zaCatRows || '<li class="text-xs text-gray-400">No categorized products</li>'}</ul>
+        <div class="mt-3 pt-3 border-t border-gray-100">
+          ${zaLeads.length ? `<div class="text-xs font-bold text-green-600 mb-1.5">💪 ZA Leads (no broker has more)</div>
+            ${zaLeads.map(s=>`<div class="text-xs text-gray-600 mb-1">✓ ${s}</div>`).join('')}` : ''}
+          ${zaTrails.length ? `<div class="text-xs font-bold text-red-500 mb-1.5 ${zaLeads.length?'mt-2':''}">⚠ ZA Trails (brokers have more)</div>
+            ${zaTrails.map(s=>`<div class="text-xs text-gray-600 mb-1">✗ ${s}</div>`).join('')}` : ''}
+        </div>
+      </div>
+    </div>`;
+  })() : '';
+
+  const brokerCards = brokerNames.map(brokerName => {
+    const d = byBroker[brokerName];
+    const color = brokerColor(brokerName);
+    const catRows = _brokerCatRows(d.cats, true);
+
+    const better = allCats.filter(c => (d.cats[c]||0) > (zaByBrokerCat[c]||0))
+      .map(c => `${BROKER_CAT_META[c].emoji} ${c}: ${d.cats[c]} vs ZA ${zaByBrokerCat[c]||0}`);
+    const worse = allCats.filter(c => (zaByBrokerCat[c]||0) > 0 && (d.cats[c]||0) < zaByBrokerCat[c])
+      .map(c => `${BROKER_CAT_META[c].emoji} ${c}: ${d.cats[c]||0} vs ZA ${zaByBrokerCat[c]}`);
+    const missing = allCats.filter(c => (zaByBrokerCat[c]||0) > 0 && !(d.cats[c]));
+
+    const vsZa = `<div class="mt-3 pt-3 border-t border-gray-100">
+      ${better.length ? `<div class="text-xs font-bold text-green-600 mb-1.5">▲ More than ZA</div>
+        ${better.map(s=>`<div class="text-xs text-gray-600 mb-1">✓ ${s}</div>`).join('')}` : ''}
+      ${worse.length ? `<div class="text-xs font-bold text-red-500 mb-1.5 ${better.length?'mt-2':''}">▼ Fewer than ZA</div>
+        ${worse.map(s=>`<div class="text-xs text-gray-600 mb-1">✗ ${s}</div>`).join('')}` : ''}
+      ${missing.length ? `<div class="text-xs font-bold text-gray-400 mb-1.5 mt-2">⊘ Not offered (ZA has)</div>
+        ${missing.map(c=>`<div class="text-xs text-gray-400 mb-1">— ${c}</div>`).join('')}` : ''}
+    </div>`;
 
     return `<div class="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
       <div class="px-4 py-3 flex items-center justify-between" style="background:${color}">
@@ -2180,9 +2286,12 @@ function buildBrokerProductAnalysis() {
       <div class="p-4">
         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Products by Category</div>
         <ul class="space-y-0.5">${catRows || '<li class="text-xs text-gray-400">No categorized products</li>'}</ul>
+        ${vsZa}
       </div>
     </div>`;
   }).join('');
+
+  grid.innerHTML = zaCard + brokerCards;
 }
 
 // ── Boot ────────────────────────────────────────────────────────────
