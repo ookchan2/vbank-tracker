@@ -32,11 +32,10 @@ AI_AVAILABLE = False
 _POE_API_KEY = os.environ.get('POE_API_KEY', '').strip()
 
 # Fallback models list — tried in order; moves to next on BotErrorNoRetry (bot unavailable)
-# Claude bots require Poe paid plan with Anthropic credits; GPT-4o works on current subscription
 MODELS_TO_TRY = [
+    "claude-sonnet-4.6",
+    "claude-haiku-4.5",
     "GPT-4o",
-    "GPT-4o-Mini",
-    "Gemini-2.0-Flash",
 ]
 
 ALLOWED_CATEGORIES = [
