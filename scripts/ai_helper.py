@@ -32,10 +32,11 @@ AI_AVAILABLE = False
 _POE_API_KEY = os.environ.get('POE_API_KEY', '').strip()
 
 # Fallback models list — tried in order; moves to next on BotErrorNoRetry (bot unavailable)
+# Claude bots require Poe paid plan with Anthropic credits; GPT-4o works on current subscription
 MODELS_TO_TRY = [
-    "claude-3.7-sonnet",
-    "claude-3-5-sonnet",
-    "Claude-3-Haiku",
+    "GPT-4o",
+    "GPT-4o-Mini",
+    "Gemini-2.0-Flash",
 ]
 
 ALLOWED_CATEGORIES = [
@@ -406,8 +407,8 @@ async def _async_call(messages: list, label: str = '') -> str:
                 result += chunk.text
 
             elapsed = time.monotonic() - t
-            logger.info(f'Poe API call{tag} ({model}) → {len(result)} chars in {elapsed:.1f}s')
-            print(f'  [DEBUG] AI ({model}){tag} → {len(result)} chars in {elapsed:.1f}s')
+            logger.info(f'Poe API call{tag} ({model}) -> {len(result)} chars in {elapsed:.1f}s')
+            print(f'  [DEBUG] AI ({model}){tag} -> {len(result)} chars in {elapsed:.1f}s')
             if len(result) < 50:
                 print(f'  [DEBUG] Full response: {repr(result)}')
             return result
