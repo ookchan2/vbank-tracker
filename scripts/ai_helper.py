@@ -31,10 +31,11 @@ except ImportError:
 AI_AVAILABLE = False
 _POE_API_KEY = os.environ.get('POE_API_KEY', '').strip()
 
-# Fallback models list
+# Fallback models list — tried in order; moves to next on BotErrorNoRetry (bot unavailable)
 MODELS_TO_TRY = [
     "claude-3.7-sonnet",
     "claude-3-5-sonnet",
+    "Claude-3-Haiku",
 ]
 
 ALLOWED_CATEGORIES = [
@@ -380,7 +381,7 @@ def _get_poe_key():
 
 
 async def _async_call(messages: list, label: str = '') -> str:
-    """Async call to Poe API using Claude bot."""
+    """Async call to Poe API using Claude bot, with automatic model fallback."""
     global AI_AVAILABLE
 
     if not AI_AVAILABLE:
@@ -390,29 +391,41 @@ async def _async_call(messages: list, label: str = '') -> str:
             return ''
 
     t = time.monotonic()
-    try:
-        # Get the last user message content
-        user_content = messages[-1]['content'] if messages else ''
+    tag = f' [{label}]' if label else ''
+    poe_messages = [fp.ProtocolMessage(role=m['role'], content=m['content']) for m in messages]
 
-        result = ''
-        async for chunk in fp.get_bot_response(
-            messages=[fp.ProtocolMessage(role=m['role'], content=m['content']) for m in messages],
-            bot_name='claude-3.7-sonnet',
-            api_key=_POE_API_KEY,
-        ):
-            result += chunk.text
+    last_exc = None
+    for model in MODELS_TO_TRY:
+        try:
+            result = ''
+            async for chunk in fp.get_bot_response(
+                messages=poe_messages,
+                bot_name=model,
+                api_key=_POE_API_KEY,
+            ):
+                result += chunk.text
 
-        elapsed = time.monotonic() - t
-        tag = f' [{label}]' if label else ''
-        logger.info(f'Poe API call{tag} → {len(result)} chars in {elapsed:.1f}s')
-        print(f'  [DEBUG] AI (claude-3.7-sonnet){tag} → {len(result)} chars in {elapsed:.1f}s')
-        if len(result) < 50:
-            print(f'  [DEBUG] Full response: {repr(result)}')
-        return result
-    except Exception as exc:
-        logger.error(f'Poe API call error: {type(exc).__name__}: {exc}')
-        print(f'  [ERR] Poe API call error: {exc}')
-        return ''
+            elapsed = time.monotonic() - t
+            logger.info(f'Poe API call{tag} ({model}) → {len(result)} chars in {elapsed:.1f}s')
+            print(f'  [DEBUG] AI ({model}){tag} → {len(result)} chars in {elapsed:.1f}s')
+            if len(result) < 50:
+                print(f'  [DEBUG] Full response: {repr(result)}')
+            return result
+
+        except Exception as exc:
+            err_str = str(exc)
+            logger.warning(f'Poe model {model} failed{tag}: {type(exc).__name__}: {exc}')
+            print(f'  [WARN] Poe model {model} failed{tag}: {exc}')
+            last_exc = exc
+            # Only retry on bot-unavailable errors; propagate other errors immediately
+            if 'unavailable' not in err_str.lower() and 'BotError' not in type(exc).__name__:
+                break
+            # Bot unavailable — try next model in list
+            continue
+
+    logger.error(f'All Poe models failed{tag}: {last_exc}')
+    print(f'  [ERR] All Poe models exhausted{tag}: {last_exc}')
+    return ''
 
 
 def _call(messages: list, label: str = '') -> str:
