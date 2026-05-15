@@ -31,10 +31,10 @@ except ImportError:
 AI_AVAILABLE = False
 _POE_API_KEY = os.environ.get('POE_API_KEY', '').strip()
 
-# Fallback models list — tried in order; moves to next on BotErrorNoRetry (bot unavailable)
+# Fallback models list — tried in order; haiku first as sonnet consistently times out
 MODELS_TO_TRY = [
-    "claude-sonnet-4.6",
     "claude-haiku-4.5",
+    "claude-sonnet-4.6",
     "GPT-4o",
 ]
 
@@ -380,7 +380,7 @@ def _get_poe_key():
     return os.environ.get('POE_API_KEY', '').strip()
 
 
-_POE_CALL_TIMEOUT = 90  # seconds per model attempt
+_POE_CALL_TIMEOUT = 150  # seconds per model attempt
 
 
 async def _single_model_call(poe_messages, model: str, api_key: str) -> str:
@@ -1401,7 +1401,7 @@ Titles to evaluate (0-indexed):
             if dup_map:
                 print(f'  🤖 ai_dedup_titles [{bank_name}]: {len(dup_map)} duplicate(s)')
             return dup_map
-        except Exception as exc:
+        except BaseException as exc:
             if attempt == 0:
                 print(f'  ⚠️  ai_dedup_titles [{bank_name}] attempt 1 failed: {exc!r} — retrying')
             else:
@@ -1514,7 +1514,7 @@ No explanation. No markdown. No code fences."""
             )
             print(f'  🤖 ai_match_against_existing [{bank_name}]: {msg}')
             return result_map
-        except Exception as exc:
+        except BaseException as exc:
             if attempt == 0:
                 print(f'  ⚠️  ai_match_against_existing [{bank_name}] attempt 1: {exc!r} — retrying')
             else:
@@ -2237,7 +2237,7 @@ def analyze_broker_promotions(
                 else:
                     if attempt == 0:
                         print(f'  🔄 Retry AI for {broker_name}...')
-            except Exception as exc:
+            except BaseException as exc:
                 if attempt == 0:
                     print(f'  ⚠️  AI error for {broker_name}: {exc} — retrying...')
         else:
@@ -2286,7 +2286,7 @@ def analyze_broker_products(
                 else:
                     if attempt == 0:
                         print(f'  🔄 Retry product extraction for {broker_name}...')
-            except Exception as exc:
+            except BaseException as exc:
                 if attempt == 0:
                     print(f'  ⚠️  Product extraction error for {broker_name}: {exc} — retrying...')
         else:
