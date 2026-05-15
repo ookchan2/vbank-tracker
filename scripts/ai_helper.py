@@ -412,15 +412,23 @@ async def _async_call(messages: list, label: str = '') -> str:
                 print(f'  [DEBUG] Full response: {repr(result)}')
             return result
 
-        except Exception as exc:
-            err_str = str(exc)
-            logger.warning(f'Poe model {model} failed{tag}: {type(exc).__name__}: {exc}')
+        except BaseException as exc:
+            err_str = str(exc).lower()
+            exc_type = type(exc).__name__
+            logger.warning(f'Poe model {model} failed{tag}: {exc_type}: {exc}')
             print(f'  [WARN] Poe model {model} failed{tag}: {exc}')
             last_exc = exc
-            # Only retry on bot-unavailable errors; propagate other errors immediately
-            if 'unavailable' not in err_str.lower() and 'BotError' not in type(exc).__name__:
-                break
-            # Bot unavailable — try next model in list
+            # Retry on bot-unavailable, cancellation, or timeout errors; break on others
+            retriable = (
+                'unavailable' in err_str
+                or 'BotError' in exc_type
+                or 'cancel' in err_str
+                or 'timeout' in err_str
+                or isinstance(exc, asyncio.CancelledError)
+            )
+            if not retriable:
+                raise
+            # Try next model in list
             continue
 
     logger.error(f'All Poe models failed{tag}: {last_exc}')
@@ -444,7 +452,7 @@ def _call(messages: list, label: str = '') -> str:
             except Exception:
                 pass
             loop.close()
-    except Exception as exc:
+    except BaseException as exc:
         logger.error(f'Sync wrapper error: {type(exc).__name__}: {exc}')
         return ''
 
