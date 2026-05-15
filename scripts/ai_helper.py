@@ -380,6 +380,21 @@ def _get_poe_key():
     return os.environ.get('POE_API_KEY', '').strip()
 
 
+_POE_CALL_TIMEOUT = 90  # seconds per model attempt
+
+
+async def _single_model_call(poe_messages, model: str, api_key: str) -> str:
+    """Call one Poe model with a hard timeout; raises on failure."""
+    result = ''
+    async for chunk in fp.get_bot_response(
+        messages=poe_messages,
+        bot_name=model,
+        api_key=api_key,
+    ):
+        result += chunk.text
+    return result
+
+
 async def _async_call(messages: list, label: str = '') -> str:
     """Async call to Poe API using Claude bot, with automatic model fallback."""
     global AI_AVAILABLE
@@ -397,14 +412,10 @@ async def _async_call(messages: list, label: str = '') -> str:
     last_exc = None
     for model in MODELS_TO_TRY:
         try:
-            result = ''
-            async for chunk in fp.get_bot_response(
-                messages=poe_messages,
-                bot_name=model,
-                api_key=_POE_API_KEY,
-            ):
-                result += chunk.text
-
+            result = await asyncio.wait_for(
+                _single_model_call(poe_messages, model, _POE_API_KEY),
+                timeout=_POE_CALL_TIMEOUT,
+            )
             elapsed = time.monotonic() - t
             logger.info(f'Poe API call{tag} ({model}) -> {len(result)} chars in {elapsed:.1f}s')
             print(f'  [DEBUG] AI ({model}){tag} -> {len(result)} chars in {elapsed:.1f}s')
@@ -418,17 +429,16 @@ async def _async_call(messages: list, label: str = '') -> str:
             logger.warning(f'Poe model {model} failed{tag}: {exc_type}: {exc}')
             print(f'  [WARN] Poe model {model} failed{tag}: {exc}')
             last_exc = exc
-            # Retry on bot-unavailable, cancellation, or timeout errors; break on others
+            # Retry on bot-unavailable, cancellation, or timeout — try next model
             retriable = (
                 'unavailable' in err_str
                 or 'BotError' in exc_type
                 or 'cancel' in err_str
                 or 'timeout' in err_str
-                or isinstance(exc, asyncio.CancelledError)
+                or isinstance(exc, (asyncio.CancelledError, asyncio.TimeoutError))
             )
             if not retriable:
                 raise
-            # Try next model in list
             continue
 
     logger.error(f'All Poe models failed{tag}: {last_exc}')
@@ -528,7 +538,7 @@ def _parse_object(raw: str) -> Optional[dict]:
         return None
 
 
-def _trim_text(text: str, max_chars: int = 25_000) -> str:
+def _trim_text(text: str, max_chars: int = 15_000) -> str:
     if len(text) <= max_chars:
         return text
     keep = max_chars // 2
@@ -1135,7 +1145,7 @@ def analyze_promotions(
                     logger.warning(f'AI returned empty result for {bank_name} on attempt {attempt + 1}')
                     if attempt == 0:
                         print(f'  🔄 Retry AI for {bank_name}...')
-            except Exception as exc:
+            except BaseException as exc:
                 logger.error(f'AI extraction error for {bank_name}: {type(exc).__name__}: {exc}')
                 if attempt == 0:
                     print(f'  ⚠️  AI error for {bank_name}: {exc} — retrying...')
@@ -1263,7 +1273,7 @@ def analyze_products(
                     logger.warning(f'AI returned empty result for {bank_name} products on attempt {attempt + 1}')
                     if attempt == 0:
                         print(f'  🔄 Retry product extraction for {bank_name}...')
-            except Exception as exc:
+            except BaseException as exc:
                 logger.error(f'Product extraction error for {bank_name}: {type(exc).__name__}: {exc}')
                 if attempt == 0:
                     print(f'  ⚠️  Product extraction error for {bank_name}: {exc} — retrying...')
