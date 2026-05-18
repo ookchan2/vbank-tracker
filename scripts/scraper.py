@@ -98,14 +98,12 @@ BANK_DOMAINS: dict[str, list[str]] = {
 }
 
 BROKER_DOMAINS: dict[str, list[str]] = {
-    'ibkr':        ['interactivebrokers.com.hk', 'interactivebrokers.com'],
-    'futu':        ['futuhk.com', 'futuhkapp.com', 'invest.futuhk.com', 'openapi.futunn.com'],
-    'tiger':       ['itiger.com'],
-    'longbridge':  ['longbridge.com'],
-    'welllink':    ['wlsec.com'],
-    'webull':      ['webull.com', 'webull.hk'],
-    'brightsmart': ['bsgroup.com.hk'],
-    'usmart':      ['usmartglobal.com', 'hk.usmartglobal.com'],
+    'ibkr':       ['interactivebrokers.com.hk', 'interactivebrokers.com'],
+    'futu':       ['futuhk.com', 'futuhkapp.com', 'invest.futuhk.com', 'openapi.futunn.com'],
+    'tiger':      ['itiger.com'],
+    'longbridge': ['longbridge.com'],
+    'webull':     ['webull.com', 'webull.hk'],
+    'usmart':     ['usmartglobal.com', 'hk.usmartglobal.com'],
 }
 
 
@@ -304,16 +302,6 @@ BROKER_CONFIGS: dict[str, dict] = {
         'link':       'https://longbridge.com/hk/investment-products',
         'wait_extra': 5000,
     },
-    'welllink': {
-        'name': '立橋', 'color': '#16a085',
-        'urls': [
-            'https://wlsec.com/notice.jhtml?tab=adInfo',
-            'https://wlsec.com/service.jhtml?tab=commissions',
-            'https://wlsec.com/service.jhtml?tab=deposit',
-        ],
-        'link':       'https://wlsec.com/notice.jhtml?tab=adInfo',
-        'wait_extra': 6000,
-    },
     'webull': {
         'name': 'webull', 'color': '#2980b9',
         'urls': [
@@ -323,20 +311,6 @@ BROKER_CONFIGS: dict[str, dict] = {
         ],
         'link':       'https://www.webull.hk/activity',
         'wait_extra': 6000,
-    },
-    'brightsmart': {
-        'name': '耀才', 'color': '#8e44ad',
-        'urls': [
-            'https://www.bsgroup.com.hk/promotion/',
-            'https://www.bsgroup.com.hk/',
-            'https://www.bsgroup.com.hk/commissions/hongkongsecurities/',
-            'https://www.bsgroup.com.hk/commissions/shanghaishenzhena/',
-            'https://www.bsgroup.com.hk/commissions/globalsecurities/',
-            'https://www.bsgroup.com.hk/commissions/hongkongfutureoption/',
-            'https://www.bsgroup.com.hk/commissions/usstockoptions/',
-        ],
-        'link':       'https://www.bsgroup.com.hk/promotion/',
-        'wait_extra': 7000,
     },
     'usmart': {
         'name': 'uSmart', 'color': '#1abc9c',
@@ -348,6 +322,27 @@ BROKER_CONFIGS: dict[str, dict] = {
         'wait_extra': 5000,
     },
 }
+
+# ── URL patterns to never follow during link discovery ───────────────────────
+
+_SKIP_LINK_PATTERNS = re.compile(
+    r'(login|signin|sign-in|logout|register|signup|sign-up|download|app-store'
+    r'|google-play|appstore|itunes|play\.google'
+    r'|\.pdf|\.zip|\.apk|mailto:|tel:|javascript:'
+    r'|terms|privacy|cookie|disclaimer|sitemap'
+    r'|contact|about-us|career|press|investor|ir\.'
+    r'|support|faq|help|feedback|security|complaint)',
+    re.IGNORECASE,
+)
+
+# Promo-related keywords that make a link worth following
+_PROMO_LINK_KEYWORDS = re.compile(
+    r'(promo|promotion|offer|reward|bonus|cashback|cash-back|rebate|discount'
+    r'|feature|campaign|event|deal|benefit|privilege|welcome|referral|invite'
+    r'|activity|activities|saving|deposit|fund|invest|loan|card|crypto|stock'
+    r'|trade|trading|特惠|優惠|推廣|活動|獎賞|回贈|存款|貸款|基金)',
+    re.IGNORECASE,
+)
 
 # ── JS text extractor ─────────────────────────────────────────────────────────
 
@@ -516,6 +511,93 @@ def _load_cached_screenshot(url: str) -> Optional[bytes]:
     return None
 
 
+# ── Dropdown / accordion expander ────────────────────────────────────────────
+
+async def _expand_interactive_elements(page: Page) -> None:
+    """Click all collapsed accordions, dropdowns, and <details> elements so their
+    text becomes visible before we extract page content."""
+    js = '''async () => {
+        const selectors = [
+            'details:not([open])',
+            '[aria-expanded="false"]',
+            '[data-toggle="collapse"]:not(.collapsed ~ *)',
+            '.accordion-button.collapsed',
+            '.collapse-toggle:not(.active)',
+            '[class*="accordion"][class*="header"]',
+            '[class*="expand"]:not([class*="expanded"])',
+            '[class*="toggle"]:not([class*="active"])',
+        ];
+        let clicked = 0;
+        for (const sel of selectors) {
+            const els = Array.from(document.querySelectorAll(sel));
+            for (const el of els) {
+                try {
+                    el.click();
+                    clicked++;
+                } catch(e) {}
+            }
+        }
+        return clicked;
+    }'''
+    try:
+        clicked = await page.evaluate(js)
+        if clicked:
+            print(f'    [EXPAND] Clicked {clicked} collapsed element(s)')
+            await page.wait_for_timeout(1_000)
+    except Exception:
+        pass
+
+
+# ── Link discovery (supplement to configured URLs) ────────────────────────────
+
+_JS_GET_LINKS = '''() => Array.from(document.querySelectorAll("a[href]"))
+    .map(a => a.href)
+    .filter(h => h.startsWith("http"))'''
+
+
+def _discover_links(
+    raw_links:      list[str],
+    allowed_domains: list[str],
+    known_urls:     set[str],
+    max_new:        int = 8,
+) -> list[str]:
+    """Filter raw href list to same-domain promo-looking URLs not already known."""
+    seen:     set[str]  = set()
+    result:   list[str] = []
+
+    for href in raw_links:
+        # Normalise — strip fragments and trailing slashes for dedup
+        href = href.split('#')[0].rstrip('/')
+        if not href or href in seen or href in known_urls:
+            continue
+        seen.add(href)
+
+        try:
+            hostname = urlparse(href).hostname or ''
+        except Exception:
+            continue
+
+        # Must be same domain as the entity
+        if not any(hostname == d or hostname.endswith('.' + d) for d in allowed_domains):
+            continue
+
+        # Skip obviously non-promo links
+        path = urlparse(href).path
+        if _SKIP_LINK_PATTERNS.search(path):
+            continue
+
+        # Prefer links that look promotion-related; still include others up to cap
+        if _PROMO_LINK_KEYWORDS.search(href):
+            result.insert(0, href)   # prioritise promo-looking links
+        else:
+            result.append(href)
+
+        if len(result) >= max_new:
+            break
+
+    return result[:max_new]
+
+
 # ── Single URL via Playwright ─────────────────────────────────────────────────
 
 async def _try_url(
@@ -535,6 +617,7 @@ async def _try_url(
             await page.wait_for_timeout(wait_extra)
             await page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
             await page.wait_for_timeout(2_000)
+            await _expand_interactive_elements(page)
             await page.evaluate('window.scrollTo(0, 0)')
 
             raw  = await page.evaluate(_JS_GET_TEXT)
@@ -647,6 +730,8 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
 
         await page.route('**/*', _handle_route)
 
+        discovered_links: list[str] = []   # filled after first successful page
+
         for url in valid_urls:
             print(f'    -> {url}')
             text, shot = await _try_url(page, url, wait_extra, retries)
@@ -658,6 +743,13 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
                     best_shot  = shot
                     result.url = url
                 print(f'    [OK]  {len(text):,} chars')
+                # Collect links from the first successful page for discovery
+                if not discovered_links:
+                    try:
+                        raw_links = await page.evaluate(_JS_GET_LINKS)
+                        discovered_links = raw_links if isinstance(raw_links, list) else []
+                    except Exception:
+                        pass
             else:
                 thin_len = len(text)
                 print(f'    🔁 thin ({thin_len} chars) -> requests fallback for {url}')
@@ -670,6 +762,26 @@ async def _scrape_bank(browser: Browser, bank_id: str) -> ScrapeResult:
                     msg = f'Insufficient content from both methods: {url}'
                     result.errors.append(msg)
                     print(f'    ⚠  {msg}')
+
+        # ── Supplemental link discovery ──────────────────────────────────────
+        allowed_domains = BANK_DOMAINS.get(bank_id, [])
+        extra_urls = _discover_links(
+            raw_links       = discovered_links,
+            allowed_domains = allowed_domains,
+            known_urls      = set(valid_urls),
+            max_new         = 6,
+        )
+        if extra_urls:
+            print(f'    [DISCOVER] Found {len(extra_urls)} extra link(s) to scrape')
+        for url in extra_urls:
+            print(f'    -> [discovered] {url}')
+            text, shot = await _try_url(page, url, wait_extra, retries=1)
+            if text and len(text) > MIN_CONTENT_CHARS:
+                text = _scrub_blocked_content(text, cfg['name'])
+                sections.append((url, text))
+                print(f'    [OK]  discovered: {len(text):,} chars')
+            else:
+                print(f'    ⚠  discovered link thin/failed: {url}')
 
         sections = _deduplicate_sections(sections)
         sections = _truncate_sections(sections)
@@ -870,6 +982,8 @@ async def _scrape_broker(browser: Browser, broker_id: str) -> ScrapeResult:
 
         await page.route('**/*', _handle_route)
 
+        discovered_links: list[str] = []
+
         for url in valid_urls:
             print(f'    -> {url}')
             text, shot = await _try_url(page, url, wait_extra, retries)
@@ -880,6 +994,12 @@ async def _scrape_broker(browser: Browser, broker_id: str) -> ScrapeResult:
                     best_shot  = shot
                     result.url = url
                 print(f'    [OK]  {len(text):,} chars')
+                if not discovered_links:
+                    try:
+                        raw_links = await page.evaluate(_JS_GET_LINKS)
+                        discovered_links = raw_links if isinstance(raw_links, list) else []
+                    except Exception:
+                        pass
             else:
                 thin_len = len(text)
                 print(f'    🔁 thin ({thin_len} chars) -> requests fallback for {url}')
@@ -891,6 +1011,24 @@ async def _scrape_broker(browser: Browser, broker_id: str) -> ScrapeResult:
                     msg = f'Insufficient content from both methods: {url}'
                     result.errors.append(msg)
                     print(f'    ⚠  {msg}')
+
+        # ── Supplemental link discovery ──────────────────────────────────────
+        extra_urls = _discover_links(
+            raw_links       = discovered_links,
+            allowed_domains = allowed_domains,
+            known_urls      = set(valid_urls),
+            max_new         = 6,
+        )
+        if extra_urls:
+            print(f'    [DISCOVER] Found {len(extra_urls)} extra link(s) to scrape')
+        for url in extra_urls:
+            print(f'    -> [discovered] {url}')
+            text, shot = await _try_url(page, url, wait_extra, retries=1)
+            if text and len(text) > MIN_CONTENT_CHARS:
+                sections.append((url, text))
+                print(f'    [OK]  discovered: {len(text):,} chars')
+            else:
+                print(f'    ⚠  discovered link thin/failed: {url}')
 
         sections = _deduplicate_sections(sections)
         sections = _truncate_sections(sections)
