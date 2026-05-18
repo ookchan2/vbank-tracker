@@ -2175,6 +2175,9 @@ function buildBrokerProductAnalysis() {
     return;
   }
 
+  // AI analysis per broker from broker_strategic_insights
+  const aiAnalysis = (brokerStrategicInsights && brokerStrategicInsights.broker_analysis) || {};
+
   // Group broker products by broker name
   const byBroker = {};
   allBrokerProducts.forEach(p => {
@@ -2189,7 +2192,6 @@ function buildBrokerProductAnalysis() {
   const zaProds = allProducts.filter(p => p.bank_name === 'ZA Bank' && p.is_active !== false);
   const zaByBrokerCat = {};
   zaProds.forEach(p => {
-    // Map bank product categories to broker categories for comparison
     const bcat = remapBrokerCat(p._displayCat || remapProdCat(p.category) || '');
     zaByBrokerCat[bcat] = (zaByBrokerCat[bcat] || 0) + 1;
   });
@@ -2198,7 +2200,6 @@ function buildBrokerProductAnalysis() {
   const brokerNames = Object.keys(byBroker).sort();
   const zaTotal = Object.values(zaByBrokerCat).reduce((s, n) => s + n, 0);
 
-  // Helper to build category rows for a given cats map, with optional diff vs ZA
   function _brokerCatRows(catsMap, showDiff) {
     return allCats.map(cat => {
       const cm = BROKER_CAT_META[cat];
@@ -2221,9 +2222,14 @@ function buildBrokerProductAnalysis() {
     }).filter(Boolean).join('');
   }
 
-  // Build ZA Bank card first (if ZA has products)
+  // Build ZA Bank card first
   const zaCard = zaTotal > 0 ? (() => {
     const zaCatRows = _brokerCatRows(zaByBrokerCat, false);
+    const zaAi = Object.values(aiAnalysis);
+    // Collect all broker cons (= ZA strengths vs brokers) from AI
+    const zaStrengths = [...new Set(zaAi.flatMap(b => toArray(b.vs_za_cons)))];
+    // Collect all broker pros (= ZA weaknesses) from AI
+    const zaWeaknesses = [...new Set(zaAi.flatMap(b => toArray(b.vs_za_pros)))];
     const zaLeads = allCats.filter(c => {
       const zaN = zaByBrokerCat[c] || 0;
       return zaN > 0 && brokerNames.every(b => (byBroker[b]?.cats[c] || 0) <= zaN);
@@ -2249,9 +2255,13 @@ function buildBrokerProductAnalysis() {
         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Products by Category</div>
         <ul class="space-y-0.5">${zaCatRows || '<li class="text-xs text-gray-400">No categorized products</li>'}</ul>
         <div class="mt-3 pt-3 border-t border-gray-100">
-          ${zaLeads.length ? `<div class="text-xs font-bold text-green-600 mb-1.5">💪 ZA Leads (no broker has more)</div>
+          ${zaStrengths.length ? `<div class="text-xs font-bold text-green-600 mb-1.5">💪 ZA Strengths vs Brokers</div>
+            <ul class="space-y-1 mb-2">${zaStrengths.map(s=>`<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-green-500 shrink-0">✓</span>${s}</li>`).join('')}</ul>` : ''}
+          ${zaLeads.length ? `<div class="text-xs font-bold text-green-600 mb-1.5">📦 ZA Leads by Product Count</div>
             ${zaLeads.map(s=>`<div class="text-xs text-gray-600 mb-1">✓ ${s}</div>`).join('')}` : ''}
-          ${zaTrails.length ? `<div class="text-xs font-bold text-red-500 mb-1.5 ${zaLeads.length?'mt-2':''}">⚠ ZA Trails (brokers have more)</div>
+          ${zaWeaknesses.length ? `<div class="text-xs font-bold text-red-500 mb-1.5 mt-2">⚠ ZA Limitations vs Brokers</div>
+            <ul class="space-y-1 mb-2">${zaWeaknesses.map(s=>`<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-red-400 shrink-0">−</span>${s}</li>`).join('')}</ul>` : ''}
+          ${zaTrails.length ? `<div class="text-xs font-bold text-red-500 mb-1.5 ${zaWeaknesses.length?'mt-0':'mt-2'}">⚠ ZA Trails by Product Count</div>
             ${zaTrails.map(s=>`<div class="text-xs text-gray-600 mb-1">✗ ${s}</div>`).join('')}` : ''}
         </div>
       </div>
@@ -2262,6 +2272,11 @@ function buildBrokerProductAnalysis() {
     const d = byBroker[brokerName];
     const color = brokerColor(brokerName);
     const catRows = _brokerCatRows(d.cats, true);
+    const ai = aiAnalysis[brokerName] || {};
+    const strengths = toArray(ai.strengths);
+    const pros = toArray(ai.vs_za_pros);
+    const cons = toArray(ai.vs_za_cons);
+    const focus = ai.focus || '';
 
     const better = allCats.filter(c => (d.cats[c]||0) > (zaByBrokerCat[c]||0))
       .map(c => `${BROKER_CAT_META[c].emoji} ${c}: ${d.cats[c]} vs ZA ${zaByBrokerCat[c]||0}`);
@@ -2269,14 +2284,23 @@ function buildBrokerProductAnalysis() {
       .map(c => `${BROKER_CAT_META[c].emoji} ${c}: ${d.cats[c]||0} vs ZA ${zaByBrokerCat[c]}`);
     const missing = allCats.filter(c => (zaByBrokerCat[c]||0) > 0 && !(d.cats[c]));
 
-    const vsZa = `<div class="mt-3 pt-3 border-t border-gray-100">
-      ${better.length ? `<div class="text-xs font-bold text-green-600 mb-1.5">▲ More than ZA</div>
-        ${better.map(s=>`<div class="text-xs text-gray-600 mb-1">✓ ${s}</div>`).join('')}` : ''}
-      ${worse.length ? `<div class="text-xs font-bold text-red-500 mb-1.5 ${better.length?'mt-2':''}">▼ Fewer than ZA</div>
-        ${worse.map(s=>`<div class="text-xs text-gray-600 mb-1">✗ ${s}</div>`).join('')}` : ''}
-      ${missing.length ? `<div class="text-xs font-bold text-gray-400 mb-1.5 mt-2">⊘ Not offered (ZA has)</div>
-        ${missing.map(c=>`<div class="text-xs text-gray-400 mb-1">— ${c}</div>`).join('')}` : ''}
-    </div>`;
+    const aiSection = (strengths.length || pros.length || cons.length) ? `
+      <div class="mt-3 pt-3 border-t border-gray-100">
+        ${strengths.length ? `<div class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">🔑 Key Strengths</div>
+          <ul class="space-y-1 mb-2">${strengths.map(s=>`<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-green-500 shrink-0">✓</span>${s}</li>`).join('')}</ul>` : ''}
+        ${pros.length ? `<div class="text-xs font-bold text-green-600 mb-1.5 ${strengths.length?'mt-2':''}">▲ Better than ZA Bank</div>
+          <ul class="space-y-1 mb-2">${pros.map(s=>`<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-green-500 shrink-0">+</span>${s}</li>`).join('')}</ul>` : ''}
+        ${cons.length ? `<div class="text-xs font-bold text-red-500 mb-1.5 ${pros.length?'mt-2':''}">▼ Weaker than ZA Bank</div>
+          <ul class="space-y-1">${cons.map(s=>`<li class="flex items-start gap-2 text-xs text-gray-600"><span class="text-red-400 shrink-0">−</span>${s}</li>`).join('')}</ul>` : ''}
+      </div>` : '';
+
+    const countSection = (better.length || worse.length || missing.length) ? `
+      <div class="mt-3 pt-3 border-t border-gray-100">
+        <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">📦 Product Count vs ZA</div>
+        ${better.length ? better.map(s=>`<div class="text-xs text-green-600 mb-1">▲ ${s}</div>`).join('') : ''}
+        ${worse.length ? worse.map(s=>`<div class="text-xs text-red-400 mb-1">▼ ${s}</div>`).join('') : ''}
+        ${missing.length ? `<div class="text-xs text-gray-400 mt-1">⊘ Not offered: ${missing.join(', ')}</div>` : ''}
+      </div>` : '';
 
     return `<div class="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
       <div class="px-4 py-3 flex items-center justify-between" style="background:${color}">
@@ -2284,9 +2308,10 @@ function buildBrokerProductAnalysis() {
         <span class="text-white/80 text-xs">${d.total} product${d.total !== 1 ? 's' : ''}</span>
       </div>
       <div class="p-4">
+        ${focus ? `<div class="text-xs text-indigo-600 font-semibold mb-2">🎯 ${focus}</div>` : ''}
         <div class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Products by Category</div>
         <ul class="space-y-0.5">${catRows || '<li class="text-xs text-gray-400">No categorized products</li>'}</ul>
-        ${vsZa}
+        ${aiSection}${countSection}
       </div>
     </div>`;
   }).join('');
