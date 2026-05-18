@@ -103,7 +103,7 @@ BROKER_DOMAINS: dict[str, list[str]] = {
     'tiger':       ['itiger.com'],
     'longbridge':  ['longbridge.com'],
     'welllink':    ['wlsec.com'],
-    'webull':      ['webull.com'],
+    'webull':      ['webull.com', 'webull.hk'],
     'brightsmart': ['bsgroup.com.hk'],
     'usmart':      ['usmartglobal.com', 'hk.usmartglobal.com'],
 }
@@ -156,6 +156,7 @@ BANK_CONFIGS: dict[str, dict] = {
             'https://mox.com/promotions/',
             'https://mox.com/zh/promotions/',
             'https://mox.com/',
+            'https://mox.com/promotions/new-to-invest-triple-0-fees/',
             'https://mox.com/zh/promotions/moxsmart/',
             'https://mox.com/zh/promotions/The-Club/',
             'https://mox.com/zh/promotions/1500mox/',
@@ -248,6 +249,7 @@ BANK_CONFIGS: dict[str, dict] = {
         'name':       'Ant Bank',
         'color':      '#1677ff',
         'urls': [
+            'https://www.antbank.hk/?lang=en_us',
             'https://www.antbank.hk/em-plus-offer?lang=en_us',
             'https://www.antbank.hk/em-plus-offer?lang=zh_hk',
             'https://www.antbank.hk/',
@@ -315,15 +317,17 @@ BROKER_CONFIGS: dict[str, dict] = {
     'webull': {
         'name': 'webull', 'color': '#2980b9',
         'urls': [
+            'https://www.webull.hk/activity',
             'https://www.webull.com/offers-promotions',
             'https://www.webull.com/pricing',
         ],
-        'link':       'https://www.webull.com/offers-promotions',
-        'wait_extra': 5000,
+        'link':       'https://www.webull.hk/activity',
+        'wait_extra': 6000,
     },
     'brightsmart': {
         'name': '耀才', 'color': '#8e44ad',
         'urls': [
+            'https://www.bsgroup.com.hk/promotion/',
             'https://www.bsgroup.com.hk/',
             'https://www.bsgroup.com.hk/commissions/hongkongsecurities/',
             'https://www.bsgroup.com.hk/commissions/shanghaishenzhena/',
@@ -331,8 +335,8 @@ BROKER_CONFIGS: dict[str, dict] = {
             'https://www.bsgroup.com.hk/commissions/hongkongfutureoption/',
             'https://www.bsgroup.com.hk/commissions/usstockoptions/',
         ],
-        'link':       'https://www.bsgroup.com.hk/',
-        'wait_extra': 5000,
+        'link':       'https://www.bsgroup.com.hk/promotion/',
+        'wait_extra': 7000,
     },
     'usmart': {
         'name': 'uSmart', 'color': '#1abc9c',

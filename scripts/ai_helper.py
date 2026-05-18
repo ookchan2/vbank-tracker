@@ -332,6 +332,22 @@ separate non-BAU promotions with the relevant end_date.
 """
 
 
+_FUSION_BANK_HINT = """
+[Fusion Bank extraction note]
+Fusion Bank's website is heavily JavaScript-rendered. The scraped text may
+contain product/service descriptions rather than clearly labelled promotions.
+Please extract ALL of the following as separate entries (use is_bau=true for
+permanent product features, is_bau=false for time-limited offers):
+  • Time-limited promotions (e.g. "FX Time Deposit 2023", "Fusion Flash Deposit",
+    "Saving Interest Plus", "Member-Get-Member" referral rewards)
+  • Permanent product features worth highlighting (e.g. multi-currency account,
+    FX conversion rates, instant transfer, savings rate tiers)
+If the text contains any mention of interest rates, deposit offers, FX rates,
+or referral rewards — extract them. Do NOT return [] unless the text is
+completely empty or is only navigation/CSS.
+"""
+
+
 def _build_prompt(bank_name: str, url: str, text: str) -> str:
     today = datetime.now().strftime('%Y-%m-%d')
     prompt = (
@@ -344,6 +360,9 @@ def _build_prompt(bank_name: str, url: str, text: str) -> str:
     # ★ Inject EleBank fee context (covers both new name and legacy 'Airstar' rows)
     if any(n in bank_name.lower() for n in ('elebank', 'ele bank', 'airstar')):
         prompt = prompt + '\n' + _ELEBANK_FEE_CONTEXT
+    # ★ Inject Fusion Bank hint to encourage extraction from JS-rendered pages
+    if 'fusion' in bank_name.lower():
+        prompt = prompt + '\n' + _FUSION_BANK_HINT
     return prompt
 
 
@@ -1392,6 +1411,10 @@ Titles to evaluate (0-indexed):
                 return {}
             raw  = re.sub(r'^```[a-z]*\n?', '', raw.strip())
             raw  = re.sub(r'\n?```$',       '', raw.strip())
+            # Handle "Extra data" when model returns two JSON objects —
+            # extract only the first complete JSON object.
+            m = re.search(r'\{.*\}', raw, re.DOTALL)
+            raw = m.group(0) if m else raw
             data = json.loads(raw)
             dup_map = {
                 int(dup): int(g['keep_index'])
