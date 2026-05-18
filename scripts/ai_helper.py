@@ -46,7 +46,6 @@ ALLOWED_CATEGORIES = [
 # ── BAU overrides ─────────────────────────────────────────────────────────────
 
 BAU_OVERRIDES: dict[str, list[str]] = {
-    "za": ["new crypto customer fee waiver"],
 }
 
 BAU_GLOBAL_OVERRIDES: list[str] = [
