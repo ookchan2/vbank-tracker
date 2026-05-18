@@ -727,14 +727,30 @@ def _common_prefix_ratio(a: str, b: str) -> float:
     return i / min_len
 
 
+def _date_pair_matches(
+    sd_new: Optional[str],
+    ed_new: Optional[str],
+    sd_old: Optional[str],
+    ed_old: Optional[str],
+) -> bool:
+    """Return True if both start_date and end_date are non-null and equal.
+    A matching date pair is a strong signal it's the same promotion even if
+    the AI paraphrased the title differently across runs."""
+    if not sd_new or not ed_new or not sd_old or not ed_old:
+        return False
+    return sd_new.strip()[:10] == sd_old.strip()[:10] and ed_new.strip()[:10] == ed_old.strip()[:10]
+
+
 def _find_duplicate_id(
     conn: sqlite3.Connection,
     bank_id: str,
     title: str,
     highlight: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
 ) -> Optional[int]:
     rows = conn.execute(
-        "SELECT id, title, highlight, active FROM promotions WHERE bank_id = ?",
+        "SELECT id, title, highlight, active, start_date, end_date FROM promotions WHERE bank_id = ?",
         (bank_id,)
     ).fetchall()
 
@@ -747,6 +763,12 @@ def _find_duplicate_id(
         is_inactive = not row['active']
         j_thr = _JACCARD_THRESHOLD_INACTIVE if is_inactive else _JACCARD_THRESHOLD
         l_thr = _LCP_THRESHOLD_INACTIVE     if is_inactive else _LCP_THRESHOLD
+
+        # ── Strongest signal: exact date pair match ──────────────────────────
+        # Same bank + same start_date + same end_date = almost certainly same
+        # promotion even if the AI wrote the title differently.
+        if _date_pair_matches(start_date, end_date, row['start_date'], row['end_date']):
+            return row['id']
 
         if new_code_stem:
             old_code_stem = _extract_promo_code_stem(row['title'])
@@ -852,7 +874,7 @@ def save_promotions(
                 dup_id = (
                     pre_match_id
                     if pre_match_id is not None
-                    else _find_duplicate_id(conn, bank_id, title, highlight)
+                    else _find_duplicate_id(conn, bank_id, title, highlight, start_date, end_date)
                 )
 
                 if dup_id:
@@ -1052,7 +1074,7 @@ def repair_reinserted_promotions(dry_run: bool = False) -> int:
     with _db_connection() as conn:
         try:
             today_rows = conn.execute(
-                "SELECT id, bank_id, title, highlight "
+                "SELECT id, bank_id, title, highlight, start_date, end_date "
                 "FROM promotions "
                 "WHERE DATE(COALESCE(first_seen_at, created_at)) = ? AND active = 1",
                 (today,),
@@ -1063,13 +1085,16 @@ def repair_reinserted_promotions(dry_run: bool = False) -> int:
                 return 0
 
             for row in today_rows:
-                bank_id = row['bank_id']
-                title   = row['title']
-                row_id  = row['id']
-                hi_new  = (row['highlight'] or '').strip()[:120]
+                bank_id  = row['bank_id']
+                title    = row['title']
+                row_id   = row['id']
+                hi_new   = (row['highlight'] or '').strip()[:120]
+                sd_new   = (row['start_date'] or '').strip()[:10]
+                ed_new   = (row['end_date']   or '').strip()[:10]
 
                 older_rows = conn.execute(
-                    "SELECT id, title, highlight, first_seen_at, created_at "
+                    "SELECT id, title, highlight, first_seen_at, created_at, "
+                    "       start_date, end_date "
                     "FROM promotions "
                     "WHERE bank_id = ? "
                     "  AND id != ? "
@@ -1088,11 +1113,15 @@ def repair_reinserted_promotions(dry_run: bool = False) -> int:
                     hi_old   = (older['highlight'] or '').strip()[:120]
                     norm_old = _normalize_title(older['title'])
                     code_old = _extract_promo_code_stem(older['title'])
+                    sd_old   = (older['start_date'] or '').strip()[:10]
+                    ed_old   = (older['end_date']   or '').strip()[:10]
 
                     is_match = False
                     reason   = ''
 
-                    if code_new and code_old and code_new == code_old:
+                    if _date_pair_matches(sd_new, ed_new, sd_old, ed_old):
+                        is_match, reason = True, f'date-pair={sd_new}/{ed_new}'
+                    elif code_new and code_old and code_new == code_old:
                         is_match, reason = True, f'code-stem={code_new}'
                     elif norm_new and norm_old and norm_new == norm_old:
                         is_match, reason = True, 'exact-norm'
@@ -1962,9 +1991,11 @@ def _find_broker_duplicate_id(
     broker_id: str,
     title: str,
     highlight: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
 ) -> Optional[int]:
     rows = conn.execute(
-        "SELECT id, title, highlight, active FROM broker_promotions WHERE broker_id = ?",
+        "SELECT id, title, highlight, active, start_date, end_date FROM broker_promotions WHERE broker_id = ?",
         (broker_id,)
     ).fetchall()
 
@@ -1977,6 +2008,9 @@ def _find_broker_duplicate_id(
         is_inactive = not row['active']
         j_thr = _JACCARD_THRESHOLD_INACTIVE if is_inactive else _JACCARD_THRESHOLD
         l_thr = _LCP_THRESHOLD_INACTIVE     if is_inactive else _LCP_THRESHOLD
+
+        if _date_pair_matches(start_date, end_date, row['start_date'], row['end_date']):
+            return row['id']
 
         if new_code_stem:
             old_code_stem = _extract_promo_code_stem(row['title'])
@@ -2065,7 +2099,7 @@ def save_broker_promotions(
                 dup_id = (
                     pre_match_id
                     if pre_match_id is not None
-                    else _find_broker_duplicate_id(conn, broker_id, title, highlight)
+                    else _find_broker_duplicate_id(conn, broker_id, title, highlight, start_date, end_date)
                 )
 
                 if dup_id:

@@ -155,6 +155,7 @@ BANK_CONFIGS: dict[str, dict] = {
             'https://mox.com/zh/promotions/',
             'https://mox.com/',
             'https://mox.com/promotions/new-to-invest-triple-0-fees/',
+            'https://mox.com/zh/promotions/new-to-invest-triple-0-fees/',
             'https://mox.com/zh/promotions/moxsmart/',
             'https://mox.com/zh/promotions/The-Club/',
             'https://mox.com/zh/promotions/1500mox/',
